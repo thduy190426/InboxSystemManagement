@@ -2,9 +2,16 @@ const { createHash } = require('crypto')
 const { randomUUID } = require('crypto')
 const { Server } = require('socket.io')
 const { pool } = require('../config/db')
+const { sendWebPushToUsers } = require('../services/push.service')
 
 let io = null
 const activeCallTimers = new Map()
+
+function pushWebNotificationToUsers(userIds, payload) {
+  sendWebPushToUsers(userIds, payload).catch((error) => {
+    console.error('Failed to send web push notification:', error)
+  })
+}
 
 function hashToken(token) {
   return createHash('sha256').update(token).digest('hex')
@@ -121,7 +128,7 @@ async function loadCall(connection, callId) {
 
 function formatDateTime(value) {
   if (!value) {
-    return 'Chưa có'
+    return 'Chưa có!'
   }
 
   return new Intl.DateTimeFormat('vi-VN', {
@@ -154,19 +161,19 @@ function formatCallDuration(seconds) {
 
 function getCallStatusLabel(status) {
   if (status === 'completed') {
-    return 'Đã kết thúc'
+    return 'Đã kết thúc!'
   }
 
   if (status === 'declined') {
-    return 'Đã từ chối'
+    return 'Đã từ chối!'
   }
 
   if (status === 'missed') {
-    return 'Cuộc gọi nhỡ'
+    return 'Cuộc gọi nhỡ!'
   }
 
   if (status === 'cancelled') {
-    return 'Đã hủy'
+    return 'Đã hủy!'
   }
 
   return status
@@ -177,22 +184,17 @@ async function createCallDetailMessage(connection, call, endedAt, durationSecond
     return null
   }
 
-  const typeLabel = call.type === 'video' ? 'video' : 'audio'
-  const [endedByRows] = await connection.execute(
-    `SELECT full_name FROM users WHERE id = ? LIMIT 1`,
-    [endedByUserId],
-  )
-  const endedByName = endedByRows[0]?.full_name || 'Hệ thống'
-  const body = [
-    `Chi tiết cuộc gọi ${typeLabel}`,
-    `Trạng thái: ${getCallStatusLabel(call.status)}`,
-    `Người gọi: ${call.caller_name}`,
-    `Người thao tác: ${endedByName}`,
-    `Bắt đầu: ${formatDateTime(call.started_at)}`,
-    `Kết thúc: ${formatDateTime(endedAt)}`,
-    `Thời lượng: ${formatCallDuration(durationSeconds)}`,
-  ].join('\n')
-
+  const durationLabel = formatCallDuration(durationSeconds)
+  const body =
+    call.status === 'cancelled'
+      ? 'Cu\u1ed9c g\u1ecdi: \u0110\u00e3 h\u1ee7y.'
+      : call.status === 'completed'
+        ? `Cu\u1ed9c g\u1ecdi: K\u1ebft th\u00fac, Th\u1eddi l\u01b0\u1ee3ng: ${durationLabel}`
+        : call.status === 'ongoing'
+          ? `Cu\u1ed9c g\u1ecdi \u0111ang di\u1ec5n ra: Th\u1eddi l\u01b0\u1ee3ng ${durationLabel}`
+          : call.status === 'missed'
+            ? 'Cu\u1ed9c g\u1ecdi nh\u1ee1'
+            : getCallStatusLabel(call.status)
   const [result] = await connection.execute(
     `INSERT INTO messages (
       public_id,
@@ -460,6 +462,17 @@ function initRealtime(server, corsOrigin) {
 
         socket.emit('call:ringing', callPayload)
         socket.to(getConversationRoom(conversationId)).emit('call:incoming', callPayload)
+        pushWebNotificationToUsers(
+          conversationPayload.participants
+            .filter((participant) => participant.userId !== Number(socket.user.id))
+            .map((participant) => participant.userId),
+          {
+            title: `Cuộc gọi ${type === 'video' ? 'video' : 'audio'} đến`,
+            body: socket.user.full_name,
+            tag: `call:${callId}`,
+            url: `/chat/${conversationId}`,
+          },
+        )
         scheduleMissedCall(callId)
         ack?.({ ok: true, call: callPayload })
       } catch (error) {

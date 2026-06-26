@@ -21,7 +21,7 @@ async function startServer() {
       console.log(`API server is running at http://127.0.0.1:${port}`)
     })
   } catch (error) {
-    console.error('Unable to start API server.')
+    console.error('Unable to start API server!')
     console.error(error)
     process.exit(1)
   }

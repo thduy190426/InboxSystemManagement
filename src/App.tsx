@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChatApp } from './components/ChatApp'
 import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
@@ -35,17 +35,69 @@ function getInitialRouteKnown() {
   return isKnownRoute()
 }
 
-function shouldShowRouteTransitionLoader(pathname: string) {
-  return pathname === '/chat' || pathname.startsWith('/chat/') || pathname === '/contacts' || pathname === '/notifications'
+function isChatRoute(pathname: string) {
+  return pathname === '/chat' || pathname.startsWith('/chat/')
+}
+
+function shouldShowRouteTransitionLoader(previousPathname: string, currentPathname: string) {
+  // Không hiện loader khi chỉ chuyển giữa các cuộc trò chuyện trong chat
+  if (isChatRoute(previousPathname) && isChatRoute(currentPathname)) {
+    return false
+  }
+
+  return isChatRoute(currentPathname) || currentPathname === '/contacts' || currentPathname === '/notifications'
 }
 
 function useRouteTransitionLoading() {
   const [isLoading, setIsLoading] = useState(false)
   const timerRef = useRef<number | null>(null)
 
+
   useEffect(() => {
-    function startLoading() {
-      if (!shouldShowRouteTransitionLoader(window.location.pathname)) {
+    type RouteTransitionDetail = { previousPathname: string }
+    type HistoryStateArgs = [data: unknown, unused: string, url?: string | URL | null]
+    const originalPushState = window.history.pushState
+    const originalReplaceState = window.history.replaceState
+
+    window.history.pushState = function pushState(...args: HistoryStateArgs) {
+      const previousHref = window.location.href
+      const previousPathname = window.location.pathname
+      const result = originalPushState.apply(window.history, args)
+
+      if (window.location.href !== previousHref) {
+        window.dispatchEvent(
+          new CustomEvent<RouteTransitionDetail>(ROUTE_TRANSITION_EVENT, {
+            detail: { previousPathname },
+          }),
+        )
+      }
+
+      return result
+    } as History['pushState']
+
+    window.history.replaceState = function replaceState(...args: HistoryStateArgs) {
+      const previousHref = window.location.href
+      const previousPathname = window.location.pathname
+      const result = originalReplaceState.apply(window.history, args)
+
+      if (window.location.href !== previousHref) {
+        window.dispatchEvent(
+          new CustomEvent<RouteTransitionDetail>(ROUTE_TRANSITION_EVENT, {
+            detail: { previousPathname },
+          }),
+        )
+      }
+
+      return result
+    } as History['replaceState']
+
+    function startLoading(event: Event) {
+      const previousPathname =
+        event instanceof CustomEvent
+          ? (event as CustomEvent<RouteTransitionDetail>).detail.previousPathname
+          : window.location.pathname
+
+      if (!shouldShowRouteTransitionLoader(previousPathname, window.location.pathname)) {
         if (timerRef.current) {
           window.clearTimeout(timerRef.current)
           timerRef.current = null
@@ -65,36 +117,6 @@ function useRouteTransitionLoading() {
         timerRef.current = null
       }, ROUTE_TRANSITION_DURATION)
     }
-
-    function emitRouteTransition() {
-      window.dispatchEvent(new Event(ROUTE_TRANSITION_EVENT))
-    }
-
-    type HistoryStateArgs = [data: unknown, unused: string, url?: string | URL | null]
-    const originalPushState = window.history.pushState
-    const originalReplaceState = window.history.replaceState
-
-    window.history.pushState = function pushState(...args: HistoryStateArgs) {
-      const previousHref = window.location.href
-      const result = originalPushState.apply(window.history, args)
-
-      if (window.location.href !== previousHref) {
-        emitRouteTransition()
-      }
-
-      return result
-    } as History['pushState']
-
-    window.history.replaceState = function replaceState(...args: HistoryStateArgs) {
-      const previousHref = window.location.href
-      const result = originalReplaceState.apply(window.history, args)
-
-      if (window.location.href !== previousHref) {
-        emitRouteTransition()
-      }
-
-      return result
-    } as History['replaceState']
 
     window.addEventListener(ROUTE_TRANSITION_EVENT, startLoading)
     window.addEventListener('popstate', startLoading)
@@ -140,6 +162,12 @@ function RouteTransitionLoader({ isVisible }: { isVisible: boolean }) {
   )
 }
 
+type AppToast = {
+  id: string
+  text: string
+  tone?: 'info' | 'error'
+}
+
 export function App() {
   const storedAuthSession = getStoredAuthSession()
   const isRouteTransitioning = useRouteTransitionLoading()
@@ -148,6 +176,8 @@ export function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(Boolean(storedAuthSession))
   const [authError, setAuthError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [toasts, setToasts] = useState<AppToast[]>([])
+  const toastTimersRef = useRef<Record<string, number>>({})
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(
     storedAuthSession?.user ?? null,
   )
@@ -196,6 +226,29 @@ export function App() {
     })
   }, [])
 
+  const dismissToast = useCallback((toastId: string) => {
+    const timerId = toastTimersRef.current[toastId]
+
+    if (timerId) {
+      window.clearTimeout(timerId)
+      delete toastTimersRef.current[toastId]
+    }
+
+    setToasts((current) => current.filter((toast) => toast.id !== toastId))
+  }, [])
+
+  const pushToast = useCallback(
+    (text: string, tone: AppToast['tone'] = 'info') => {
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`
+
+      setToasts((current) => [...current, { id, text, tone }])
+      toastTimersRef.current[id] = window.setTimeout(() => {
+        dismissToast(id)
+      }, 3200)
+    },
+    [dismissToast],
+  )
+
   function navigateAuth(nextScreen: AuthScreen) {
     window.history.pushState(null, '', toAuthPath(nextScreen))
     setIsRouteKnown(true)
@@ -206,6 +259,7 @@ export function App() {
   function handleAuthSuccess(
     response: Awaited<ReturnType<typeof login>>,
     rememberLogin: boolean,
+    successMessage: string = 'Đăng nhập thành công!',
   ) {
     storeAuthSession(response, rememberLogin)
     setCurrentUser(response.user)
@@ -219,6 +273,7 @@ export function App() {
     setIsRouteKnown(true)
     setIsAuthenticated(true)
     setAuthError('')
+    pushToast(successMessage, 'info')
   }
 
   async function handleLogout() {
@@ -229,6 +284,7 @@ export function App() {
     setIsAuthenticated(false)
     setCurrentUser(null)
     setAuthScreen('login')
+    pushToast('Đăng xuất thành công!', 'info')
   }
 
   function handleAccountDeleted() {
@@ -282,7 +338,7 @@ export function App() {
         password: payload.password,
       })
 
-      handleAuthSuccess(response, true)
+      handleAuthSuccess(response, true, 'Đăng kí thành công!')
     } catch (error) {
       setAuthError(error instanceof ApiError ? error.message : 'Không thể đăng kí.')
     } finally {
@@ -358,10 +414,32 @@ export function App() {
     )
   })()
 
+  function renderToasts() {
+    if (toasts.length === 0) {
+      return null
+    }
+
+    return (
+      <div aria-live="polite" className="toast-stack" role="status">
+        {toasts.map((toast) => (
+          <button
+            className={`toast ${toast.tone === 'info' ? 'is-info' : 'is-error'}`}
+            key={toast.id}
+            onClick={() => dismissToast(toast.id)}
+            type="button"
+          >
+            {toast.text}
+          </button>
+        ))}
+      </div>
+    )
+  }
+
   return (
     <>
       {content}
       <RouteTransitionLoader isVisible={isRouteTransitioning} />
+      {renderToasts()}
     </>
   )
 }

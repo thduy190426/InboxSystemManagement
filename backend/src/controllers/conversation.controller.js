@@ -1,6 +1,7 @@
 const { randomUUID } = require('crypto')
 const { pool } = require('../config/db')
 const { emitToConversation, emitToUsers } = require('../realtime/socket')
+const { sendWebPushToUsers } = require('../services/push.service')
 
 const accentColors = ['#14b8a6', '#f97316', '#4f46e5', '#db2777', '#2563eb']
 const typingIndicators = new Map()
@@ -35,6 +36,19 @@ const messageHiddenEntriesTableReady = pool
     console.error('Failed to ensure message_hidden_entries table:', error)
     throw error
   })
+const conversationParticipantHiddenAtReady = pool
+  .execute(
+    `ALTER TABLE conversation_participants
+      ADD COLUMN hidden_at TIMESTAMP NULL DEFAULT NULL`,
+  )
+  .catch((error) => {
+    if (error && error.code === 'ER_DUP_FIELDNAME') {
+      return
+    }
+
+    console.error('Failed to ensure conversation participant hidden_at column:', error)
+    throw error
+  })
 
 async function ensureMessagePinsTable() {
   await messagePinsTableReady
@@ -42,6 +56,10 @@ async function ensureMessagePinsTable() {
 
 async function ensureMessageHiddenEntriesTable() {
   await messageHiddenEntriesTableReady
+}
+
+async function ensureConversationParticipantHiddenAtColumn() {
+  await conversationParticipantHiddenAtReady
 }
 
 function formatOfflineDuration(lastSeenAt) {
@@ -328,6 +346,25 @@ async function emitConversationChanged(connection, conversationId, actorUserId, 
   } catch (error) {
     console.error('Failed to emit conversation realtime event:', error)
   }
+}
+
+async function loadConversationPushRecipientIds(connection, conversationId, actorUserId) {
+  const [rows] = await connection.execute(
+    `SELECT user_id
+    FROM conversation_participants
+    WHERE conversation_id = ?
+      AND user_id <> ?
+      AND left_at IS NULL`,
+    [conversationId, actorUserId],
+  )
+
+  return rows.map((row) => row.user_id)
+}
+
+function pushWebNotificationToUsers(userIds, payload) {
+  sendWebPushToUsers(userIds, payload).catch((error) => {
+    console.error('Failed to send web push notification:', error)
+  })
 }
 
 function getTypingKey(conversationId, userId) {
@@ -777,6 +814,7 @@ async function touchDeliveredReceipts(connection, conversationId, currentUserId)
 
 async function loadConversationSummary(connection, conversationId, currentUserId) {
   await ensureMessageHiddenEntriesTable()
+  await ensureConversationParticipantHiddenAtColumn()
 
   const [conversationRows] = await connection.execute(
     `SELECT
@@ -815,6 +853,7 @@ async function loadConversationSummary(connection, conversationId, currentUserId
       ON participant_settings.conversation_id = conversations.id
       AND participant_settings.user_id = ?
       AND participant_settings.left_at IS NULL
+      AND participant_settings.hidden_at IS NULL
     LEFT JOIN messages AS last_messages
       ON last_messages.id = (
         SELECT visible_messages.id
@@ -907,6 +946,7 @@ async function listConversations(request, response, next) {
     const includeArchived = request.query.archived === 'true'
 
     await ensureMessageHiddenEntriesTable()
+    await ensureConversationParticipantHiddenAtColumn()
 
     const [conversationRows] = await pool.execute(
       `SELECT
@@ -946,6 +986,7 @@ async function listConversations(request, response, next) {
         ON participant_settings.conversation_id = conversations.id
         AND participant_settings.user_id = ?
         AND participant_settings.left_at IS NULL
+        AND participant_settings.hidden_at IS NULL
       LEFT JOIN messages AS last_messages
         ON last_messages.id = (
           SELECT visible_messages.id
@@ -1531,7 +1572,7 @@ async function removeGroupMember(request, response, next) {
       [conversationId, targetUser.id],
     )
 
-    await createSystemMessage(connection, conversationId, currentUserId, `${targetUser.full_name} đã rời nhóm`)
+    await createSystemMessage(connection, conversationId, currentUserId, `${targetUser.full_name} đã rời nhóm!`)
     const members = await loadConversationMembers(connection, conversationId, currentUserId)
 
     await connection.commit()
@@ -1681,7 +1722,7 @@ async function leaveGroupConversation(request, response, next) {
       [conversationId, currentUserId],
     )
 
-    await createSystemMessage(connection, conversationId, currentUserId, `${currentMember.full_name} đã rời nhóm`)
+    await createSystemMessage(connection, conversationId, currentUserId, `${currentMember.full_name} đã rời nhóm!`)
 
     await connection.commit()
     await emitConversationChanged(connection, conversationId, currentUserId, 'group:members')
@@ -1751,7 +1792,7 @@ async function disbandGroupConversation(request, response, next) {
       connection,
       conversationId,
       currentUserId,
-      `${group.title || 'Nhom'} đã bị giải tán bởi ${request.user.fullName}`,
+      `${group.title || 'Nhóm'} đã bị giải tán bởi ${request.user.fullName}!`,
     )
 
     await connection.execute(
@@ -2128,17 +2169,40 @@ async function createMessage(request, response, next) {
         messageId: result.insertId,
       })
       const createdMessage = messages.find((message) => message.id === String(result.insertId))
+      const mentionedUserIds = mentionedMembers.map((member) => member.userId)
+      const pushRecipientIds = (
+        await loadConversationPushRecipientIds(
+        connection,
+        conversationId,
+        currentUserId,
+        )
+      ).filter((userId) => !mentionedUserIds.includes(userId))
 
       await connection.commit()
       await emitConversationChanged(connection, conversationId, currentUserId, 'message:created')
+      pushWebNotificationToUsers(pushRecipientIds, {
+        title: request.user.full_name,
+        body: text || 'Đã gửi một tin nhắn mới!',
+        tag: `conversation:${conversationId}`,
+        url: `/chat/${conversationId}`,
+      })
       emitToUsers(
-        mentionedMembers.map((member) => member.userId),
+        mentionedUserIds,
         'notifications:changed',
         {
           eventType: 'mention',
           conversationId: String(conversationId),
           messageId: String(result.insertId),
           actorUserId: String(currentUserId),
+        },
+      )
+      pushWebNotificationToUsers(
+        mentionedUserIds,
+        {
+          title: `${request.user.full_name} đã nhắc đến bạn!`,
+          body: text.slice(0, 500),
+          tag: `mention:${result.insertId}`,
+          url: `/chat/${conversationId}`,
         },
       )
 
@@ -2264,9 +2328,25 @@ async function createAttachmentMessage(request, response, next) {
       messageId: result.insertId,
     })
     const createdMessage = messages.find((message) => message.id === String(result.insertId))
+    const pushRecipientIds = await loadConversationPushRecipientIds(
+      connection,
+      conversationId,
+      currentUserId,
+    )
 
     await connection.commit()
     await emitConversationChanged(connection, conversationId, currentUserId, 'message:created')
+    pushWebNotificationToUsers(pushRecipientIds, {
+      title: request.user.full_name,
+      body:
+        messageType === 'image'
+          ? 'Đã gửi một ảnh!'
+          : messageType === 'audio'
+            ? 'Đã gửi một tin nhắn thoại!'
+            : 'Đã gửi một tệp!',
+      tag: `conversation:${conversationId}`,
+      url: `/chat/${conversationId}`,
+    })
 
     response.status(201).json({
       message: createdMessage,
@@ -2424,6 +2504,84 @@ async function deleteMessage(request, response, next) {
     })
 
     response.status(204).send()
+  } catch (error) {
+    await connection.rollback()
+    next(error)
+  } finally {
+    connection.release()
+  }
+}
+
+async function recallMessage(request, response, next) {
+  const connection = await pool.getConnection()
+
+  try {
+    const currentUserId = request.user.id
+    const conversationId = Number(request.params.conversationId)
+    const messageId = Number(request.params.messageId)
+
+    if (!Number.isInteger(conversationId) || !Number.isInteger(messageId)) {
+      return response.status(400).json({
+        message: 'Đường dẫn tin nhắn không hợp lệ!',
+      })
+    }
+
+    await connection.beginTransaction()
+
+    const participant = await findActiveParticipant(connection, conversationId, currentUserId)
+
+    if (!participant) {
+      await connection.rollback()
+      return response.status(404).json({
+        message: 'Không tìm thấy hội thoại!',
+      })
+    }
+
+    const [messageRows] = await connection.execute(
+      `SELECT id, sender_id, type
+      FROM messages
+      WHERE id = ?
+        AND conversation_id = ?
+        AND deleted_at IS NULL
+      LIMIT 1`,
+      [messageId, conversationId],
+    )
+
+    const message = messageRows[0]
+
+    if (!message) {
+      await connection.rollback()
+      return response.status(404).json({
+        message: 'Không tìm thấy tin nhắn!',
+      })
+    }
+
+    if (message.sender_id !== currentUserId || message.type === 'system') {
+      await connection.rollback()
+      return response.status(403).json({
+        message: 'Bạn chỉ có thể thu hồi tin nhắn do mình đã gửi!',
+      })
+    }
+
+    await connection.execute(
+      `UPDATE messages
+      SET deleted_at = CURRENT_TIMESTAMP,
+        status = 'deleted'
+      WHERE id = ?`,
+      [messageId],
+    )
+
+    await updateConversationLastMessage(connection, conversationId)
+
+    const conversation = await loadConversationSummary(connection, conversationId, currentUserId)
+
+    await connection.commit()
+    await emitConversationChanged(connection, conversationId, currentUserId, 'message:recalled')
+
+    response.json({
+      conversation,
+      messageId: String(messageId),
+    })
   } catch (error) {
     await connection.rollback()
     next(error)
@@ -3041,6 +3199,57 @@ async function archiveConversation(request, response, next) {
   }
 }
 
+async function hideConversation(request, response, next) {
+  const connection = await pool.getConnection()
+
+  try {
+    await ensureConversationParticipantHiddenAtColumn()
+
+    const currentUserId = request.user.id
+    const conversationId = Number(request.params.conversationId)
+
+    if (!Number.isInteger(conversationId)) {
+      return response.status(400).json({
+        message: 'Đường dẫn hội thoại không hợp lệ!',
+      })
+    }
+
+    await connection.beginTransaction()
+
+    const participant = await findActiveParticipant(connection, conversationId, currentUserId)
+
+    if (!participant) {
+      await connection.rollback()
+      return response.status(404).json({
+        message: 'Không tìm thấy hội thoại!',
+      })
+    }
+
+    await connection.execute(
+      `UPDATE conversation_participants
+      SET hidden_at = CURRENT_TIMESTAMP,
+        is_pinned = 0
+      WHERE conversation_id = ? AND user_id = ?`,
+      [conversationId, currentUserId],
+    )
+
+    await connection.commit()
+
+    emitToUsers([currentUserId], 'conversation:changed', {
+      conversationId: String(conversationId),
+      actorUserId: String(currentUserId),
+      eventType: 'conversation:hidden',
+    })
+
+    response.status(204).end()
+  } catch (error) {
+    await connection.rollback()
+    next(error)
+  } finally {
+    connection.release()
+  }
+}
+
 async function unarchiveConversation(request, response, next) {
   const connection = await pool.getConnection()
 
@@ -3099,12 +3308,14 @@ module.exports = {
   getConversationMembers,
   getMessages,
   getTypingStatus,
+  hideConversation,
   leaveGroupConversation,
   listConversationCalls,
   listConversations,
   markConversationDelivered,
   markConversationRead,
   removeMessageReaction,
+  recallMessage,
   removeGroupMember,
   toggleMessageReaction,
   toggleMessagePin,

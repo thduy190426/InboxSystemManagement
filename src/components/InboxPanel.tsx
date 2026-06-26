@@ -1,6 +1,6 @@
 import type { CSSProperties, ChangeEvent, FormEvent } from 'react'
-import { useEffect, useMemo, useState } from 'react'
-import { ArchiveRestore, BellOff, ImagePlus, MessageSquare, Pin, Plus, Search, UserRound, X } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { ArchiveRestore, BellOff, Check, ImagePlus, MessageSquare, Pin, Plus, Search, Trash2, Type, UserRound, Users, X } from 'lucide-react'
 import { globalSearch, type GlobalSearchResponse } from '../services/searchApi'
 import type { ContactUser, Conversation } from '../types'
 import { AvatarFallback } from './AvatarFallback'
@@ -23,6 +23,7 @@ type InboxPanelProps = {
   }) => Promise<void> | void
   onFilterChange: (filter: ConversationFilter) => void
   onClosePanel?: () => void
+  onDeleteConversation: (conversationId: string) => void
   onRestoreConversation: (conversationId: string) => Promise<void> | void
   onQueryChange: (query: string) => void
   onSelectConversation: (conversationId: string) => void
@@ -38,6 +39,7 @@ export function InboxPanel({
   query,
   onCreateGroup,
   onClosePanel,
+  onDeleteConversation,
   onFilterChange,
   onRestoreConversation,
   onQueryChange,
@@ -52,6 +54,12 @@ export function InboxPanel({
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false)
   const [isSearchingGlobally, setIsSearchingGlobally] = useState(false)
   const [globalSearchError, setGlobalSearchError] = useState('')
+  const [conversationMenu, setConversationMenu] = useState<{
+    conversationId: string
+    x: number
+    y: number
+  } | null>(null)
+  const longPressTimerRef = useRef<number | null>(null)
   const hasGlobalResults = useMemo(
     () =>
       Boolean(
@@ -66,6 +74,26 @@ export function InboxPanel({
   function handleQueryChange(event: ChangeEvent<HTMLInputElement>) {
     onQueryChange(event.target.value)
   }
+
+  useEffect(() => {
+    if (!conversationMenu) {
+      return
+    }
+
+    function closeConversationMenu() {
+      setConversationMenu(null)
+    }
+
+    window.addEventListener('click', closeConversationMenu)
+    window.addEventListener('scroll', closeConversationMenu, true)
+    window.addEventListener('resize', closeConversationMenu)
+
+    return () => {
+      window.removeEventListener('click', closeConversationMenu)
+      window.removeEventListener('scroll', closeConversationMenu, true)
+      window.removeEventListener('resize', closeConversationMenu)
+    }
+  }, [conversationMenu])
 
   useEffect(() => {
     const keyword = query.trim()
@@ -137,6 +165,34 @@ export function InboxPanel({
     onSelectConversation(conversationId)
   }
 
+  function clearLongPressTimer() {
+    if (longPressTimerRef.current) {
+      window.clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
+    }
+  }
+
+  function openConversationMenu(conversationId: string, x: number, y: number) {
+    const menuWidth = 176
+    const menuHeight = 48
+    const safeX = Math.min(Math.max(x, 12), window.innerWidth - menuWidth - 12)
+    const safeY = Math.min(Math.max(y, 12), window.innerHeight - menuHeight - 12)
+
+    setConversationMenu({ conversationId, x: safeX, y: safeY })
+  }
+
+  function startConversationLongPress(conversationId: string, x: number, y: number) {
+    clearLongPressTimer()
+    longPressTimerRef.current = window.setTimeout(() => {
+      openConversationMenu(conversationId, x, y)
+    }, 520)
+  }
+
+  function handleDeleteConversation(conversationId: string) {
+    setConversationMenu(null)
+    onDeleteConversation(conversationId)
+  }
+
   async function handleCreateGroup(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -164,14 +220,20 @@ export function InboxPanel({
           ? conversations.filter((conversation) => conversation.type === 'group')
           : conversations
 
+  function getLastNameWord(name: string) {
+    const words = name.trim().split(/\s+/).filter(Boolean)
+
+    return words.at(-1) || name
+  }
+
   function getStripLabel(conversation: Conversation) {
     if (activeFilter === 'unread' && conversation.unreadSenders?.length) {
       return conversation.unreadSenders.length === 1
-        ? conversation.unreadSenders[0].fullName
+        ? getLastNameWord(conversation.unreadSenders[0].fullName)
         : `${conversation.unreadSenders.length} người gửi`
     }
 
-    return conversation.name
+    return getLastNameWord(conversation.name)
   }
 
   function getConversationPreview(conversation: Conversation) {
@@ -410,15 +472,37 @@ export function InboxPanel({
           <button
             className={
               conversation.id === activeConversation?.id
-                ? 'conversation-row is-active'
-                : 'conversation-row'
+                ? 'conversation-row is-active animate-in'
+                : 'conversation-row animate-in'
             }
             key={conversation.id}
+            onContextMenu={(event) => {
+              event.preventDefault()
+              openConversationMenu(conversation.id, event.clientX, event.clientY)
+            }}
             onClick={() =>
               activeFilter === 'archived'
                 ? onRestoreConversation(conversation.id)
                 : onSelectConversation(conversation.id)
             }
+            onMouseDown={(event) => {
+              if (event.button !== 0) {
+                return
+              }
+
+              startConversationLongPress(conversation.id, event.clientX, event.clientY)
+            }}
+            onMouseLeave={clearLongPressTimer}
+            onMouseUp={clearLongPressTimer}
+            onTouchCancel={clearLongPressTimer}
+            onTouchEnd={clearLongPressTimer}
+            onTouchStart={(event) => {
+              const touch = event.touches[0]
+
+              if (touch) {
+                startConversationLongPress(conversation.id, touch.clientX, touch.clientY)
+              }
+            }}
             style={{ '--conversation-accent': conversation.accent } as CSSProperties}
             type="button"
           >
@@ -434,7 +518,7 @@ export function InboxPanel({
             <span className="conversation-copy">
               <span className="conversation-topline">
                 <strong>{conversation.name}</strong>
-                <span>{conversation.lastTime}</span>
+                {activeFilter !== 'archived' ? <span>{conversation.lastTime}</span> : null}
               </span>
               <span className="conversation-preview">{getConversationPreview(conversation)}</span>
             </span>
@@ -458,13 +542,35 @@ export function InboxPanel({
         ) : null}
       </div>
 
+      {conversationMenu ? (
+        <div
+          className="conversation-context-menu"
+          onClick={(event) => event.stopPropagation()}
+          style={{ left: conversationMenu.x, top: conversationMenu.y }}
+        >
+          <button
+            className="is-danger"
+            onClick={() => handleDeleteConversation(conversationMenu.conversationId)}
+            type="button"
+          >
+            <Trash2 size={16} />
+            <span>Xóa</span>
+          </button>
+        </div>
+      ) : null}
+
       {isCreateGroupOpen ? (
         <div className={isCreateGroupClosing ? 'modal-backdrop is-exiting' : 'modal-backdrop'} role="presentation">
           <form className="group-modal" onSubmit={handleCreateGroup}>
             <div className="group-modal-header">
-              <div>
-                <h2>Tạo nhóm</h2>
-                <p>Đặt tên, avatar và chọn thành viên.</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '44px', height: '44px', borderRadius: '50%', background: 'var(--primary)', color: '#fff' }}>
+                  <Users size={22} />
+                </div>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '18px' }}>Tạo nhóm</h2>
+                  <p style={{ margin: 0, marginTop: '4px' }}>Đặt tên, avatar và chọn thành viên.</p>
+                </div>
               </div>
               <button className="icon-button" onClick={closeCreateGroup} type="button" title="Đóng">
                 <X size={18} />
@@ -472,7 +578,9 @@ export function InboxPanel({
             </div>
 
             <label className="group-field">
-              <span>Tên nhóm</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Type size={16} /> Tên nhóm
+              </span>
               <input
                 autoFocus
                 onChange={(event) => setGroupTitle(event.target.value)}
@@ -493,7 +601,9 @@ export function InboxPanel({
 
             <div className="group-member-picker">
               <div className="group-member-title">
-                <strong>Thành viên</strong>
+                <strong style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Users size={16} /> Thành viên
+                </strong>
                 <span>{selectedMemberIds.length} đã chọn</span>
               </div>
               <div className="group-member-list">
@@ -521,7 +631,9 @@ export function InboxPanel({
               className="group-primary-button"
               disabled={!groupTitle.trim() || selectedMemberIds.length === 0 || isCreatingGroup}
               type="submit"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
             >
+              {isCreatingGroup ? null : <Check size={18} />}
               {isCreatingGroup ? 'Đang tạo...' : 'Tạo nhóm'}
             </button>
           </form>

@@ -168,6 +168,17 @@ export async function deleteMessage(conversationId: string, messageId: string) {
   })
 }
 
+export async function recallMessage(conversationId: string, messageId: string) {
+  const response = await request<ConversationResponse>(
+    `/conversations/${conversationId}/messages/${messageId}/recall`,
+    {
+      method: 'DELETE',
+    },
+  )
+
+  return response.conversation
+}
+
 export async function toggleMessagePin(conversationId: string, messageId: string) {
   const response = await request<UpdateMessageResponse>(
     `/conversations/${conversationId}/messages/${messageId}/pin`,
@@ -272,6 +283,12 @@ export async function unarchiveConversation(conversationId: string) {
   })
 
   return response.conversation
+}
+
+export async function hideConversation(conversationId: string) {
+  await request(`/conversations/${conversationId}`, {
+    method: 'DELETE',
+  })
 }
 
 export async function fetchTypingStatus(conversationId: string) {

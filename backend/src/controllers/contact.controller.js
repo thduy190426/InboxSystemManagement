@@ -1,6 +1,13 @@
 const { randomUUID } = require('crypto')
 const { pool } = require('../config/db')
 const { emitToUsers } = require('../realtime/socket')
+const { sendWebPushToUsers } = require('../services/push.service')
+
+function pushWebNotificationToUsers(userIds, payload) {
+  sendWebPushToUsers(userIds, payload).catch((error) => {
+    console.error('Failed to send web push notification:', error)
+  })
+}
 
 function toContactUser(row) {
   return {
@@ -339,8 +346,8 @@ async function sendFriendRequest(request, response, next) {
         [
           targetUser.id,
           currentUserId,
-          `${request.user.full_name} đã gửi lời mời kết bạn`,
-          'Muốn kết bạn với bạn',
+          `${request.user.full_name} đã gửi lời mời kết bạn!`,
+          'Muốn kết bạn với bạn!',
         ],
       )
 
@@ -352,6 +359,12 @@ async function sendFriendRequest(request, response, next) {
       emitToUsers([targetUser.id], 'notifications:changed', {
         eventType: 'contact_request',
         actorUserId: String(currentUserId),
+      })
+      pushWebNotificationToUsers([targetUser.id], {
+        title: `${request.user.full_name} đã gửi lời mời kết bạn!`,
+        body: 'Muốn kết bạn với bạn!',
+        tag: `contact-request:${currentUserId}`,
+        url: '/notifications',
       })
 
       response.status(201).json({

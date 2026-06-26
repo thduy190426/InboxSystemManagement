@@ -1,11 +1,13 @@
 import type { ChangeEvent, FormEvent } from 'react'
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import type { EmojiClickData, EmojiStyle, Theme } from 'emoji-picker-react'
 import {
   Check,
   CheckCheck,
   ChevronDown,
   ChevronUp,
+  Download,
+  FileText,
   Info,
   Menu,
   Mic,
@@ -25,12 +27,72 @@ import {
   Video,
   X,
 } from 'lucide-react'
-import type { Conversation, Message } from '../types'
+import type { Conversation, Message, MessageAttachment } from '../types'
 import { AvatarFallback } from './AvatarFallback'
 import { ConfirmDialog, type ConfirmDialogState } from './ConfirmDialog'
 import { OnlineDurationBadge } from './OnlineDurationBadge'
 
 const EmojiPicker = lazy(() => import('emoji-picker-react'))
+const MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024
+const ALLOWED_ATTACHMENT_TYPES = [
+  'image/',
+  'audio/',
+  'video/',
+  'application/pdf',
+  'text/plain',
+  'application/zip',
+  'application/x-zip-compressed',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument',
+]
+
+function parseMessageDate(message?: Message) {
+  const value = message?.createdAt || message?.updatedAt
+
+  if (!value) {
+    return null
+  }
+
+  const date = new Date(value)
+
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+function isSameLocalDay(left: Date | null, right: Date | null) {
+  if (!left || !right) {
+    return false
+  }
+
+  return (
+    left.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth() &&
+    left.getDate() === right.getDate()
+  )
+}
+
+function formatDateHeader(date: Date | null, now = new Date()) {
+  if (!date) {
+    return ''
+  }
+
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const targetDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  const dayDistance = Math.round((today.getTime() - targetDay.getTime()) / 86400000)
+
+  if (dayDistance === 0) {
+    return 'Hôm nay'
+  }
+
+  if (dayDistance === 1) {
+    return 'Hôm qua'
+  }
+
+  return new Intl.DateTimeFormat('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: date.getFullYear() === now.getFullYear() ? undefined : 'numeric',
+  }).format(date)
+}
 
 type ChatPanelProps = {
   activeConversation: Conversation
@@ -56,6 +118,7 @@ type ChatPanelProps = {
   replyingTo?: Message | null
   onCancelReply: () => void
   onDeleteMessage: (messageId: string) => Promise<void> | void
+  onRecallMessage: (messageId: string) => Promise<void> | void
   onDraftChange: (draft: string) => void
   onEditMessage: (messageId: string, text: string) => Promise<void> | void
   onForwardMessage: (messageId: string, targetConversationId: string) => Promise<void> | void
@@ -92,6 +155,7 @@ export function ChatPanel({
   replyingTo = null,
   onCancelReply,
   onDeleteMessage,
+  onRecallMessage,
   onDraftChange,
   onEditMessage,
   onForwardMessage,
@@ -126,6 +190,7 @@ export function ChatPanel({
   const [recordingError, setRecordingError] = useState('')
   const [recordedAudioUrl, setRecordedAudioUrl] = useState('')
   const [recordedAudioFile, setRecordedAudioFile] = useState<File | null>(null)
+  const [galleryImage, setGalleryImage] = useState<MessageAttachment | null>(null)
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const threadEndRef = useRef<HTMLDivElement | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
@@ -172,6 +237,32 @@ export function ChatPanel({
           : true,
       )
   }, [activeConversation.id, conversations, forwardQuery])
+
+  function isSameMessageGroup(message: Message, sibling?: Message) {
+    if (!sibling || message.author === 'system' || sibling.author === 'system') {
+      return false
+    }
+
+    const sameAuthor =
+      message.author === sibling.author &&
+      (message.author === 'me' || (message.senderName || '') === (sibling.senderName || ''))
+
+    return (
+      sameAuthor &&
+      isSameLocalDay(parseMessageDate(message), parseMessageDate(sibling))
+    )
+  }
+
+  function getDateDividerLabel(message: Message, previousMessage?: Message) {
+    const messageDate = parseMessageDate(message)
+    const previousDate = parseMessageDate(previousMessage)
+
+    if (!messageDate || isSameLocalDay(messageDate, previousDate)) {
+      return ''
+    }
+
+    return formatDateHeader(messageDate)
+  }
 
   useEffect(() => {
     setActiveSearchIndex(0)
@@ -253,8 +344,23 @@ export function ChatPanel({
       return
     }
 
+    if (!isSupportedAttachment(file)) {
+      setRecordingError('File khong duoc ho tro hoac vuot qua 10MB!')
+      event.target.value = ''
+      return
+    }
+
+    setRecordingError('')
     await onUploadAttachment(file)
     event.target.value = ''
+  }
+
+  function isSupportedAttachment(file: File) {
+    if (file.size > MAX_ATTACHMENT_SIZE_BYTES) {
+      return false
+    }
+
+    return ALLOWED_ATTACHMENT_TYPES.some((type) => file.type.startsWith(type) || file.type === type)
   }
 
   function getSupportedAudioMimeType() {
@@ -448,7 +554,7 @@ export function ChatPanel({
     })
   }
 
-  async function handleDelete(message: Message) {
+  async function handleDeleteForMe(message: Message) {
     setConfirmDialog({
       title: 'Xoá tin nhắn?',
       description: 'Tin nhắn này sẽ bị xoá khỏi cuộc trò chuyện của bạn.',
@@ -461,6 +567,23 @@ export function ChatPanel({
 
         setOpenActionMenuId('')
         await onDeleteMessage(message.id)
+      },
+    })
+  }
+
+  async function handleRecall(message: Message) {
+    setConfirmDialog({
+      title: 'Thu hồi tin nhắn?',
+      description: 'Tin nhắn này sẽ bị gỡ khỏi cuộc trò chuyện của tất cả mọi người.',
+      confirmLabel: 'Thu hồi',
+      tone: 'danger',
+      onConfirm: async () => {
+        if (editingMessageId === message.id) {
+          cancelEditing()
+        }
+
+        setOpenActionMenuId('')
+        await onRecallMessage(message.id)
       },
     })
   }
@@ -500,22 +623,22 @@ export function ChatPanel({
 
   function getMessageStateLabel(message: Message) {
     if (message.state === 'sending') {
-      return 'Đang gửi'
+      return 'Đang gửi...'
     }
 
     if (message.state === 'failed') {
-      return 'Gửi lỗi'
+      return 'Gửi lỗi!'
     }
 
     if (message.state === 'seen') {
-      return message.seenAt ? `Đã xem lúc ${message.seenAt}` : 'Đã xem'
+      return message.seenAt ? `Đã xem lúc ${message.seenAt}!` : 'Đã xem!'
     }
 
     if (message.state === 'delivered') {
-      return 'Đã nhận'
+      return 'Đã nhận!'
     }
 
-    return 'Đã gửi'
+    return 'Đã gửi!'
   }
 
   function moveSearchResult(direction: 'next' | 'previous') {
@@ -537,11 +660,11 @@ export function ChatPanel({
       const mentionNames = message.mentions?.map((mention) => mention.fullName) ?? []
       const pattern = mentionNames.length
         ? new RegExp(
-            `(@(?:${mentionNames
-              .map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-              .join('|')}))`,
-            'giu',
-          )
+          `(@(?:${mentionNames
+            .map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+            .join('|')}))`,
+          'giu',
+        )
         : null
 
       if (!pattern) {
@@ -630,12 +753,124 @@ export function ChatPanel({
     )
   }
 
+  function isPdfAttachment(attachment: MessageAttachment) {
+    return attachment.mimeType === 'application/pdf'
+  }
+
+  function isVideoAttachment(attachment: MessageAttachment) {
+    return attachment.mimeType.startsWith('video/')
+  }
+
+  function renderDownloadLink(attachment: MessageAttachment) {
+    return (
+      <a
+        className="attachment-download-button"
+        download={attachment.name}
+        href={attachment.url}
+        rel="noreferrer"
+        target="_blank"
+        title="Tải xuống"
+      >
+        <Download size={15} />
+        <span>Tải xuống</span>
+      </a>
+    )
+  }
+
+  function renderAttachmentPreview(attachment: MessageAttachment) {
+    if (attachment.type === 'image') {
+      return (
+        <div className="message-image-attachment" key={attachment.url}>
+          <button
+            className="message-image-link"
+            onClick={() => setGalleryImage(attachment)}
+            title={attachment.name}
+            type="button"
+          >
+            <img alt={attachment.name} src={attachment.url} />
+          </button>
+          <div className="attachment-toolbar">
+            <span>{attachment.name}</span>
+            {renderDownloadLink(attachment)}
+          </div>
+        </div>
+      )
+    }
+
+    if (attachment.type === 'audio') {
+      return (
+        <div className="message-audio-attachment" key={attachment.url}>
+          <Mic size={16} />
+          <span>
+            <strong>Tin nhắn thoại</strong>
+            <small>{attachment.meta}</small>
+          </span>
+          {renderDownloadLink(attachment)}
+          <audio controls preload="metadata" src={attachment.url} />
+        </div>
+      )
+    }
+
+    if (isVideoAttachment(attachment)) {
+      return (
+        <div className="message-video-attachment" key={attachment.url}>
+          <video controls preload="metadata" src={attachment.url} />
+          <div className="attachment-toolbar">
+            <span>{attachment.name}</span>
+            {renderDownloadLink(attachment)}
+          </div>
+        </div>
+      )
+    }
+
+    if (isPdfAttachment(attachment)) {
+      return (
+        <div className="message-pdf-attachment" key={attachment.url}>
+          <iframe src={attachment.url} title={attachment.name} />
+          <div className="attachment-toolbar">
+            <span>{attachment.name}</span>
+            <a href={attachment.url} rel="noreferrer" target="_blank">
+              Xem PDF
+            </a>
+            {renderDownloadLink(attachment)}
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div className="message-file-link" key={attachment.url}>
+        <FileText size={17} />
+        <span>
+          <strong>{attachment.name}</strong>
+          <small>{attachment.meta}</small>
+        </span>
+        {renderDownloadLink(attachment)}
+      </div>
+    )
+  }
+
+  function shouldRenderMessageText(message: Message) {
+    if (!message.text) {
+      return false
+    }
+
+    return !message.attachments?.some((attachment) => attachment.name === message.text)
+  }
+
   function renderAttachments(message: Message) {
     if (!message.attachments?.length) {
       return null
     }
+    const attachments = message.attachments
 
     return (
+      <div className="message-attachments">
+        {attachments.map((attachment) => renderAttachmentPreview(attachment))}
+      </div>
+    )
+
+    /* return (
       <div className="message-attachments">
         {message.attachments.map((attachment) =>
           attachment.type === 'image' ? (
@@ -674,7 +909,7 @@ export function ChatPanel({
           ),
         )}
       </div>
-    )
+    ) */
   }
 
   function renderReactions(message: Message) {
@@ -819,229 +1054,258 @@ export function ChatPanel({
             {isLoadingOlderMessages ? 'Đang tải tin cũ...' : 'Tải tin nhắn cũ hơn'}
           </button>
         ) : null}
-        <div className="day-divider">
-          <span>Hôm nay</span>
-        </div>
 
-        {messages.map((message) => (
-          <div
-            className={[
-              message.author === 'system'
-                ? 'message-row system-message-row'
-                : message.author === 'me'
-                  ? 'message-row outgoing'
-                  : 'message-row',
-              searchMatches.some((match) => match.id === message.id) ? 'is-search-match' : '',
-              activeSearchMessageId === message.id ? 'is-search-active' : '',
-              focusedMessageId === message.id ? 'is-focused-message' : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            key={message.id}
-            ref={(node) => {
-              messageRefs.current[message.id] = node
-            }}
-          >
-            {message.author === 'system' ? (
-              <div className="system-message">
-                <span>{renderHighlightedText(message)}</span>
-              </div>
-            ) : (
-              <>
-            {message.author === 'them' ? (
-              <AvatarFallback
-                className="message-avatar"
-                name={message.senderName || activeConversation.name}
-                src={message.senderAvatar || activeConversation.avatar}
-              />
-            ) : null}
-            <div className="message-bubble">
-              {editingMessageId === message.id ? (
-                <form
-                  className="message-edit-form"
-                  onSubmit={(event) => handleEditSubmit(event, message)}
-                >
-                  <input
-                    aria-label="Sửa tin nhắn"
-                    autoFocus
-                    disabled={busyMessageId === message.id}
-                    onChange={(event) => setEditingText(event.target.value)}
-                    value={editingText}
-                  />
-                  <button
-                    className="message-action-button"
-                    disabled={!editingText.trim() || busyMessageId === message.id}
-                    title="Lưu"
-                    type="submit"
-                  >
-                    <Check size={15} />
-                  </button>
-                  <button
-                    className="message-action-button"
-                    disabled={busyMessageId === message.id}
-                    onClick={cancelEditing}
-                    title="Hủy"
-                    type="button"
-                  >
-                    <X size={15} />
-                  </button>
-                </form>
-              ) : (
-                <>
-                  {message.isPinned ? (
-                    <span className="message-pin-badge">
-                      <Pin size={12} />
-                      <span>Đã ghim</span>
-                    </span>
-                  ) : null}
-                  {message.replyTo ? renderReplyPreview(message.replyTo) : null}
-                  {message.text ? <p>{renderHighlightedText(message)}</p> : null}
-                  {renderAttachments(message)}
-                </>
-              )}
-              <span className="message-time">
-                {message.time}
-                {message.isEdited ? <span>Đã chỉnh sửa!</span> : null}
-                {message.author === 'me' ? (
+        {messages.length === 0 && activeConversation.type !== 'group' ? (
+          <div className="thread-empty-state">
+            <span>Hãy bắt đầu cuộc trò chuyện cùng với {activeConversation.name} nào!</span>
+          </div>
+        ) : null}
+
+        {messages.map((message, index) => {
+          const previousMessage = messages[index - 1]
+          const nextMessage = messages[index + 1]
+          const dateDividerLabel = getDateDividerLabel(message, previousMessage)
+          const isGroupedWithPrevious = isSameMessageGroup(message, previousMessage)
+          const isGroupedWithNext = isSameMessageGroup(message, nextMessage)
+          const shouldShowAvatar = message.author === 'them' && !isGroupedWithNext
+
+          return (
+            <Fragment key={message.id}>
+              {dateDividerLabel ? (
+                <div className="day-divider message-time-divider">
+                  <span>{dateDividerLabel}</span>
+                </div>
+              ) : null}
+              <div
+                className={[
+                  message.author === 'system'
+                    ? 'message-row system-message-row animate-in'
+                    : message.author === 'me'
+                      ? 'message-row outgoing animate-in'
+                      : 'message-row animate-in',
+                  isGroupedWithPrevious ? 'is-grouped-with-previous' : 'is-group-start',
+                  isGroupedWithNext ? 'is-grouped-with-next' : 'is-group-end',
+                  searchMatches.some((match) => match.id === message.id) ? 'is-search-match' : '',
+                  activeSearchMessageId === message.id ? 'is-search-active' : '',
+                  focusedMessageId === message.id ? 'is-focused-message' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                ref={(node) => {
+                  messageRefs.current[message.id] = node
+                }}
+              >
+                {message.author === 'system' ? (
+                  <div className="system-message">
+                    <span>{renderHighlightedText(message)}</span>
+                  </div>
+                ) : (
                   <>
-                    <CheckCheck aria-label={getMessageStateLabel(message)} size={15} />
-                    <span>{getMessageStateLabel(message)}</span>
-                    {message.state === 'failed' ? (
-                      <button
-                        className="message-retry-button"
-                        onClick={() => onRetryMessage(message)}
-                        title="Thử gửi lại"
-                        type="button"
-                      >
-                        Thử lại
-                      </button>
+                    {message.author === 'them' ? (
+                      <AvatarFallback
+                        className={shouldShowAvatar ? 'message-avatar' : 'message-avatar is-hidden'}
+                        name={message.senderName || activeConversation.name}
+                        src={message.senderAvatar || activeConversation.avatar}
+                      />
+                    ) : null}
+                    <div className="message-bubble">
+                      {editingMessageId === message.id ? (
+                        <form
+                          className="message-edit-form"
+                          onSubmit={(event) => handleEditSubmit(event, message)}
+                        >
+                          <input
+                            aria-label="Sửa tin nhắn"
+                            autoFocus
+                            disabled={busyMessageId === message.id}
+                            onChange={(event) => setEditingText(event.target.value)}
+                            value={editingText}
+                          />
+                          <button
+                            className="message-action-button"
+                            disabled={!editingText.trim() || busyMessageId === message.id}
+                            title="Lưu"
+                            type="submit"
+                          >
+                            <Check size={15} />
+                          </button>
+                          <button
+                            className="message-action-button"
+                            disabled={busyMessageId === message.id}
+                            onClick={cancelEditing}
+                            title="Hủy"
+                            type="button"
+                          >
+                            <X size={15} />
+                          </button>
+                        </form>
+                      ) : (
+                        <>
+                          {message.isPinned ? (
+                            <span className="message-pin-badge">
+                              <Pin size={12} />
+                              <span>Đã ghim</span>
+                            </span>
+                          ) : null}
+                          {message.replyTo ? renderReplyPreview(message.replyTo) : null}
+                          {shouldRenderMessageText(message) ? <p>{renderHighlightedText(message)}</p> : null}
+                          {renderAttachments(message)}
+                        </>
+                      )}
+                      <span className="message-time">
+                        {message.time}
+                        {message.isEdited ? <span>Đã chỉnh sửa!</span> : null}
+                        {message.author === 'me' ? (
+                          <>
+                            <CheckCheck aria-label={getMessageStateLabel(message)} size={15} />
+                            <span>{getMessageStateLabel(message)}</span>
+                            {message.state === 'failed' ? (
+                              <button
+                                className="message-retry-button"
+                                onClick={() => onRetryMessage(message)}
+                                title="Thử gửi lại"
+                                type="button"
+                              >
+                                Thử lại
+                              </button>
+                            ) : null}
+                          </>
+                        ) : null}
+                      </span>
+                      {renderReactions(message)}
+                    </div>
+                    {editingMessageId !== message.id && !['sending', 'failed'].includes(message.state ?? '') ? (
+                      <span className="message-actions">
+                        <button
+                          className="message-more-button"
+                          disabled={Boolean(busyMessageId)}
+                          onClick={() => startReplying(message)}
+                          title="Trả lời"
+                          type="button"
+                        >
+                          <Reply size={17} />
+                        </button>
+                        <button
+                          className="message-more-button"
+                          disabled={Boolean(busyMessageId)}
+                          onClick={() => {
+                            setOpenActionMenuId('')
+                            setOpenReactionPickerId((current) =>
+                              current === message.id ? '' : message.id,
+                            )
+                          }}
+                          title="Reaction"
+                          type="button"
+                        >
+                          <Smile size={17} />
+                        </button>
+                        {openReactionPickerId === message.id ? (
+                          <span
+                            className={
+                              message.author === 'me'
+                                ? 'reaction-picker'
+                                : 'reaction-picker reaction-picker-incoming'
+                            }
+                          >
+                            <Suspense fallback={<span className="reaction-picker-loading">...</span>}>
+                              <EmojiPicker
+                                emojiStyle={'native' as EmojiStyle}
+                                height={300}
+                                lazyLoadEmojis
+                                onEmojiClick={(emojiData) =>
+                                  handleToggleReaction(message.id, emojiData.emoji)
+                                }
+                                previewConfig={{ showPreview: false }}
+                                searchPlaceHolder="Tìm Emoji"
+                                skinTonesDisabled
+                                theme={'light' as Theme}
+                                width={292}
+                              />
+                            </Suspense>
+                          </span>
+                        ) : null}
+                        <button
+                          className="message-more-button"
+                          disabled={Boolean(busyMessageId)}
+                          onClick={() => {
+                            setOpenReactionPickerId('')
+                            setOpenActionMenuId((current) =>
+                              current === message.id ? '' : message.id,
+                            )
+                          }}
+                          title="Tùy chọn tin nhắn"
+                          type="button"
+                        >
+                          <MoreHorizontal size={18} />
+                        </button>
+                        {openActionMenuId === message.id ? (
+                          <span className="message-action-menu">
+                            <button
+                              disabled={Boolean(busyMessageId)}
+                              onClick={() => handleTogglePin(message.id)}
+                              type="button"
+                            >
+                              {message.isPinned ? <PinOff size={14} /> : <Pin size={14} />}
+                              <span>{message.isPinned ? 'Bỏ ghim' : 'Ghim'}</span>
+                            </button>
+                            <button
+                              disabled={Boolean(busyMessageId)}
+                              onClick={() => startForwarding(message)}
+                              type="button"
+                            >
+                              <SendHorizontal size={14} />
+                              <span>Chuyển tiếp</span>
+                            </button>
+                            {message.author === 'me' ? (
+                              <>
+                                <button
+                                  disabled={Boolean(busyMessageId)}
+                                  onClick={() => startEditing(message)}
+                                  type="button"
+                                >
+                                  <Pencil size={14} />
+                                  <span>Sửa</span>
+                                </button>
+                                <button
+                                  className="is-danger"
+                                  disabled={Boolean(busyMessageId)}
+                                  onClick={() => handleDeleteForMe(message)}
+                                  type="button"
+                                >
+                                  <Trash2 size={14} />
+                                  <span>Xoá phía tôi</span>
+                                </button>
+                                <button
+                                  className="is-danger"
+                                  disabled={Boolean(busyMessageId)}
+                                  onClick={() => handleRecall(message)}
+                                  type="button"
+                                >
+                                  <Trash2 size={14} />
+                                  <span>Thu hồi với mọi người</span>
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                className="is-danger"
+                                disabled={Boolean(busyMessageId)}
+                                onClick={() => handleDeleteForMe(message)}
+                                type="button"
+                              >
+                                <Trash2 size={14} />
+                                <span>Xoá phía tôi</span>
+                              </button>
+                            )}
+                          </span>
+                        ) : null}
+                      </span>
                     ) : null}
                   </>
-                ) : null}
-              </span>
-              {renderReactions(message)}
-            </div>
-            {editingMessageId !== message.id && !['sending', 'failed'].includes(message.state ?? '') ? (
-              <span className="message-actions">
-                <button
-                  className="message-more-button"
-                  disabled={Boolean(busyMessageId)}
-                  onClick={() => startReplying(message)}
-                  title="Trả lời"
-                  type="button"
-                >
-                  <Reply size={17} />
-                </button>
-                <button
-                  className="message-more-button"
-                  disabled={Boolean(busyMessageId)}
-                  onClick={() => {
-                    setOpenActionMenuId('')
-                    setOpenReactionPickerId((current) =>
-                      current === message.id ? '' : message.id,
-                    )
-                  }}
-                  title="Reaction"
-                  type="button"
-                >
-                  <Smile size={17} />
-                </button>
-                {openReactionPickerId === message.id ? (
-                  <span
-                    className={
-                      message.author === 'me'
-                        ? 'reaction-picker'
-                        : 'reaction-picker reaction-picker-incoming'
-                    }
-                  >
-                    <Suspense fallback={<span className="reaction-picker-loading">...</span>}>
-                      <EmojiPicker
-                        emojiStyle={'native' as EmojiStyle}
-                        height={300}
-                        lazyLoadEmojis
-                        onEmojiClick={(emojiData) =>
-                          handleToggleReaction(message.id, emojiData.emoji)
-                        }
-                        previewConfig={{ showPreview: false }}
-                        searchPlaceHolder="Tìm Emoji"
-                        skinTonesDisabled
-                        theme={'light' as Theme}
-                        width={292}
-                      />
-                    </Suspense>
-                  </span>
-                ) : null}
-                <button
-                  className="message-more-button"
-                  disabled={Boolean(busyMessageId)}
-                  onClick={() => {
-                    setOpenReactionPickerId('')
-                    setOpenActionMenuId((current) =>
-                      current === message.id ? '' : message.id,
-                    )
-                  }}
-                  title="Tùy chọn tin nhắn"
-                  type="button"
-                >
-                  <MoreHorizontal size={18} />
-                </button>
-                {openActionMenuId === message.id ? (
-                  <span className="message-action-menu">
-                    <button
-                      disabled={Boolean(busyMessageId)}
-                      onClick={() => handleTogglePin(message.id)}
-                      type="button"
-                    >
-                      {message.isPinned ? <PinOff size={14} /> : <Pin size={14} />}
-                      <span>{message.isPinned ? 'Bỏ ghim' : 'Ghim'}</span>
-                    </button>
-                    <button
-                      disabled={Boolean(busyMessageId)}
-                      onClick={() => startForwarding(message)}
-                      type="button"
-                    >
-                      <SendHorizontal size={14} />
-                      <span>Chuyển tiếp</span>
-                    </button>
-                    {message.author === 'me' ? (
-                      <>
-                        <button
-                          disabled={Boolean(busyMessageId)}
-                          onClick={() => startEditing(message)}
-                          type="button"
-                        >
-                          <Pencil size={14} />
-                          <span>Sửa</span>
-                        </button>
-                        <button
-                          className="is-danger"
-                          disabled={Boolean(busyMessageId)}
-                          onClick={() => handleDelete(message)}
-                          type="button"
-                        >
-                          <Trash2 size={14} />
-                          <span>Xóa</span>
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        className="is-danger"
-                        disabled={Boolean(busyMessageId)}
-                        onClick={() => handleDelete(message)}
-                        type="button"
-                      >
-                        <Trash2 size={14} />
-                        <span>Xóa tin nhắn</span>
-                      </button>
-                    )}
-                  </span>
-                ) : null}
-              </span>
-            ) : null}
-              </>
-            )}
-          </div>
-        ))}
+                )}
+              </div>
+            </Fragment>
+          )
+        })}
         <div ref={threadEndRef} />
       </div>
 
@@ -1071,6 +1335,7 @@ export function ChatPanel({
           <Paperclip size={20} />
           <input
             aria-label="Đính kèm file"
+            accept="image/*,audio/*,video/*,application/pdf,text/plain,.zip,.doc,.docx"
             disabled={isBlocked || isUploadingAttachment}
             onChange={handleAttachmentChange}
             type="file"
@@ -1233,6 +1498,23 @@ export function ChatPanel({
                 <p>Không có hội thoại phù hợp!</p>
               ) : null}
             </div>
+          </section>
+        </div>
+      ) : null}
+      {galleryImage ? (
+        <div className="attachment-gallery-backdrop" role="presentation">
+          <section aria-modal="true" className="attachment-gallery" role="dialog">
+            <header>
+              <strong>{galleryImage.name}</strong>
+              <span>
+                {galleryImage.meta} · {galleryImage.mimeType}
+              </span>
+              <button onClick={() => setGalleryImage(null)} title="Dong" type="button">
+                <X size={18} />
+              </button>
+            </header>
+            <img alt={galleryImage.name} src={galleryImage.url} />
+            <footer>{renderDownloadLink(galleryImage)}</footer>
           </section>
         </div>
       ) : null}

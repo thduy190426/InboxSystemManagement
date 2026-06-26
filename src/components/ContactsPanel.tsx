@@ -1,9 +1,10 @@
-﻿import type { FormEvent } from 'react'
+import type { FormEvent } from 'react'
 import { useEffect, useState } from 'react'
 import {
   CalendarDays,
   Check,
   Clock,
+  IdCard,
   Mail,
   MapPin,
   Phone,
@@ -30,6 +31,7 @@ import { AvatarFallback } from './AvatarFallback'
 
 type ContactsPanelProps = {
   onAccepted: (conversationId: string) => void
+  pushToast: (text: string, tone?: 'info' | 'error') => void
 }
 
 function getActionLabel(user: ContactUser) {
@@ -86,7 +88,7 @@ function formatProfileDate(value?: string | null) {
   }).format(date)
 }
 
-export function ContactsPanel({ onAccepted }: ContactsPanelProps) {
+export function ContactsPanel({ onAccepted, pushToast }: ContactsPanelProps) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<ContactUser[]>([])
   const [friends, setFriends] = useState<ContactUser[]>([])
@@ -109,6 +111,7 @@ export function ContactsPanel({ onAccepted }: ContactsPanelProps) {
     setRequests(nextRequests)
     setSuggestions(nextSuggestions)
   }
+
 
   useEffect(() => {
     loadDirectory().catch((error) => {
@@ -174,7 +177,7 @@ export function ContactsPanel({ onAccepted }: ContactsPanelProps) {
               : item,
           ),
         )
-        setMessage('Đã hủy lời mời kết bạn! Bạn có thể gửi lời mời kết bạn lại.')
+        pushToast('Đã hủy lời mời kết bạn! Bạn có thể gửi lời mời kết bạn lại.', 'info')
         return
       }
 
@@ -207,9 +210,9 @@ export function ContactsPanel({ onAccepted }: ContactsPanelProps) {
             : item,
         ),
       )
-      setMessage('Đã gửi lời mời kết bạn! Vui lòng chờ đối phương chấp nhận.')
+      pushToast('Đã gửi lời mời kết bạn! Vui lòng chờ đối phương chấp nhận.', 'info')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Không thể xử lý lời mời!')
+      pushToast(error instanceof Error ? error.message : 'Không thể xử lý lời mời!', 'error')
     } finally {
       setBusyId('')
     }
@@ -227,7 +230,7 @@ export function ContactsPanel({ onAccepted }: ContactsPanelProps) {
       await loadDirectory()
       onAccepted(response.conversationId)
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Không thể chấp nhận lời mời!')
+      pushToast(error instanceof Error ? error.message : 'Không thể chấp nhận lời mời!', 'error')
     } finally {
       setBusyId('')
     }
@@ -250,9 +253,9 @@ export function ContactsPanel({ onAccepted }: ContactsPanelProps) {
             : item,
         ),
       )
-      setMessage('Đã từ chối lời mời kết bạn.')
+      pushToast('Đã từ chối lời mời kết bạn.', 'info')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Không thể từ chối lời mời!')
+      pushToast(error instanceof Error ? error.message : 'Không thể từ chối lời mời!', 'error')
     } finally {
       setBusyId('')
     }
@@ -275,9 +278,9 @@ export function ContactsPanel({ onAccepted }: ContactsPanelProps) {
             : item,
         ),
       )
-      setMessage('Đã hủy kết bạn. Bạn có thể gửi lời mời kết bạn lại!')
+      pushToast('Đã hủy kết bạn. Bạn có thể gửi lời mời kết bạn lại!', 'info')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Không thể hủy kết bạn!')
+      pushToast(error instanceof Error ? error.message : 'Không thể hủy kết bạn!', 'error')
     } finally {
       setBusyId('')
     }
@@ -397,7 +400,7 @@ export function ContactsPanel({ onAccepted }: ContactsPanelProps) {
 
   function renderContactRow(user: ContactUser, action: React.ReactNode) {
     return (
-      <article className="contact-row" key={user.id}>
+      <article className="contact-row animate-in" key={user.id}>
         <AvatarFallback name={user.fullName} src={user.avatarUrl} />
         <div>
           <strong>{user.nickname || user.fullName}</strong>
@@ -410,6 +413,7 @@ export function ContactsPanel({ onAccepted }: ContactsPanelProps) {
             onClick={() => openContactProfile(user)}
             type="button"
           >
+            <IdCard size={16} />
             Xem hồ sơ
           </button>
           {action}
@@ -449,22 +453,23 @@ export function ContactsPanel({ onAccepted }: ContactsPanelProps) {
           </div>
 
           <div className="contact-list">
-            {friends.map((friend) =>
-              renderContactRow(
-                friend,
-                <button
-                  disabled={busyId === friend.id}
-                  onClick={() => handleUnfriend(friend)}
-                  type="button"
-                >
-                  <UserMinus size={16} />
-                  {busyId === friend.id ? 'Đang xử lý' : 'Hủy kết bạn'}
-                </button>,
-              ),
-            )}
-            {friends.length === 0 ? (
+            {friends.length > 0 ? (
+              friends.map((friend) =>
+                renderContactRow(
+                  friend,
+                  <button
+                    disabled={busyId === friend.id}
+                    onClick={() => handleUnfriend(friend)}
+                    type="button"
+                  >
+                    <UserMinus size={16} />
+                    {busyId === friend.id ? 'Đang xử lý' : 'Hủy kết bạn'}
+                  </button>,
+                ),
+              )
+            ) : (
               <div className="empty-state">Bạn chưa có người bạn nào!</div>
-            ) : null}
+            )}
           </div>
         </section>
 
@@ -475,26 +480,27 @@ export function ContactsPanel({ onAccepted }: ContactsPanelProps) {
           </div>
 
           <div className="contact-list">
-            {suggestions.map((user) =>
-              renderContactRow(
-                user,
-                <button
-                  disabled={busyId === user.id || user.friendshipStatus === 'accepted'}
-                  onClick={() => handleSendRequest(user)}
-                  type="button"
-                >
-                  {user.friendshipStatus === 'pending' && user.requestDirection === 'outgoing' ? (
-                    <X size={16} />
-                  ) : (
-                    <UserPlus size={16} />
-                  )}
-                  {busyId === user.id ? 'Đang xử lý' : getActionLabel(user)}
-                </button>,
-              ),
-            )}
-            {suggestions.length === 0 ? (
+            {suggestions.length > 0 ? (
+              suggestions.map((user) =>
+                renderContactRow(
+                  user,
+                  <button
+                    disabled={busyId === user.id || user.friendshipStatus === 'accepted'}
+                    onClick={() => handleSendRequest(user)}
+                    type="button"
+                  >
+                    {user.friendshipStatus === 'pending' && user.requestDirection === 'outgoing' ? (
+                      <X size={16} />
+                    ) : (
+                      <UserPlus size={16} />
+                    )}
+                    {busyId === user.id ? 'Đang xử lý' : getActionLabel(user)}
+                  </button>,
+                ),
+              )
+            ) : (
               <div className="empty-state">Chưa có gợi ý kết bạn mới!</div>
-            ) : null}
+            )}
           </div>
         </section>
 
@@ -505,26 +511,27 @@ export function ContactsPanel({ onAccepted }: ContactsPanelProps) {
           </div>
 
           <div className="contact-list">
-            {results.map((user) =>
-              renderContactRow(
-                user,
-                <button
-                  disabled={busyId === user.id || user.friendshipStatus === 'accepted'}
-                  onClick={() => handleSendRequest(user)}
-                  type="button"
-                >
-                  {user.friendshipStatus === 'pending' && user.requestDirection === 'outgoing' ? (
-                    <X size={16} />
-                  ) : (
-                    <UserPlus size={16} />
-                  )}
-                  {busyId === user.id ? 'Đang xử lý' : getActionLabel(user)}
-                </button>,
-              ),
-            )}
-            {results.length === 0 ? (
+            {results.length > 0 ? (
+              results.map((user) =>
+                renderContactRow(
+                  user,
+                  <button
+                    disabled={busyId === user.id || user.friendshipStatus === 'accepted'}
+                    onClick={() => handleSendRequest(user)}
+                    type="button"
+                  >
+                    {user.friendshipStatus === 'pending' && user.requestDirection === 'outgoing' ? (
+                      <X size={16} />
+                    ) : (
+                      <UserPlus size={16} />
+                    )}
+                    {busyId === user.id ? 'Đang xử lý' : getActionLabel(user)}
+                  </button>,
+                ),
+              )
+            ) : (
               <div className="empty-state">Chưa có kết quả tìm kiếm!</div>
-            ) : null}
+            )}
           </div>
         </section>
 
@@ -535,45 +542,47 @@ export function ContactsPanel({ onAccepted }: ContactsPanelProps) {
           </div>
 
           <div className="contact-list">
-            {requests.map((request) => (
-              <article className="contact-row" key={request.id}>
-                <AvatarFallback name={request.fullName} src={request.avatarUrl} />
-                <div>
-                  <strong>{request.fullName}</strong>
-                  <span>{request.email}</span>
-                  <small>Muốn kết bạn với bạn</small>
-                </div>
-                <span className="contact-request-actions">
-                  <button
-                    className="contact-secondary-button"
-                    onClick={() => openContactProfile(request)}
-                    type="button"
-                  >
-                    Xem hồ sơ
-                  </button>
-                  <button
-                    disabled={busyId === request.id}
-                    onClick={() => handleAcceptRequest(request)}
-                    type="button"
-                  >
-                    <Check size={16} />
-                    {busyId === request.id ? 'Đang xử lý' : 'Chấp nhận'}
-                  </button>
-                  <button
-                    className="contact-secondary-button"
-                    disabled={busyId === request.id}
-                    onClick={() => handleDeclineRequest(request)}
-                    type="button"
-                  >
-                    <X size={16} />
-                    Từ chối
-                  </button>
-                </span>
-              </article>
-            ))}
-            {requests.length === 0 ? (
-              <div className="empty-state">Không có lời mời mới!</div>
-            ) : null}
+            {requests.length > 0 ? (
+              requests.map((request) => (
+                <article className="contact-row animate-in" key={request.id}>
+                  <AvatarFallback name={request.fullName} src={request.avatarUrl} />
+                  <div>
+                    <strong>{request.fullName}</strong>
+                    <span>{request.email}</span>
+                    <small>Muốn kết bạn với bạn</small>
+                  </div>
+                  <span className="contact-request-actions">
+                    <button
+                      className="contact-secondary-button"
+                      onClick={() => openContactProfile(request)}
+                      type="button"
+                    >
+                      <IdCard size={16} />
+                      Xem hồ sơ
+                    </button>
+                    <button
+                      disabled={busyId === request.id}
+                      onClick={() => handleAcceptRequest(request)}
+                      type="button"
+                    >
+                      <Check size={16} />
+                      {busyId === request.id ? 'Đang xử lý' : 'Chấp nhận'}
+                    </button>
+                    <button
+                      className="contact-secondary-button"
+                      disabled={busyId === request.id}
+                      onClick={() => handleDeclineRequest(request)}
+                      type="button"
+                    >
+                      <X size={16} />
+                      Từ chối
+                    </button>
+                  </span>
+                </article>
+              ))
+            ) : (
+              <div className="empty-state">Không có lời mời kết bạn mới!</div>
+            )}
           </div>
         </section>
       </div>

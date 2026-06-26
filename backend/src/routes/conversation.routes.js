@@ -9,6 +9,7 @@ const {
   disbandGroupConversation,
   forwardMessage,
   getConversationMembers,
+  hideConversation,
   listConversationCalls,
   getTypingStatus,
   leaveGroupConversation,
@@ -18,6 +19,7 @@ const {
   markConversationDelivered,
   markConversationRead,
   removeMessageReaction,
+  recallMessage,
   removeGroupMember,
   toggleMessageReaction,
   toggleMessagePin,
@@ -62,6 +64,8 @@ router.patch('/:conversationId/members/:userId/nickname', updateGroupMemberNickn
 router.delete('/:conversationId/group', disbandGroupConversation)
 router.delete('/:conversationId/members/:userId', removeGroupMember)
 router.delete('/:conversationId/messages/:messageId/reactions/:emoji', removeMessageReaction)
+router.delete('/:conversationId/messages/:messageId/recall', recallMessage)
 router.delete('/:conversationId/messages/:messageId', deleteMessage)
+router.delete('/:conversationId', hideConversation)
 
 module.exports = router

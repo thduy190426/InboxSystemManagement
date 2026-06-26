@@ -5,6 +5,7 @@ const authRoutes = require('./routes/auth.routes')
 const contactRoutes = require('./routes/contact.routes')
 const conversationRoutes = require('./routes/conversation.routes')
 const notificationRoutes = require('./routes/notification.routes')
+const pushRoutes = require('./routes/push.routes')
 const searchRoutes = require('./routes/search.routes')
 const userRoutes = require('./routes/user.routes')
 const { authenticate } = require('./middleware/auth.middleware')
@@ -30,7 +31,7 @@ app.use(
         return
       }
 
-      callback(new Error('Origin is not allowed by CORS.'))
+      callback(new Error('Origin is not allowed by CORS!'))
     },
     credentials: true,
   }),
@@ -49,6 +50,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/contacts', authenticate, contactRoutes)
 app.use('/api/conversations', authenticate, conversationRoutes)
 app.use('/api/notifications', authenticate, notificationRoutes)
+app.use('/api/push', authenticate, pushRoutes)
 app.use('/api/search', authenticate, searchRoutes)
 app.use('/api/users', authenticate, userRoutes)
 

@@ -1,6 +1,6 @@
 import type { ChangeEvent, FormEvent } from 'react'
 import { useEffect, useState } from 'react'
-import { AlertTriangle, Camera, KeyRound, Save, Trash2 } from 'lucide-react'
+import { AlertTriangle, AlignLeft, CalendarDays, Camera, IdCard, KeyRound, MapPin, MessageSquare, Phone, Save, Trash2, User, Users } from 'lucide-react'
 import type { AuthUser } from '../services/authApi'
 import {
   changePassword,
@@ -18,6 +18,7 @@ type ProfilePageProps = {
   currentUser: AuthUser | null
   onAccountDeleted: () => void
   onUserChange: (user: AuthUser) => void
+  pushToast: (text: string, tone?: 'info' | 'error') => void
 }
 
 const initialPasswordForm: ChangePasswordPayload = {
@@ -112,7 +113,7 @@ function validateDeleteForm(form: DeleteAccountPayload) {
   }
 
   if (form.confirmationText.trim() !== 'XOA TAI KHOAN') {
-    errors.confirmationText = 'Vui lòng nhập chính xác XOA TAI KHOAN.'
+    errors.confirmationText = 'Vui lòng nhập chính xác XOA TAI KHOAN!'
   }
 
   return errors
@@ -122,6 +123,7 @@ export function ProfilePage({
   currentUser,
   onAccountDeleted,
   onUserChange,
+  pushToast,
 }: ProfilePageProps) {
   const [fullName, setFullName] = useState(currentUser?.fullName ?? '')
   const [form, setForm] = useState<ProfilePayload>(() => createInitialForm(currentUser))
@@ -134,9 +136,6 @@ export function ProfilePage({
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null)
-  const [message, setMessage] = useState('')
-  const [passwordMessage, setPasswordMessage] = useState('')
-  const [deleteMessage, setDeleteMessage] = useState('')
   const [passwordForm, setPasswordForm] =
     useState<ChangePasswordPayload>(initialPasswordForm)
   const [deleteForm, setDeleteForm] = useState<DeleteAccountPayload>(initialDeleteForm)
@@ -168,7 +167,7 @@ export function ProfilePage({
       })
       .catch((error) => {
         if (isMounted) {
-          setMessage(error instanceof Error ? error.message : 'Không thể tải hồ sơ!')
+          pushToast(error instanceof Error ? error.message : 'Không thể tải hồ sơ!', 'error')
         }
       })
 
@@ -223,13 +222,12 @@ export function ProfilePage({
 
     try {
       setIsUploading(true)
-      setMessage('')
       const response = await uploadAvatar(file)
       onUserChange(response.user)
       setAvatarUrl(response.user.avatarUrl ?? '')
-      setMessage('Đã cập nhật ảnh đại diện!')
+      pushToast('Đã cập nhật ảnh đại diện!', 'info')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Không thể cập nhật ảnh đại diện!')
+      pushToast(error instanceof Error ? error.message : 'Không thể cập nhật ảnh đại diện!', 'error')
     } finally {
       setIsUploading(false)
       event.target.value = ''
@@ -245,16 +243,15 @@ export function ProfilePage({
 
     try {
       setIsSaving(true)
-      setMessage('')
       const response = await updateProfile(form)
       onUserChange(response.user)
       const nextForm = createInitialForm(response.user)
       setFullName(response.user.fullName)
       setForm(nextForm)
       setInitialForm(nextForm)
-      setMessage('Đã lưu hồ sơ!')
+      pushToast('Đã lưu hồ sơ!', 'info')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Không thể lưu hồ sơ!')
+      pushToast(error instanceof Error ? error.message : 'Không thể lưu hồ sơ!', 'error')
     } finally {
       setIsSaving(false)
     }
@@ -267,19 +264,18 @@ export function ProfilePage({
 
     if (Object.keys(errors).length > 0) {
       setPasswordErrors(errors)
-      setPasswordMessage('Vui lòng kiểm tra lại thông tin đổi mật khẩu!')
+      pushToast('Vui lòng kiểm tra lại thông tin đổi mật khẩu!', 'error')
       return
     }
 
     try {
       setIsChangingPassword(true)
       setPasswordErrors({})
-      setPasswordMessage('')
       const response = await changePassword(passwordForm)
       setPasswordForm(initialPasswordForm)
-      setPasswordMessage(response.message || 'Đã đổi mật khẩu!')
+      pushToast(response.message || 'Đã đổi mật khẩu!', 'info')
     } catch (error) {
-      setPasswordMessage(error instanceof Error ? error.message : 'Không thể đổi mật khẩu!')
+      pushToast(error instanceof Error ? error.message : 'Không thể đổi mật khẩu!', 'error')
     } finally {
       setIsChangingPassword(false)
     }
@@ -292,7 +288,7 @@ export function ProfilePage({
 
     if (Object.keys(errors).length > 0) {
       setDeleteErrors(errors)
-      setDeleteMessage('Vui lòng hoàn tất bước xác nhận trước khi xoá tài khoản!')
+      pushToast('Vui lòng hoàn tất bước xác nhận trước khi xoá tài khoản!', 'error')
       return
     }
 
@@ -309,11 +305,10 @@ export function ProfilePage({
     try {
       setIsDeletingAccount(true)
       setDeleteErrors({})
-      setDeleteMessage('')
       await deleteAccount(deleteForm)
       onAccountDeleted()
     } catch (error) {
-      setDeleteMessage(error instanceof Error ? error.message : 'Không thể xóa tài khoản!')
+      pushToast(error instanceof Error ? error.message : 'Không thể xóa tài khoản!', 'error')
     } finally {
       setIsDeletingAccount(false)
     }
@@ -378,12 +373,12 @@ export function ProfilePage({
 
         <form className="profile-form" onSubmit={handleSubmit}>
           <label className="profile-field">
-            <span>Họ và tên</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><User size={16} /> Họ và tên</span>
             <input name="fullName" readOnly value={fullName} />
           </label>
 
           <label className="profile-field">
-            <span>Tên hiển thị</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><IdCard size={16} /> Tên hiển thị</span>
             <input
               maxLength={80}
               name="displayName"
@@ -394,7 +389,7 @@ export function ProfilePage({
           </label>
 
           <label className="profile-field">
-            <span>Số điện thoại</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Phone size={16} /> Số điện thoại</span>
             <input
               maxLength={32}
               name="phone"
@@ -405,7 +400,7 @@ export function ProfilePage({
           </label>
 
           <label className="profile-field">
-            <span>Giới tính</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Users size={16} /> Giới tính</span>
             <select name="gender" onChange={handleChange} value={form.gender}>
               <option value="">Chưa cập nhật</option>
               <option value="male">Nam</option>
@@ -416,7 +411,7 @@ export function ProfilePage({
           </label>
 
           <label className="profile-field">
-            <span>Ngày sinh</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><CalendarDays size={16} /> Ngày sinh</span>
             <input
               max={getLocalDateInputValue()}
               name="birthDate"
@@ -427,7 +422,7 @@ export function ProfilePage({
           </label>
 
           <label className="profile-field profile-field-wide">
-            <span>Địa chỉ</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><MapPin size={16} /> Địa chỉ</span>
             <input
               maxLength={255}
               name="address"
@@ -438,7 +433,7 @@ export function ProfilePage({
           </label>
 
           <label className="profile-field">
-            <span>Trạng thái cá nhân</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><MessageSquare size={16} /> Trạng thái cá nhân</span>
             <input
               maxLength={120}
               name="statusMessage"
@@ -449,7 +444,7 @@ export function ProfilePage({
           </label>
 
           <label className="profile-field profile-field-wide">
-            <span>Giới thiệu</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><AlignLeft size={16} /> Giới thiệu</span>
             <textarea
               maxLength={255}
               name="bio"
@@ -459,8 +454,6 @@ export function ProfilePage({
               value={form.bio}
             />
           </label>
-
-          {message ? <p className="profile-message">{message}</p> : null}
 
           <button
             className="profile-save-button"
@@ -482,7 +475,7 @@ export function ProfilePage({
           </div>
 
           <label className="profile-field">
-            <span>Mật khẩu hiện tại</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><KeyRound size={16} /> Mật khẩu hiện tại</span>
             <input
               autoComplete="current-password"
               name="currentPassword"
@@ -497,7 +490,7 @@ export function ProfilePage({
           </label>
 
           <label className="profile-field">
-            <span>Mật khẩu mới</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><KeyRound size={16} /> Mật khẩu mới</span>
             <input
               autoComplete="new-password"
               maxLength={72}
@@ -514,7 +507,7 @@ export function ProfilePage({
           </label>
 
           <label className="profile-field">
-            <span>Xác nhận mật khẩu mới</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><KeyRound size={16} /> Xác nhận mật khẩu mới</span>
             <input
               autoComplete="new-password"
               maxLength={72}
@@ -529,8 +522,6 @@ export function ProfilePage({
               <span className="profile-field-error">{passwordErrors.confirmNewPassword}</span>
             ) : null}
           </label>
-
-          {passwordMessage ? <p className="profile-message">{passwordMessage}</p> : null}
 
           <button
             className="profile-save-button"
@@ -558,7 +549,7 @@ export function ProfilePage({
           </div>
 
           <label className="profile-field">
-            <span>Mật khẩu hiện tại</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><KeyRound size={16} /> Mật khẩu hiện tại</span>
             <input
               autoComplete="current-password"
               name="password"
@@ -573,7 +564,7 @@ export function ProfilePage({
           </label>
 
           <label className="profile-field">
-            <span>Nhập XOA TAI KHOAN</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Trash2 size={16} /> Nhập XOA TAI KHOAN</span>
             <input
               autoComplete="off"
               name="confirmationText"
@@ -585,8 +576,6 @@ export function ProfilePage({
               <span className="profile-field-error">{deleteErrors.confirmationText}</span>
             ) : null}
           </label>
-
-          {deleteMessage ? <p className="profile-message profile-danger-message">{deleteMessage}</p> : null}
 
           <button
             className="profile-save-button profile-delete-button"

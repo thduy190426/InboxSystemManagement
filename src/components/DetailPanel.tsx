@@ -1,4 +1,4 @@
-﻿import type { ChangeEvent, FormEvent } from 'react'
+import type { ChangeEvent, FormEvent } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import {
   Archive,
@@ -8,9 +8,6 @@ import {
   Image,
   ImagePlus,
   LogOut,
-  PhoneIncoming,
-  PhoneMissed,
-  PhoneOutgoing,
   Pin,
   PinOff,
   Save,
@@ -18,17 +15,15 @@ import {
   UserCheck,
   UserPlus,
   UserX,
-  Video,
   X,
 } from 'lucide-react'
-import type { CallHistoryItem, ContactUser, Conversation, ConversationMember, Message } from '../types'
+import type { ContactUser, Conversation, ConversationMember, Message } from '../types'
 import { AvatarFallback } from './AvatarFallback'
 import { OnlineDurationBadge } from './OnlineDurationBadge'
 
 type DetailPanelProps = {
   activeConversation: Conversation
   busyAction?: string
-  callHistory: CallHistoryItem[]
   currentUserId?: string
   friends: ContactUser[]
   isOpen: boolean
@@ -51,7 +46,6 @@ type DetailPanelProps = {
 export function DetailPanel({
   activeConversation,
   busyAction = '',
-  callHistory,
   currentUserId = '',
   friends,
   isOpen,
@@ -181,18 +175,6 @@ export function DetailPanel({
     }
 
     return message.senderName || activeConversation.name
-  }
-
-  function getCallIcon(call: CallHistoryItem) {
-    if (call.isMissed) {
-      return <PhoneMissed size={15} />
-    }
-
-    if (call.type === 'video') {
-      return <Video size={15} />
-    }
-
-    return call.direction === 'outgoing' ? <PhoneOutgoing size={15} /> : <PhoneIncoming size={15} />
   }
 
   return (
@@ -448,37 +430,6 @@ export function DetailPanel({
         </div>
       </section>
 
-      <section className="detail-section call-history-section">
-        <div className="detail-section-title">
-          <h3>Lịch sử cuộc gọi</h3>
-          <span>{callHistory.filter((call) => call.isMissed).length} nhỡ</span>
-        </div>
-        <div className="call-history-list">
-          {callHistory.map((call) => (
-            <div
-              className={call.isMissed ? 'call-history-row is-missed' : 'call-history-row'}
-              key={call.id}
-            >
-              <span className="call-history-icon">{getCallIcon(call)}</span>
-              <span>
-                <strong>{call.type === 'video' ? 'Video call' : 'Audio call'}</strong>
-                <small>
-                  {call.direction === 'outgoing' ? 'Bạn gọi' : `${call.caller.fullName} gọi`}
-                  {' · '}
-                  {call.statusLabel}
-                </small>
-              </span>
-              <em>
-                {call.time}
-                {call.durationSeconds > 0 ? ` · ${call.durationLabel}` : ''}
-              </em>
-            </div>
-          ))}
-          {callHistory.length === 0 ? (
-            <div className="detail-empty-state">Chưa có cuộc gọi nào trong hội thoại này.</div>
-          ) : null}
-        </div>
-      </section>
 
       <section className="detail-section">
         <div className="detail-section-title">

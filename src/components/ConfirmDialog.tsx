@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, Loader2, X } from 'lucide-react'
+import { AlertTriangle, Check, CheckCircle2, Loader2, Trash2, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 export type ConfirmDialogTone = 'default' | 'danger'
@@ -56,6 +56,7 @@ export function ConfirmDialog({
 
   const isDanger = visibleDialog.tone === 'danger'
   const Icon = isDanger ? AlertTriangle : CheckCircle2
+  const ActionIcon = isDanger ? Trash2 : Check
 
   return (
     <div className={isExiting ? 'confirm-dialog-backdrop is-exiting' : 'confirm-dialog-backdrop'} role="presentation">
@@ -88,6 +89,7 @@ export function ConfirmDialog({
             onClick={onCancel}
             type="button"
           >
+            <X size={16} />
             {visibleDialog.cancelLabel || 'Huỷ'}
           </button>
           <button
@@ -96,7 +98,7 @@ export function ConfirmDialog({
             onClick={onConfirm}
             type="button"
           >
-            {isWorking ? <Loader2 className="confirm-dialog-spinner" size={16} /> : null}
+            {isWorking ? <Loader2 className="confirm-dialog-spinner" size={16} /> : <ActionIcon size={16} />}
             {isWorking ? 'Đang xử lí...' : visibleDialog.confirmLabel || 'Xác nhận'}
           </button>
         </div>

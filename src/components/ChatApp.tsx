@@ -4,6 +4,13 @@ import type { AuthUser } from '../services/authApi'
 import { touchPresence } from '../services/authApi'
 import { readAppRouteFromLocation, toAppPath } from '../services/appRoutes'
 import {
+  getBrowserNotificationPermission,
+  registerWebPushSubscription,
+  requestBrowserNotificationPermission,
+  showBrowserNotification,
+  type BrowserNotificationPermission,
+} from '../services/browserNotifications'
+import {
   archiveConversation,
   addGroupMember,
   createGroupConversation,
@@ -15,9 +22,11 @@ import {
   fetchMessagesPage,
   fetchTypingStatus,
   forwardMessage,
+  hideConversation,
   leaveGroupConversation,
   markConversationDelivered,
   markConversationRead,
+  recallMessage,
   removeGroupMember,
   removeMessageReaction,
   sendMessage,
@@ -51,7 +60,6 @@ import type {
   AppView,
   CallSession,
   CallType,
-  CallHistoryItem,
   ContactUser,
   Conversation,
   ConversationMember,
@@ -73,12 +81,14 @@ type ChatAppProps = {
   onAccountDeleted: () => void
   onLogout: () => void
   onUserChange: (user: AuthUser) => void
+  pushToast?: (text: string, tone?: 'info' | 'error') => void
 }
 
 type Toast = {
   id: string
   text: string
   tone?: 'info' | 'error'
+  isHiding?: boolean
 }
 
 type MessagePaginationState = {
@@ -119,15 +129,15 @@ function getAttachmentPreview(message?: Message) {
   const attachmentType = message?.attachments?.[0]?.type
 
   if (attachmentType === 'image') {
-    return 'Đã gửi một ảnh'
+    return 'Đã gửi một ảnh!'
   }
 
   if (attachmentType === 'audio') {
-    return 'Đã gửi một tin nhắn thoại'
+    return 'Đã gửi một tin nhắn thoại!'
   }
 
   if (attachmentType === 'file') {
-    return 'Đã gửi một tệp'
+    return 'Đã gửi một tệp!'
   }
 
   return message?.text ?? 'Chưa có tin nhắn!'
@@ -161,7 +171,8 @@ export function ChatApp({
   const [friends, setFriends] = useState<ContactUser[]>([])
   const [friendRequests, setFriendRequests] = useState<ContactUser[]>([])
   const [notifications, setNotifications] = useState<AppNotification[]>([])
-  const [callHistoryByConversation, setCallHistoryByConversation] = useState<Record<string, CallHistoryItem[]>>({})
+  const [browserNotificationPermission, setBrowserNotificationPermission] =
+    useState<BrowserNotificationPermission>(() => getBrowserNotificationPermission())
   const [membersByConversation, setMembersByConversation] = useState<Record<string, ConversationMember[]>>({})
   const [messagesByConversation, setMessagesByConversation] = useState<Record<string, Message[]>>(
     {},
@@ -192,10 +203,22 @@ export function ChatApp({
   const locallyDisbandedConversationIdsRef = useRef(new Set<string>())
   const deliveredSyncKeysRef = useRef(new Set<string>())
   const toastTimersRef = useRef<Record<string, number>>({})
+  const notifiedNotificationIdsRef = useRef(new Set<string>())
+  const recentBrowserNotificationKeysRef = useRef(new Set<string>())
+  const hasSyncedWebPushRef = useRef(false)
 
   useEffect(() => {
     activeIdRef.current = activeId
   }, [activeId])
+
+  useEffect(() => {
+    if (browserNotificationPermission !== 'granted' || hasSyncedWebPushRef.current) {
+      return
+    }
+
+    hasSyncedWebPushRef.current = true
+    registerWebPushSubscription().catch(() => undefined)
+  }, [browserNotificationPermission])
 
   useEffect(() => {
     currentUserIdRef.current = currentUser?.id ?? ''
@@ -233,11 +256,6 @@ export function ChatApp({
 
     const calls = await fetchConversationCalls(conversationId)
 
-    setCallHistoryByConversation((current) => ({
-      ...current,
-      [conversationId]: calls,
-    }))
-
     return calls
   }, [])
 
@@ -249,7 +267,13 @@ export function ChatApp({
       delete toastTimersRef.current[toastId]
     }
 
-    setToasts((current) => current.filter((toast) => toast.id !== toastId))
+    setToasts((current) =>
+      current.map((toast) => (toast.id === toastId ? { ...toast, isHiding: true } : toast))
+    )
+
+    window.setTimeout(() => {
+      setToasts((current) => current.filter((toast) => toast.id !== toastId))
+    }, 300)
   }, [])
 
   const pushToast = useCallback(
@@ -277,6 +301,68 @@ export function ChatApp({
     return error instanceof Error ? error.message : fallbackMessage
   }
 
+  function canNotifyConversation(conversationId: string) {
+    return document.visibilityState === 'hidden' || activeIdRef.current !== conversationId
+  }
+
+  function showDedupedBrowserNotification(
+    key: string,
+    title: string,
+    payload: { body?: string; url?: string } = {},
+  ) {
+    if (recentBrowserNotificationKeysRef.current.has(key)) {
+      return
+    }
+
+    recentBrowserNotificationKeysRef.current.add(key)
+    window.setTimeout(() => {
+      recentBrowserNotificationKeysRef.current.delete(key)
+    }, 4500)
+
+    showBrowserNotification(title, {
+      ...payload,
+      tag: key,
+    })
+  }
+
+  function notifyConversationUpdate(conversationId: string, nextConversations: Conversation[]) {
+    if (!conversationId || !canNotifyConversation(conversationId)) {
+      return
+    }
+
+    const conversation = nextConversations.find((item) => item.id === conversationId)
+
+    if (!conversation || conversation.unread === 0) {
+      return
+    }
+
+    showDedupedBrowserNotification(`conversation:${conversationId}`, conversation.name, {
+      body: conversation.lastMessage,
+      url: toAppPath({ view: 'chat', conversationId }),
+    })
+  }
+
+  function notifyAppNotifications(nextNotifications: AppNotification[]) {
+    nextNotifications.forEach((notification) => {
+      if (notification.readAt || notifiedNotificationIdsRef.current.has(notification.id)) {
+        return
+      }
+
+      notifiedNotificationIdsRef.current.add(notification.id)
+
+      if (notification.conversationId && !canNotifyConversation(notification.conversationId)) {
+        return
+      }
+
+      showDedupedBrowserNotification(`notification:${notification.id}`, notification.title, {
+        body: notification.body,
+        url: notification.conversationId
+          ? toAppPath({ view: 'chat', conversationId: notification.conversationId })
+          : toAppPath({ view: 'notifications' }),
+      })
+    })
+  }
+
   const syncDeliveredReceipts = useCallback(async (conversationId: string) => {
     if (!conversationId) {
       return
@@ -294,9 +380,9 @@ export function ChatApp({
       setMessagesByConversation((current) =>
         current[conversationId]
           ? {
-              ...current,
-              [conversationId]: mergeLatestMessages(current[conversationId], response.messages),
-            }
+            ...current,
+            [conversationId]: mergeLatestMessages(current[conversationId], response.messages),
+          }
           : current,
       )
     } catch {
@@ -325,6 +411,9 @@ export function ChatApp({
         setFriends(nextFriends)
         setFriendRequests(nextFriendRequests)
         setNotifications(nextNotifications)
+        nextNotifications.forEach((notification) => {
+          notifiedNotificationIdsRef.current.add(notification.id)
+        })
       } catch (error) {
         if (isMounted) {
           setPageErrorMessage(error instanceof Error ? error.message : 'Không thể tải hội thoại.')
@@ -406,6 +495,7 @@ export function ChatApp({
       ])
 
       setConversations(nextConversations)
+      notifyConversationUpdate(conversationId, nextConversations)
       setMessagesByConversation((current) => ({
         ...current,
         [conversationId]: mergeLatestMessages(current[conversationId] ?? [], nextMessagePage.messages),
@@ -518,7 +608,10 @@ export function ChatApp({
       }
 
       fetchConversations()
-        .then(setConversations)
+        .then((nextConversations) => {
+          setConversations(nextConversations)
+          notifyConversationUpdate(conversationId, nextConversations)
+        })
         .catch(() => undefined)
     }
 
@@ -534,7 +627,12 @@ export function ChatApp({
     }
 
     function handleNotificationsChanged() {
-      fetchNotifications().then(setNotifications).catch(() => undefined)
+      fetchNotifications()
+        .then((nextNotifications) => {
+          setNotifications(nextNotifications)
+          notifyAppNotifications(nextNotifications)
+        })
+        .catch(() => undefined)
     }
 
     function toCallSession(payload: Omit<CallSession, 'direction'>, direction: CallSession['direction']) {
@@ -550,6 +648,10 @@ export function ChatApp({
       }
 
       setActiveCall(toCallSession(payload, 'incoming'))
+      showDedupedBrowserNotification(`call:${payload.callId}`, `Cuộc gọi ${payload.type === 'video' ? 'video' : 'audio'} đến`, {
+        body: payload.caller.fullName,
+        url: toAppPath({ view: 'chat', conversationId: payload.conversationId }),
+      })
     }
 
     function handleRingingCall(payload: Omit<CallSession, 'direction'>) {
@@ -560,10 +662,10 @@ export function ChatApp({
       setActiveCall((current) =>
         current?.callId === payload.callId
           ? {
-              ...current,
-              ...payload,
-              status: 'ongoing',
-            }
+            ...current,
+            ...payload,
+            status: 'ongoing',
+          }
           : current,
       )
     }
@@ -572,9 +674,9 @@ export function ChatApp({
       setActiveCall((current) =>
         current?.callId === payload.callId
           ? {
-              ...current,
-              ...payload,
-            }
+            ...current,
+            ...payload,
+          }
           : current,
       )
       fetchNotifications().then(setNotifications).catch(() => undefined)
@@ -640,14 +742,24 @@ export function ChatApp({
   )
 
   useEffect(() => {
+    if (isCompactLayout) {
+      return
+    }
+
     localStorage.setItem(SIDEBAR_STATE_KEY, String(isSidebarOpen))
-  }, [isSidebarOpen])
+  }, [isCompactLayout, isSidebarOpen])
 
   useEffect(() => {
     const mediaQuery = window.matchMedia(COMPACT_LAYOUT_MEDIA_QUERY)
 
     function handleChange() {
-      setIsCompactLayout(mediaQuery.matches)
+      const isCompact = mediaQuery.matches
+
+      setIsCompactLayout(isCompact)
+
+      if (isCompact) {
+        setIsSidebarOpen(false)
+      }
     }
 
     handleChange()
@@ -763,7 +875,6 @@ export function ChatApp({
   const activeMessagePagination = activeId ? messagePaginationByConversation[activeId] : undefined
   const hasOlderMessages = Boolean(activeMessagePagination?.hasMore)
   const isLoadingOlderMessages = Boolean(activeMessagePagination?.isLoadingOlder)
-  const activeCallHistory = activeId ? callHistoryByConversation[activeId] ?? [] : []
   const pinnedMessages = messages.filter((message) => message.isPinned)
   const activeMembers = activeId ? membersByConversation[activeId] ?? [] : []
 
@@ -921,9 +1032,9 @@ export function ChatApp({
           current.map((conversation) =>
             conversation.id === activeId
               ? {
-                  ...conversation,
-                  unread: 0,
-                }
+                ...conversation,
+                unread: 0,
+              }
               : conversation,
           ),
         )
@@ -994,6 +1105,39 @@ export function ChatApp({
     }
   }
 
+  async function handleEnableBrowserNotifications() {
+    const permission = await requestBrowserNotificationPermission()
+
+    setBrowserNotificationPermission(permission)
+
+    if (permission === 'granted') {
+      const pushResult = await registerWebPushSubscription().catch(() => ({
+        enabled: false,
+        reason: 'register-failed' as const,
+      }))
+
+      showBrowserNotification('Đã bật thông báo trình duyệt', {
+        body: 'Bạn sẽ nhận cảnh báo khi có tin nhắn, mention, lời mời hoặc cuộc gọi mới.',
+        tag: 'browser-notifications-enabled',
+        url: toAppPath({ view: 'notifications' }),
+      })
+
+      if (!pushResult.enabled && pushResult.reason === 'missing-vapid') {
+        pushToast('Đã bật thông báo khi app đang mở. Muốn nhận khi đóng tab, hãy cấu hình VAPID keys cho backend.')
+      }
+
+      if (!pushResult.enabled && pushResult.reason === 'register-failed') {
+        pushToast('Không thể đăng ký Web Push lúc này. Thông báo trong tab vẫn hoạt động.')
+      }
+
+      return
+    }
+
+    if (permission === 'denied') {
+      pushToast('Trình duyệt đang chặn thông báo. Hãy bật lại trong cài đặt trình duyệt.')
+    }
+  }
+
   function handleChangeView(view: AppView) {
     setActiveView(view)
 
@@ -1055,9 +1199,9 @@ export function ChatApp({
         current.map((item) =>
           item.id === notification.id
             ? {
-                ...item,
-                readAt: item.readAt || new Date().toISOString(),
-              }
+              ...item,
+              readAt: item.readAt || new Date().toISOString(),
+            }
             : item,
         ),
       )
@@ -1146,16 +1290,17 @@ export function ChatApp({
         author: 'me',
         text,
         time: 'Bây giờ',
+        createdAt: new Date().toISOString(),
         type: 'text',
         state: 'sending',
         replyTo: replyingTo
           ? {
-              id: replyingTo.id,
-              author: replyingTo.author,
-              text: replyingTo.text,
-              type: replyingTo.type,
-              senderName: replyingTo.senderName,
-            }
+            id: replyingTo.id,
+            author: replyingTo.author,
+            text: replyingTo.text,
+            type: replyingTo.type,
+            senderName: replyingTo.senderName,
+          }
           : null,
         mentions: [],
         reactions: [],
@@ -1169,10 +1314,10 @@ export function ChatApp({
         ...current,
         [activeConversation.id]: retryMessage
           ? (current[activeConversation.id] ?? []).map((message) =>
-              message.id === retryMessage.id
-                ? { ...message, state: 'sending', time: 'Bây giờ' }
-                : message,
-            )
+            message.id === retryMessage.id
+              ? { ...message, createdAt: message.createdAt || new Date().toISOString(), state: 'sending', time: 'Bây giờ' }
+              : message,
+          )
           : [...(current[activeConversation.id] ?? []), temporaryMessage],
       }))
       setShouldAutoScrollToLatest(true)
@@ -1181,12 +1326,12 @@ export function ChatApp({
         current.map((conversation) =>
           conversation.id === activeConversation.id
             ? {
-                ...conversation,
-                lastMessage: text,
-                lastMessageByMe: true,
-                lastMessageIsAttachment: false,
-                lastTime: 'Bây giờ',
-              }
+              ...conversation,
+              lastMessage: text,
+              lastMessageByMe: true,
+              lastMessageIsAttachment: false,
+              lastTime: 'Bây giờ',
+            }
             : conversation,
         ),
       )
@@ -1266,16 +1411,16 @@ export function ChatApp({
         current.map((conversation) =>
           conversation.id === activeConversation.id
             ? {
-                ...conversation,
-                lastMessage: getAttachmentPreview(createdMessage),
-                lastMessageByMe: true,
-                lastMessageIsAttachment: Boolean(createdMessage.attachments?.length),
-                lastTime: createdMessage.time,
-                attachments: [
-                  ...(createdMessage.attachments ?? []),
-                  ...conversation.attachments,
-                ],
-              }
+              ...conversation,
+              lastMessage: getAttachmentPreview(createdMessage),
+              lastMessageByMe: true,
+              lastMessageIsAttachment: Boolean(createdMessage.attachments?.length),
+              lastTime: createdMessage.time,
+              attachments: [
+                ...(createdMessage.attachments ?? []),
+                ...conversation.attachments,
+              ],
+            }
             : conversation,
         ),
       )
@@ -1307,15 +1452,15 @@ export function ChatApp({
         current.map((conversation) =>
           conversation.id === activeConversation.id && conversation.lastMessage !== 'Chưa có tin nhắn!'
             ? {
-                ...conversation,
-                lastMessage:
-                  conversation.lastMessage ===
+              ...conversation,
+              lastMessage:
+                conversation.lastMessage ===
                   messagesByConversation[activeConversation.id]?.find(
                     (message) => message.id === messageId,
                   )?.text
-                    ? text
-                    : conversation.lastMessage,
-              }
+                  ? text
+                  : conversation.lastMessage,
+            }
             : conversation,
         ),
       )
@@ -1354,12 +1499,12 @@ export function ChatApp({
         current.map((conversation) =>
           conversation.id === activeConversation.id
             ? {
-                ...conversation,
-                lastMessage: nextLastMessage,
-                lastMessageByMe: nextLastMessageItem?.author === 'me',
-                lastMessageIsAttachment: Boolean(nextLastMessageItem?.attachments?.length),
-                lastTime: nextLastTime,
-              }
+              ...conversation,
+              lastMessage: nextLastMessage,
+              lastMessageByMe: nextLastMessageItem?.author === 'me',
+              lastMessageIsAttachment: Boolean(nextLastMessageItem?.attachments?.length),
+              lastTime: nextLastTime,
+            }
             : conversation,
         ),
       )
@@ -1386,6 +1531,57 @@ export function ChatApp({
       setConversations(nextConversations)
     } catch (error) {
       pushToast(getErrorMessage(error, 'Không thể xóa tin nhắn!'))
+    } finally {
+      setBusyMessageId('')
+    }
+  }
+
+  async function handleRecallMessage(messageId: string) {
+    if (!activeConversation || busyMessageId) {
+      return
+    }
+
+    try {
+      setBusyMessageId(messageId)
+
+      const updatedConversation = await recallMessage(activeConversation.id, messageId)
+
+      const nextMessages = (messagesByConversation[activeConversation.id] ?? []).filter(
+        (message) => message.id !== messageId,
+      )
+
+      setMessagesByConversation((current) => ({
+        ...current,
+        [activeConversation.id]: nextMessages,
+      }))
+      setReplyingTo((current) => (current?.id === messageId ? null : current))
+
+      setConversations((current) =>
+        current.map((conversation) =>
+          conversation.id === activeConversation.id ? updatedConversation : conversation,
+        ),
+      )
+
+      const [serverMessagePage, nextConversations] = await Promise.all([
+        fetchMessagesPage(activeConversation.id, { limit: MESSAGE_PAGE_LIMIT }),
+        fetchConversations(),
+      ])
+
+      setMessagesByConversation((current) => ({
+        ...current,
+        [activeConversation.id]: serverMessagePage.messages,
+      }))
+      setMessagePaginationByConversation((current) => ({
+        ...current,
+        [activeConversation.id]: {
+          hasMore: serverMessagePage.hasMore,
+          isLoadingOlder: false,
+          nextCursor: serverMessagePage.nextCursor,
+        },
+      }))
+      setConversations(nextConversations)
+    } catch (error) {
+      pushToast(getErrorMessage(error, 'Không thể thu hồi tin nhắn!'))
     } finally {
       setBusyMessageId('')
     }
@@ -1440,9 +1636,9 @@ export function ChatApp({
           .map((conversation) =>
             conversation.id === targetConversationId
               ? {
-                  ...conversation,
-                  ...response.conversation,
-                }
+                ...conversation,
+                ...response.conversation,
+              }
               : conversation,
           )
           .sort((first, second) => Number(second.pinned) - Number(first.pinned)),
@@ -1520,9 +1716,9 @@ export function ChatApp({
           .map((conversation) =>
             conversation.id === activeConversation.id
               ? {
-                  ...conversation,
-                  pinned: updatedConversation.pinned,
-                }
+                ...conversation,
+                pinned: updatedConversation.pinned,
+              }
               : conversation,
           )
           .sort((first, second) => Number(second.pinned) - Number(first.pinned)),
@@ -1551,9 +1747,9 @@ export function ChatApp({
         current.map((conversation) =>
           conversation.id === activeConversation.id
             ? {
-                ...conversation,
-                muted: updatedConversation.muted,
-              }
+              ...conversation,
+              muted: updatedConversation.muted,
+            }
             : conversation,
         ),
       )
@@ -1628,6 +1824,82 @@ export function ChatApp({
       }
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Không thể lưu trữ cuộc trò chuyện!')
+    } finally {
+      setBusyConversationAction('')
+    }
+  }
+
+  function handleDeleteConversation(conversationId: string) {
+    if (busyConversationAction) {
+      return
+    }
+
+    const conversation =
+      conversations.find((item) => item.id === conversationId) ||
+      archivedConversations.find((item) => item.id === conversationId)
+
+    setConfirmDialog({
+      title: 'Xóa hội thoại?',
+      description: `Hội thoại "${conversation?.name || 'này'}" sẽ bị ẩn khỏi danh sách trò chuyện của bạn.`,
+      confirmLabel: 'Xóa',
+      tone: 'danger',
+      onConfirm: () => deleteConversationFromInbox(conversationId),
+    })
+  }
+
+  async function deleteConversationFromInbox(conversationId: string) {
+    if (busyConversationAction) {
+      return
+    }
+
+    try {
+      setBusyConversationAction('delete-conversation')
+      setErrorMessage('')
+
+      await hideConversation(conversationId)
+
+      const nextConversations = conversations.filter(
+        (conversation) => conversation.id !== conversationId,
+      )
+      const nextArchivedConversations = archivedConversations.filter(
+        (conversation) => conversation.id !== conversationId,
+      )
+      const nextConversationId =
+        activeId === conversationId ? nextConversations[0]?.id || '' : activeId
+
+      setConversations(nextConversations)
+      setArchivedConversations(nextArchivedConversations)
+      setMessagesByConversation((current) => {
+        const next = { ...current }
+        delete next[conversationId]
+        return next
+      })
+      setMessagePaginationByConversation((current) => {
+        const next = { ...current }
+        delete next[conversationId]
+        return next
+      })
+      setMembersByConversation((current) => {
+        const next = { ...current }
+        delete next[conversationId]
+        return next
+      })
+
+      if (activeId === conversationId) {
+        setActiveId(nextConversationId)
+        setIsDetailOpen(false)
+        window.history.replaceState(
+          null,
+          '',
+          nextConversationId
+            ? toAppPath({ view: 'chat', conversationId: nextConversationId })
+            : toAppPath({ view: 'chat' }),
+        )
+      }
+
+      pushToast('Đã xóa hội thoại khỏi danh sách của bạn.', 'info')
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Không thể xóa hội thoại!')
     } finally {
       setBusyConversationAction('')
     }
@@ -1715,11 +1987,11 @@ export function ChatApp({
         current.map((conversation) =>
           conversation.id === activeConversation.id
             ? {
-                ...conversation,
-                blocked: isBlocked,
-                friendshipStatus: response.friendshipStatus,
-                status: isBlocked ? 'Đã chặn' : conversation.status,
-              }
+              ...conversation,
+              blocked: isBlocked,
+              friendshipStatus: response.friendshipStatus,
+              status: isBlocked ? 'Đã chặn' : conversation.status,
+            }
             : conversation,
         ),
       )
@@ -1822,9 +2094,9 @@ export function ChatApp({
         current.map((conversation) =>
           conversation.id === activeConversation.id
             ? {
-                ...conversation,
-                ...updatedConversation,
-              }
+              ...conversation,
+              ...updatedConversation,
+            }
             : conversation,
         ),
       )
@@ -2071,11 +2343,18 @@ export function ChatApp({
       <NavRail
         activeView={activeView}
         currentUser={currentUser}
-        isOpen={isSidebarOpen}
+        isOpen={!isCompactLayout && isSidebarOpen}
         notificationCount={notificationBadgeCount}
         onChangeView={handleChangeView}
         onLogout={handleLogout}
-        onToggleOpen={() => setIsSidebarOpen((current) => !current)}
+        onToggleOpen={() => {
+          if (isCompactLayout) {
+            setIsSidebarOpen(false)
+            return
+          }
+
+          setIsSidebarOpen((current) => !current)
+        }}
         onUserChange={onUserChange}
       />
     )
@@ -2103,6 +2382,7 @@ export function ChatApp({
           onCreateGroup={handleCreateGroup}
           onFilterChange={setConversationFilter}
           onQueryChange={setQuery}
+          onDeleteConversation={handleDeleteConversation}
           onRestoreConversation={handleRestoreConversation}
           onSelectConversation={handleSelectConversation}
           query={query}
@@ -2142,7 +2422,8 @@ export function ChatApp({
       <div aria-live="polite" className="toast-stack" role="status">
         {toasts.map((toast) => (
           <button
-            className={`toast ${toast.tone === 'info' ? 'is-info' : 'is-error'}`}
+            className={`toast ${toast.tone === 'info' ? 'is-info' : 'is-error'} ${toast.isHiding ? 'is-hiding' : ''
+              }`}
             key={toast.id}
             onClick={() => dismissToast(toast.id)}
             type="button"
@@ -2156,7 +2437,7 @@ export function ChatApp({
 
   const shellClassName = [
     'app-shell',
-    isSidebarOpen ? 'is-sidebar-open' : '',
+    !isCompactLayout && isSidebarOpen ? 'is-sidebar-open' : '',
     isDetailOpen && activeView === 'chat' ? 'is-detail-open' : '',
     isCompactLayout && activeView === 'chat' ? 'has-inbox-drawer' : '',
     isCompactLayout && activeView === 'chat' && isInboxOpen ? 'is-inbox-open' : '',
@@ -2168,7 +2449,7 @@ export function ChatApp({
     return (
       <main className={`${shellClassName} contacts-shell`}>
         {renderNavRail()}
-        <ContactsPanel onAccepted={handleAcceptedFriend} />
+        <ContactsPanel onAccepted={handleAcceptedFriend} pushToast={pushToast} />
         {renderCallOverlay()}
         {renderConfirmDialog()}
         {renderToasts()}
@@ -2184,6 +2465,7 @@ export function ChatApp({
           currentUser={currentUser}
           onAccountDeleted={onAccountDeleted}
           onUserChange={onUserChange}
+          pushToast={pushToast}
         />
         {renderCallOverlay()}
         {renderConfirmDialog()}
@@ -2197,9 +2479,11 @@ export function ChatApp({
       <main className={`${shellClassName} notifications-shell`}>
         {renderNavRail()}
         <NotificationsPanel
+          browserNotificationPermission={browserNotificationPermission}
           conversations={conversations}
           friendRequests={friendRequests}
           notifications={notifications}
+          onEnableBrowserNotifications={handleEnableBrowserNotifications}
           onOpenContacts={handleOpenContacts}
           onOpenConversation={handleSelectConversation}
           onOpenNotification={handleOpenNotification}
@@ -2257,6 +2541,7 @@ export function ChatApp({
         replyingTo={replyingTo}
         onCancelReply={() => setReplyingTo(null)}
         onDeleteMessage={handleDeleteMessage}
+        onRecallMessage={handleRecallMessage}
         onDraftChange={handleDraftChange}
         onEditMessage={handleEditMessage}
         onForwardMessage={handleForwardMessage}
@@ -2277,7 +2562,6 @@ export function ChatApp({
       <DetailPanel
         activeConversation={activeConversation}
         busyAction={busyConversationAction}
-        callHistory={activeCallHistory}
         currentUserId={currentUser?.id}
         friends={friends}
         isOpen={isDetailOpen}

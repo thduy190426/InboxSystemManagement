@@ -161,7 +161,7 @@ export function RegisterPage({
                 maxLength={120}
                 minLength={2}
                 name="fullName"
-                placeholder="Nguyễn Văn A"
+                placeholder="Nhập họ và tên tại đây"
                 required
                 type="text"
               />
@@ -179,7 +179,7 @@ export function RegisterPage({
                 autoComplete="email"
                 maxLength={190}
                 name="email"
-                placeholder="you@example.com"
+                placeholder="Nhập địa chỉ Email tại đây"
                 required
                 type="email"
               />
@@ -196,7 +196,7 @@ export function RegisterPage({
                 inputMode="tel"
                 maxLength={32}
                 name="phone"
-                placeholder="+84901234567"
+                placeholder="Nhập số điện thoại tại đây"
                 type="tel"
               />
             </div>
@@ -212,7 +212,7 @@ export function RegisterPage({
                 maxLength={72}
                 minLength={8}
                 name="password"
-                placeholder="Tối thiểu 8 ký tự"
+                placeholder="Nhập mật khẩu tại đây"
                 required
                 type={showPassword ? 'text' : 'password'}
               />
@@ -240,7 +240,7 @@ export function RegisterPage({
                 maxLength={72}
                 minLength={8}
                 name="confirmPassword"
-                placeholder="Nhập lại mật khẩu"
+                placeholder="Nhập lại mật khẩu tại đây"
                 required
                 type={showConfirmPassword ? 'text' : 'password'}
               />

@@ -411,14 +411,14 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
         ? 'Đang đổ chuông'
         : 'Cuộc gọi đến'
       : callStatus === 'connecting'
-        ? 'Đang kết nối'
+        ? 'Đang kết nối...'
         : callStatus === 'ongoing'
           ? formatElapsed()
           : callStatus === 'declined'
-            ? 'Đã từ chối'
+            ? 'Đã từ chối!'
             : callStatus === 'missed'
               ? 'Cuộc gọi nhỡ'
-              : 'Đã kết thúc'
+              : 'Đã kết thúc!'
 
   const fullStatusLabel =
     networkQualityLabel && ['connecting', 'ongoing'].includes(callStatus)
