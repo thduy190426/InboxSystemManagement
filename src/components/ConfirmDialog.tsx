@@ -1,4 +1,5 @@
 import { AlertTriangle, CheckCircle2, Loader2, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 export type ConfirmDialogTone = 'default' | 'danger'
 
@@ -18,21 +19,46 @@ type ConfirmDialogProps = {
   onConfirm: () => void
 }
 
+const EXIT_DURATION_MS = 140
+
 export function ConfirmDialog({
   dialog,
   isWorking = false,
   onCancel,
   onConfirm,
 }: ConfirmDialogProps) {
-  if (!dialog) {
+  const [visibleDialog, setVisibleDialog] = useState(dialog)
+  const [isExiting, setIsExiting] = useState(false)
+
+  useEffect(() => {
+    if (dialog) {
+      setVisibleDialog(dialog)
+      setIsExiting(false)
+      return
+    }
+
+    if (!visibleDialog) {
+      return
+    }
+
+    setIsExiting(true)
+    const timer = window.setTimeout(() => {
+      setVisibleDialog(null)
+      setIsExiting(false)
+    }, EXIT_DURATION_MS)
+
+    return () => window.clearTimeout(timer)
+  }, [dialog, visibleDialog])
+
+  if (!visibleDialog) {
     return null
   }
 
-  const isDanger = dialog.tone === 'danger'
+  const isDanger = visibleDialog.tone === 'danger'
   const Icon = isDanger ? AlertTriangle : CheckCircle2
 
   return (
-    <div className="confirm-dialog-backdrop" role="presentation">
+    <div className={isExiting ? 'confirm-dialog-backdrop is-exiting' : 'confirm-dialog-backdrop'} role="presentation">
       <section
         aria-labelledby="confirm-dialog-title"
         aria-modal="true"
@@ -41,9 +67,9 @@ export function ConfirmDialog({
       >
         <button
           className="confirm-dialog-close"
-          disabled={isWorking}
+          disabled={isWorking || isExiting}
           onClick={onCancel}
-          title="Dong"
+          title="Đóng"
           type="button"
         >
           <X size={18} />
@@ -52,26 +78,26 @@ export function ConfirmDialog({
           <Icon size={22} />
         </span>
         <div className="confirm-dialog-copy">
-          <h2 id="confirm-dialog-title">{dialog.title}</h2>
-          <p>{dialog.description}</p>
+          <h2 id="confirm-dialog-title">{visibleDialog.title}</h2>
+          <p>{visibleDialog.description}</p>
         </div>
         <div className="confirm-dialog-actions">
           <button
             className="confirm-dialog-secondary"
-            disabled={isWorking}
+            disabled={isWorking || isExiting}
             onClick={onCancel}
             type="button"
           >
-            {dialog.cancelLabel || 'Huỷ'}
+            {visibleDialog.cancelLabel || 'Huỷ'}
           </button>
           <button
             className="confirm-dialog-primary"
-            disabled={isWorking}
+            disabled={isWorking || isExiting}
             onClick={onConfirm}
             type="button"
           >
             {isWorking ? <Loader2 className="confirm-dialog-spinner" size={16} /> : null}
-            {isWorking ? 'Đang xử lí...' : dialog.confirmLabel || 'Xác nhận'}
+            {isWorking ? 'Đang xử lí...' : visibleDialog.confirmLabel || 'Xác nhận'}
           </button>
         </div>
       </section>

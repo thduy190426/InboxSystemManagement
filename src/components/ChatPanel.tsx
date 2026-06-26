@@ -36,11 +36,13 @@ type ChatPanelProps = {
   activeConversation: Conversation
   busyMessageId?: string
   draft: string
-  errorMessage?: string
   isBlocked?: boolean
   isDetailOpen?: boolean
   isSending?: boolean
+  shouldAutoScrollToLatest?: boolean
+  hasOlderMessages?: boolean
   isTyping?: boolean
+  isLoadingOlderMessages?: boolean
   isUploadingAttachment?: boolean
   focusedMessageId?: string
   messages: Message[]
@@ -59,7 +61,10 @@ type ChatPanelProps = {
   onForwardMessage: (messageId: string, targetConversationId: string) => Promise<void> | void
   onReplyMessage: (message: Message) => void
   onRemoveReaction: (messageId: string, emoji: string) => Promise<void> | void
+  onRetryMessage: (message: Message) => Promise<void> | void
+  onLoadOlderMessages: () => Promise<void> | void
   onSendQuickMessage: (text: string) => Promise<void> | void
+  onAutoScrollComplete: () => void
   onToggleMessagePin: (messageId: string) => Promise<void> | void
   onToggleReaction: (messageId: string, emoji: string) => Promise<void> | void
   onUploadAttachment: (file: File) => Promise<void> | void
@@ -73,11 +78,12 @@ export function ChatPanel({
   activeConversation,
   busyMessageId = '',
   draft,
-  errorMessage,
   isBlocked = false,
   isDetailOpen = false,
-  isSending = false,
+  shouldAutoScrollToLatest = false,
+  hasOlderMessages = false,
   isTyping = false,
+  isLoadingOlderMessages = false,
   isUploadingAttachment = false,
   focusedMessageId = '',
   messages,
@@ -91,7 +97,10 @@ export function ChatPanel({
   onForwardMessage,
   onReplyMessage,
   onRemoveReaction,
+  onRetryMessage,
+  onLoadOlderMessages,
   onSendQuickMessage,
+  onAutoScrollComplete,
   onToggleMessagePin,
   onToggleReaction,
   onUploadAttachment,
@@ -106,6 +115,7 @@ export function ChatPanel({
   const [isComposerEmojiOpen, setIsComposerEmojiOpen] = useState(false)
   const [openReactionPickerId, setOpenReactionPickerId] = useState('')
   const [forwardingMessage, setForwardingMessage] = useState<Message | null>(null)
+  const [isForwardDialogClosing, setIsForwardDialogClosing] = useState(false)
   const [forwardQuery, setForwardQuery] = useState('')
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null)
   const [isConfirming, setIsConfirming] = useState(false)
@@ -117,6 +127,7 @@ export function ChatPanel({
   const [recordedAudioUrl, setRecordedAudioUrl] = useState('')
   const [recordedAudioFile, setRecordedAudioFile] = useState<File | null>(null)
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const threadEndRef = useRef<HTMLDivElement | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordingChunksRef = useRef<BlobPart[]>([])
   const recordingStreamRef = useRef<MediaStream | null>(null)
@@ -193,6 +204,18 @@ export function ChatPanel({
       block: 'center',
     })
   }, [focusedMessageId])
+
+  useEffect(() => {
+    if (!shouldAutoScrollToLatest) {
+      return
+    }
+
+    threadEndRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'end',
+    })
+    onAutoScrollComplete()
+  }, [onAutoScrollComplete, shouldAutoScrollToLatest])
 
   useEffect(
     () => () => {
@@ -366,10 +389,20 @@ export function ChatPanel({
   }
 
   function startForwarding(message: Message) {
+    setIsForwardDialogClosing(false)
     setForwardingMessage(message)
     setForwardQuery('')
     setOpenActionMenuId('')
     setOpenReactionPickerId('')
+  }
+
+  function closeForwardDialog() {
+    setIsForwardDialogClosing(true)
+    window.setTimeout(() => {
+      setForwardingMessage(null)
+      setForwardQuery('')
+      setIsForwardDialogClosing(false)
+    }, 140)
   }
 
   function cancelEditing() {
@@ -443,8 +476,7 @@ export function ChatPanel({
     }
 
     await onForwardMessage(forwardingMessage.id, targetConversationId)
-    setForwardingMessage(null)
-    setForwardQuery('')
+    closeForwardDialog()
   }
 
   async function handleToggleReaction(messageId: string, emoji: string) {
@@ -467,6 +499,14 @@ export function ChatPanel({
   }
 
   function getMessageStateLabel(message: Message) {
+    if (message.state === 'sending') {
+      return 'Đang gửi'
+    }
+
+    if (message.state === 'failed') {
+      return 'Gửi lỗi'
+    }
+
     if (message.state === 'seen') {
       return message.seenAt ? `Đã xem lúc ${message.seenAt}` : 'Đã xem'
     }
@@ -769,6 +809,16 @@ export function ChatPanel({
       </header>
 
       <div className="thread">
+        {hasOlderMessages ? (
+          <button
+            className="load-older-messages-button"
+            disabled={isLoadingOlderMessages}
+            onClick={onLoadOlderMessages}
+            type="button"
+          >
+            {isLoadingOlderMessages ? 'Đang tải tin cũ...' : 'Tải tin nhắn cũ hơn'}
+          </button>
+        ) : null}
         <div className="day-divider">
           <span>Hôm nay</span>
         </div>
@@ -851,17 +901,27 @@ export function ChatPanel({
               )}
               <span className="message-time">
                 {message.time}
-                {message.isEdited ? <span>Đã chỉnh sửa</span> : null}
+                {message.isEdited ? <span>Đã chỉnh sửa!</span> : null}
                 {message.author === 'me' ? (
                   <>
                     <CheckCheck aria-label={getMessageStateLabel(message)} size={15} />
                     <span>{getMessageStateLabel(message)}</span>
+                    {message.state === 'failed' ? (
+                      <button
+                        className="message-retry-button"
+                        onClick={() => onRetryMessage(message)}
+                        title="Thử gửi lại"
+                        type="button"
+                      >
+                        Thử lại
+                      </button>
+                    ) : null}
                   </>
                 ) : null}
               </span>
               {renderReactions(message)}
             </div>
-            {editingMessageId !== message.id ? (
+            {editingMessageId !== message.id && !['sending', 'failed'].includes(message.state ?? '') ? (
               <span className="message-actions">
                 <button
                   className="message-more-button"
@@ -982,6 +1042,7 @@ export function ChatPanel({
             )}
           </div>
         ))}
+        <div ref={threadEndRef} />
       </div>
 
       {isTyping ? (
@@ -1006,7 +1067,7 @@ export function ChatPanel({
             </button>
           </div>
         ) : null}
-        <label className="icon-button attachment-picker" title="Đính kèm">
+        <label className="icon-button attachment-picker" title="Đính kèm tài liệu">
           <Paperclip size={20} />
           <input
             aria-label="Đính kèm file"
@@ -1027,7 +1088,7 @@ export function ChatPanel({
         <span className="composer-emoji-wrap">
           <button
             className={isComposerEmojiOpen ? 'icon-button composer-extra is-active' : 'icon-button composer-extra'}
-            disabled={isBlocked || isSending || isUploadingAttachment}
+            disabled={isBlocked || isUploadingAttachment}
             onClick={() => setIsComposerEmojiOpen((current) => !current)}
             title="Biểu cảm"
             type="button"
@@ -1036,14 +1097,14 @@ export function ChatPanel({
           </button>
           {isComposerEmojiOpen ? (
             <span className="composer-emoji-picker">
-              <Suspense fallback={<span className="composer-emoji-loading">Đang tải emoji...</span>}>
+              <Suspense fallback={<span className="composer-emoji-loading">Đang tải Emoji...</span>}>
                 <EmojiPicker
                   emojiStyle={'native' as EmojiStyle}
                   height={360}
                   lazyLoadEmojis
                   onEmojiClick={handleSendComposerEmoji}
                   previewConfig={{ showPreview: false }}
-                  searchPlaceHolder="Tìm emoji"
+                  searchPlaceHolder="Tìm Emoji"
                   skinTonesDisabled
                   theme={'light' as Theme}
                   width={320}
@@ -1095,7 +1156,7 @@ export function ChatPanel({
         ) : (
           <button
             className="icon-button composer-extra voice-record-button"
-            disabled={isBlocked || isSending || isUploadingAttachment}
+            disabled={isBlocked || isUploadingAttachment}
             onClick={startAudioRecording}
             title="Ghi âm"
             type="button"
@@ -1112,16 +1173,14 @@ export function ChatPanel({
             </button>
           </div>
         ) : null}
-        {errorMessage ? (
-          <span className="composer-error">{errorMessage}</span>
-        ) : recordingError ? (
+        {recordingError ? (
           <span className="composer-error">{recordingError}</span>
         ) : isBlocked ? (
           <span className="composer-error">Đã chặn người dùng!</span>
         ) : null}
         <button
           className="send-button"
-          disabled={isBlocked || !draft.trim() || isSending || isUploadingAttachment}
+          disabled={isBlocked || !draft.trim() || isUploadingAttachment}
           title="Gửi"
           type="submit"
         >
@@ -1130,7 +1189,7 @@ export function ChatPanel({
       </form>
 
       {forwardingMessage ? (
-        <div className="forward-dialog-backdrop" role="presentation">
+        <div className={isForwardDialogClosing ? 'forward-dialog-backdrop is-exiting' : 'forward-dialog-backdrop'} role="presentation">
           <section aria-modal="true" className="forward-dialog" role="dialog">
             <header>
               <div>
@@ -1138,7 +1197,7 @@ export function ChatPanel({
                 <span>{getReplyText(forwardingMessage)}</span>
               </div>
               <button
-                onClick={() => setForwardingMessage(null)}
+                onClick={closeForwardDialog}
                 title="Đóng"
                 type="button"
               >

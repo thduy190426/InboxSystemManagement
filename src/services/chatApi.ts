@@ -1,4 +1,4 @@
-import type { Conversation, ConversationMember, Message } from '../types'
+import type { CallHistoryItem, Conversation, ConversationMember, Message } from '../types'
 import { apiFetch } from './apiClient'
 
 type ConversationsResponse = {
@@ -7,6 +7,8 @@ type ConversationsResponse = {
 
 type MessagesResponse = {
   messages: Message[]
+  hasMore?: boolean
+  nextCursor?: string | null
 }
 
 type CreateMessageResponse = {
@@ -47,6 +49,10 @@ type ConversationMembersResponse = {
   members: ConversationMember[]
 }
 
+type ConversationCallsResponse = {
+  calls: CallHistoryItem[]
+}
+
 async function request<T>(path: string, options: RequestInit = {}) {
   const response = await apiFetch(path, {
     ...options,
@@ -72,8 +78,40 @@ export async function fetchConversations(options: { archived?: boolean } = {}) {
   return response.conversations
 }
 
+export type MessagesPage = {
+  messages: Message[]
+  hasMore: boolean
+  nextCursor: string | null
+}
+
+export async function fetchMessagesPage(
+  conversationId: string,
+  options: { before?: string | null; limit?: number } = {},
+) {
+  const params = new URLSearchParams()
+
+  if (options.before) {
+    params.set('before', options.before)
+  }
+
+  if (options.limit) {
+    params.set('limit', String(options.limit))
+  }
+
+  const query = params.toString()
+  const response = await request<MessagesResponse>(
+    `/conversations/${conversationId}/messages${query ? `?${query}` : ''}`,
+  )
+
+  return {
+    messages: response.messages,
+    hasMore: Boolean(response.hasMore),
+    nextCursor: response.nextCursor ?? null,
+  }
+}
+
 export async function fetchMessages(conversationId: string) {
-  const response = await request<MessagesResponse>(`/conversations/${conversationId}/messages`)
+  const response = await fetchMessagesPage(conversationId)
 
   return response.messages
 }
@@ -284,6 +322,14 @@ export async function fetchConversationMembers(conversationId: string) {
   )
 
   return response.members
+}
+
+export async function fetchConversationCalls(conversationId: string) {
+  const response = await request<ConversationCallsResponse>(
+    `/conversations/${conversationId}/calls`,
+  )
+
+  return response.calls
 }
 
 export async function updateGroupConversation(

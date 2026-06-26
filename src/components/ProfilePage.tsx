@@ -51,16 +51,36 @@ function getLocalDateInputValue(date = new Date()) {
   return `${year}-${month}-${day}`
 }
 
+function getGenderLabel(gender: string) {
+  if (gender === 'male') {
+    return 'Nam'
+  }
+
+  if (gender === 'female') {
+    return 'Nữ'
+  }
+
+  if (gender === 'other') {
+    return 'Khác'
+  }
+
+  if (gender === 'prefer_not_to_say') {
+    return 'Không muốn chia sẻ!'
+  }
+
+  return 'Chưa cập nhật!'
+}
+
 function validatePasswordForm(form: ChangePasswordPayload) {
   const errors: Partial<Record<keyof ChangePasswordPayload, string>> = {}
   const requirements = [
-    form.newPassword.length >= 8 || 'ít nhất 8 ký tự',
-    form.newPassword.length <= 72 || 'không quá 72 ký tự',
-    !/\s/.test(form.newPassword) || 'không chứa khoảng trắng',
-    /[a-z]/.test(form.newPassword) || 'có chữ thường',
-    /[A-Z]/.test(form.newPassword) || 'có chữ hoa',
-    /[0-9]/.test(form.newPassword) || 'có chữ số',
-    /[^A-Za-z0-9]/.test(form.newPassword) || 'có ký tự đặc biệt',
+    form.newPassword.length >= 8 || 'ít nhất 8 ký tự!',
+    form.newPassword.length <= 72 || 'không quá 72 ký tự!',
+    !/\s/.test(form.newPassword) || 'không chứa khoảng trắng!',
+    /[a-z]/.test(form.newPassword) || 'có chữ thường!',
+    /[A-Z]/.test(form.newPassword) || 'có chữ hoa!',
+    /[0-9]/.test(form.newPassword) || 'có chữ số!',
+    /[^A-Za-z0-9]/.test(form.newPassword) || 'có ký tự đặc biệt!',
   ].filter((requirement): requirement is string => typeof requirement === 'string')
 
   if (!form.currentPassword) {
@@ -70,7 +90,7 @@ function validatePasswordForm(form: ChangePasswordPayload) {
   if (!form.newPassword) {
     errors.newPassword = 'Vui lòng nhập mật khẩu mới!'
   } else if (requirements.length) {
-    errors.newPassword = `Mật khẩu mới cần ${requirements.join(', ')}.`
+    errors.newPassword = `Mật khẩu mới cần ${requirements.join(', ')}!`
   } else if (form.currentPassword && form.currentPassword === form.newPassword) {
     errors.newPassword = 'Mật khẩu mới phải khác mật khẩu hiện tại!'
   }
@@ -126,7 +146,9 @@ export function ProfilePage({
   const [deleteErrors, setDeleteErrors] = useState<
     Partial<Record<keyof DeleteAccountPayload, string>>
   >({})
+  const [isBioExpanded, setIsBioExpanded] = useState(false)
   const hasChanges = JSON.stringify(form) !== JSON.stringify(initialForm)
+  const hasLongBio = form.bio.trim().length > 120
 
   useEffect(() => {
     let isMounted = true
@@ -333,7 +355,25 @@ export function ProfilePage({
             />
           </label>
           <strong>{form.displayName || fullName || 'Người dùng Inbox'}</strong>
-          <p>{form.statusMessage || 'Chưa có trạng thái cá nhân!'}</p>
+          <div className="profile-preview-meta">
+            <span>{form.statusMessage || 'Chưa cập nhật trạng thái'}</span>
+            <span>{getGenderLabel(form.gender)}</span>
+          </div>
+          <div className="profile-preview-bio">
+            <span>Giới thiệu</span>
+            <p className={isBioExpanded ? 'is-expanded' : ''}>
+              {form.bio || 'Chưa có giới thiệu!'}
+            </p>
+            {hasLongBio ? (
+              <button
+                className="profile-preview-toggle"
+                onClick={() => setIsBioExpanded((current) => !current)}
+                type="button"
+              >
+                {isBioExpanded ? 'Thu gọn' : 'Xem thêm'}
+              </button>
+            ) : null}
+          </div>
         </aside>
 
         <form className="profile-form" onSubmit={handleSubmit}>

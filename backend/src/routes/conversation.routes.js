@@ -9,6 +9,7 @@ const {
   disbandGroupConversation,
   forwardMessage,
   getConversationMembers,
+  listConversationCalls,
   getTypingStatus,
   leaveGroupConversation,
   updateMessage,
@@ -33,6 +34,7 @@ const router = express.Router()
 
 router.get('/', listConversations)
 router.post('/groups', avatarUpload.single('avatar'), createGroupConversation)
+router.get('/:conversationId/calls', listConversationCalls)
 router.get('/:conversationId/members', getConversationMembers)
 router.get('/:conversationId/messages', getMessages)
 router.get('/:conversationId/typing', getTypingStatus)

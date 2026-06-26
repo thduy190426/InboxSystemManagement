@@ -20,11 +20,11 @@ export function NotFoundPage({
         </div>
 
         <div className="not-found-copy">
-          <span className="section-kicker">Không tìm thấy</span>
-          <h1 id="not-found-title">Trang này đã rời khỏi cuộc trò chuyện</h1>
+          <span className="section-kicker">Không tìm thấy!</span>
+          <h1 id="not-found-title">Trang này đã rời khỏi cuộc trò chuyện!</h1>
           <p>
             Đường dẫn bạn mở không tồn tại hoặc đã được chuyển đi. Hãy quay lại khu vực
-            chính để tiếp tục quản lý hội thoại.
+            chính để tiếp tục quản lý hội thoại!
           </p>
         </div>
 

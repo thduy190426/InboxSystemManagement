@@ -8,7 +8,7 @@ export type Message = {
   text: string
   time: string
   type?: 'text' | 'image' | 'file' | 'audio' | 'system'
-  state?: 'sent' | 'delivered' | 'seen'
+  state?: 'sending' | 'sent' | 'delivered' | 'seen' | 'failed'
   createdAt?: string
   updatedAt?: string
   readAt?: string | null
@@ -89,6 +89,21 @@ export type CallSession = {
   participants: CallParticipant[]
 }
 
+export type CallHistoryItem = {
+  id: string
+  type: CallType
+  status: Exclude<CallStatus, 'idle' | 'connecting' | 'failed'>
+  direction: 'incoming' | 'outgoing'
+  startedAt: string
+  endedAt: string | null
+  durationSeconds: number
+  time: string
+  durationLabel: string
+  statusLabel: string
+  isMissed: boolean
+  caller: CallParticipant
+}
+
 export type MessageReaction = {
   emoji: string
   count: number
@@ -120,6 +135,8 @@ export type Conversation = {
   avatar: string | null
   accent: string
   lastMessage: string
+  lastMessageByMe?: boolean
+  lastMessageIsAttachment?: boolean
   lastTime: string
   unread: number
   pinned: boolean
@@ -166,6 +183,9 @@ export type ContactUser = {
   fullName: string
   email: string
   phone: string | null
+  gender?: string | null
+  address?: string | null
+  birthDate?: string | null
   avatarUrl: string | null
   bio: string | null
   statusMessage: string | null

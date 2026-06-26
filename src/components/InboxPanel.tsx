@@ -44,6 +44,7 @@ export function InboxPanel({
   onSelectConversation,
 }: InboxPanelProps) {
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false)
+  const [isCreateGroupClosing, setIsCreateGroupClosing] = useState(false)
   const [groupTitle, setGroupTitle] = useState('')
   const [groupAvatar, setGroupAvatar] = useState<File | null>(null)
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([])
@@ -121,10 +122,14 @@ export function InboxPanel({
   }
 
   function closeCreateGroup() {
-    setIsCreateGroupOpen(false)
-    setGroupTitle('')
-    setGroupAvatar(null)
-    setSelectedMemberIds([])
+    setIsCreateGroupClosing(true)
+    window.setTimeout(() => {
+      setIsCreateGroupOpen(false)
+      setIsCreateGroupClosing(false)
+      setGroupTitle('')
+      setGroupAvatar(null)
+      setSelectedMemberIds([])
+    }, 140)
   }
 
   function openConversationFromSearch(conversationId: string) {
@@ -169,6 +174,18 @@ export function InboxPanel({
     return conversation.name
   }
 
+  function getConversationPreview(conversation: Conversation) {
+    if (!conversation.lastMessageByMe) {
+      return conversation.lastMessage
+    }
+
+    if (conversation.lastMessageIsAttachment) {
+      return conversation.lastMessage.replace(/^Đã gửi/, 'Bạn đã gửi')
+    }
+
+    return `Bạn: ${conversation.lastMessage}`
+  }
+
   function renderStripAvatar(conversation: Conversation) {
     const unreadSenders = conversation.unreadSenders ?? []
 
@@ -211,7 +228,10 @@ export function InboxPanel({
         <div className="panel-header-actions">
           <button
             className="icon-button"
-            onClick={() => setIsCreateGroupOpen(true)}
+            onClick={() => {
+              setIsCreateGroupClosing(false)
+              setIsCreateGroupOpen(true)
+            }}
             title="Tạo nhóm"
             type="button"
           >
@@ -416,7 +436,7 @@ export function InboxPanel({
                 <strong>{conversation.name}</strong>
                 <span>{conversation.lastTime}</span>
               </span>
-              <span className="conversation-preview">{conversation.lastMessage}</span>
+              <span className="conversation-preview">{getConversationPreview(conversation)}</span>
             </span>
             <span className="conversation-meta">
               {activeFilter === 'archived' ? (
@@ -439,7 +459,7 @@ export function InboxPanel({
       </div>
 
       {isCreateGroupOpen ? (
-        <div className="modal-backdrop" role="presentation">
+        <div className={isCreateGroupClosing ? 'modal-backdrop is-exiting' : 'modal-backdrop'} role="presentation">
           <form className="group-modal" onSubmit={handleCreateGroup}>
             <div className="group-modal-header">
               <div>

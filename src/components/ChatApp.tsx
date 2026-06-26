@@ -10,8 +10,9 @@ import {
   deleteMessage,
   disbandGroupConversation,
   fetchConversations,
+  fetchConversationCalls,
   fetchConversationMembers,
-  fetchMessages,
+  fetchMessagesPage,
   fetchTypingStatus,
   forwardMessage,
   leaveGroupConversation,
@@ -50,6 +51,7 @@ import type {
   AppView,
   CallSession,
   CallType,
+  CallHistoryItem,
   ContactUser,
   Conversation,
   ConversationMember,
@@ -73,8 +75,37 @@ type ChatAppProps = {
   onUserChange: (user: AuthUser) => void
 }
 
+type Toast = {
+  id: string
+  text: string
+  tone?: 'info' | 'error'
+}
+
+type MessagePaginationState = {
+  hasMore: boolean
+  isLoadingOlder: boolean
+  nextCursor: string | null
+}
+
 const SIDEBAR_STATE_KEY = 'sidebar_is_open'
 const COMPACT_LAYOUT_MEDIA_QUERY = '(max-width: 1024px)'
+const MESSAGE_PAGE_LIMIT = 40
+
+function mergeLatestMessages(existingMessages: Message[], incomingMessages: Message[]) {
+  const incomingById = new Map(incomingMessages.map((message) => [message.id, message]))
+  const existingIds = new Set(existingMessages.map((message) => message.id))
+  const updatedMessages = existingMessages.map((message) => incomingById.get(message.id) ?? message)
+  const newMessages = incomingMessages.filter((message) => !existingIds.has(message.id))
+
+  return [...updatedMessages, ...newMessages]
+}
+
+function prependOlderMessages(existingMessages: Message[], olderMessages: Message[]) {
+  const existingIds = new Set(existingMessages.map((message) => message.id))
+  const newOlderMessages = olderMessages.filter((message) => !existingIds.has(message.id))
+
+  return [...newOlderMessages, ...existingMessages]
+}
 
 function getInitialSidebarState() {
   return localStorage.getItem(SIDEBAR_STATE_KEY) === 'true'
@@ -82,6 +113,24 @@ function getInitialSidebarState() {
 
 function getInitialCompactLayoutState() {
   return typeof window !== 'undefined' && window.matchMedia(COMPACT_LAYOUT_MEDIA_QUERY).matches
+}
+
+function getAttachmentPreview(message?: Message) {
+  const attachmentType = message?.attachments?.[0]?.type
+
+  if (attachmentType === 'image') {
+    return 'Đã gửi một ảnh'
+  }
+
+  if (attachmentType === 'audio') {
+    return 'Đã gửi một tin nhắn thoại'
+  }
+
+  if (attachmentType === 'file') {
+    return 'Đã gửi một tệp'
+  }
+
+  return message?.text ?? 'Chưa có tin nhắn!'
 }
 
 export function ChatApp({
@@ -112,10 +161,14 @@ export function ChatApp({
   const [friends, setFriends] = useState<ContactUser[]>([])
   const [friendRequests, setFriendRequests] = useState<ContactUser[]>([])
   const [notifications, setNotifications] = useState<AppNotification[]>([])
+  const [callHistoryByConversation, setCallHistoryByConversation] = useState<Record<string, CallHistoryItem[]>>({})
   const [membersByConversation, setMembersByConversation] = useState<Record<string, ConversationMember[]>>({})
   const [messagesByConversation, setMessagesByConversation] = useState<Record<string, Message[]>>(
     {},
   )
+  const [messagePaginationByConversation, setMessagePaginationByConversation] = useState<
+    Record<string, MessagePaginationState>
+  >({})
   const [isLoading, setIsLoading] = useState(true)
   const [isSending, setIsSending] = useState(false)
   const [isCreatingGroup, setIsCreatingGroup] = useState(false)
@@ -125,16 +178,20 @@ export function ChatApp({
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null)
   const [isConfirming, setIsConfirming] = useState(false)
   const [readSyncKey, setReadSyncKey] = useState('')
-  const [errorMessage, setErrorMessage] = useState('')
+  const [pageErrorMessage, setPageErrorMessage] = useState('')
   const [typingByConversation, setTypingByConversation] = useState<Record<string, boolean>>({})
   const [activeCall, setActiveCall] = useState<CallSession | null>(null)
+  const [shouldAutoScrollToLatest, setShouldAutoScrollToLatest] = useState(false)
+  const [toasts, setToasts] = useState<Toast[]>([])
   const typingStopTimerRef = useRef<number | null>(null)
   const lastSentTypingRef = useRef<{ conversationId: string; isTyping: boolean } | null>(null)
+  const lastAutoScrolledConversationIdRef = useRef('')
   const activeIdRef = useRef(activeId)
   const currentUserIdRef = useRef(currentUser?.id ?? '')
   const conversationsRef = useRef<Conversation[]>([])
   const locallyDisbandedConversationIdsRef = useRef(new Set<string>())
   const deliveredSyncKeysRef = useRef(new Set<string>())
+  const toastTimersRef = useRef<Record<string, number>>({})
 
   useEffect(() => {
     activeIdRef.current = activeId
@@ -148,9 +205,18 @@ export function ChatApp({
     conversationsRef.current = conversations
   }, [conversations])
 
+  useEffect(() => {
+    if (!activeId || lastAutoScrolledConversationIdRef.current === activeId) {
+      return
+    }
+
+    lastAutoScrolledConversationIdRef.current = activeId
+    setShouldAutoScrollToLatest(true)
+  }, [activeId])
+
   const loadConversations = useCallback(async () => {
     setIsLoading(true)
-    setErrorMessage('')
+    setPageErrorMessage('')
 
     const nextConversations = await fetchConversations()
 
@@ -159,6 +225,57 @@ export function ChatApp({
 
     return nextConversations
   }, [])
+
+  const loadCallHistory = useCallback(async (conversationId: string) => {
+    if (!conversationId) {
+      return []
+    }
+
+    const calls = await fetchConversationCalls(conversationId)
+
+    setCallHistoryByConversation((current) => ({
+      ...current,
+      [conversationId]: calls,
+    }))
+
+    return calls
+  }, [])
+
+  const dismissToast = useCallback((toastId: string) => {
+    const timerId = toastTimersRef.current[toastId]
+
+    if (timerId) {
+      window.clearTimeout(timerId)
+      delete toastTimersRef.current[toastId]
+    }
+
+    setToasts((current) => current.filter((toast) => toast.id !== toastId))
+  }, [])
+
+  const pushToast = useCallback(
+    (text: string, tone: Toast['tone'] = 'error') => {
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`
+
+      setToasts((current) => [...current, { id, text, tone }])
+      toastTimersRef.current[id] = window.setTimeout(() => {
+        dismissToast(id)
+      }, 3200)
+    },
+    [dismissToast],
+  )
+
+  const setErrorMessage = useCallback(
+    (message: string) => {
+      if (message) {
+        pushToast(message)
+      }
+    },
+    [pushToast],
+  )
+
+  function getErrorMessage(error: unknown, fallbackMessage: string) {
+    return error instanceof Error ? error.message : fallbackMessage
+  }
 
   const syncDeliveredReceipts = useCallback(async (conversationId: string) => {
     if (!conversationId) {
@@ -178,7 +295,7 @@ export function ChatApp({
         current[conversationId]
           ? {
               ...current,
-              [conversationId]: response.messages,
+              [conversationId]: mergeLatestMessages(current[conversationId], response.messages),
             }
           : current,
       )
@@ -210,7 +327,7 @@ export function ChatApp({
         setNotifications(nextNotifications)
       } catch (error) {
         if (isMounted) {
-          setErrorMessage(error instanceof Error ? error.message : 'Không thể tải hội thoại.')
+          setPageErrorMessage(error instanceof Error ? error.message : 'Không thể tải hội thoại.')
         }
       } finally {
         if (isMounted) {
@@ -262,7 +379,9 @@ export function ChatApp({
       })
       .catch((error) => {
         if (isMounted) {
-          setErrorMessage(error instanceof Error ? error.message : 'Không thể tải hội thoại lưu trữ!')
+          setPageErrorMessage(
+            error instanceof Error ? error.message : 'Không thể tải hội thoại lưu trữ!',
+          )
         }
       })
 
@@ -281,18 +400,26 @@ export function ChatApp({
     const realtimeSocket = socket
 
     async function refreshActiveConversation(conversationId: string) {
-      const [nextConversations, nextMessages] = await Promise.all([
+      const [nextConversations, nextMessagePage] = await Promise.all([
         fetchConversations(),
-        fetchMessages(conversationId),
+        fetchMessagesPage(conversationId, { limit: MESSAGE_PAGE_LIMIT }),
       ])
 
       setConversations(nextConversations)
       setMessagesByConversation((current) => ({
         ...current,
-        [conversationId]: nextMessages,
+        [conversationId]: mergeLatestMessages(current[conversationId] ?? [], nextMessagePage.messages),
+      }))
+      setMessagePaginationByConversation((current) => ({
+        ...current,
+        [conversationId]: {
+          hasMore: current[conversationId]?.hasMore ?? nextMessagePage.hasMore,
+          isLoadingOlder: false,
+          nextCursor: current[conversationId]?.nextCursor ?? nextMessagePage.nextCursor,
+        },
       }))
 
-      if (nextMessages.some((message) => message.author === 'them')) {
+      if (nextMessagePage.messages.some((message) => message.author === 'them')) {
         syncDeliveredReceipts(conversationId).catch(() => undefined)
       }
 
@@ -329,6 +456,11 @@ export function ChatApp({
         return nextConversations
       })
       setMessagesByConversation((current) => {
+        const next = { ...current }
+        delete next[conversationId]
+        return next
+      })
+      setMessagePaginationByConversation((current) => {
         const next = { ...current }
         delete next[conversationId]
         return next
@@ -370,7 +502,7 @@ export function ChatApp({
           (conversation) => conversation.id === conversationId,
         )
 
-        window.alert(
+        pushToast(
           disbandedConversation
             ? `Nhóm "${disbandedConversation.name}" đã bị giải tán!`
             : 'Nhóm đã bị giải tán!',
@@ -446,6 +578,7 @@ export function ChatApp({
           : current,
       )
       fetchNotifications().then(setNotifications).catch(() => undefined)
+      loadCallHistory(payload.conversationId).catch(() => undefined)
     }
 
     function handleCallSignal(payload: { callId?: string; data?: RTCSessionDescriptionInit | RTCIceCandidateInit }) {
@@ -498,6 +631,10 @@ export function ChatApp({
       if (lastSentTypingRef.current?.isTyping) {
         updateTypingStatus(lastSentTypingRef.current.conversationId, false).catch(() => undefined)
       }
+
+      Object.values(toastTimersRef.current).forEach((timerId) => {
+        window.clearTimeout(timerId)
+      })
     },
     [],
   )
@@ -587,21 +724,29 @@ export function ChatApp({
 
     async function loadMessages() {
       try {
-        const messages = await fetchMessages(activeId)
+        const messagePage = await fetchMessagesPage(activeId, { limit: MESSAGE_PAGE_LIMIT })
 
         if (isMounted) {
           setMessagesByConversation((current) => ({
             ...current,
-            [activeId]: messages,
+            [activeId]: messagePage.messages,
+          }))
+          setMessagePaginationByConversation((current) => ({
+            ...current,
+            [activeId]: {
+              hasMore: messagePage.hasMore,
+              isLoadingOlder: false,
+              nextCursor: messagePage.nextCursor,
+            },
           }))
 
-          if (messages.some((message) => message.author === 'them')) {
+          if (messagePage.messages.some((message) => message.author === 'them')) {
             syncDeliveredReceipts(activeId).catch(() => undefined)
           }
         }
       } catch (error) {
         if (isMounted) {
-          setErrorMessage(error instanceof Error ? error.message : 'Không thể tải tin nhắn!')
+          setPageErrorMessage(error instanceof Error ? error.message : 'Không thể tải tin nhắn!')
         }
       }
     }
@@ -615,8 +760,59 @@ export function ChatApp({
 
   const activeConversation = conversations.find((conversation) => conversation.id === activeId)
   const messages = activeId ? messagesByConversation[activeId] ?? [] : []
+  const activeMessagePagination = activeId ? messagePaginationByConversation[activeId] : undefined
+  const hasOlderMessages = Boolean(activeMessagePagination?.hasMore)
+  const isLoadingOlderMessages = Boolean(activeMessagePagination?.isLoadingOlder)
+  const activeCallHistory = activeId ? callHistoryByConversation[activeId] ?? [] : []
   const pinnedMessages = messages.filter((message) => message.isPinned)
   const activeMembers = activeId ? membersByConversation[activeId] ?? [] : []
+
+  async function handleLoadOlderMessages() {
+    if (!activeId || !activeMessagePagination?.hasMore || activeMessagePagination.isLoadingOlder) {
+      return
+    }
+
+    try {
+      setMessagePaginationByConversation((current) => ({
+        ...current,
+        [activeId]: {
+          ...current[activeId],
+          hasMore: current[activeId]?.hasMore ?? true,
+          isLoadingOlder: true,
+          nextCursor: current[activeId]?.nextCursor ?? null,
+        },
+      }))
+
+      const messagePage = await fetchMessagesPage(activeId, {
+        before: activeMessagePagination.nextCursor,
+        limit: MESSAGE_PAGE_LIMIT,
+      })
+
+      setMessagesByConversation((current) => ({
+        ...current,
+        [activeId]: prependOlderMessages(current[activeId] ?? [], messagePage.messages),
+      }))
+      setMessagePaginationByConversation((current) => ({
+        ...current,
+        [activeId]: {
+          hasMore: messagePage.hasMore,
+          isLoadingOlder: false,
+          nextCursor: messagePage.nextCursor,
+        },
+      }))
+    } catch (error) {
+      setMessagePaginationByConversation((current) => ({
+        ...current,
+        [activeId]: {
+          ...current[activeId],
+          hasMore: current[activeId]?.hasMore ?? true,
+          isLoadingOlder: false,
+          nextCursor: current[activeId]?.nextCursor ?? null,
+        },
+      }))
+      pushToast(getErrorMessage(error, 'Không thể tải thêm tin nhắn cũ!'))
+    }
+  }
 
   useEffect(() => {
     if (!activeConversation || activeConversation.type !== 'group') {
@@ -638,7 +834,7 @@ export function ChatApp({
         }
       } catch (error) {
         if (isMounted) {
-          setErrorMessage(error instanceof Error ? error.message : 'Không thể tải thành viên nhóm!')
+          setPageErrorMessage(error instanceof Error ? error.message : 'Không thể tải thành viên nhóm!')
         }
       }
     }
@@ -649,6 +845,16 @@ export function ChatApp({
       isMounted = false
     }
   }, [activeConversation?.id, activeConversation?.type])
+
+  useEffect(() => {
+    if (!isDetailOpen || !activeId) {
+      return
+    }
+
+    loadCallHistory(activeId).catch((error) => {
+      pushToast(getErrorMessage(error, 'Không thể tải lịch sử cuộc gọi!'))
+    })
+  }, [activeId, isDetailOpen, loadCallHistory, pushToast])
 
   useEffect(() => {
     if (activeView !== 'chat' || !activeId) {
@@ -709,7 +915,7 @@ export function ChatApp({
 
         setMessagesByConversation((current) => ({
           ...current,
-          [activeId]: response.messages,
+          [activeId]: mergeLatestMessages(current[activeId] ?? [], response.messages),
         }))
         setConversations((current) =>
           current.map((conversation) =>
@@ -774,6 +980,11 @@ export function ChatApp({
 
       handleSelectConversation(nextConversationId)
       setMessagesByConversation((current) => {
+        const next = { ...current }
+        delete next[conversationId]
+        return next
+      })
+      setMessagePaginationByConversation((current) => {
         const next = { ...current }
         delete next[conversationId]
         return next
@@ -909,13 +1120,17 @@ export function ChatApp({
     await sendActiveConversationMessage(draft, true)
   }
 
-  async function sendActiveConversationMessage(textValue: string, clearDraft = false) {
-    if (!activeConversation || isSending) {
+  async function sendActiveConversationMessage(
+    textValue: string,
+    clearDraft = false,
+    retryMessage?: Message,
+  ) {
+    if (!activeConversation) {
       return
     }
 
     if (activeConversation.blocked) {
-      setErrorMessage('Bạn đã chặn người dùng này!')
+      pushToast('Bạn đã chặn người dùng này!')
       return
     }
 
@@ -925,11 +1140,67 @@ export function ChatApp({
       return
     }
 
+    const temporaryMessage: Message =
+      retryMessage ?? {
+        id: `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        author: 'me',
+        text,
+        time: 'Bây giờ',
+        type: 'text',
+        state: 'sending',
+        replyTo: replyingTo
+          ? {
+              id: replyingTo.id,
+              author: replyingTo.author,
+              text: replyingTo.text,
+              type: replyingTo.type,
+              senderName: replyingTo.senderName,
+            }
+          : null,
+        mentions: [],
+        reactions: [],
+        attachments: [],
+      }
+
     try {
       setIsSending(true)
-      setErrorMessage('')
 
-      const createdMessage = await sendMessage(activeConversation.id, text, replyingTo?.id ?? null)
+      setMessagesByConversation((current) => ({
+        ...current,
+        [activeConversation.id]: retryMessage
+          ? (current[activeConversation.id] ?? []).map((message) =>
+              message.id === retryMessage.id
+                ? { ...message, state: 'sending', time: 'Bây giờ' }
+                : message,
+            )
+          : [...(current[activeConversation.id] ?? []), temporaryMessage],
+      }))
+      setShouldAutoScrollToLatest(true)
+
+      setConversations((current) =>
+        current.map((conversation) =>
+          conversation.id === activeConversation.id
+            ? {
+                ...conversation,
+                lastMessage: text,
+                lastMessageByMe: true,
+                lastMessageIsAttachment: false,
+                lastTime: 'Bây giờ',
+              }
+            : conversation,
+        ),
+      )
+
+      if (clearDraft) {
+        setDraft('')
+      }
+      setReplyingTo(null)
+
+      const createdMessage = await sendMessage(
+        activeConversation.id,
+        text,
+        retryMessage?.replyTo?.id ?? replyingTo?.id ?? null,
+      )
       updateTypingStatus(activeConversation.id, false).catch(() => undefined)
       lastSentTypingRef.current = {
         conversationId: activeConversation.id,
@@ -943,27 +1214,22 @@ export function ChatApp({
 
       setMessagesByConversation((current) => ({
         ...current,
-        [activeConversation.id]: [...(current[activeConversation.id] ?? []), createdMessage],
-      }))
-
-      setConversations((current) =>
-        current.map((conversation) =>
-          conversation.id === activeConversation.id
-            ? {
-                ...conversation,
-                lastMessage: text,
-                lastTime: 'Bây giờ',
-              }
-            : conversation,
+        [activeConversation.id]: (current[activeConversation.id] ?? []).map((message) =>
+          message.id === temporaryMessage.id ? createdMessage : message,
         ),
-      )
-
-      if (clearDraft) {
-        setDraft('')
-      }
-      setReplyingTo(null)
+      }))
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể gửi tin nhắn!')
+      setMessagesByConversation((current) => ({
+        ...current,
+        [activeConversation.id]: (current[activeConversation.id] ?? []).map((message) =>
+          message.id === temporaryMessage.id ? { ...message, state: 'failed' } : message,
+        ),
+      }))
+      pushToast(
+        error instanceof Error
+          ? `${error.message} Tin nhắn đã được giữ lại, bạn có thể thử gửi lại!`
+          : 'Không thể gửi tin nhắn. Tin nhắn đã được giữ lại, bạn có thể thử gửi lại!',
+      )
     } finally {
       setIsSending(false)
     }
@@ -972,19 +1238,22 @@ export function ChatApp({
   async function handleSendQuickMessage(text: string) {
     await sendActiveConversationMessage(text)
   }
+
+  async function handleRetryMessage(message: Message) {
+    await sendActiveConversationMessage(message.text, false, message)
+  }
   async function handleUploadAttachment(file: File) {
     if (!activeConversation || isUploadingAttachment) {
       return
     }
 
     if (activeConversation.blocked) {
-      setErrorMessage('Bạn đã chặn người dùng này!')
+      pushToast('Bạn đã chặn người dùng này!')
       return
     }
 
     try {
       setIsUploadingAttachment(true)
-      setErrorMessage('')
 
       const createdMessage = await uploadMessageAttachment(activeConversation.id, file)
 
@@ -998,7 +1267,9 @@ export function ChatApp({
           conversation.id === activeConversation.id
             ? {
                 ...conversation,
-                lastMessage: createdMessage.text,
+                lastMessage: getAttachmentPreview(createdMessage),
+                lastMessageByMe: true,
+                lastMessageIsAttachment: Boolean(createdMessage.attachments?.length),
                 lastTime: createdMessage.time,
                 attachments: [
                   ...(createdMessage.attachments ?? []),
@@ -1009,7 +1280,7 @@ export function ChatApp({
         ),
       )
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể gửi file!')
+      pushToast(getErrorMessage(error, 'Không thể gửi file!'))
     } finally {
       setIsUploadingAttachment(false)
     }
@@ -1022,7 +1293,6 @@ export function ChatApp({
 
     try {
       setBusyMessageId(messageId)
-      setErrorMessage('')
 
       const updatedMessage = await updateMessage(activeConversation.id, messageId, text)
 
@@ -1050,7 +1320,7 @@ export function ChatApp({
         ),
       )
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể sửa tin nhắn!')
+      pushToast(getErrorMessage(error, 'Không thể sửa tin nhắn!'))
       throw error
     } finally {
       setBusyMessageId('')
@@ -1064,15 +1334,15 @@ export function ChatApp({
 
     try {
       setBusyMessageId(messageId)
-      setErrorMessage('')
 
       await deleteMessage(activeConversation.id, messageId)
 
       const nextMessages = (messagesByConversation[activeConversation.id] ?? []).filter(
         (message) => message.id !== messageId,
       )
-      const nextLastMessage = nextMessages.at(-1)?.text ?? 'Chưa có tin nhắn!'
-      const nextLastTime = nextMessages.at(-1)?.time ?? ''
+      const nextLastMessageItem = nextMessages.at(-1)
+      const nextLastMessage = getAttachmentPreview(nextLastMessageItem)
+      const nextLastTime = nextLastMessageItem?.time ?? ''
 
       setMessagesByConversation((current) => ({
         ...current,
@@ -1086,24 +1356,36 @@ export function ChatApp({
             ? {
                 ...conversation,
                 lastMessage: nextLastMessage,
+                lastMessageByMe: nextLastMessageItem?.author === 'me',
+                lastMessageIsAttachment: Boolean(nextLastMessageItem?.attachments?.length),
                 lastTime: nextLastTime,
               }
             : conversation,
         ),
       )
 
-      const [serverMessages, nextConversations] = await Promise.all([
-        fetchMessages(activeConversation.id),
+      const [serverMessagePage, nextConversations] = await Promise.all([
+        fetchMessagesPage(activeConversation.id, { limit: MESSAGE_PAGE_LIMIT }),
         fetchConversations(),
       ])
 
       setMessagesByConversation((current) => ({
         ...current,
-        [activeConversation.id]: serverMessages,
+        [activeConversation.id]: mergeLatestMessages(current[activeConversation.id] ?? [], serverMessagePage.messages).filter(
+          (message) => message.id !== messageId,
+        ),
+      }))
+      setMessagePaginationByConversation((current) => ({
+        ...current,
+        [activeConversation.id]: {
+          hasMore: current[activeConversation.id]?.hasMore ?? serverMessagePage.hasMore,
+          isLoadingOlder: false,
+          nextCursor: current[activeConversation.id]?.nextCursor ?? serverMessagePage.nextCursor,
+        },
       }))
       setConversations(nextConversations)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể xóa tin nhắn!')
+      pushToast(getErrorMessage(error, 'Không thể xóa tin nhắn!'))
     } finally {
       setBusyMessageId('')
     }
@@ -1116,7 +1398,6 @@ export function ChatApp({
 
     try {
       setBusyMessageId(messageId)
-      setErrorMessage('')
 
       const updatedMessage = await toggleMessagePin(activeConversation.id, messageId)
 
@@ -1127,7 +1408,7 @@ export function ChatApp({
         ),
       }))
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể cập nhật ghim tin nhắn!')
+      pushToast(getErrorMessage(error, 'Không thể cập nhật ghim tin nhắn!'))
     } finally {
       setBusyMessageId('')
     }
@@ -1140,7 +1421,6 @@ export function ChatApp({
 
     try {
       setBusyMessageId(messageId)
-      setErrorMessage('')
 
       const response = await forwardMessage(activeConversation.id, messageId, targetConversationId)
 
@@ -1193,7 +1473,7 @@ export function ChatApp({
         ),
       }))
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể Reaction tin nhắn!')
+      pushToast(getErrorMessage(error, 'Không thể Reaction tin nhắn!'))
     } finally {
       setBusyMessageId('')
     }
@@ -1206,7 +1486,6 @@ export function ChatApp({
 
     try {
       setBusyMessageId(messageId)
-      setErrorMessage('')
 
       const message = await removeMessageReaction(activeConversation.id, messageId, emoji)
 
@@ -1217,7 +1496,7 @@ export function ChatApp({
         ),
       }))
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể thu hồi Reaction!')
+      pushToast(getErrorMessage(error, 'Không thể thu hồi Reaction!'))
     } finally {
       setBusyMessageId('')
     }
@@ -1331,6 +1610,11 @@ export function ChatApp({
 
       setConversations(nextConversations)
       setMessagesByConversation((current) => {
+        const next = { ...current }
+        delete next[activeConversation.id]
+        return next
+      })
+      setMessagePaginationByConversation((current) => {
         const next = { ...current }
         delete next[activeConversation.id]
         return next
@@ -1485,7 +1769,6 @@ export function ChatApp({
 
     try {
       setIsCreatingGroup(true)
-      setErrorMessage('')
 
       const conversation = await createGroupConversation(payload)
 
@@ -1493,7 +1776,7 @@ export function ChatApp({
       handleSelectConversation(conversation.id)
       setIsDetailOpen(true)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể tạo nhóm!')
+      pushToast(getErrorMessage(error, 'Không thể tạo nhóm!'))
       throw error
     } finally {
       setIsCreatingGroup(false)
@@ -1501,10 +1784,10 @@ export function ChatApp({
   }
 
   async function refreshActiveGroup(conversationId: string) {
-    const [nextConversations, nextMembers, nextMessages] = await Promise.all([
+    const [nextConversations, nextMembers, nextMessagePage] = await Promise.all([
       fetchConversations(),
       fetchConversationMembers(conversationId),
-      fetchMessages(conversationId),
+      fetchMessagesPage(conversationId, { limit: MESSAGE_PAGE_LIMIT }),
     ])
 
     setConversations(nextConversations)
@@ -1514,7 +1797,15 @@ export function ChatApp({
     }))
     setMessagesByConversation((current) => ({
       ...current,
-      [conversationId]: nextMessages,
+      [conversationId]: mergeLatestMessages(current[conversationId] ?? [], nextMessagePage.messages),
+    }))
+    setMessagePaginationByConversation((current) => ({
+      ...current,
+      [conversationId]: {
+        hasMore: current[conversationId]?.hasMore ?? nextMessagePage.hasMore,
+        isLoadingOlder: false,
+        nextCursor: current[conversationId]?.nextCursor ?? nextMessagePage.nextCursor,
+      },
     }))
   }
 
@@ -1525,7 +1816,6 @@ export function ChatApp({
 
     try {
       setBusyConversationAction('group')
-      setErrorMessage('')
       const updatedConversation = await updateGroupConversation(activeConversation.id, payload)
 
       setConversations((current) =>
@@ -1540,7 +1830,7 @@ export function ChatApp({
       )
       await refreshActiveGroup(activeConversation.id)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể cập nhật nhóm!')
+      pushToast(getErrorMessage(error, 'Không thể cập nhật nhóm!'))
       throw error
     } finally {
       setBusyConversationAction('')
@@ -1662,6 +1952,11 @@ export function ChatApp({
         delete next[activeConversation.id]
         return next
       })
+      setMessagePaginationByConversation((current) => {
+        const next = { ...current }
+        delete next[activeConversation.id]
+        return next
+      })
       setMembersByConversation((current) => {
         const next = { ...current }
         delete next[activeConversation.id]
@@ -1716,6 +2011,11 @@ export function ChatApp({
 
       setConversations(nextConversations)
       setMessagesByConversation((current) => {
+        const next = { ...current }
+        delete next[activeConversation.id]
+        return next
+      })
+      setMessagePaginationByConversation((current) => {
         const next = { ...current }
         delete next[activeConversation.id]
         return next
@@ -1828,9 +2128,30 @@ export function ChatApp({
         call={activeCall}
         currentUserId={currentUser.id}
         onClear={() => setActiveCall(null)}
-        onError={setErrorMessage}
+        onError={(message) => pushToast(message)}
       />
     ) : null
+  }
+
+  function renderToasts() {
+    if (toasts.length === 0) {
+      return null
+    }
+
+    return (
+      <div aria-live="polite" className="toast-stack" role="status">
+        {toasts.map((toast) => (
+          <button
+            className={`toast ${toast.tone === 'info' ? 'is-info' : 'is-error'}`}
+            key={toast.id}
+            onClick={() => dismissToast(toast.id)}
+            type="button"
+          >
+            {toast.text}
+          </button>
+        ))}
+      </div>
+    )
   }
 
   const shellClassName = [
@@ -1850,6 +2171,7 @@ export function ChatApp({
         <ContactsPanel onAccepted={handleAcceptedFriend} />
         {renderCallOverlay()}
         {renderConfirmDialog()}
+        {renderToasts()}
       </main>
     )
   }
@@ -1865,6 +2187,7 @@ export function ChatApp({
         />
         {renderCallOverlay()}
         {renderConfirmDialog()}
+        {renderToasts()}
       </main>
     )
   }
@@ -1883,6 +2206,7 @@ export function ChatApp({
         />
         {renderCallOverlay()}
         {renderConfirmDialog()}
+        {renderToasts()}
       </main>
     )
   }
@@ -1892,6 +2216,7 @@ export function ChatApp({
       <main className={shellClassName}>
         {renderNavRail()}
         <section className="loading-panel">Đang tải dữ liệu từ máy chủ...</section>
+        {renderToasts()}
       </main>
     )
   }
@@ -1902,8 +2227,9 @@ export function ChatApp({
         {renderNavRail()}
         {renderInboxPanel()}
         <section className="loading-panel">
-          {errorMessage || 'Không có hội thoại nào trong tài khoản này!'}
+          {pageErrorMessage || 'Không có hội thoại nào trong tài khoản này!'}
         </section>
+        {renderToasts()}
       </main>
     )
   }
@@ -1915,13 +2241,15 @@ export function ChatApp({
       <ChatPanel
         activeConversation={activeConversation}
         draft={draft}
-        errorMessage={errorMessage}
         busyMessageId={busyMessageId}
         focusedMessageId={focusedMessageId}
         isBlocked={activeConversation.blocked}
         isDetailOpen={isDetailOpen}
         isSending={isSending}
+        shouldAutoScrollToLatest={shouldAutoScrollToLatest}
+        hasOlderMessages={hasOlderMessages}
         isTyping={Boolean(typingByConversation[activeConversation.id])}
+        isLoadingOlderMessages={isLoadingOlderMessages}
         isUploadingAttachment={isUploadingAttachment}
         members={activeMembers}
         messages={messages}
@@ -1935,7 +2263,10 @@ export function ChatApp({
         onToggleMessagePin={handleToggleMessagePin}
         onReplyMessage={setReplyingTo}
         onRemoveReaction={handleRemoveMessageReaction}
+        onRetryMessage={handleRetryMessage}
+        onLoadOlderMessages={handleLoadOlderMessages}
         onSendQuickMessage={handleSendQuickMessage}
+        onAutoScrollComplete={() => setShouldAutoScrollToLatest(false)}
         onToggleReaction={handleToggleMessageReaction}
         onUploadAttachment={handleUploadAttachment}
         onToggleDetails={() => setIsDetailOpen((current) => !current)}
@@ -1946,6 +2277,7 @@ export function ChatApp({
       <DetailPanel
         activeConversation={activeConversation}
         busyAction={busyConversationAction}
+        callHistory={activeCallHistory}
         currentUserId={currentUser?.id}
         friends={friends}
         isOpen={isDetailOpen}
@@ -1966,6 +2298,7 @@ export function ChatApp({
       />
       {renderCallOverlay()}
       {renderConfirmDialog()}
+      {renderToasts()}
     </main>
   )
 }

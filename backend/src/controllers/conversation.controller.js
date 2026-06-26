@@ -112,6 +112,63 @@ function formatRelativeTime(value) {
   }).format(new Date(value))
 }
 
+function formatCallDateTime(value) {
+  if (!value) {
+    return ''
+  }
+
+  return new Intl.DateTimeFormat('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value))
+}
+
+function formatCallDuration(seconds) {
+  const safeSeconds = Math.max(Number(seconds || 0), 0)
+  const minutes = Math.floor(safeSeconds / 60)
+  const remainingSeconds = safeSeconds % 60
+
+  if (minutes >= 60) {
+    const hours = Math.floor(minutes / 60)
+    const remainingMinutes = minutes % 60
+
+    return `${hours} giờ ${remainingMinutes} phút`
+  }
+
+  if (minutes > 0) {
+    return `${minutes} phút ${remainingSeconds} giây`
+  }
+
+  return `${remainingSeconds} giây`
+}
+
+function getCallStatusLabel(status, participantStatus) {
+  if (participantStatus === 'missed' || status === 'missed') {
+    return 'Cuộc gọi nhỡ'
+  }
+
+  if (participantStatus === 'declined' || status === 'declined') {
+    return 'Đã từ chối!'
+  }
+
+  if (status === 'cancelled') {
+    return 'Đã hủy!'
+  }
+
+  if (status === 'ongoing') {
+    return 'Đang diễn ra!'
+  }
+
+  if (status === 'ringing') {
+    return 'Đang đổ chuông!'
+  }
+
+  return 'Đã kết thúc!'
+}
+
 function mapAttachment(row) {
   const attachmentType = row.mime_type.startsWith('image/')
     ? 'image'
@@ -126,6 +183,38 @@ function mapAttachment(row) {
     url: row.storage_url,
     mimeType: row.mime_type,
     sizeBytes: Number(row.file_size_bytes || 0),
+  }
+}
+
+function getAttachmentPreview(type) {
+  if (type === 'image') {
+    return 'Đã gửi một ảnh!'
+  }
+
+  if (type === 'audio') {
+    return 'Đã gửi một tin nhắn thoại!'
+  }
+
+  if (type === 'file' || type === 'video') {
+    return 'Đã gửi một tệp!'
+  }
+
+  return ''
+}
+
+function getConversationLastMessagePreview(row) {
+  const attachmentPreview = getAttachmentPreview(row.last_message_type)
+
+  if (attachmentPreview) {
+    return {
+      text: attachmentPreview,
+      isAttachment: true,
+    }
+  }
+
+  return {
+    text: row.last_message_body || 'Chưa có tin nhắn!',
+    isAttachment: false,
   }
 }
 
@@ -147,13 +236,13 @@ function mapMessage(
               : 'them',
         text:
           row.parent_deleted_at
-            ? 'Tin nhan da bi xoa'
+            ? 'Tin nhắn đã bị xoá!'
             : row.parent_body ||
               (row.parent_type === 'image'
-                ? 'Hinh anh'
+                ? 'Hình ảnh'
                 : row.parent_type === 'audio'
-                  ? 'Tin nhan thoai'
-                  : 'Tep dinh kem'),
+                  ? 'Tin nhắn thoại'
+                  : 'Tệp đính kèm'),
         type: row.parent_type,
         senderName: row.parent_sender_name || null,
       }
@@ -458,9 +547,66 @@ async function updateConversationLastMessage(connection, conversationId) {
   )
 }
 
-async function loadConversationMessages(connection, conversationId, currentUserId) {
+async function loadConversationMessages(
+  connection,
+  conversationId,
+  currentUserId,
+  options = {},
+) {
   await ensureMessagePinsTable()
   await ensureMessageHiddenEntriesTable()
+  const requestedLimit = Number(options.limit)
+  const limit =
+    Number.isInteger(requestedLimit) && requestedLimit > 0
+      ? Math.min(requestedLimit, 100)
+      : 40
+  const targetMessageId = Number(options.messageId)
+  const hasTargetMessageId = Number.isInteger(targetMessageId) && targetMessageId > 0
+  const beforeMessageId = Number(options.beforeMessageId)
+  let beforeCreatedAt = null
+
+  if (!hasTargetMessageId && Number.isInteger(beforeMessageId) && beforeMessageId > 0) {
+    const [cursorRows] = await connection.execute(
+      `SELECT id, created_at
+      FROM messages
+      WHERE id = ?
+        AND conversation_id = ?
+        AND deleted_at IS NULL
+      LIMIT 1`,
+      [beforeMessageId, conversationId],
+    )
+
+    if (!cursorRows[0]) {
+      return {
+        messages: [],
+        hasMore: false,
+        nextCursor: null,
+      }
+    }
+
+    beforeCreatedAt = cursorRows[0].created_at
+  }
+
+  const messageFilterClause = hasTargetMessageId
+    ? 'AND messages.id = ?'
+    : beforeCreatedAt
+      ? `AND (
+        messages.created_at < ?
+        OR (messages.created_at = ? AND messages.id < ?)
+      )`
+      : ''
+  const messageFilterParams = hasTargetMessageId
+    ? [targetMessageId]
+    : beforeCreatedAt
+      ? [beforeCreatedAt, beforeCreatedAt, beforeMessageId]
+      : []
+  const messageQueryParams = [
+    currentUserId,
+    currentUserId,
+    conversationId,
+    ...messageFilterParams,
+  ]
+  const queryLimit = hasTargetMessageId ? 1 : limit + 1
 
   const [messageRows] = await connection.execute(
     `SELECT
@@ -501,6 +647,7 @@ async function loadConversationMessages(connection, conversationId, currentUserI
     WHERE messages.conversation_id = ?
       AND messages.deleted_at IS NULL
       AND message_hidden_entries.id IS NULL
+      ${messageFilterClause}
     GROUP BY
       messages.id,
       messages.parent_message_id,
@@ -519,11 +666,16 @@ async function loadConversationMessages(connection, conversationId, currentUserI
       parent_messages.body,
       parent_messages.deleted_at,
       parent_users.full_name
-    ORDER BY messages.created_at ASC, messages.id ASC`,
-    [currentUserId, currentUserId, conversationId],
+    ORDER BY messages.created_at DESC, messages.id DESC
+    LIMIT ${queryLimit}`,
+    messageQueryParams,
   )
 
-  const messageIds = messageRows.map((row) => row.id)
+  const hasMore = !hasTargetMessageId && messageRows.length > limit
+  const visibleMessageRows = hasMore ? messageRows.slice(0, limit) : messageRows
+  visibleMessageRows.reverse()
+
+  const messageIds = visibleMessageRows.map((row) => row.id)
   let attachmentRows = []
   let reactionRows = []
   let mentionRows = []
@@ -598,9 +750,15 @@ async function loadConversationMessages(connection, conversationId, currentUserI
     return result
   }, {})
 
-  return messageRows.map((row) =>
+  const messages = visibleMessageRows.map((row) =>
     mapMessage(row, currentUserId, attachmentsByMessage, reactionsByMessage, mentionsByMessage),
   )
+
+  return {
+    messages,
+    hasMore,
+    nextCursor: hasMore && messages.length > 0 ? messages[0].id : null,
+  }
 }
 
 async function touchDeliveredReceipts(connection, conversationId, currentUserId) {
@@ -633,6 +791,8 @@ async function loadConversationSummary(connection, conversationId, currentUserId
       participant_settings.is_muted,
       participant_settings.last_read_message_id,
       last_messages.body AS last_message_body,
+      last_messages.type AS last_message_type,
+      last_messages.sender_id AS last_message_sender_id,
       other_users.full_name AS direct_name,
       other_users.avatar_url AS direct_avatar_url,
       other_users.bio AS direct_role,
@@ -706,6 +866,7 @@ async function loadConversationSummary(connection, conversationId, currentUserId
   const name = isDirect ? row.direct_nickname || row.direct_name : row.title
   const avatar = isDirect ? row.direct_avatar_url : row.avatar_url
   const memberCount = Number(row.member_count || 0)
+  const lastMessagePreview = getConversationLastMessagePreview(row)
 
   return {
     id: String(row.id),
@@ -720,7 +881,9 @@ async function loadConversationSummary(connection, conversationId, currentUserId
         : `${memberCount} thành viên`,
     avatar: isDirect ? avatar || null : avatar || getDefaultGroupAvatar(),
     accent: accentColors[0],
-    lastMessage: row.last_message_body || 'Chưa có tin nhắn!',
+    lastMessage: lastMessagePreview.text,
+    lastMessageByMe: row.last_message_sender_id === currentUserId,
+    lastMessageIsAttachment: lastMessagePreview.isAttachment,
     lastTime: formatRelativeTime(row.visible_last_message_at),
     unread: 0,
     pinned: Boolean(row.is_pinned),
@@ -758,7 +921,9 @@ async function listConversations(request, response, next) {
         participant_settings.is_muted,
         participant_settings.last_read_message_id,
         last_messages.body AS last_message_body,
+        last_messages.type AS last_message_type,
         last_messages.id AS last_message_id,
+        last_messages.sender_id AS last_message_sender_id,
         other_users.full_name AS direct_name,
         other_users.avatar_url AS direct_avatar_url,
         other_users.bio AS direct_role,
@@ -942,6 +1107,7 @@ async function listConversations(request, response, next) {
       const name = isDirect ? row.direct_nickname || row.direct_name : row.title
       const avatar = isDirect ? row.direct_avatar_url : row.avatar_url
       const memberCount = Number(row.member_count || 0)
+      const lastMessagePreview = getConversationLastMessagePreview(row)
 
       return {
         id: String(row.id),
@@ -956,7 +1122,9 @@ async function listConversations(request, response, next) {
             : `${memberCount} thành viên`,
         avatar: isDirect ? avatar || null : avatar || getDefaultGroupAvatar(),
         accent: accentColors[index % accentColors.length],
-        lastMessage: row.last_message_body || 'Chưa có tin nhắn!',
+        lastMessage: lastMessagePreview.text,
+        lastMessageByMe: row.last_message_sender_id === currentUserId,
+        lastMessageIsAttachment: lastMessagePreview.isAttachment,
         lastTime: formatRelativeTime(row.visible_last_message_at),
         unread: unreadByConversation[row.id] || 0,
         pinned: Boolean(row.is_pinned),
@@ -1634,10 +1802,96 @@ async function getMessages(request, response, next) {
       })
     }
 
-    const messages = await loadConversationMessages(connection, conversationId, currentUserId)
+    const messagePage = await loadConversationMessages(connection, conversationId, currentUserId, {
+      beforeMessageId: request.query.before,
+      limit: request.query.limit,
+    })
 
     response.json({
-      messages,
+      ...messagePage,
+    })
+  } catch (error) {
+    next(error)
+  } finally {
+    connection.release()
+  }
+}
+
+async function listConversationCalls(request, response, next) {
+  const connection = await pool.getConnection()
+
+  try {
+    const currentUserId = request.user.id
+    const conversationId = Number(request.params.conversationId)
+
+    if (!Number.isInteger(conversationId)) {
+      return response.status(400).json({
+        message: 'Đường dẫn hội thoại không hợp lệ!',
+      })
+    }
+
+    const participant = await findActiveParticipant(connection, conversationId, currentUserId)
+
+    if (!participant) {
+      return response.status(404).json({
+        message: 'Không tìm thấy hội thoại!',
+      })
+    }
+
+    const [rows] = await connection.execute(
+      `SELECT
+        call_logs.public_id,
+        call_logs.started_by,
+        call_logs.type,
+        call_logs.status,
+        call_logs.started_at,
+        call_logs.ended_at,
+        call_logs.duration_seconds,
+        callers.public_id AS caller_public_id,
+        callers.full_name AS caller_name,
+        callers.avatar_url AS caller_avatar_url,
+        current_participant.status AS participant_status
+      FROM call_logs
+      INNER JOIN users AS callers ON callers.id = call_logs.started_by
+      LEFT JOIN call_participants AS current_participant
+        ON current_participant.call_log_id = call_logs.id
+        AND current_participant.user_id = ?
+      WHERE call_logs.conversation_id = ?
+      ORDER BY call_logs.started_at DESC, call_logs.id DESC
+      LIMIT 30`,
+      [currentUserId, conversationId],
+    )
+
+    const calls = rows.map((row) => {
+      const durationSeconds = Number(row.duration_seconds || 0)
+      const direction = row.started_by === currentUserId ? 'outgoing' : 'incoming'
+      const isMissed =
+        row.participant_status === 'missed' ||
+        (row.status === 'missed' && direction === 'incoming')
+
+      return {
+        id: String(row.public_id),
+        type: row.type,
+        status: row.status,
+        direction,
+        startedAt: row.started_at,
+        endedAt: row.ended_at || null,
+        durationSeconds,
+        time: formatCallDateTime(row.started_at),
+        durationLabel: formatCallDuration(durationSeconds),
+        statusLabel: getCallStatusLabel(row.status, row.participant_status),
+        isMissed,
+        caller: {
+          id: String(row.caller_public_id),
+          userId: Number(row.started_by),
+          fullName: row.caller_name,
+          avatarUrl: row.caller_avatar_url || null,
+        },
+      }
+    })
+
+    response.json({
+      calls,
     })
   } catch (error) {
     next(error)
@@ -1870,7 +2124,9 @@ async function createMessage(request, response, next) {
         [result.insertId, currentUserId],
       )
 
-      const messages = await loadConversationMessages(connection, conversationId, currentUserId)
+      const { messages } = await loadConversationMessages(connection, conversationId, currentUserId, {
+        messageId: result.insertId,
+      })
       const createdMessage = messages.find((message) => message.id === String(result.insertId))
 
       await connection.commit()
@@ -2004,7 +2260,9 @@ async function createAttachmentMessage(request, response, next) {
       [result.insertId, currentUserId],
     )
 
-    const messages = await loadConversationMessages(connection, conversationId, currentUserId)
+    const { messages } = await loadConversationMessages(connection, conversationId, currentUserId, {
+      messageId: result.insertId,
+    })
     const createdMessage = messages.find((message) => message.id === String(result.insertId))
 
     await connection.commit()
@@ -2086,7 +2344,9 @@ async function updateMessage(request, response, next) {
       [text, messageId],
     )
 
-    const messages = await loadConversationMessages(connection, conversationId, currentUserId)
+    const { messages } = await loadConversationMessages(connection, conversationId, currentUserId, {
+      messageId,
+    })
     const updatedMessage = messages.find((item) => item.id === String(messageId))
 
     await connection.commit()
@@ -2237,10 +2497,17 @@ async function toggleMessagePin(request, response, next) {
       )
     }
 
-    const messages = await loadConversationMessages(connection, conversationId, currentUserId)
+    const { messages } = await loadConversationMessages(connection, conversationId, currentUserId, {
+      messageId,
+    })
     const message = messages.find((item) => item.id === String(messageId))
 
     await connection.commit()
+    emitToUsers([currentUserId], 'conversation:changed', {
+      conversationId: String(conversationId),
+      actorUserId: String(currentUserId),
+      eventType: 'message:pinned',
+    })
 
     response.json({
       message,
@@ -2381,7 +2648,9 @@ async function forwardMessage(request, response, next) {
       [result.insertId, currentUserId],
     )
 
-    const messages = await loadConversationMessages(connection, targetConversationId, currentUserId)
+    const { messages } = await loadConversationMessages(connection, targetConversationId, currentUserId, {
+      messageId: result.insertId,
+    })
     const message = messages.find((item) => item.id === String(result.insertId))
     const conversation = await loadConversationSummary(connection, targetConversationId, currentUserId)
 
@@ -2476,7 +2745,9 @@ async function toggleMessageReaction(request, response, next) {
       )
     }
 
-    const messages = await loadConversationMessages(connection, conversationId, currentUserId)
+    const { messages } = await loadConversationMessages(connection, conversationId, currentUserId, {
+      messageId,
+    })
     const message = messages.find((item) => item.id === String(messageId))
 
     await connection.commit()
@@ -2525,7 +2796,9 @@ async function removeMessageReaction(request, response, next) {
       [messageId, currentUserId, emoji],
     )
 
-    const messages = await loadConversationMessages(connection, conversationId, currentUserId)
+    const { messages } = await loadConversationMessages(connection, conversationId, currentUserId, {
+      messageId,
+    })
     const message = messages.find((item) => item.id === String(messageId))
 
     await connection.commit()
@@ -2596,7 +2869,7 @@ async function markConversationRead(request, response, next) {
       [lastMessageId, conversationId, currentUserId],
     )
 
-    const messages = await loadConversationMessages(connection, conversationId, currentUserId)
+    const { messages } = await loadConversationMessages(connection, conversationId, currentUserId)
 
     await connection.commit()
     await emitConversationChanged(connection, conversationId, currentUserId, 'message:read')
@@ -2639,7 +2912,7 @@ async function markConversationDelivered(request, response, next) {
 
     await touchDeliveredReceipts(connection, conversationId, currentUserId)
 
-    const messages = await loadConversationMessages(connection, conversationId, currentUserId)
+    const { messages } = await loadConversationMessages(connection, conversationId, currentUserId)
 
     await connection.commit()
     await emitConversationChanged(connection, conversationId, currentUserId, 'message:delivered')
@@ -2827,6 +3100,7 @@ module.exports = {
   getMessages,
   getTypingStatus,
   leaveGroupConversation,
+  listConversationCalls,
   listConversations,
   markConversationDelivered,
   markConversationRead,

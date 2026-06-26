@@ -1,6 +1,18 @@
 ﻿import type { FormEvent } from 'react'
 import { useEffect, useState } from 'react'
-import { Check, Search, UserMinus, UserPlus, X } from 'lucide-react'
+import {
+  CalendarDays,
+  Check,
+  Clock,
+  Mail,
+  MapPin,
+  Phone,
+  Search,
+  User,
+  UserMinus,
+  UserPlus,
+  X,
+} from 'lucide-react'
 import {
   acceptFriendRequest,
   cancelFriendRequest,
@@ -36,6 +48,44 @@ function getActionLabel(user: ContactUser) {
   return 'Kết bạn'
 }
 
+function getGenderLabel(gender?: string | null) {
+  if (gender === 'male') {
+    return 'Nam'
+  }
+
+  if (gender === 'female') {
+    return 'Nữ'
+  }
+
+  if (gender === 'other') {
+    return 'Khác'
+  }
+
+  if (gender === 'prefer_not_to_say') {
+    return 'Không muốn chia sẻ!'
+  }
+
+  return 'Chưa cập nhật giới tính!'
+}
+
+function formatProfileDate(value?: string | null) {
+  if (!value) {
+    return null
+  }
+
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return null
+  }
+
+  return new Intl.DateTimeFormat('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(date)
+}
+
 export function ContactsPanel({ onAccepted }: ContactsPanelProps) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<ContactUser[]>([])
@@ -45,6 +95,8 @@ export function ContactsPanel({ onAccepted }: ContactsPanelProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [busyId, setBusyId] = useState('')
   const [message, setMessage] = useState('')
+  const [selectedUser, setSelectedUser] = useState<ContactUser | null>(null)
+  const [isProfileClosing, setIsProfileClosing] = useState(false)
 
   async function loadDirectory() {
     const [nextFriends, nextRequests, nextSuggestions] = await Promise.all([
@@ -231,6 +283,141 @@ export function ContactsPanel({ onAccepted }: ContactsPanelProps) {
     }
   }
 
+  function openContactProfile(user: ContactUser) {
+    setIsProfileClosing(false)
+    setSelectedUser(user)
+  }
+
+  function closeContactProfile() {
+    setIsProfileClosing(true)
+    window.setTimeout(() => {
+      setSelectedUser(null)
+      setIsProfileClosing(false)
+    }, 140)
+  }
+
+  function renderContactProfile(user: ContactUser) {
+    const presenceLabel =
+      user.presence === 'online'
+        ? 'Đang trực tuyến'
+        : user.presence === 'away'
+          ? 'Tạm vắng'
+          : user.presence === 'busy'
+            ? 'Đang bận'
+            : 'Ngoại tuyến'
+
+    return (
+      <div className={isProfileClosing ? 'contact-profile-backdrop is-exiting' : 'contact-profile-backdrop'} role="presentation">
+        <section aria-modal="true" className="contact-profile-dialog" role="dialog">
+          <header className="contact-profile-header">
+            <div className="contact-profile-identity">
+              <AvatarFallback
+                className="contact-profile-avatar"
+                name={user.fullName}
+                src={user.avatarUrl}
+              />
+              <div>
+                <strong>{user.nickname || user.fullName}</strong>
+                <span>{user.fullName}</span>
+                <small>{presenceLabel}</small>
+              </div>
+            </div>
+            <button onClick={closeContactProfile} title="Đóng hồ sơ" type="button">
+              <X size={18} />
+            </button>
+          </header>
+
+          <div className="contact-profile-summary">
+            <div>
+              <Mail size={16} />
+              <span>
+                <strong>Email</strong>
+                {user.email}
+              </span>
+            </div>
+            <div>
+              <Phone size={16} />
+              <span>
+                <strong>Số điện thoại</strong>
+                {user.phone || 'Chưa có số điện thoại!'}
+              </span>
+            </div>
+            <div>
+              <User size={16} />
+              <span>
+                <strong>Trạng thái</strong>
+                {user.statusMessage || 'Chưa có trạng thái cá nhân!'}
+              </span>
+            </div>
+            <div>
+              <MapPin size={16} />
+              <span>
+                <strong>Địa chỉ</strong>
+                {user.address || 'Chưa có địa chỉ!'}
+              </span>
+            </div>
+            <div>
+              <User size={16} />
+              <span>
+                <strong>Giới tính</strong>
+                {getGenderLabel(user.gender)}
+              </span>
+            </div>
+            <div>
+              <CalendarDays size={16} />
+              <span>
+                <strong>Ngày sinh</strong>
+                {formatProfileDate(user.birthDate) || 'Chưa có ngày sinh!'}
+              </span>
+            </div>
+            <div>
+              <Clock size={16} />
+              <span>
+                <strong>Tham gia</strong>
+                {formatProfileDate(user.createdAt) || 'Chưa có thông tin ngày tham gia!'}
+              </span>
+            </div>
+            <div>
+              <Clock size={16} />
+              <span>
+                <strong>Kết nối</strong>
+                {formatProfileDate(user.contactCreatedAt) || 'Chưa kết bạn!'}
+              </span>
+            </div>
+          </div>
+
+          <div className="contact-profile-bio">
+            <strong>Giới thiệu</strong>
+            <p>{user.bio || 'Người dùng này chưa thêm phần giới thiệu!'}</p>
+          </div>
+        </section>
+      </div>
+    )
+  }
+
+  function renderContactRow(user: ContactUser, action: React.ReactNode) {
+    return (
+      <article className="contact-row" key={user.id}>
+        <AvatarFallback name={user.fullName} src={user.avatarUrl} />
+        <div>
+          <strong>{user.nickname || user.fullName}</strong>
+          <span>{user.email}</span>
+          <small>{user.statusMessage || user.bio || 'Người dùng Inbox'}</small>
+        </div>
+        <span className="contact-row-actions">
+          <button
+            className="contact-secondary-button"
+            onClick={() => openContactProfile(user)}
+            type="button"
+          >
+            Xem hồ sơ
+          </button>
+          {action}
+        </span>
+      </article>
+    )
+  }
+
   return (
     <section className="contacts-panel">
       <header className="contacts-header">
@@ -262,14 +449,9 @@ export function ContactsPanel({ onAccepted }: ContactsPanelProps) {
           </div>
 
           <div className="contact-list">
-            {friends.map((friend) => (
-              <article className="contact-row" key={friend.id}>
-                <AvatarFallback name={friend.fullName} src={friend.avatarUrl} />
-                <div>
-                  <strong>{friend.fullName}</strong>
-                  <span>{friend.email}</span>
-                  <small>{friend.statusMessage || friend.bio || 'Người dùng Inbox'}</small>
-                </div>
+            {friends.map((friend) =>
+              renderContactRow(
+                friend,
                 <button
                   disabled={busyId === friend.id}
                   onClick={() => handleUnfriend(friend)}
@@ -277,9 +459,9 @@ export function ContactsPanel({ onAccepted }: ContactsPanelProps) {
                 >
                   <UserMinus size={16} />
                   {busyId === friend.id ? 'Đang xử lý' : 'Hủy kết bạn'}
-                </button>
-              </article>
-            ))}
+                </button>,
+              ),
+            )}
             {friends.length === 0 ? (
               <div className="empty-state">Bạn chưa có người bạn nào!</div>
             ) : null}
@@ -293,14 +475,9 @@ export function ContactsPanel({ onAccepted }: ContactsPanelProps) {
           </div>
 
           <div className="contact-list">
-            {suggestions.map((user) => (
-              <article className="contact-row" key={user.id}>
-                <AvatarFallback name={user.fullName} src={user.avatarUrl} />
-                <div>
-                  <strong>{user.fullName}</strong>
-                  <span>{user.email}</span>
-                  <small>{user.statusMessage || user.bio || 'Người dùng Inbox'}</small>
-                </div>
+            {suggestions.map((user) =>
+              renderContactRow(
+                user,
                 <button
                   disabled={busyId === user.id || user.friendshipStatus === 'accepted'}
                   onClick={() => handleSendRequest(user)}
@@ -312,9 +489,9 @@ export function ContactsPanel({ onAccepted }: ContactsPanelProps) {
                     <UserPlus size={16} />
                   )}
                   {busyId === user.id ? 'Đang xử lý' : getActionLabel(user)}
-                </button>
-              </article>
-            ))}
+                </button>,
+              ),
+            )}
             {suggestions.length === 0 ? (
               <div className="empty-state">Chưa có gợi ý kết bạn mới!</div>
             ) : null}
@@ -328,14 +505,9 @@ export function ContactsPanel({ onAccepted }: ContactsPanelProps) {
           </div>
 
           <div className="contact-list">
-            {results.map((user) => (
-              <article className="contact-row" key={user.id}>
-                <AvatarFallback name={user.fullName} src={user.avatarUrl} />
-                <div>
-                  <strong>{user.fullName}</strong>
-                  <span>{user.email}</span>
-                  <small>{user.statusMessage || user.bio || 'Người dùng Inbox'}</small>
-                </div>
+            {results.map((user) =>
+              renderContactRow(
+                user,
                 <button
                   disabled={busyId === user.id || user.friendshipStatus === 'accepted'}
                   onClick={() => handleSendRequest(user)}
@@ -347,9 +519,9 @@ export function ContactsPanel({ onAccepted }: ContactsPanelProps) {
                     <UserPlus size={16} />
                   )}
                   {busyId === user.id ? 'Đang xử lý' : getActionLabel(user)}
-                </button>
-              </article>
-            ))}
+                </button>,
+              ),
+            )}
             {results.length === 0 ? (
               <div className="empty-state">Chưa có kết quả tìm kiếm!</div>
             ) : null}
@@ -372,6 +544,13 @@ export function ContactsPanel({ onAccepted }: ContactsPanelProps) {
                   <small>Muốn kết bạn với bạn</small>
                 </div>
                 <span className="contact-request-actions">
+                  <button
+                    className="contact-secondary-button"
+                    onClick={() => openContactProfile(request)}
+                    type="button"
+                  >
+                    Xem hồ sơ
+                  </button>
                   <button
                     disabled={busyId === request.id}
                     onClick={() => handleAcceptRequest(request)}
@@ -398,6 +577,7 @@ export function ContactsPanel({ onAccepted }: ContactsPanelProps) {
           </div>
         </section>
       </div>
+      {selectedUser ? renderContactProfile(selectedUser) : null}
     </section>
   )
 }
