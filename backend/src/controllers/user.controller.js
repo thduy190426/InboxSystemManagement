@@ -108,17 +108,15 @@ async function getUserPasswordRecord(userId) {
   return rows[0] || null
 }
 
-function normalizeOptionalString(value) {
-  const normalized = typeof value === 'string' ? value.trim() : ''
-
-  return normalized || null
+function normalizeRequiredString(value) {
+  return typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : ''
 }
 
 function normalizeBirthDate(value) {
   const normalized = typeof value === 'string' ? value.trim() : ''
 
   if (!normalized) {
-    return { value: null }
+    return { error: 'Ngày sinh là bắt buộc!' }
   }
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
@@ -139,15 +137,40 @@ function normalizeBirthDate(value) {
 }
 
 function validateProfilePayload(payload) {
-  const displayName = normalizeOptionalString(payload.displayName)
-  const phone = normalizeOptionalString(payload.phone)
-  const gender = normalizeOptionalString(payload.gender)
-  const address = normalizeOptionalString(payload.address)
-  const birthDate = normalizeBirthDate(payload.birthDate)
-  const bio = normalizeOptionalString(payload.bio)
-  const statusMessage = normalizeOptionalString(payload.statusMessage)
+  const source = payload && typeof payload === 'object' ? payload : {}
+  const displayName = normalizeRequiredString(source.displayName)
+  const phone = normalizeRequiredString(source.phone)
+  const gender = normalizeRequiredString(source.gender)
+  const address = normalizeRequiredString(source.address)
+  const birthDate = normalizeBirthDate(source.birthDate)
+  const bio = normalizeRequiredString(source.bio)
+  const statusMessage = normalizeRequiredString(source.statusMessage)
   const errors = {}
   const allowedGenders = new Set(['male', 'female', 'other', 'prefer_not_to_say'])
+
+  if (!displayName) {
+    errors.displayName = 'Tên hiển thị là bắt buộc!'
+  }
+
+  if (!phone) {
+    errors.phone = 'Số điện thoại là bắt buộc!'
+  }
+
+  if (!gender) {
+    errors.gender = 'Giới tính là bắt buộc!'
+  }
+
+  if (!address) {
+    errors.address = 'Địa chỉ là bắt buộc!'
+  }
+
+  if (!bio) {
+    errors.bio = 'Giới thiệu là bắt buộc!'
+  }
+
+  if (!statusMessage) {
+    errors.statusMessage = 'Trạng thái cá nhân là bắt buộc!'
+  }
 
   if (displayName && displayName.length > 80) {
     errors.displayName = 'Tên hiển thị không được vượt quá 80 ký tự!'

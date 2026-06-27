@@ -1,14 +1,19 @@
 import type { FormEvent } from 'react'
 import { useState } from 'react'
-import { ArrowRight, Eye, EyeOff, Lock, Mail } from 'lucide-react'
+import { ArrowRight, Eye, EyeOff, Lock, LogIn, Mail } from 'lucide-react'
 import type { AuthPageProps } from '../types'
+
+type LoginPageProps = AuthPageProps & {
+  onForgotPassword: () => void
+}
 
 export function LoginPage({
   errorMessage,
   isSubmitting = false,
+  onForgotPassword,
   onSubmit,
   onSwitchMode,
-}: AuthPageProps) {
+}: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false)
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -27,7 +32,10 @@ export function LoginPage({
     <main className="auth-shell">
       <section className="auth-card" aria-labelledby="login-title">
         <div className="auth-card-header">
-          <span className="section-kicker">Đăng nhập</span>
+          <span className="section-kicker" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <LogIn size={14} />
+            Đăng nhập
+          </span>
           <h1 id="login-title">Chào mừng trở lại!</h1>
           <p>Tiếp tục quản lý hội thoại khách hàng và đội nhóm của bạn.</p>
         </div>
@@ -76,7 +84,12 @@ export function LoginPage({
               <input defaultChecked name="rememberLogin" type="checkbox" />
               <span>Ghi nhớ đăng nhập</span>
             </label>
-            <button className="auth-text-button" type="button">
+            <button
+              className="auth-text-button"
+              disabled={isSubmitting}
+              onClick={onForgotPassword}
+              type="button"
+            >
               Quên mật khẩu?
             </button>
           </div>

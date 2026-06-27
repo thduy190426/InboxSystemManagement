@@ -146,7 +146,10 @@ export function RegisterPage({
     <main className="auth-shell">
       <section className="auth-card" aria-labelledby="register-title">
         <div className="auth-card-header">
-          <span className="section-kicker">Đăng kí</span>
+          <span className="section-kicker" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <UserPlus size={14} />
+            Đăng kí
+          </span>
           <h1 id="register-title">Tạo tài khoản mới</h1>
           <p>Thiết lập Workspace chat để quản lý khách hàng, nhóm và tin nhắn.</p>
         </div>

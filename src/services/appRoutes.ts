@@ -22,7 +22,19 @@ export function readAuthScreenFromLocation(location: RouteLocation = window.loca
   const [firstSegment] = getPathSegments(location)
   const legacyHash = getLegacyHash(location)
 
-  return firstSegment === 'register' || legacyHash === 'register' ? 'register' : 'login'
+  if (firstSegment === 'register' || legacyHash === 'register') {
+    return 'register'
+  }
+
+  if (firstSegment === 'forgot-password' || legacyHash === 'forgot-password') {
+    return 'forgot-password'
+  }
+
+  if (firstSegment === 'reset-password' || legacyHash === 'reset-password') {
+    return 'reset-password'
+  }
+
+  return 'login'
 }
 
 export function readAppRouteFromLocation(location: RouteLocation = window.location): AppRoute {
@@ -58,8 +70,12 @@ export function isAuthRoute(location: RouteLocation = window.location) {
   return (
     firstSegment === 'login' ||
     firstSegment === 'register' ||
+    firstSegment === 'forgot-password' ||
+    firstSegment === 'reset-password' ||
     legacyHash === 'login' ||
-    legacyHash === 'register'
+    legacyHash === 'register' ||
+    legacyHash === 'forgot-password' ||
+    legacyHash === 'reset-password'
   )
 }
 
@@ -86,6 +102,8 @@ export function isKnownRoute(location: RouteLocation = window.location) {
   const knownFirstSegments = [
     'login',
     'register',
+    'forgot-password',
+    'reset-password',
     'chat',
     'contacts',
     'notifications',
@@ -97,6 +115,8 @@ export function isKnownRoute(location: RouteLocation = window.location) {
     '',
     'login',
     'register',
+    'forgot-password',
+    'reset-password',
     'chat',
     'contacts',
     'notifications',

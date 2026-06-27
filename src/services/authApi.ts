@@ -43,11 +43,54 @@ export type RegisterPayload = {
   confirmPassword: string
 }
 
+export type ForgotPasswordPayload = {
+  email: string
+}
+
+export type ForgotPasswordResponse = {
+  message: string
+  resetCode?: string | null
+}
+
+export type ResetPasswordPayload = {
+  email: string
+  token: string
+  password: string
+  confirmPassword: string
+}
+
+export type ResetPasswordResponse = {
+  message: string
+}
+
 export class ApiError extends ApiRequestError {}
 
 async function requestAuth(path: string, payload: LoginPayload | RegisterPayload) {
   try {
     return await requestJson<AuthResponse>(
+      path,
+      {
+        auth: false,
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+      'Không thể xử lý yêu cầu!',
+    )
+  } catch (error) {
+    if (error instanceof ApiRequestError) {
+      throw new ApiError(error.message, error.status, error.errors)
+    }
+
+    throw error
+  }
+}
+
+async function requestAuthJson<T>(
+  path: string,
+  payload: ForgotPasswordPayload | ResetPasswordPayload,
+) {
+  try {
+    return await requestJson<T>(
       path,
       {
         auth: false,
@@ -71,6 +114,14 @@ export function login(payload: LoginPayload) {
 
 export function register(payload: RegisterPayload) {
   return requestAuth('/auth/register', payload)
+}
+
+export function forgotPassword(payload: ForgotPasswordPayload) {
+  return requestAuthJson<ForgotPasswordResponse>('/auth/forgot-password', payload)
+}
+
+export function resetPassword(payload: ResetPasswordPayload) {
+  return requestAuthJson<ResetPasswordResponse>('/auth/reset-password', payload)
 }
 
 async function requestAuthenticated(path: string, options: RequestInit = {}) {

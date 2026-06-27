@@ -34,18 +34,21 @@ export function NotificationsPanel({
   const totalNotifications = totalUnreadMessages + friendRequests.length + unreadMentionCount
   const browserNotificationLabel =
     browserNotificationPermission === 'granted'
-      ? 'Đã bật thông báo trình duyệt!'
+      ? 'Đã bật thông báo đẩy!'
       : browserNotificationPermission === 'denied'
         ? 'Trình duyệt đang chặn thông báo!'
         : browserNotificationPermission === 'unsupported'
           ? 'Trình duyệt không hỗ trợ thông báo!'
-          : 'Bật thông báo trình duyệt'
+          : 'Bật thông báo trình duyệt?'
 
   return (
     <section className="notifications-panel">
       <header className="notifications-header">
         <div>
-          <span className="section-kicker">Thông báo</span>
+          <span className="section-kicker" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Bell size={14} />
+            Thông báo
+          </span>
           <h1>Cập nhật mới nhất</h1>
         </div>
         <div className="notifications-header-actions">

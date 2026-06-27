@@ -1,6 +1,6 @@
 import type { CSSProperties, ChangeEvent, FormEvent } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArchiveRestore, BellOff, Check, ImagePlus, MessageSquare, Pin, Plus, Search, Trash2, Type, UserRound, Users, X } from 'lucide-react'
+import { ArchiveRestore, BellOff, Check, ImagePlus, MessageSquare, MessageSquareOff, Pin, Plus, Search, SearchX, Trash2, Type, UserRound, Users, X } from 'lucide-react'
 import { globalSearch, type GlobalSearchResponse } from '../services/searchApi'
 import type { ContactUser, Conversation } from '../types'
 import { AvatarFallback } from './AvatarFallback'
@@ -27,6 +27,53 @@ type InboxPanelProps = {
   onRestoreConversation: (conversationId: string) => Promise<void> | void
   onQueryChange: (query: string) => void
   onSelectConversation: (conversationId: string) => void
+}
+
+function getStartOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+}
+
+function getStartOfWeek(date: Date) {
+  const startOfDay = getStartOfDay(date)
+  const day = startOfDay.getDay()
+  const daysFromMonday = day === 0 ? 6 : day - 1
+
+  startOfDay.setDate(startOfDay.getDate() - daysFromMonday)
+  return startOfDay
+}
+
+function formatConversationLastTime(conversation: Conversation) {
+  if (!conversation.lastMessageAt) {
+    return conversation.lastTime
+  }
+
+  const sentAt = new Date(conversation.lastMessageAt)
+
+  if (Number.isNaN(sentAt.getTime())) {
+    return conversation.lastTime
+  }
+
+  const now = new Date()
+  const sentDay = getStartOfDay(sentAt)
+  const today = getStartOfDay(now)
+
+  if (sentDay.getTime() === today.getTime()) {
+    return new Intl.DateTimeFormat('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(sentAt)
+  }
+
+  if (sentDay >= getStartOfWeek(now)) {
+    return new Intl.DateTimeFormat('vi-VN', {
+      weekday: 'short',
+    }).format(sentAt)
+  }
+
+  return new Intl.DateTimeFormat('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+  }).format(sentAt)
 }
 
 export function InboxPanel({
@@ -284,8 +331,13 @@ export function InboxPanel({
     <section className="inbox-panel" aria-label="Danh sách hội thoại">
       <header className="panel-header">
         <div>
-          <span className="section-kicker">Inbox</span>
-          <h1>Hộp thư</h1>
+          <span className="section-kicker" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <MessageSquare size={14} />
+            Inbox
+          </span>
+          <h1 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            Hộp thư
+          </h1>
         </div>
         <div className="panel-header-actions">
           <button
@@ -337,7 +389,12 @@ export function InboxPanel({
             <div className="global-search-state is-error">{globalSearchError}</div>
           ) : null}
           {!isSearchingGlobally && !globalSearchError && !hasGlobalResults ? (
-            <div className="global-search-state">Không có kết quả phù hợp.</div>
+            <div className="global-search-state">
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                <SearchX size={24} strokeWidth={1.5} style={{ opacity: 0.5 }} />
+                <span>Không có kết quả phù hợp.</span>
+              </div>
+            </div>
           ) : null}
 
           {globalResults?.conversations.length ? (
@@ -518,7 +575,9 @@ export function InboxPanel({
             <span className="conversation-copy">
               <span className="conversation-topline">
                 <strong>{conversation.name}</strong>
-                {activeFilter !== 'archived' ? <span>{conversation.lastTime}</span> : null}
+                {activeFilter !== 'archived' ? (
+                  <span>{formatConversationLastTime(conversation)}</span>
+                ) : null}
               </span>
               <span className="conversation-preview">{getConversationPreview(conversation)}</span>
             </span>
@@ -538,7 +597,12 @@ export function InboxPanel({
           </button>
         ))}
         {conversations.length === 0 ? (
-          <div className="empty-state">Không tìm thấy hội thoại phù hợp!</div>
+          <div className="empty-state">
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+              <MessageSquareOff size={32} strokeWidth={1.5} />
+              <span>Không tìm thấy hội thoại phù hợp!</span>
+            </div>
+          </div>
         ) : null}
       </div>
 
@@ -622,7 +686,12 @@ export function InboxPanel({
                   </label>
                 ))}
                 {friends.length === 0 ? (
-                  <div className="empty-state">Chưa có bạn bè để tạo nhóm!</div>
+                  <div className="empty-state">
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                      <Users size={32} strokeWidth={1.5} />
+                      <span>Chưa có bạn bè để tạo nhóm!</span>
+                    </div>
+                  </div>
                 ) : null}
               </div>
             </div>

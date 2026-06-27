@@ -1,11 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChatApp } from './components/ChatApp'
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage'
 import { RegisterPage } from './pages/RegisterPage'
+import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { TermsPage } from './pages/TermsPage'
-import { ApiError, login, logout, register, type AuthUser } from './services/authApi'
+import {
+  ApiError,
+  forgotPassword,
+  login,
+  logout,
+  register,
+  resetPassword,
+  type AuthUser,
+} from './services/authApi'
 import { onSessionExpired } from './services/apiClient'
 import {
   isAppRoute,
@@ -39,13 +49,30 @@ function isChatRoute(pathname: string) {
   return pathname === '/chat' || pathname.startsWith('/chat/')
 }
 
-function shouldShowRouteTransitionLoader(previousPathname: string, currentPathname: string) {
+function isLoaderDisabledRoute(pathname: string, hash = '') {
+  const legacyHash = hash.replace(/^#\/?/, '').trim()
+
+  return (
+    isChatRoute(pathname) ||
+    pathname === '/contacts' ||
+    pathname === '/notifications' ||
+    legacyHash === 'chat' ||
+    legacyHash === 'contacts' ||
+    legacyHash === 'notifications'
+  )
+}
+
+function shouldShowRouteTransitionLoader(
+  previousPathname: string,
+  currentPathname: string,
+  currentHash = window.location.hash,
+) {
   // Không hiện loader khi chỉ chuyển giữa các cuộc trò chuyện trong chat
-  if (isChatRoute(previousPathname) && isChatRoute(currentPathname)) {
+  if (isLoaderDisabledRoute(previousPathname) || isLoaderDisabledRoute(currentPathname, currentHash)) {
     return false
   }
 
-  return isChatRoute(currentPathname) || currentPathname === '/contacts' || currentPathname === '/notifications'
+  return false
 }
 
 function useRouteTransitionLoading() {
@@ -171,10 +198,13 @@ type AppToast = {
 export function App() {
   const storedAuthSession = getStoredAuthSession()
   const isRouteTransitioning = useRouteTransitionLoading()
+  const isRouteLoaderDisabled = isLoaderDisabledRoute(window.location.pathname, window.location.hash)
   const [authScreen, setAuthScreen] = useState<AuthScreen>(getInitialAuthScreen)
   const [isRouteKnown, setIsRouteKnown] = useState(getInitialRouteKnown)
   const [isAuthenticated, setIsAuthenticated] = useState(Boolean(storedAuthSession))
   const [authError, setAuthError] = useState('')
+  const [authSuccessMessage, setAuthSuccessMessage] = useState('')
+  const [passwordResetCode, setPasswordResetCode] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [toasts, setToasts] = useState<AppToast[]>([])
   const toastTimersRef = useRef<Record<string, number>>({})
@@ -254,6 +284,8 @@ export function App() {
     setIsRouteKnown(true)
     setAuthScreen(nextScreen)
     setAuthError('')
+    setAuthSuccessMessage('')
+    setPasswordResetCode('')
   }
 
   function handleAuthSuccess(
@@ -305,6 +337,7 @@ export function App() {
   async function handleLogin(payload: Record<string, string>) {
     setIsSubmitting(true)
     setAuthError('')
+    setAuthSuccessMessage('')
 
     try {
       const response = await login({
@@ -323,6 +356,7 @@ export function App() {
   async function handleRegister(payload: Record<string, string>) {
     setIsSubmitting(true)
     setAuthError('')
+    setAuthSuccessMessage('')
 
     try {
       await register({
@@ -341,6 +375,56 @@ export function App() {
       handleAuthSuccess(response, true, 'Đăng kí thành công!')
     } catch (error) {
       setAuthError(error instanceof ApiError ? error.message : 'Không thể đăng kí.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  async function handleForgotPassword(payload: Record<string, string>) {
+    setIsSubmitting(true)
+    setAuthError('')
+    setAuthSuccessMessage('')
+    setPasswordResetCode('')
+
+    try {
+      const response = await forgotPassword({
+        email: payload.email,
+      })
+
+      setAuthSuccessMessage(response.message)
+      setPasswordResetCode(response.resetCode || '')
+      pushToast(response.message, 'info')
+    } catch (error) {
+      setAuthError(
+        error instanceof ApiError ? error.message : 'Không thể tạo yêu cầu đặt lại mật khẩu.',
+      )
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  async function handleResetPassword(payload: Record<string, string>) {
+    setIsSubmitting(true)
+    setAuthError('')
+    setAuthSuccessMessage('')
+
+    try {
+      const response = await resetPassword({
+        email: payload.email,
+        token: payload.token,
+        password: payload.password,
+        confirmPassword: payload.confirmPassword,
+      })
+
+      window.history.replaceState(null, '', toAuthPath('login'))
+      setIsRouteKnown(true)
+      setAuthScreen('login')
+      setAuthSuccessMessage('')
+      setPasswordResetCode('')
+      setAuthError('')
+      pushToast(response.message, 'info')
+    } catch (error) {
+      setAuthError(error instanceof ApiError ? error.message : 'Không thể đặt lại mật khẩu.')
     } finally {
       setIsSubmitting(false)
     }
@@ -404,11 +488,37 @@ export function App() {
       )
     }
 
+    if (authScreen === 'forgot-password') {
+      return (
+        <ForgotPasswordPage
+          errorMessage={authError}
+          isSubmitting={isSubmitting}
+          onResetPassword={() => navigateAuth('reset-password')}
+          onSubmit={handleForgotPassword}
+          onSwitchMode={() => navigateAuth('login')}
+          resetCode={passwordResetCode}
+          successMessage={authSuccessMessage}
+        />
+      )
+    }
+
+    if (authScreen === 'reset-password') {
+      return (
+        <ResetPasswordPage
+          errorMessage={authError}
+          isSubmitting={isSubmitting}
+          onSubmit={handleResetPassword}
+          onSwitchMode={() => navigateAuth('login')}
+        />
+      )
+    }
+
     return (
       <LoginPage
         errorMessage={authError}
         isSubmitting={isSubmitting}
         onSubmit={handleLogin}
+        onForgotPassword={() => navigateAuth('forgot-password')}
         onSwitchMode={() => navigateAuth('register')}
       />
     )
@@ -438,7 +548,7 @@ export function App() {
   return (
     <>
       {content}
-      <RouteTransitionLoader isVisible={isRouteTransitioning} />
+      {isRouteLoaderDisabled ? null : <RouteTransitionLoader isVisible={isRouteTransitioning} />}
       {renderToasts()}
     </>
   )

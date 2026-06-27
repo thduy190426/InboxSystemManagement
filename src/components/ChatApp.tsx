@@ -1330,6 +1330,7 @@ export function ChatApp({
               lastMessage: text,
               lastMessageByMe: true,
               lastMessageIsAttachment: false,
+              lastMessageAt: temporaryMessage.createdAt,
               lastTime: 'Bây giờ',
             }
             : conversation,
@@ -1415,6 +1416,7 @@ export function ChatApp({
               lastMessage: getAttachmentPreview(createdMessage),
               lastMessageByMe: true,
               lastMessageIsAttachment: Boolean(createdMessage.attachments?.length),
+              lastMessageAt: createdMessage.createdAt ?? null,
               lastTime: createdMessage.time,
               attachments: [
                 ...(createdMessage.attachments ?? []),
@@ -1503,6 +1505,7 @@ export function ChatApp({
               lastMessage: nextLastMessage,
               lastMessageByMe: nextLastMessageItem?.author === 'me',
               lastMessageIsAttachment: Boolean(nextLastMessageItem?.attachments?.length),
+              lastMessageAt: nextLastMessageItem?.createdAt ?? null,
               lastTime: nextLastTime,
             }
             : conversation,

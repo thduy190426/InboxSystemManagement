@@ -169,6 +169,79 @@ function validateLoginPayload(payload) {
   }
 }
 
+function validateForgotPasswordPayload(payload) {
+  const source = payload && typeof payload === 'object' ? payload : {}
+  const email = normalizeEmail(source.email)
+  const errors = {}
+
+  if (!email) {
+    errors.email = 'Email là bắt buộc!'
+  } else if (!emailPattern.test(email)) {
+    errors.email = 'Email không hợp lệ!'
+  }
+
+  return {
+    data: {
+      email,
+    },
+    errors,
+    isValid: Object.keys(errors).length === 0,
+  }
+}
+
+function validateResetPasswordPayload(payload, user = {}) {
+  const source = payload && typeof payload === 'object' ? payload : {}
+  const email = normalizeEmail(source.email)
+  const token = typeof source.token === 'string' ? source.token.trim() : ''
+  const password = typeof source.password === 'string' ? source.password : ''
+  const confirmPassword =
+    typeof source.confirmPassword === 'string' ? source.confirmPassword : ''
+  const errors = {}
+
+  if (!email) {
+    errors.email = 'Email là bắt buộc!'
+  } else if (!emailPattern.test(email)) {
+    errors.email = 'Email không hợp lệ!'
+  }
+
+  if (!token) {
+    errors.token = 'Mã đặt lại mật khẩu là bắt buộc!'
+  } else if (!/^[0-9]{6}$/.test(token)) {
+    errors.token = 'Mã đặt lại mật khẩu phải gồm 6 chữ số!'
+  }
+
+  if (!password) {
+    errors.password = 'Mật khẩu mới là bắt buộc!'
+  } else {
+    const passwordErrors = getPasswordErrors(
+      password,
+      normalizeString(user.fullName),
+      normalizeEmail(user.email),
+    )
+
+    if (passwordErrors.length) {
+      errors.password = `Mật khẩu mới phải ${passwordErrors.join(', ')}!`
+    }
+  }
+
+  if (!confirmPassword) {
+    errors.confirmPassword = 'Xác nhận mật khẩu mới là bắt buộc!'
+  } else if (password && confirmPassword !== password) {
+    errors.confirmPassword = 'Mật khẩu mới xác nhận không khớp!'
+  }
+
+  return {
+    data: {
+      email,
+      token,
+      password,
+      confirmPassword,
+    },
+    errors,
+    isValid: Object.keys(errors).length === 0,
+  }
+}
+
 function validateChangePasswordPayload(payload, user = {}) {
   const source = payload && typeof payload === 'object' ? payload : {}
   const currentPassword =
@@ -217,6 +290,8 @@ function validateChangePasswordPayload(payload, user = {}) {
 
 module.exports = {
   validateChangePasswordPayload,
+  validateForgotPasswordPayload,
   validateLoginPayload,
   validateRegisterPayload,
+  validateResetPasswordPayload,
 }

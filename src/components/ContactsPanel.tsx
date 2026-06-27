@@ -1,17 +1,22 @@
 import type { FormEvent } from 'react'
 import { useEffect, useState } from 'react'
 import {
+  BookUser,
   CalendarDays,
   Check,
   Clock,
+  Ghost,
   IdCard,
+  Inbox,
   Mail,
   MapPin,
   Phone,
   Search,
+  SearchX,
   User,
   UserMinus,
   UserPlus,
+  Users,
   X,
 } from 'lucide-react'
 import {
@@ -314,11 +319,14 @@ export function ContactsPanel({ onAccepted, pushToast }: ContactsPanelProps) {
         <section aria-modal="true" className="contact-profile-dialog" role="dialog">
           <header className="contact-profile-header">
             <div className="contact-profile-identity">
-              <AvatarFallback
-                className="contact-profile-avatar"
-                name={user.fullName}
-                src={user.avatarUrl}
-              />
+              <span className="avatar-wrap">
+                <AvatarFallback
+                  className="contact-profile-avatar"
+                  name={user.fullName}
+                  src={user.avatarUrl}
+                />
+                <span className={`presence-dot ${user.presence}`} />
+              </span>
               <div>
                 <strong>{user.nickname || user.fullName}</strong>
                 <span>{user.fullName}</span>
@@ -426,8 +434,13 @@ export function ContactsPanel({ onAccepted, pushToast }: ContactsPanelProps) {
     <section className="contacts-panel">
       <header className="contacts-header">
         <div>
-          <span className="section-kicker">Danh bạ</span>
-          <h1>Danh bạ và gợi ý kết bạn</h1>
+          <span className="section-kicker" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <BookUser size={14} />
+            Danh bạ
+          </span>
+          <h1 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            Danh bạ và gợi ý kết bạn
+          </h1>
         </div>
       </header>
 
@@ -448,7 +461,10 @@ export function ContactsPanel({ onAccepted, pushToast }: ContactsPanelProps) {
       <div className="contacts-grid">
         <section className="contacts-section">
           <div className="contacts-section-title">
-            <h2>Bạn bè đã kết bạn</h2>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Users size={18} />
+              Bạn bè đã kết bạn
+            </h2>
             <span>{friends.length}</span>
           </div>
 
@@ -468,14 +484,22 @@ export function ContactsPanel({ onAccepted, pushToast }: ContactsPanelProps) {
                 ),
               )
             ) : (
-              <div className="empty-state">Bạn chưa có người bạn nào!</div>
+              <div className="empty-state">
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                  <Users size={32} strokeWidth={1.5} />
+                  <span>Bạn chưa có người bạn nào!</span>
+                </div>
+              </div>
             )}
           </div>
         </section>
 
         <section className="contacts-section">
           <div className="contacts-section-title">
-            <h2>Gợi ý kết bạn</h2>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <UserPlus size={18} />
+              Gợi ý kết bạn
+            </h2>
             <span>{suggestions.length}</span>
           </div>
 
@@ -499,14 +523,22 @@ export function ContactsPanel({ onAccepted, pushToast }: ContactsPanelProps) {
                 ),
               )
             ) : (
-              <div className="empty-state">Chưa có gợi ý kết bạn mới!</div>
+              <div className="empty-state">
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                  <UserPlus size={32} strokeWidth={1.5} />
+                  <span>Chưa có gợi ý kết bạn mới!</span>
+                </div>
+              </div>
             )}
           </div>
         </section>
 
         <section className="contacts-section">
           <div className="contacts-section-title">
-            <h2>Kết quả tìm kiếm</h2>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Search size={18} />
+              Kết quả tìm kiếm
+            </h2>
             <span>{results.length}</span>
           </div>
 
@@ -530,14 +562,22 @@ export function ContactsPanel({ onAccepted, pushToast }: ContactsPanelProps) {
                 ),
               )
             ) : (
-              <div className="empty-state">Chưa có kết quả tìm kiếm!</div>
+              <div className="empty-state">
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                  <SearchX size={32} strokeWidth={1.5} />
+                  <span>Chưa có kết quả tìm kiếm!</span>
+                </div>
+              </div>
             )}
           </div>
         </section>
 
         <section className="contacts-section">
           <div className="contacts-section-title">
-            <h2>Lời mời kết bạn</h2>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Inbox size={18} />
+              Lời mời kết bạn
+            </h2>
             <span>{requests.length}</span>
           </div>
 
@@ -581,7 +621,12 @@ export function ContactsPanel({ onAccepted, pushToast }: ContactsPanelProps) {
                 </article>
               ))
             ) : (
-              <div className="empty-state">Không có lời mời kết bạn mới!</div>
+              <div className="empty-state">
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                  <Ghost size={32} strokeWidth={1.5} />
+                  <span>Không có lời mời kết bạn mới!</span>
+                </div>
+              </div>
             )}
           </div>
         </section>

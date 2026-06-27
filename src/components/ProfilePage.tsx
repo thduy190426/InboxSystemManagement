@@ -21,6 +21,8 @@ type ProfilePageProps = {
   pushToast: (text: string, tone?: 'info' | 'error') => void
 }
 
+type ProfileErrors = Partial<Record<keyof ProfilePayload, string>>
+
 const initialPasswordForm: ChangePasswordPayload = {
   currentPassword: '',
   newPassword: '',
@@ -70,6 +72,52 @@ function getGenderLabel(gender: string) {
   }
 
   return 'Chưa cập nhật!'
+}
+
+function validateProfileForm(form: ProfilePayload) {
+  const errors: ProfileErrors = {}
+
+  if (!form.displayName.trim()) {
+    errors.displayName = 'Vui lòng nhập tên hiển thị!'
+  } else if (form.displayName.trim().length > 80) {
+    errors.displayName = 'Tên hiển thị không được vượt quá 80 ký tự!'
+  }
+
+  if (!form.phone.trim()) {
+    errors.phone = 'Vui lòng nhập số điện thoại!'
+  } else if (!/^\+?[0-9\s.-]{8,32}$/.test(form.phone.trim())) {
+    errors.phone = 'Số điện thoại không hợp lệ!'
+  }
+
+  if (!form.gender) {
+    errors.gender = 'Vui lòng chọn giới tính!'
+  }
+
+  if (!form.birthDate) {
+    errors.birthDate = 'Vui lòng chọn ngày sinh!'
+  } else if (form.birthDate > getLocalDateInputValue()) {
+    errors.birthDate = 'Ngày sinh không được lớn hơn ngày hiện tại!'
+  }
+
+  if (!form.address.trim()) {
+    errors.address = 'Vui lòng nhập địa chỉ!'
+  } else if (form.address.trim().length > 255) {
+    errors.address = 'Địa chỉ không được vượt quá 255 ký tự!'
+  }
+
+  if (!form.statusMessage.trim()) {
+    errors.statusMessage = 'Vui lòng nhập trạng thái cá nhân!'
+  } else if (form.statusMessage.trim().length > 120) {
+    errors.statusMessage = 'Trạng thái không được vượt quá 120 ký tự!'
+  }
+
+  if (!form.bio.trim()) {
+    errors.bio = 'Vui lòng nhập giới thiệu!'
+  } else if (form.bio.trim().length > 255) {
+    errors.bio = 'Giới thiệu không được vượt quá 255 ký tự!'
+  }
+
+  return errors
 }
 
 function validatePasswordForm(form: ChangePasswordPayload) {
@@ -142,6 +190,7 @@ export function ProfilePage({
   const [passwordErrors, setPasswordErrors] = useState<
     Partial<Record<keyof ChangePasswordPayload, string>>
   >({})
+  const [profileErrors, setProfileErrors] = useState<ProfileErrors>({})
   const [deleteErrors, setDeleteErrors] = useState<
     Partial<Record<keyof DeleteAccountPayload, string>>
   >({})
@@ -184,6 +233,10 @@ export function ProfilePage({
     setForm((current) => ({
       ...current,
       [name]: value,
+    }))
+    setProfileErrors((current) => ({
+      ...current,
+      [name]: '',
     }))
   }
 
@@ -241,8 +294,17 @@ export function ProfilePage({
       return
     }
 
+    const errors = validateProfileForm(form)
+
+    if (Object.keys(errors).length > 0) {
+      setProfileErrors(errors)
+      pushToast('Vui lòng điền đầy đủ thông tin hồ sơ bắt buộc!', 'error')
+      return
+    }
+
     try {
       setIsSaving(true)
+      setProfileErrors({})
       const response = await updateProfile(form)
       onUserChange(response.user)
       const nextForm = createInitialForm(response.user)
@@ -329,7 +391,10 @@ export function ProfilePage({
     <section className="profile-page" aria-labelledby="profile-title">
       <header className="profile-page-header">
         <div>
-          <span className="section-kicker">Hồ sơ cá nhân</span>
+          <span className="section-kicker" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <User size={14} />
+            Hồ sơ cá nhân
+          </span>
           <h1 id="profile-title">Chỉnh sửa profile</h1>
         </div>
       </header>
@@ -384,8 +449,12 @@ export function ProfilePage({
               name="displayName"
               onChange={handleChange}
               placeholder="Tên hiển thị trong chat"
+              required
               value={form.displayName}
             />
+            {profileErrors.displayName ? (
+              <span className="profile-field-error">{profileErrors.displayName}</span>
+            ) : null}
           </label>
 
           <label className="profile-field">
@@ -395,19 +464,26 @@ export function ProfilePage({
               name="phone"
               onChange={handleChange}
               placeholder="Số điện thoại"
+              required
               value={form.phone}
             />
+            {profileErrors.phone ? (
+              <span className="profile-field-error">{profileErrors.phone}</span>
+            ) : null}
           </label>
 
           <label className="profile-field">
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Users size={16} /> Giới tính</span>
-            <select name="gender" onChange={handleChange} value={form.gender}>
+            <select name="gender" onChange={handleChange} required value={form.gender}>
               <option value="">Chưa cập nhật</option>
               <option value="male">Nam</option>
               <option value="female">Nữ</option>
               <option value="other">Khác</option>
               <option value="prefer_not_to_say">Không muốn chia sẻ</option>
             </select>
+            {profileErrors.gender ? (
+              <span className="profile-field-error">{profileErrors.gender}</span>
+            ) : null}
           </label>
 
           <label className="profile-field">
@@ -417,8 +493,12 @@ export function ProfilePage({
               name="birthDate"
               onChange={handleChange}
               type="date"
+              required
               value={form.birthDate}
             />
+            {profileErrors.birthDate ? (
+              <span className="profile-field-error">{profileErrors.birthDate}</span>
+            ) : null}
           </label>
 
           <label className="profile-field profile-field-wide">
@@ -428,8 +508,12 @@ export function ProfilePage({
               name="address"
               onChange={handleChange}
               placeholder="Địa chỉ liên hệ"
+              required
               value={form.address}
             />
+            {profileErrors.address ? (
+              <span className="profile-field-error">{profileErrors.address}</span>
+            ) : null}
           </label>
 
           <label className="profile-field">
@@ -439,8 +523,12 @@ export function ProfilePage({
               name="statusMessage"
               onChange={handleChange}
               placeholder="Ví dụ: Đang sẵn sàng hỗ trợ"
+              required
               value={form.statusMessage}
             />
+            {profileErrors.statusMessage ? (
+              <span className="profile-field-error">{profileErrors.statusMessage}</span>
+            ) : null}
           </label>
 
           <label className="profile-field profile-field-wide">
@@ -451,8 +539,12 @@ export function ProfilePage({
               onChange={handleChange}
               placeholder="Một vài dòng giới thiệu về bạn"
               rows={5}
+              required
               value={form.bio}
             />
+            {profileErrors.bio ? (
+              <span className="profile-field-error">{profileErrors.bio}</span>
+            ) : null}
           </label>
 
           <button

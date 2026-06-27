@@ -425,7 +425,12 @@ export function DetailPanel({
             </button>
           ))}
           {pinnedMessages.length === 0 ? (
-            <div className="detail-empty-state">Chưa có tin nhắn nào được ghim.</div>
+            <div className="detail-empty-state">
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                <PinOff size={24} strokeWidth={1.5} style={{ opacity: 0.5 }} />
+                <span>Chưa có tin nhắn nào được ghim.</span>
+              </div>
+            </div>
           ) : null}
         </div>
       </section>

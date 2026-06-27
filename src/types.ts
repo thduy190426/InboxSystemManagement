@@ -1,4 +1,4 @@
-export type AuthScreen = 'login' | 'register'
+export type AuthScreen = 'login' | 'register' | 'forgot-password' | 'reset-password'
 
 export type AppView = 'chat' | 'contacts' | 'notifications' | 'profile'
 
@@ -138,6 +138,7 @@ export type Conversation = {
   lastMessageByMe?: boolean
   lastMessageIsAttachment?: boolean
   lastTime: string
+  lastMessageAt?: string | null
   unread: number
   pinned: boolean
   muted: boolean

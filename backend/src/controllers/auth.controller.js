@@ -2,9 +2,12 @@ const bcrypt = require('bcryptjs')
 const { createHash, randomBytes, randomUUID } = require('crypto')
 const { pool } = require('../config/db')
 const { emitToUsers } = require('../realtime/socket')
+const { sendPasswordResetCode } = require('../services/mail.service')
 const {
+  validateForgotPasswordPayload,
   validateLoginPayload,
   validateRegisterPayload,
+  validateResetPasswordPayload,
 } = require('../utils/validation')
 const { ensureUserProfileColumns } = require('../utils/userProfileColumns')
 
@@ -111,6 +114,14 @@ function hashToken(token) {
 
 function createRefreshToken() {
   return randomBytes(48).toString('hex')
+}
+
+function createPasswordResetCode() {
+  return String(randomBytes(4).readUInt32BE(0) % 1000000).padStart(6, '0')
+}
+
+function hashPasswordResetCode(email, code) {
+  return hashToken(`${email}:${code}`)
 }
 
 function getTokenFromRequest(request) {
@@ -318,6 +329,146 @@ async function login(request, response, next) {
   }
 }
 
+async function forgotPassword(request, response, next) {
+  try {
+    const validation = validateForgotPasswordPayload(request.body)
+
+    if (!validation.isValid) {
+      return response.status(422).json({
+        message: 'Dữ liệu quên mật khẩu không hợp lệ!',
+        errors: validation.errors,
+      })
+    }
+
+    const { email } = validation.data
+    const user = await getUserByEmail(email)
+    let devResetCode = null
+
+    if (user && user.is_active) {
+      const code = createPasswordResetCode()
+      const tokenHash = hashPasswordResetCode(email, code)
+      const expiresAt = new Date(Date.now() + 1000 * 60 * 30)
+
+      await pool.execute(
+        `UPDATE password_reset_tokens
+        SET used_at = CURRENT_TIMESTAMP
+        WHERE user_id = ? AND used_at IS NULL`,
+        [user.id],
+      )
+
+      await pool.execute(
+        `INSERT INTO password_reset_tokens (
+          user_id,
+          token_hash,
+          expires_at
+        ) VALUES (?, ?, ?)`,
+        [user.id, tokenHash, expiresAt],
+      )
+
+      const mailResult = await sendPasswordResetCode({
+        code,
+        email,
+        fullName: user.full_name,
+      })
+
+      if (mailResult.skipped) {
+        devResetCode = code
+      }
+    }
+
+    return response.json({
+      message: 'Nếu Email tồn tại, hệ thống đã gửi mã đặt lại mật khẩu!',
+      resetCode: process.env.NODE_ENV === 'production' ? undefined : devResetCode,
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+async function resetPassword(request, response, next) {
+  try {
+    const email = typeof request.body?.email === 'string' ? request.body.email.trim().toLowerCase() : ''
+    const token = typeof request.body?.token === 'string' ? request.body.token.trim() : ''
+    const tokenHash = email && token ? hashPasswordResetCode(email, token) : ''
+
+    const [rows] = tokenHash
+      ? await pool.execute(
+          `SELECT
+            password_reset_tokens.id,
+            password_reset_tokens.user_id,
+            password_reset_tokens.expires_at,
+            password_reset_tokens.used_at,
+            users.full_name,
+            users.email,
+            users.is_active
+          FROM password_reset_tokens
+          INNER JOIN users ON users.id = password_reset_tokens.user_id
+          WHERE password_reset_tokens.token_hash = ?
+            AND users.email = ?
+            AND users.deleted_at IS NULL
+          LIMIT 1`,
+          [tokenHash, email],
+        )
+      : [[]]
+    const resetToken = rows[0] || null
+    const validation = validateResetPasswordPayload(request.body, {
+      fullName: resetToken?.full_name || '',
+      email: resetToken?.email || '',
+    })
+
+    if (!validation.isValid) {
+      return response.status(422).json({
+        message: 'Dữ liệu đặt lại mật khẩu không hợp lệ!',
+        errors: validation.errors,
+      })
+    }
+
+    if (
+      !resetToken ||
+      !resetToken.is_active ||
+      resetToken.used_at ||
+      new Date(resetToken.expires_at).getTime() <= Date.now()
+    ) {
+      return response.status(400).json({
+        message: 'Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.',
+      })
+    }
+
+    const saltRounds = Number(process.env.BCRYPT_SALT_ROUNDS || 10)
+    const passwordHash = await bcrypt.hash(validation.data.password, saltRounds)
+
+    await pool.execute(
+      `UPDATE users
+      SET password_hash = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?`,
+      [passwordHash, resetToken.user_id],
+    )
+
+    await pool.execute(
+      `UPDATE password_reset_tokens
+      SET used_at = CURRENT_TIMESTAMP
+      WHERE id = ?`,
+      [resetToken.id],
+    )
+
+    await pool.execute(
+      `UPDATE user_sessions
+      SET revoked_at = CURRENT_TIMESTAMP
+      WHERE user_id = ? AND revoked_at IS NULL`,
+      [resetToken.user_id],
+    )
+
+    await updateUserPresenceFromSessions(resetToken.user_id)
+
+    return response.json({
+      message: 'Đặt lại mật khẩu thành công. Vui lòng đăng nhập bằng mật khẩu mới.',
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
 async function logout(request, response, next) {
   try {
     const token = getTokenFromRequest(request)
@@ -363,8 +514,10 @@ async function touchPresence(request, response, next) {
 }
 
 module.exports = {
+  forgotPassword,
   login,
   logout,
   register,
+  resetPassword,
   touchPresence,
 }

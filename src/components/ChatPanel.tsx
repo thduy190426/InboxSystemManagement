@@ -10,6 +10,7 @@ import {
   FileText,
   Info,
   Menu,
+  MessageSquare,
   Mic,
   MoreHorizontal,
   Paperclip,
@@ -1057,7 +1058,10 @@ export function ChatPanel({
 
         {messages.length === 0 && activeConversation.type !== 'group' ? (
           <div className="thread-empty-state">
-            <span>Hãy bắt đầu cuộc trò chuyện cùng với {activeConversation.name} nào!</span>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+              <MessageSquare size={48} strokeWidth={1.5} style={{ opacity: 0.2 }} />
+              <span>Hãy bắt đầu cuộc trò chuyện cùng với {activeConversation.name} nào!</span>
+            </div>
           </div>
         ) : null}
 
@@ -1068,6 +1072,7 @@ export function ChatPanel({
           const isGroupedWithPrevious = isSameMessageGroup(message, previousMessage)
           const isGroupedWithNext = isSameMessageGroup(message, nextMessage)
           const shouldShowAvatar = message.author === 'them' && !isGroupedWithNext
+          const shouldShowSenderName = message.author === 'them' && !isGroupedWithPrevious
 
           return (
             <Fragment key={message.id}>
@@ -1109,6 +1114,11 @@ export function ChatPanel({
                       />
                     ) : null}
                     <div className="message-bubble">
+                      {shouldShowSenderName ? (
+                        <span className="message-sender-name">
+                          {message.senderName || activeConversation.name}
+                        </span>
+                      ) : null}
                       {editingMessageId === message.id ? (
                         <form
                           className="message-edit-form"

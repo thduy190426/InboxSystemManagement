@@ -324,6 +324,33 @@ img {
   color: var(--blue);
 }
 
+.auth-inline-action {
+  align-self: flex-start;
+}
+
+.auth-action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--surface-strong);
+  color: var(--primary-strong);
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 160ms ease;
+  border: 1px solid rgba(15, 159, 142, 0.3);
+  align-self: center;
+  margin-top: 4px;
+}
+
+.auth-action-button:hover {
+  background: var(--primary-strong);
+  color: var(--surface);
+  border-color: var(--primary-strong);
+}
+
 .auth-primary {
   justify-content: center;
   gap: 9px;
@@ -368,6 +395,39 @@ img {
   line-height: 1.45;
 }
 
+.auth-success {
+  padding: 10px 12px;
+  border: 1px solid rgba(15, 159, 142, 0.24);
+  border-radius: 8px;
+  background: rgba(15, 159, 142, 0.08);
+  color: var(--primary-strong);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.auth-reset-code {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 14px;
+  border: 1px solid rgba(15, 159, 142, 0.32);
+  border-radius: 8px;
+  background: rgba(15, 159, 142, 0.06);
+  color: var(--primary-strong);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.auth-reset-code strong {
+  color: var(--text);
+  font-size: 18px;
+  letter-spacing: 0;
+}
+
 .auth-field-error {
   color: #9d174d;
   font-size: 12px;
@@ -399,6 +459,12 @@ img {
   font-size: 14px;
   line-height: 1.45;
   text-align: center;
+}
+
+.auth-switch button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .not-found-shell {
@@ -3006,6 +3072,19 @@ h3 {
   font-weight: 900;
 }
 
+.contact-profile-identity .avatar-wrap {
+  width: 68px;
+  height: 68px;
+}
+
+.contact-profile-identity .avatar-wrap .presence-dot {
+  width: 15px;
+  height: 15px;
+  right: 2px;
+  bottom: 2px;
+  border-width: 2.5px;
+}
+
 .contact-profile-identity strong,
 .contact-profile-identity span,
 .contact-profile-identity small {
@@ -3452,6 +3531,19 @@ h3 {
   background: #dbeafe;
   color: #1d4ed8;
   font-weight: 800;
+}
+
+.message-sender-name {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--primary-strong);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .message-pin-badge {
@@ -4642,6 +4734,7 @@ h3 {
 
 .call-device-panel select {
   min-width: 0;
+  width: 100%;
   height: 36px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 8px;
@@ -4650,6 +4743,9 @@ h3 {
   font-size: 12px;
   font-weight: 800;
   padding: 0 9px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .call-device-panel option {

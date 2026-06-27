@@ -66,6 +66,22 @@ const registerRateLimit = createRateLimiter({
   message: 'Đăng ký quá nhiều lần. Vui lòng thử lại sau!',
 })
 
+const forgotPasswordRateLimit = createRateLimiter({
+  keyPrefix: 'auth:forgot-password',
+  keyGenerator: authRateLimitKey,
+  limit: 5,
+  windowMs: 60 * 60 * 1000,
+  message: 'Yêu cầu đặt lại mật khẩu quá nhiều lần. Vui lòng thử lại sau!',
+})
+
+const resetPasswordRateLimit = createRateLimiter({
+  keyPrefix: 'auth:reset-password',
+  keyGenerator: authRateLimitKey,
+  limit: 10,
+  windowMs: 60 * 60 * 1000,
+  message: 'Thử đặt lại mật khẩu quá nhiều lần. Vui lòng thử lại sau!',
+})
+
 const searchRateLimit = createRateLimiter({
   keyPrefix: 'contacts:search',
   keyGenerator: userRateLimitKey,
@@ -84,8 +100,10 @@ const sendMessageRateLimit = createRateLimiter({
 
 module.exports = {
   createRateLimiter,
+  forgotPasswordRateLimit,
   loginRateLimit,
   registerRateLimit,
+  resetPasswordRateLimit,
   searchRateLimit,
   sendMessageRateLimit,
 }
