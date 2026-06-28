@@ -5,7 +5,7 @@ const { sendWebPushToUsers } = require('../services/push.service')
 
 function pushWebNotificationToUsers(userIds, payload) {
   sendWebPushToUsers(userIds, payload).catch((error) => {
-    console.error('Failed to send web push notification:', error)
+    console.error('Không thể gửi thông báo đẩy trên Web:', error)
   })
 }
 

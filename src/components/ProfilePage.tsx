@@ -1,16 +1,20 @@
 import type { ChangeEvent, FormEvent } from 'react'
 import { useEffect, useState } from 'react'
-import { AlertTriangle, AlignLeft, CalendarDays, Camera, IdCard, KeyRound, MapPin, MessageSquare, Phone, Save, Trash2, User, Users } from 'lucide-react'
+import { AlertTriangle, AlignLeft, CalendarDays, Camera, IdCard, KeyRound, Laptop, LogOut, MapPin, MessageSquare, Phone, RefreshCw, Save, ShieldCheck, Trash2, User, Users } from 'lucide-react'
 import type { AuthUser } from '../services/authApi'
 import {
   changePassword,
   deleteAccount,
+  fetchSessions,
   fetchProfile,
+  revokeOtherSessions,
+  revokeSession,
   updateProfile,
   uploadAvatar,
   type ChangePasswordPayload,
   type DeleteAccountPayload,
   type ProfilePayload,
+  type UserSession,
 } from '../services/userApi'
 import { ConfirmDialog, type ConfirmDialogState } from './ConfirmDialog'
 
@@ -19,6 +23,7 @@ type ProfilePageProps = {
   onAccountDeleted: () => void
   onUserChange: (user: AuthUser) => void
   pushToast: (text: string, tone?: 'info' | 'error') => void
+  onLogout?: () => void
 }
 
 type ProfileErrors = Partial<Record<keyof ProfilePayload, string>>
@@ -167,9 +172,43 @@ function validateDeleteForm(form: DeleteAccountPayload) {
   return errors
 }
 
+function formatDateTime(value: string | null) {
+  if (!value) {
+    return 'ChÆ°a cÃ³'
+  }
+
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+
+  return new Intl.DateTimeFormat('vi-VN', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(date)
+}
+
+function getSessionTitle(session: UserSession) {
+  if (session.deviceName) {
+    return session.deviceName
+  }
+
+  if (!session.userAgent) {
+    return 'Thiết bị không xác định'
+  }
+
+  if (/Mobile|Android|iPhone|iPad/i.test(session.userAgent)) {
+    return 'Thiết bị di động'
+  }
+
+  return 'Trình duyệt Web'
+}
+
 export function ProfilePage({
   currentUser,
   onAccountDeleted,
+  onLogout,
   onUserChange,
   pushToast,
 }: ProfilePageProps) {
@@ -182,8 +221,12 @@ export function ProfilePage({
   const [isSaving, setIsSaving] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [isLoadingSessions, setIsLoadingSessions] = useState(false)
+  const [revokingSessionId, setRevokingSessionId] = useState<string | null>(null)
+  const [isRevokingOtherSessions, setIsRevokingOtherSessions] = useState(false)
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null)
+  const [sessions, setSessions] = useState<UserSession[]>([])
   const [passwordForm, setPasswordForm] =
     useState<ChangePasswordPayload>(initialPasswordForm)
   const [deleteForm, setDeleteForm] = useState<DeleteAccountPayload>(initialDeleteForm)
@@ -224,6 +267,22 @@ export function ProfilePage({
       isMounted = false
     }
   }, [])
+
+  useEffect(() => {
+    loadSessions()
+  }, [])
+
+  async function loadSessions() {
+    try {
+      setIsLoadingSessions(true)
+      const response = await fetchSessions()
+      setSessions(response.sessions)
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : 'KhÃ´ng thá»ƒ táº£i phiÃªn Ä‘Äƒng nháº­p!', 'error')
+    } finally {
+      setIsLoadingSessions(false)
+    }
+  }
 
   function handleChange(
     event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
@@ -373,6 +432,68 @@ export function ProfilePage({
       pushToast(error instanceof Error ? error.message : 'Không thể xóa tài khoản!', 'error')
     } finally {
       setIsDeletingAccount(false)
+    }
+  }
+
+  function confirmRevokeSession(session: UserSession) {
+  setConfirmDialog({
+    title: session.isCurrent
+      ? 'Thu hồi phiên hiện tại?'
+      : 'Đăng xuất thiết bị này?',
+
+    description: session.isCurrent
+      ? 'Bạn sẽ được đưa về màn hình đăng nhập ngay sau khi thu hồi phiên này!'
+      : 'Thiết bị này sẽ cần đăng nhập lại để tiếp tục sử dụng!',
+
+    confirmLabel: session.isCurrent
+      ? 'Thu hồi và đăng xuất'
+      : 'Đăng xuất thiết bị',
+
+    tone: 'danger',
+    onConfirm: () => revokeOneSession(session.id),
+  })
+}
+
+  function confirmRevokeOtherSessions() {
+    setConfirmDialog({
+      title: 'Đăng xuất khỏi thiết bị khác?',
+      description: 'Tất cả các phiên đăng nhập khác sẽ bị thu hồi. Phiên hiện tại vẫn được giữ lại!',
+      confirmLabel: 'Đăng xuất thiết bị khác',
+      tone: 'danger',
+      onConfirm: revokeAllOtherSessions,
+    })
+  }
+
+  async function revokeOneSession(sessionId: string) {
+    try {
+      setRevokingSessionId(sessionId)
+      const response = await revokeSession(sessionId)
+
+      if (response.revokedCurrentSession) {
+        pushToast('Đã thu hồi phiên hiện tại!', 'info')
+        onLogout?.()
+        return
+      }
+
+      pushToast(response.message || 'Đã thu hồi phiên đăng nhập!', 'info')
+      await loadSessions()
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : 'Không thể thu hồi phiên đăng nhập!', 'error')
+    } finally {
+      setRevokingSessionId(null)
+    }
+  }
+
+  async function revokeAllOtherSessions() {
+    try {
+      setIsRevokingOtherSessions(true)
+      const response = await revokeOtherSessions()
+      pushToast(response.message || 'Đã đăng xuất khỏi thiết bị khác!', 'info')
+      await loadSessions()
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : 'Không thể đăng xuất khỏi thiết bị khác!', 'error')
+    } finally {
+      setIsRevokingOtherSessions(false)
     }
   }
 
@@ -624,6 +745,75 @@ export function ProfilePage({
             {isChangingPassword ? 'Đang đổi mật khẩu...' : 'Đổi mật khẩu'}
           </button>
         </form>
+
+        <section className="profile-form profile-sessions-form" aria-labelledby="sessions-title">
+          <div className="profile-form-heading">
+            <ShieldCheck size={18} />
+            <div>
+              <h2 id="sessions-title">Phiên đăng nhập</h2>
+              <p>Xem thiết bị đang đăng nhập và thu hồi phiên khi cần.</p>
+            </div>
+          </div>
+
+          <div className="profile-session-toolbar">
+            <button
+              className="profile-session-button"
+              disabled={isLoadingSessions}
+              onClick={() => void loadSessions()}
+              type="button"
+            >
+              <RefreshCw size={16} />
+              {isLoadingSessions ? 'Đang tải...' : 'Làm mới'}
+            </button>
+            <button
+              className="profile-session-button profile-session-danger"
+              disabled={isRevokingOtherSessions || sessions.filter((session) => !session.isCurrent && !session.revokedAt).length === 0}
+              onClick={confirmRevokeOtherSessions}
+              type="button"
+            >
+              <LogOut size={16} />
+              {isRevokingOtherSessions ? 'Đang xử lý...' : 'Đăng xuất thiết bị khác'}
+            </button>
+          </div>
+
+          <div className="profile-session-list">
+            {sessions.length === 0 && !isLoadingSessions ? (
+              <p className="profile-session-empty">Chưa có phiên đăng nhập nào!</p>
+            ) : null}
+            {sessions.map((session) => (
+              <article
+                className={`profile-session-item${session.revokedAt ? ' is-revoked' : ''}`}
+                key={session.id}
+              >
+                <div className="profile-session-icon">
+                  <Laptop size={18} />
+                </div>
+                <div className="profile-session-main">
+                  <div className="profile-session-title-row">
+                    <strong>{getSessionTitle(session)}</strong>
+                    {session.isCurrent ? <span>Hiện tại</span> : null}
+                    {session.revokedAt ? <span>Đã thu hồi</span> : null}
+                  </div>
+                  <p>{session.userAgent || 'Không có thông tin trình duyệt!'}</p>
+                  <div className="profile-session-meta">
+                    <span>IP: {session.ipAddress || 'Không rõ!'}</span>
+                    <span>Tạo lúc: {formatDateTime(session.createdAt)}</span>
+                    <span>Hết hạn: {formatDateTime(session.expiresAt)}</span>
+                  </div>
+                </div>
+                <button
+                  className="profile-session-revoke"
+                  disabled={Boolean(session.revokedAt) || revokingSessionId === session.id}
+                  onClick={() => confirmRevokeSession(session)}
+                  type="button"
+                >
+                  <LogOut size={16} />
+                  {revokingSessionId === session.id ? 'Đang thu hồi...' : 'Thu hồi'}
+                </button>
+              </article>
+            ))}
+          </div>
+        </section>
 
         <form
           className="profile-form profile-danger-form"

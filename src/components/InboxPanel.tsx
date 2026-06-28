@@ -1,6 +1,6 @@
 import type { CSSProperties, ChangeEvent, FormEvent } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArchiveRestore, BellOff, Check, ImagePlus, MessageSquare, MessageSquareOff, Pin, Plus, Search, SearchX, Trash2, Type, UserRound, Users, X } from 'lucide-react'
+import { Archive, ArchiveRestore, BellOff, Check, ImagePlus, Inbox, MessageCircle, MessageSquare, MessageSquareOff, Pin, Plus, Search, SearchX, Trash2, Type, UserRound, Users, X } from 'lucide-react'
 import { globalSearch, type GlobalSearchResponse } from '../services/searchApi'
 import type { ContactUser, Conversation } from '../types'
 import { AvatarFallback } from './AvatarFallback'
@@ -475,8 +475,8 @@ export function InboxPanel({
           <button
             className={
               conversation.id === activeConversation?.id
-                ? 'friend-status-card is-active'
-                : 'friend-status-card'
+                ? `friend-status-card is-active${conversation.unread ? ' is-unread' : ''}`
+                : `friend-status-card${conversation.unread ? ' is-unread' : ''}`
             }
             key={conversation.id}
             onClick={() => onSelectConversation(conversation.id)}
@@ -484,9 +484,6 @@ export function InboxPanel({
           >
             <span className="friend-avatar-frame">
               {renderStripAvatar(conversation)}
-              {activeFilter === 'unread' && conversation.unread ? (
-                <span className="friend-unread-dot">{conversation.unread}</span>
-              ) : null}
             </span>
             <span>{getStripLabel(conversation)}</span>
           </button>
@@ -499,28 +496,32 @@ export function InboxPanel({
           onClick={() => onFilterChange('all')}
           type="button"
         >
-          Tất cả
+          <Inbox size={16} />
+          <span>Tất cả</span>
         </button>
         <button
           className={activeFilter === 'unread' ? 'is-active' : ''}
           onClick={() => onFilterChange('unread')}
           type="button"
         >
-          Chưa đọc
+          <MessageCircle size={16} />
+          <span>Chưa đọc</span>
         </button>
         <button
           className={activeFilter === 'group' ? 'is-active' : ''}
           onClick={() => onFilterChange('group')}
           type="button"
         >
-          Nhóm
+          <Users size={16} />
+          <span>Nhóm</span>
         </button>
         <button
           className={activeFilter === 'archived' ? 'is-active' : ''}
           onClick={() => onFilterChange('archived')}
           type="button"
         >
-          Lưu trữ
+          <Archive size={16} />
+          <span>Lưu trữ</span>
         </button>
       </div>
 
@@ -529,8 +530,8 @@ export function InboxPanel({
           <button
             className={
               conversation.id === activeConversation?.id
-                ? 'conversation-row is-active animate-in'
-                : 'conversation-row animate-in'
+                ? `conversation-row is-active${conversation.unread ? ' is-unread' : ''} animate-in`
+                : `conversation-row${conversation.unread ? ' is-unread' : ''} animate-in`
             }
             key={conversation.id}
             onContextMenu={(event) => {
@@ -590,9 +591,6 @@ export function InboxPanel({
               ) : null}
               {conversation.pinned ? <Pin size={14} aria-label="Đã ghim" /> : null}
               {conversation.muted ? <BellOff size={14} aria-label="Đã tắt tiếng" /> : null}
-              {conversation.unread ? (
-                <span className="unread-badge">{conversation.unread}</span>
-              ) : null}
             </span>
           </button>
         ))}

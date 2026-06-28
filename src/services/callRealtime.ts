@@ -10,6 +10,7 @@ type Ack<T = unknown> = {
 export type CallSignalPayload = {
   callId: string
   conversationId: string
+  toUserId?: number
   from: {
     id: string
     userId: number
@@ -22,7 +23,7 @@ function getSocketOrThrow() {
   const socket = getRealtimeSocket()
 
   if (!socket) {
-    throw new Error('Ban can dang nhap de goi!')
+    throw new Error('Bạn cần đăng nhập để thực hiện cuộc gọi!')
   }
 
   return socket
@@ -32,7 +33,7 @@ function emitWithAck<T>(socket: Socket, eventName: string, payload: unknown) {
   return new Promise<Ack<T>>((resolve) => {
     socket.timeout(8000).emit(eventName, payload, (error: Error | null, response: Ack<T>) => {
       if (error) {
-        resolve({ ok: false, message: 'May chu khong phan hoi kip thoi!' } as Ack<T>)
+        resolve({ ok: false, message: 'Máy chủ không phản hồi kịp thời!' } as Ack<T>)
         return
       }
 
@@ -50,7 +51,7 @@ export async function startRealtimeCall(conversationId: string, type: CallType) 
   )
 
   if (!response.ok || !response.call) {
-    throw new Error(response.message || 'Khong the bat dau cuoc goi!')
+    throw new Error(response.message || 'Không thể bắt đầu cuộc gọi!')
   }
 
   return response.call
@@ -61,7 +62,7 @@ export async function acceptRealtimeCall(callId: string) {
   const response = await emitWithAck(socket, 'call:accept', { callId })
 
   if (!response.ok) {
-    throw new Error(response.message || 'Khong the nhan cuoc goi!')
+    throw new Error(response.message || 'Không thể nhận cuộc gọi!')
   }
 }
 
@@ -77,6 +78,10 @@ export function endRealtimeCall(callId: string) {
   getRealtimeSocket()?.emit('call:end', { callId })
 }
 
-export function sendCallSignal(callId: string, data: RTCSessionDescriptionInit | RTCIceCandidateInit) {
-  getRealtimeSocket()?.emit('call:signal', { callId, data })
+export function sendCallSignal(
+  callId: string,
+  data: RTCSessionDescriptionInit | RTCIceCandidateInit,
+  toUserId?: number,
+) {
+  getRealtimeSocket()?.emit('call:signal', { callId, data, toUserId })
 }

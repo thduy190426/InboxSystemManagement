@@ -48,7 +48,7 @@ export function LoginPage({
               <input
                 autoComplete="username"
                 name="email"
-                placeholder="you@example.com"
+                placeholder="Nhập Email của bạn tại đây"
                 required
                 type="email"
               />

@@ -77,7 +77,7 @@ export function NavRail({
             >
               <Icon size={22} strokeWidth={2.1} />
               {badgeCount > 0 ? (
-                <strong className="nav-count-badge" aria-label={`${badgeCount} thông báo mới`}>
+                <strong className="nav-count-badge" aria-label={`${badgeCount} thông báo mới!`}>
                   {badgeCount > 99 ? '99+' : badgeCount}
                 </strong>
               ) : null}

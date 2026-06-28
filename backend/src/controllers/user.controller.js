@@ -399,6 +399,129 @@ async function changePassword(request, response, next) {
   }
 }
 
+function toPublicSession(row, currentRefreshTokenHash) {
+  return {
+    id: String(row.id),
+    deviceName: row.device_name,
+    ipAddress: row.ip_address,
+    userAgent: row.user_agent,
+    isCurrent: currentRefreshTokenHash ? row.refresh_token_hash === currentRefreshTokenHash : false,
+    expiresAt: row.expires_at,
+    revokedAt: row.revoked_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }
+}
+
+async function listSessions(request, response, next) {
+  try {
+    const refreshToken = getTokenFromRequest(request)
+    const refreshTokenHash = refreshToken ? hashToken(refreshToken) : null
+    const [rows] = await pool.execute(
+      `SELECT
+        id,
+        refresh_token_hash,
+        device_name,
+        ip_address,
+        user_agent,
+        expires_at,
+        revoked_at,
+        created_at,
+        updated_at
+      FROM user_sessions
+      WHERE user_id = ?
+      ORDER BY revoked_at IS NULL DESC, updated_at DESC, created_at DESC`,
+      [request.user.id],
+    )
+
+    response.json({
+      sessions: rows.map((row) => toPublicSession(row, refreshTokenHash)),
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+async function revokeSession(request, response, next) {
+  try {
+    const sessionId = Number(request.params.sessionId)
+
+    if (!Number.isSafeInteger(sessionId) || sessionId <= 0) {
+      return response.status(400).json({
+        message: 'Phiên đăng nhập không hợp lệ!',
+      })
+    }
+
+    const refreshToken = getTokenFromRequest(request)
+    const refreshTokenHash = refreshToken ? hashToken(refreshToken) : null
+    const [rows] = await pool.execute(
+      `SELECT id, refresh_token_hash, revoked_at
+      FROM user_sessions
+      WHERE id = ? AND user_id = ?
+      LIMIT 1`,
+      [sessionId, request.user.id],
+    )
+    const session = rows[0] || null
+
+    if (!session) {
+      return response.status(404).json({
+        message: 'Không tìm thấy phiên đăng nhập!',
+      })
+    }
+
+    if (!session.revoked_at) {
+      await pool.execute(
+        `UPDATE user_sessions
+        SET revoked_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ? AND user_id = ?`,
+        [sessionId, request.user.id],
+      )
+      await updateUserPresenceFromSessions(request.user.id)
+    }
+
+    response.json({
+      message: 'Đã thu hồi phiên đăng nhập!',
+      revokedSessionId: String(session.id),
+      revokedCurrentSession: refreshTokenHash
+        ? session.refresh_token_hash === refreshTokenHash
+        : false,
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+async function revokeOtherSessions(request, response, next) {
+  try {
+    const refreshToken = getTokenFromRequest(request)
+    const refreshTokenHash = refreshToken ? hashToken(refreshToken) : null
+
+    if (!refreshTokenHash) {
+      return response.status(401).json({
+        message: 'Phiên đăng nhập không hợp lệ hoặc đã hết hạn!',
+      })
+    }
+
+    const [result] = await pool.execute(
+      `UPDATE user_sessions
+      SET revoked_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = ?
+        AND refresh_token_hash <> ?
+        AND revoked_at IS NULL`,
+      [request.user.id, refreshTokenHash],
+    )
+
+    await updateUserPresenceFromSessions(request.user.id)
+
+    response.json({
+      message: 'Đã đăng xuất khỏi các thiết bị khác!',
+      revokedCount: result.affectedRows || 0,
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
 async function deleteAccount(request, response, next) {
   const connection = await pool.getConnection()
 
@@ -478,6 +601,9 @@ module.exports = {
   changePassword,
   deleteAccount,
   getProfile,
+  listSessions,
+  revokeOtherSessions,
+  revokeSession,
   updateAvatar,
   updateProfile,
 }

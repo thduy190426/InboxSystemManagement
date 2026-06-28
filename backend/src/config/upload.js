@@ -3,6 +3,7 @@ const { v2: cloudinary } = require('cloudinary')
 
 const avatarStorage = multer.memoryStorage()
 const messageStorage = multer.memoryStorage()
+const MESSAGE_UPLOAD_SIZE_BYTES = 2 * 1024 * 1024
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -23,7 +24,7 @@ function assertCloudinaryConfigured() {
     !process.env.CLOUDINARY_API_KEY ||
     !process.env.CLOUDINARY_API_SECRET
   ) {
-    const error = new Error('Cloudinary chưa được cấu hình. Vui lòng kiểm tra lại biến môi trường!')
+    const error = new Error('Cloudinary chua duoc cau hinh. Vui long kiem tra bien moi truong!')
     error.statusCode = 500
     throw error
   }
@@ -32,6 +33,15 @@ function assertCloudinaryConfigured() {
 function imageFileFilter(_request, file, callback) {
   if (!file.mimetype.startsWith('image/')) {
     callback(new Error('Chỉ hỗ trợ upload file ảnh!'))
+    return
+  }
+
+  callback(null, true)
+}
+
+function messageFileFilter(_request, file, callback) {
+  if (!file.mimetype.startsWith('image/') && !file.mimetype.startsWith('audio/')) {
+    callback(new Error('Chỉ hỗ trợ gửi ảnh hoặc tin nhắn thoại trong cuộc trò chuyện!'))
     return
   }
 
@@ -93,14 +103,15 @@ const avatarMulter = multer({
   storage: avatarStorage,
   fileFilter: imageFileFilter,
   limits: {
-    fileSize: 2 * 1024 * 1024,
+    fileSize: MESSAGE_UPLOAD_SIZE_BYTES,
   },
 })
 
 const messageMulter = multer({
   storage: messageStorage,
+  fileFilter: messageFileFilter,
   limits: {
-    fileSize: 10 * 1024 * 1024,
+    fileSize: MESSAGE_UPLOAD_SIZE_BYTES,
   },
 })
 

@@ -1,4 +1,4 @@
-import type { CallHistoryItem, Conversation, ConversationMember, Message } from '../types'
+import type { CallHistoryItem, Conversation, ConversationMember, GroupJoinRequest, Message } from '../types'
 import { apiFetch } from './apiClient'
 
 type ConversationsResponse = {
@@ -9,6 +9,17 @@ type MessagesResponse = {
   messages: Message[]
   hasMore?: boolean
   nextCursor?: string | null
+}
+
+export type MessageSearchType = 'all' | 'text' | 'image' | 'audio' | 'attachment'
+
+export type MessageSearchFilters = {
+  query?: string
+  senderId?: string
+  type?: MessageSearchType
+  dateFrom?: string
+  dateTo?: string
+  limit?: number
 }
 
 type CreateMessageResponse = {
@@ -49,6 +60,20 @@ type ConversationMembersResponse = {
   members: ConversationMember[]
 }
 
+type GroupInviteResponse = {
+  token: string
+}
+
+type GroupJoinRequestsResponse = {
+  requests: GroupJoinRequest[]
+}
+
+type GroupJoinResponse = {
+  status: 'pending' | 'joined'
+  message?: string
+  conversation?: Conversation
+}
+
 type ConversationCallsResponse = {
   calls: CallHistoryItem[]
 }
@@ -86,9 +111,13 @@ export type MessagesPage = {
 
 export async function fetchMessagesPage(
   conversationId: string,
-  options: { before?: string | null; limit?: number } = {},
+  options: { around?: string | null; before?: string | null; limit?: number } = {},
 ) {
   const params = new URLSearchParams()
+
+  if (options.around) {
+    params.set('around', options.around)
+  }
 
   if (options.before) {
     params.set('before', options.before)
@@ -108,6 +137,44 @@ export async function fetchMessagesPage(
     hasMore: Boolean(response.hasMore),
     nextCursor: response.nextCursor ?? null,
   }
+}
+
+export async function searchConversationMessages(
+  conversationId: string,
+  filters: MessageSearchFilters = {},
+) {
+  const params = new URLSearchParams()
+
+  if (filters.query?.trim()) {
+    params.set('q', filters.query.trim())
+  }
+
+  if (filters.senderId) {
+    params.set('senderId', filters.senderId)
+  }
+
+  if (filters.type && filters.type !== 'all') {
+    params.set('type', filters.type)
+  }
+
+  if (filters.dateFrom) {
+    params.set('dateFrom', filters.dateFrom)
+  }
+
+  if (filters.dateTo) {
+    params.set('dateTo', filters.dateTo)
+  }
+
+  if (filters.limit) {
+    params.set('limit', String(filters.limit))
+  }
+
+  const query = params.toString()
+  const response = await request<MessagesResponse>(
+    `/conversations/${conversationId}/messages/search${query ? `?${query}` : ''}`,
+  )
+
+  return response.messages
 }
 
 export async function fetchMessages(conversationId: string) {
@@ -341,6 +408,53 @@ export async function fetchConversationMembers(conversationId: string) {
   return response.members
 }
 
+export async function fetchGroupInvite(conversationId: string) {
+  const response = await request<GroupInviteResponse>(`/conversations/${conversationId}/invite`)
+
+  return response.token
+}
+
+export async function resetGroupInvite(conversationId: string) {
+  const response = await request<GroupInviteResponse>(
+    `/conversations/${conversationId}/invite/reset`,
+    {
+      method: 'POST',
+    },
+  )
+
+  return response.token
+}
+
+export async function requestGroupJoin(token: string) {
+  return request<GroupJoinResponse>(`/conversations/join/${encodeURIComponent(token)}`, {
+    method: 'POST',
+  })
+}
+
+export async function fetchGroupJoinRequests(conversationId: string) {
+  const response = await request<GroupJoinRequestsResponse>(
+    `/conversations/${conversationId}/join-requests`,
+  )
+
+  return response.requests
+}
+
+export async function reviewGroupJoinRequest(
+  conversationId: string,
+  requestId: string,
+  action: 'approve' | 'decline',
+) {
+  const response = await request<ConversationMembersResponse>(
+    `/conversations/${conversationId}/join-requests/${requestId}/review`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ action }),
+    },
+  )
+
+  return response.members
+}
+
 export async function fetchConversationCalls(conversationId: string) {
   const response = await request<ConversationCallsResponse>(
     `/conversations/${conversationId}/calls`,
@@ -409,6 +523,33 @@ export async function updateGroupMemberNickname(
     {
       method: 'PATCH',
       body: JSON.stringify({ nickname }),
+    },
+  )
+
+  return response.members
+}
+
+export async function updateGroupMemberRole(
+  conversationId: string,
+  userId: string,
+  role: 'admin' | 'member',
+) {
+  const response = await request<ConversationMembersResponse>(
+    `/conversations/${conversationId}/members/${userId}/role`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ role }),
+    },
+  )
+
+  return response.members
+}
+
+export async function transferGroupOwner(conversationId: string, userId: string) {
+  const response = await request<ConversationMembersResponse>(
+    `/conversations/${conversationId}/members/${userId}/owner`,
+    {
+      method: 'PATCH',
     },
   )
 

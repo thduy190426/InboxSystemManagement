@@ -18,10 +18,10 @@ async function startServer() {
     ])
 
     server.listen(port, () => {
-      console.log(`API server is running at http://127.0.0.1:${port}`)
+      console.log(`Máy chủ API đang chạy ở cổng http://127.0.0.1:${port}!`)
     })
   } catch (error) {
-    console.error('Unable to start API server!')
+    console.error('Khởi động máy chủ API thất bại!')
     console.error(error)
     process.exit(1)
   }

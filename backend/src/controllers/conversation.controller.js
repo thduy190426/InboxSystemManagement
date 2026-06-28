@@ -12,13 +12,37 @@ const messagePinsTableReady = pool
       id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
       message_id BIGINT UNSIGNED NOT NULL,
       user_id BIGINT UNSIGNED NOT NULL,
+      conversation_id BIGINT UNSIGNED NULL,
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       UNIQUE KEY unique_message_pin (message_id, user_id),
-      INDEX idx_message_pins_user (user_id, created_at)
+      INDEX idx_message_pins_user (user_id, created_at),
+      INDEX idx_message_pins_conversation (conversation_id, created_at)
     )`,
   )
+  .then(async () => {
+    await pool.execute(
+      `ALTER TABLE message_pins
+        ADD COLUMN conversation_id BIGINT UNSIGNED NULL`,
+    ).catch((error) => {
+      if (error && error.code === 'ER_DUP_FIELDNAME') {
+        return
+      }
+
+      throw error
+    })
+    await pool.execute(
+      `ALTER TABLE message_pins
+        ADD INDEX idx_message_pins_conversation (conversation_id, created_at)`,
+    ).catch((error) => {
+      if (error && error.code === 'ER_DUP_KEYNAME') {
+        return
+      }
+
+      throw error
+    })
+  })
   .catch((error) => {
-    console.error('Failed to ensure message_pins table:', error)
+    console.error('Không thể đảm bảo bảng message_pins:', error)
     throw error
   })
 const messageHiddenEntriesTableReady = pool
@@ -33,7 +57,56 @@ const messageHiddenEntriesTableReady = pool
     )`,
   )
   .catch((error) => {
-    console.error('Failed to ensure message_hidden_entries table:', error)
+    console.error('Không thể đảm bảo bảng message_hidden_entries:', error)
+    throw error
+  })
+const messagePollsTablesReady = pool
+  .execute(
+    `ALTER TABLE messages
+      MODIFY type ENUM('text', 'image', 'file', 'audio', 'video', 'system', 'poll') NOT NULL DEFAULT 'text'`,
+  )
+  .catch((error) => {
+    console.error('Không thể đảm bảo loại tin nhắn khảo sát:', error)
+    throw error
+  })
+  .then(async () => {
+    await pool.execute(
+      `CREATE TABLE IF NOT EXISTS message_polls (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        message_id BIGINT UNSIGNED NOT NULL,
+        question VARCHAR(255) NOT NULL,
+        allow_multiple TINYINT(1) NOT NULL DEFAULT 0,
+        is_closed TINYINT(1) NOT NULL DEFAULT 0,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_message_polls_message (message_id)
+      )`,
+    )
+    await pool.execute(
+      `CREATE TABLE IF NOT EXISTS message_poll_options (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        poll_id BIGINT UNSIGNED NOT NULL,
+        option_text VARCHAR(120) NOT NULL,
+        position INT UNSIGNED NOT NULL DEFAULT 0,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_message_poll_options_poll (poll_id, position)
+      )`,
+    )
+    await pool.execute(
+      `CREATE TABLE IF NOT EXISTS message_poll_votes (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        option_id BIGINT UNSIGNED NOT NULL,
+        user_id BIGINT UNSIGNED NOT NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_message_poll_votes_option_user (option_id, user_id),
+        INDEX idx_message_poll_votes_user (user_id, created_at)
+      )`,
+    )
+  })
+  .catch((error) => {
+    console.error('Không thể đảm bảo bảng khảo sát tin nhắn:', error)
     throw error
   })
 const conversationParticipantHiddenAtReady = pool
@@ -46,7 +119,47 @@ const conversationParticipantHiddenAtReady = pool
       return
     }
 
-    console.error('Failed to ensure conversation participant hidden_at column:', error)
+    console.error('Không thể đảm bảo cột hidden_at cho người tham gia cuộc trò chuyện:', error)
+    throw error
+  })
+const groupInviteTokensTableReady = pool
+  .execute(
+    `CREATE TABLE IF NOT EXISTS group_invite_tokens (
+      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+      conversation_id BIGINT UNSIGNED NOT NULL,
+      token CHAR(36) NOT NULL,
+      created_by BIGINT UNSIGNED NOT NULL,
+      revoked_at DATETIME NULL,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_group_invite_tokens_token (token),
+      INDEX idx_group_invite_tokens_conversation (conversation_id, revoked_at)
+    )`,
+  )
+  .catch((error) => {
+    console.error('Không thể đảm bảo bảng group_invite_tokens:', error)
+    throw error
+  })
+const groupJoinRequestsTableReady = pool
+  .execute(
+    `CREATE TABLE IF NOT EXISTS group_join_requests (
+      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+      public_id CHAR(36) NOT NULL,
+      conversation_id BIGINT UNSIGNED NOT NULL,
+      user_id BIGINT UNSIGNED NOT NULL,
+      invite_token_id BIGINT UNSIGNED NULL,
+      status ENUM('pending', 'approved', 'declined') NOT NULL DEFAULT 'pending',
+      reviewed_by BIGINT UNSIGNED NULL,
+      reviewed_at DATETIME NULL,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_group_join_requests_public_id (public_id),
+      UNIQUE KEY uq_group_join_requests_pending (conversation_id, user_id, status),
+      INDEX idx_group_join_requests_conversation (conversation_id, status, created_at)
+    )`,
+  )
+  .catch((error) => {
+    console.error('Không thể đảm bảo bảng group_join_requests:', error)
     throw error
   })
 
@@ -58,8 +171,17 @@ async function ensureMessageHiddenEntriesTable() {
   await messageHiddenEntriesTableReady
 }
 
+async function ensureMessagePollsTables() {
+  await messagePollsTablesReady
+}
+
 async function ensureConversationParticipantHiddenAtColumn() {
   await conversationParticipantHiddenAtReady
+}
+
+async function ensureGroupInviteTables() {
+  await groupInviteTokensTableReady
+  await groupJoinRequestsTableReady
 }
 
 function formatOfflineDuration(lastSeenAt) {
@@ -318,13 +440,43 @@ function mapMessage(
 
 async function findActiveParticipant(connection, conversationId, userId) {
   const [participantRows] = await connection.execute(
-    `SELECT id FROM conversation_participants
+    `SELECT id, role FROM conversation_participants
     WHERE conversation_id = ? AND user_id = ? AND left_at IS NULL
     LIMIT 1`,
     [conversationId, userId],
   )
 
   return participantRows[0]
+}
+
+async function findActiveGroupParticipant(connection, conversationId, userId) {
+  const [participantRows] = await connection.execute(
+    `SELECT conversation_participants.id, conversation_participants.role, conversations.title
+    FROM conversations
+    INNER JOIN conversation_participants
+      ON conversation_participants.conversation_id = conversations.id
+      AND conversation_participants.user_id = ?
+      AND conversation_participants.left_at IS NULL
+    WHERE conversations.id = ?
+      AND conversations.type = 'group'
+      AND conversations.deleted_at IS NULL
+    LIMIT 1`,
+    [userId, conversationId],
+  )
+
+  return participantRows[0]
+}
+
+function canManageGroup(role) {
+  return role === 'owner' || role === 'admin'
+}
+
+function canManageMemberRole(actorRole, targetRole) {
+  if (actorRole === 'owner') {
+    return targetRole !== 'owner'
+  }
+
+  return false
 }
 
 async function emitConversationChanged(connection, conversationId, actorUserId, eventType) {
@@ -344,7 +496,7 @@ async function emitConversationChanged(connection, conversationId, actorUserId, 
       userIds: rows.map((row) => Number(row.user_id)),
     })
   } catch (error) {
-    console.error('Failed to emit conversation realtime event:', error)
+    console.error('Không thể phát ra sự kiện thời gian thực của cuộc trò chuyện:', error)
   }
 }
 
@@ -363,7 +515,7 @@ async function loadConversationPushRecipientIds(connection, conversationId, acto
 
 function pushWebNotificationToUsers(userIds, payload) {
   sendWebPushToUsers(userIds, payload).catch((error) => {
-    console.error('Failed to send web push notification:', error)
+    console.error('Không thể gửi thông báo đẩy trên Web:', error)
   })
 }
 
@@ -484,10 +636,6 @@ async function loadConversationMembers(connection, conversationId, currentUserId
   }))
 }
 
-function getDefaultGroupAvatar() {
-  return 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=160&q=80'
-}
-
 function normalizeNickname(value) {
   if (value === null || value === undefined) {
     return null
@@ -599,10 +747,35 @@ async function loadConversationMessages(
       : 40
   const targetMessageId = Number(options.messageId)
   const hasTargetMessageId = Number.isInteger(targetMessageId) && targetMessageId > 0
+  const aroundMessageId = Number(options.aroundMessageId)
+  const hasAroundMessageId = Number.isInteger(aroundMessageId) && aroundMessageId > 0
   const beforeMessageId = Number(options.beforeMessageId)
   let beforeCreatedAt = null
+  let aroundCreatedAt = null
 
-  if (!hasTargetMessageId && Number.isInteger(beforeMessageId) && beforeMessageId > 0) {
+  if (!hasTargetMessageId && hasAroundMessageId) {
+    const [targetRows] = await connection.execute(
+      `SELECT id, created_at
+      FROM messages
+      WHERE id = ?
+        AND conversation_id = ?
+        AND deleted_at IS NULL
+      LIMIT 1`,
+      [aroundMessageId, conversationId],
+    )
+
+    if (!targetRows[0]) {
+      return {
+        messages: [],
+        hasMore: false,
+        nextCursor: null,
+      }
+    }
+
+    aroundCreatedAt = targetRows[0].created_at
+  }
+
+  if (!hasTargetMessageId && !hasAroundMessageId && Number.isInteger(beforeMessageId) && beforeMessageId > 0) {
     const [cursorRows] = await connection.execute(
       `SELECT id, created_at
       FROM messages
@@ -626,6 +799,11 @@ async function loadConversationMessages(
 
   const messageFilterClause = hasTargetMessageId
     ? 'AND messages.id = ?'
+    : hasAroundMessageId
+      ? `AND (
+        messages.created_at < ?
+        OR (messages.created_at = ? AND messages.id <= ?)
+      )`
     : beforeCreatedAt
       ? `AND (
         messages.created_at < ?
@@ -634,11 +812,12 @@ async function loadConversationMessages(
       : ''
   const messageFilterParams = hasTargetMessageId
     ? [targetMessageId]
+    : hasAroundMessageId
+      ? [aroundCreatedAt, aroundCreatedAt, aroundMessageId]
     : beforeCreatedAt
       ? [beforeCreatedAt, beforeCreatedAt, beforeMessageId]
       : []
   const messageQueryParams = [
-    currentUserId,
     currentUserId,
     conversationId,
     ...messageFilterParams,
@@ -656,7 +835,7 @@ async function loadConversationMessages(
       messages.edited_at,
       messages.created_at,
       messages.updated_at,
-      message_pins.created_at AS pinned_at,
+      MIN(message_pins.created_at) AS pinned_at,
       users.full_name AS sender_name,
       users.avatar_url AS sender_avatar_url,
       parent_messages.sender_id AS parent_sender_id,
@@ -677,7 +856,7 @@ async function loadConversationMessages(
       AND message_receipts.user_id <> messages.sender_id
     LEFT JOIN message_pins
       ON message_pins.message_id = messages.id
-      AND message_pins.user_id = ?
+      AND (message_pins.conversation_id = messages.conversation_id OR message_pins.conversation_id IS NULL)
     LEFT JOIN message_hidden_entries
       ON message_hidden_entries.message_id = messages.id
       AND message_hidden_entries.user_id = ?
@@ -695,7 +874,6 @@ async function loadConversationMessages(
       messages.edited_at,
       messages.created_at,
       messages.updated_at,
-      message_pins.created_at,
       users.full_name,
       users.avatar_url,
       parent_messages.sender_id,
@@ -708,7 +886,7 @@ async function loadConversationMessages(
     messageQueryParams,
   )
 
-  const hasMore = !hasTargetMessageId && messageRows.length > limit
+  const hasMore = !hasTargetMessageId && !hasAroundMessageId && messageRows.length > limit
   const visibleMessageRows = hasMore ? messageRows.slice(0, limit) : messageRows
   visibleMessageRows.reverse()
 
@@ -918,7 +1096,7 @@ async function loadConversationSummary(connection, conversationId, currentUserId
       : row.type === 'support'
         ? 'Đang xử lý hỗ trợ'
         : `${memberCount} thành viên`,
-    avatar: isDirect ? avatar || null : avatar || getDefaultGroupAvatar(),
+    avatar: avatar || null,
     accent: accentColors[0],
     lastMessage: lastMessagePreview.text,
     lastMessageByMe: row.last_message_sender_id === currentUserId,
@@ -1162,7 +1340,7 @@ async function listConversations(request, response, next) {
           : row.type === 'support'
             ? 'Đang xử lý hỗ trợ'
             : `${memberCount} thành viên`,
-        avatar: isDirect ? avatar || null : avatar || getDefaultGroupAvatar(),
+        avatar: avatar || null,
         accent: accentColors[index % accentColors.length],
         lastMessage: lastMessagePreview.text,
         lastMessageByMe: row.last_message_sender_id === currentUserId,
@@ -1286,7 +1464,7 @@ async function createGroupConversation(request, response, next) {
       )
     }
 
-    await createSystemMessage(connection, conversationId, currentUserId, `Đã tạo nhóm ${title}`)
+    await createSystemMessage(connection, conversationId, currentUserId, `Đã tạo nhóm ${title}!`)
 
     const conversation = await loadConversationSummary(connection, conversationId, currentUserId)
 
@@ -1335,6 +1513,563 @@ async function getConversationMembers(request, response, next) {
   }
 }
 
+async function getGroupInvite(request, response, next) {
+  const connection = await pool.getConnection()
+
+  try {
+    await ensureGroupInviteTables()
+    const currentUserId = request.user.id
+    const conversationId = Number(request.params.conversationId)
+
+    if (!Number.isInteger(conversationId)) {
+      return response.status(400).json({
+        message: 'Đường dẫn hội thoại không hợp lệ!',
+      })
+    }
+
+    const participant = await findActiveGroupParticipant(connection, conversationId, currentUserId)
+
+    if (!participant) {
+      return response.status(404).json({
+        message: 'Không tìm thấy nhóm!',
+      })
+    }
+
+    if (!canManageGroup(participant.role)) {
+      return response.status(403).json({
+        message: 'Chỉ Owner hoặc Admin mới có thể tạo liên kết mời!',
+      })
+    }
+
+    const [existingRows] = await connection.execute(
+      `SELECT token
+      FROM group_invite_tokens
+      WHERE conversation_id = ? AND revoked_at IS NULL
+      ORDER BY created_at DESC
+      LIMIT 1`,
+      [conversationId],
+    )
+    const existingToken = existingRows[0]?.token
+
+    if (existingToken) {
+      return response.json({
+        token: existingToken,
+      })
+    }
+
+    const token = randomUUID()
+
+    await connection.execute(
+      `INSERT INTO group_invite_tokens (
+        conversation_id,
+        token,
+        created_by
+      ) VALUES (?, ?, ?)`,
+      [conversationId, token, currentUserId],
+    )
+
+    response.status(201).json({
+      token,
+    })
+  } catch (error) {
+    next(error)
+  } finally {
+    connection.release()
+  }
+}
+
+async function resetGroupInvite(request, response, next) {
+  const connection = await pool.getConnection()
+
+  try {
+    await ensureGroupInviteTables()
+    const currentUserId = request.user.id
+    const conversationId = Number(request.params.conversationId)
+
+    if (!Number.isInteger(conversationId)) {
+      return response.status(400).json({
+        message: 'Đường dẫn hội thoại không hợp lệ!',
+      })
+    }
+
+    const participant = await findActiveGroupParticipant(connection, conversationId, currentUserId)
+
+    if (!participant) {
+      return response.status(404).json({
+        message: 'Không tìm thấy nhóm!',
+      })
+    }
+
+    if (!canManageGroup(participant.role)) {
+      return response.status(403).json({
+        message: 'Chỉ Owner hoặc Admin mới có thể đổi liên kết mời!',
+      })
+    }
+
+    await connection.beginTransaction()
+    await connection.execute(
+      `UPDATE group_invite_tokens
+      SET revoked_at = CURRENT_TIMESTAMP
+      WHERE conversation_id = ? AND revoked_at IS NULL`,
+      [conversationId],
+    )
+
+    const token = randomUUID()
+
+    await connection.execute(
+      `INSERT INTO group_invite_tokens (
+        conversation_id,
+        token,
+        created_by
+      ) VALUES (?, ?, ?)`,
+      [conversationId, token, currentUserId],
+    )
+
+    await connection.commit()
+
+    response.status(201).json({
+      token,
+    })
+  } catch (error) {
+    await connection.rollback()
+    next(error)
+  } finally {
+    connection.release()
+  }
+}
+
+async function requestGroupJoin(request, response, next) {
+  const connection = await pool.getConnection()
+
+  try {
+    await ensureGroupInviteTables()
+    const currentUserId = request.user.id
+    const token = typeof request.params.token === 'string' ? request.params.token.trim() : ''
+
+    if (!token) {
+      return response.status(400).json({
+        message: 'Link mời không hợp lệ!',
+      })
+    }
+
+    await connection.beginTransaction()
+
+    const [inviteRows] = await connection.execute(
+      `SELECT
+        group_invite_tokens.id,
+        group_invite_tokens.conversation_id,
+        conversations.title
+      FROM group_invite_tokens
+      INNER JOIN conversations ON conversations.id = group_invite_tokens.conversation_id
+      WHERE group_invite_tokens.token = ?
+        AND group_invite_tokens.revoked_at IS NULL
+        AND conversations.type = 'group'
+        AND conversations.deleted_at IS NULL
+      LIMIT 1`,
+      [token],
+    )
+    const invite = inviteRows[0]
+
+    if (!invite) {
+      await connection.rollback()
+      return response.status(404).json({
+        message: 'Link mời đã hết hạn hoặc không tồn tại!',
+      })
+    }
+
+    const [memberRows] = await connection.execute(
+      `SELECT role
+      FROM conversation_participants
+      WHERE conversation_id = ?
+        AND user_id = ?
+        AND left_at IS NULL
+      LIMIT 1`,
+      [invite.conversation_id, currentUserId],
+    )
+
+    if (memberRows[0]) {
+      const conversation = await loadConversationSummary(connection, invite.conversation_id, currentUserId)
+      await connection.commit()
+      return response.json({
+        status: 'joined',
+        conversation,
+      })
+    }
+
+    await connection.execute(
+      `INSERT INTO group_join_requests (
+        public_id,
+        conversation_id,
+        user_id,
+        invite_token_id,
+        status
+      ) VALUES (?, ?, ?, ?, 'pending')
+      ON DUPLICATE KEY UPDATE
+        invite_token_id = VALUES(invite_token_id),
+        status = 'pending',
+        reviewed_by = NULL,
+        reviewed_at = NULL,
+        updated_at = CURRENT_TIMESTAMP`,
+      [randomUUID(), invite.conversation_id, currentUserId, invite.id],
+    )
+
+    await connection.commit()
+    await emitConversationChanged(connection, invite.conversation_id, currentUserId, 'group:join:requested')
+
+    response.status(202).json({
+      status: 'pending',
+      message: `Đã gửi yêu cầu tham gia ${invite.title || 'nhóm'}!`,
+    })
+  } catch (error) {
+    await connection.rollback()
+    next(error)
+  } finally {
+    connection.release()
+  }
+}
+
+async function listGroupJoinRequests(request, response, next) {
+  const connection = await pool.getConnection()
+
+  try {
+    await ensureGroupInviteTables()
+    const currentUserId = request.user.id
+    const conversationId = Number(request.params.conversationId)
+
+    if (!Number.isInteger(conversationId)) {
+      return response.status(400).json({
+        message: 'Đường dẫn hội thoại không hợp lệ!',
+      })
+    }
+
+    const participant = await findActiveGroupParticipant(connection, conversationId, currentUserId)
+
+    if (!participant) {
+      return response.status(404).json({
+        message: 'Không tìm thấy nhóm!',
+      })
+    }
+
+    if (!canManageGroup(participant.role)) {
+      return response.status(403).json({
+        message: 'Chỉ Owner hoặc Admin mới có thể xem yêu cầu tham gia!',
+      })
+    }
+
+    const [rows] = await connection.execute(
+      `SELECT
+        group_join_requests.public_id,
+        group_join_requests.created_at,
+        users.public_id AS user_public_id,
+        users.id AS user_id,
+        users.full_name,
+        users.email,
+        users.avatar_url
+      FROM group_join_requests
+      INNER JOIN users ON users.id = group_join_requests.user_id
+      WHERE group_join_requests.conversation_id = ?
+        AND group_join_requests.status = 'pending'
+        AND users.deleted_at IS NULL
+      ORDER BY group_join_requests.created_at ASC`,
+      [conversationId],
+    )
+
+    response.json({
+      requests: rows.map((row) => ({
+        id: row.public_id,
+        user: {
+          id: row.user_public_id,
+          userId: Number(row.user_id),
+          fullName: row.full_name,
+          email: row.email,
+          avatarUrl: row.avatar_url,
+        },
+        createdAt: row.created_at,
+      })),
+    })
+  } catch (error) {
+    next(error)
+  } finally {
+    connection.release()
+  }
+}
+
+async function reviewGroupJoinRequest(request, response, next) {
+  const connection = await pool.getConnection()
+
+  try {
+    await ensureGroupInviteTables()
+    const currentUserId = request.user.id
+    const conversationId = Number(request.params.conversationId)
+    const requestPublicId = request.params.requestId
+    const action = request.body.action === 'approve' ? 'approve' : 'decline'
+
+    if (!Number.isInteger(conversationId) || !requestPublicId) {
+      return response.status(400).json({
+        message: 'Yêu cầu duyệt thành viên không hợp lệ!',
+      })
+    }
+
+    await connection.beginTransaction()
+
+    const participant = await findActiveGroupParticipant(connection, conversationId, currentUserId)
+
+    if (!participant) {
+      await connection.rollback()
+      return response.status(404).json({
+        message: 'Không tìm thấy nhóm!',
+      })
+    }
+
+    if (!canManageGroup(participant.role)) {
+      await connection.rollback()
+      return response.status(403).json({
+        message: 'Chỉ owner hoặc admin mới có thể duyệt thành viên!',
+      })
+    }
+
+    const [joinRequestRows] = await connection.execute(
+      `SELECT
+        group_join_requests.id,
+        group_join_requests.user_id,
+        users.full_name
+      FROM group_join_requests
+      INNER JOIN users ON users.id = group_join_requests.user_id
+      WHERE group_join_requests.public_id = ?
+        AND group_join_requests.conversation_id = ?
+        AND group_join_requests.status = 'pending'
+      LIMIT 1`,
+      [requestPublicId, conversationId],
+    )
+    const joinRequest = joinRequestRows[0]
+
+    if (!joinRequest) {
+      await connection.rollback()
+      return response.status(404).json({
+        message: 'Không tìm thấy yêu cầu đang chờ!',
+      })
+    }
+
+    await connection.execute(
+      `UPDATE group_join_requests
+      SET status = ?,
+        reviewed_by = ?,
+        reviewed_at = CURRENT_TIMESTAMP
+      WHERE id = ?`,
+      [action === 'approve' ? 'approved' : 'declined', currentUserId, joinRequest.id],
+    )
+
+    if (action === 'approve') {
+      await connection.execute(
+        `INSERT INTO conversation_participants (
+          conversation_id,
+          user_id,
+          role,
+          joined_at,
+          left_at,
+          last_read_at
+        ) VALUES (?, ?, 'member', CURRENT_TIMESTAMP, NULL, CURRENT_TIMESTAMP)
+        ON DUPLICATE KEY UPDATE
+          role = IF(role = 'owner', role, 'member'),
+          left_at = NULL,
+          joined_at = CURRENT_TIMESTAMP`,
+        [conversationId, joinRequest.user_id],
+      )
+
+      await createSystemMessage(connection, conversationId, currentUserId, `${joinRequest.full_name} da tham gia nhom`)
+    }
+
+    const members = await loadConversationMembers(connection, conversationId, currentUserId)
+
+    await connection.commit()
+    await emitConversationChanged(connection, conversationId, currentUserId, 'group:join:reviewed')
+
+    response.json({
+      members,
+    })
+  } catch (error) {
+    await connection.rollback()
+    next(error)
+  } finally {
+    connection.release()
+  }
+}
+
+async function updateGroupMemberRole(request, response, next) {
+  const connection = await pool.getConnection()
+
+  try {
+    const currentUserId = request.user.id
+    const conversationId = Number(request.params.conversationId)
+    const targetPublicId = request.params.userId
+    const nextRole = request.body.role === 'admin' ? 'admin' : 'member'
+
+    if (!Number.isInteger(conversationId) || !targetPublicId) {
+      return response.status(400).json({
+        message: 'Yêu cầu cập nhật quyền không hợp lệ!',
+      })
+    }
+
+    await connection.beginTransaction()
+
+    const actor = await findActiveGroupParticipant(connection, conversationId, currentUserId)
+
+    if (!actor) {
+      await connection.rollback()
+      return response.status(404).json({
+        message: 'Không tìm thấy nhóm!',
+      })
+    }
+
+    if (actor.role !== 'owner') {
+      await connection.rollback()
+      return response.status(403).json({
+        message: 'Chỉ Owner mới có thể cập nhật quyền Admin!',
+      })
+    }
+
+    const [targetRows] = await connection.execute(
+      `SELECT users.id, users.full_name, conversation_participants.role
+      FROM users
+      INNER JOIN conversation_participants
+        ON conversation_participants.user_id = users.id
+        AND conversation_participants.conversation_id = ?
+        AND conversation_participants.left_at IS NULL
+      WHERE users.public_id = ?
+      LIMIT 1`,
+      [conversationId, targetPublicId],
+    )
+    const target = targetRows[0]
+
+    if (!target) {
+      await connection.rollback()
+      return response.status(404).json({
+        message: 'Không tìm thấy thành viên trong nhóm!',
+      })
+    }
+
+    if (!canManageMemberRole(actor.role, target.role)) {
+      await connection.rollback()
+      return response.status(403).json({
+        message: 'Không thể thay đổi quyền của Owner!',
+      })
+    }
+
+    await connection.execute(
+      `UPDATE conversation_participants
+      SET role = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE conversation_id = ? AND user_id = ? AND left_at IS NULL`,
+      [nextRole, conversationId, target.id],
+    )
+
+    await createSystemMessage(
+      connection,
+      conversationId,
+      currentUserId,
+      `${target.full_name} đã được ${nextRole === 'admin' ? 'nâng lên Admin' : 'hạ xuống thành viên'}`,
+    )
+
+    const members = await loadConversationMembers(connection, conversationId, currentUserId)
+
+    await connection.commit()
+    await emitConversationChanged(connection, conversationId, currentUserId, 'group:member:role')
+
+    response.json({
+      members,
+    })
+  } catch (error) {
+    await connection.rollback()
+    next(error)
+  } finally {
+    connection.release()
+  }
+}
+
+async function transferGroupOwner(request, response, next) {
+  const connection = await pool.getConnection()
+
+  try {
+    const currentUserId = request.user.id
+    const conversationId = Number(request.params.conversationId)
+    const targetPublicId = request.params.userId
+
+    if (!Number.isInteger(conversationId) || !targetPublicId) {
+      return response.status(400).json({
+        message: 'Yêu cầu chuyển quyền Owner không hợp lệ!',
+      })
+    }
+
+    await connection.beginTransaction()
+
+    const actor = await findActiveGroupParticipant(connection, conversationId, currentUserId)
+
+    if (!actor) {
+      await connection.rollback()
+      return response.status(404).json({
+        message: 'Không tìm thấy nhóm!',
+      })
+    }
+
+    if (actor.role !== 'owner') {
+      await connection.rollback()
+      return response.status(403).json({
+        message: 'Chỉ Owner hiện tại mới có thể chuyển Owner!',
+      })
+    }
+
+    const [targetRows] = await connection.execute(
+      `SELECT users.id, users.full_name
+      FROM users
+      INNER JOIN conversation_participants
+        ON conversation_participants.user_id = users.id
+        AND conversation_participants.conversation_id = ?
+        AND conversation_participants.left_at IS NULL
+      WHERE users.public_id = ?
+        AND users.id <> ?
+      LIMIT 1`,
+      [conversationId, targetPublicId, currentUserId],
+    )
+    const target = targetRows[0]
+
+    if (!target) {
+      await connection.rollback()
+      return response.status(404).json({
+        message: 'Không tìm thấy thành viên nhận Owner!',
+      })
+    }
+
+    await connection.execute(
+      `UPDATE conversation_participants
+      SET role = CASE
+          WHEN user_id = ? THEN 'owner'
+          WHEN user_id = ? THEN 'admin'
+          ELSE role
+        END,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE conversation_id = ?
+        AND user_id IN (?, ?)
+        AND left_at IS NULL`,
+      [target.id, currentUserId, conversationId, target.id, currentUserId],
+    )
+
+    await createSystemMessage(connection, conversationId, currentUserId, `${target.full_name} đã trở thành owner nhóm`)
+    const members = await loadConversationMembers(connection, conversationId, currentUserId)
+
+    await connection.commit()
+    await emitConversationChanged(connection, conversationId, currentUserId, 'group:owner:transferred')
+
+    response.json({
+      members,
+    })
+  } catch (error) {
+    await connection.rollback()
+    next(error)
+  } finally {
+    connection.release()
+  }
+}
+
 async function updateGroupConversation(request, response, next) {
   const connection = await pool.getConnection()
 
@@ -1375,6 +2110,15 @@ async function updateGroupConversation(request, response, next) {
       await connection.rollback()
       return response.status(404).json({
         message: 'Không tìm thấy nhóm!',
+      })
+    }
+
+    const participant = await findActiveGroupParticipant(connection, conversationId, currentUserId)
+
+    if (!canManageGroup(participant?.role)) {
+      await connection.rollback()
+      return response.status(403).json({
+        message: 'Chỉ Owner hoặc Admin mới có thể cập nhật nhóm!',
       })
     }
 
@@ -1456,6 +2200,15 @@ async function addGroupMember(request, response, next) {
       await connection.rollback()
       return response.status(404).json({
         message: 'Không tìm thấy nhóm!',
+      })
+    }
+
+    const participant = await findActiveGroupParticipant(connection, conversationId, currentUserId)
+
+    if (!canManageGroup(participant?.role)) {
+      await connection.rollback()
+      return response.status(403).json({
+        message: 'Chỉ Owner hoặc Admin mới có thể thêm thành viên!',
       })
     }
 
@@ -1547,8 +2300,17 @@ async function removeGroupMember(request, response, next) {
       })
     }
 
+    const participant = await findActiveGroupParticipant(connection, conversationId, currentUserId)
+
+    if (!canManageGroup(participant?.role)) {
+      await connection.rollback()
+      return response.status(403).json({
+        message: 'Chỉ Owner hoặc Admin mới có thể xoá thành viên!',
+      })
+    }
+
     const [targetRows] = await connection.execute(
-      `SELECT users.id, users.full_name
+      `SELECT users.id, users.full_name, conversation_participants.role
       FROM users
       INNER JOIN conversation_participants
         ON conversation_participants.user_id = users.id
@@ -1564,6 +2326,20 @@ async function removeGroupMember(request, response, next) {
       await connection.rollback()
       return response.status(404).json({
         message: 'Không tìm thấy thành viên trong nhóm!',
+      })
+    }
+
+    if (targetUser.id === currentUserId || targetUser.role === 'owner') {
+      await connection.rollback()
+      return response.status(403).json({
+        message: 'Không thể xóa Owner hoặc chính bạn khỏi nhóm!',
+      })
+    }
+
+    if (participant.role === 'admin' && targetUser.role !== 'member') {
+      await connection.rollback()
+      return response.status(403).json({
+        message: 'Admin chỉ có thể xóa thành viên thường!',
       })
     }
 
@@ -1846,12 +2622,183 @@ async function getMessages(request, response, next) {
     }
 
     const messagePage = await loadConversationMessages(connection, conversationId, currentUserId, {
+      aroundMessageId: request.query.around,
       beforeMessageId: request.query.before,
       limit: request.query.limit,
     })
 
     response.json({
       ...messagePage,
+    })
+  } catch (error) {
+    next(error)
+  } finally {
+    connection.release()
+  }
+}
+
+async function searchConversationMessages(request, response, next) {
+  const connection = await pool.getConnection()
+
+  try {
+    await ensureMessagePinsTable()
+    await ensureMessageHiddenEntriesTable()
+    const currentUserId = request.user.id
+    const conversationId = Number(request.params.conversationId)
+
+    if (!Number.isInteger(conversationId)) {
+      return response.status(400).json({
+        message: 'Đường dẫn hội thoại không hợp lệ!',
+      })
+    }
+
+    const participant = await findActiveParticipant(connection, conversationId, currentUserId)
+
+    if (!participant) {
+      return response.status(404).json({
+        message: 'Không tìm thấy hội thoại!',
+      })
+    }
+
+    const rawQuery = typeof request.query.q === 'string' ? request.query.q.trim() : ''
+    const senderId = Number(request.query.senderId)
+    const hasSenderId = Number.isInteger(senderId) && senderId > 0
+    const type = typeof request.query.type === 'string' ? request.query.type : 'all'
+    const dateFrom = typeof request.query.dateFrom === 'string' ? request.query.dateFrom : ''
+    const dateTo = typeof request.query.dateTo === 'string' ? request.query.dateTo : ''
+    const requestedLimit = Number(request.query.limit)
+    const limit =
+      Number.isInteger(requestedLimit) && requestedLimit > 0
+        ? Math.min(requestedLimit, 50)
+        : 30
+
+    const filters = [
+      'messages.conversation_id = ?',
+      'messages.deleted_at IS NULL',
+      'message_hidden_entries.id IS NULL',
+    ]
+    const params = [currentUserId, conversationId]
+
+    if (rawQuery) {
+      filters.push(`(
+        messages.body LIKE ?
+        OR message_attachments.original_name LIKE ?
+      )`)
+      params.push(`%${rawQuery}%`, `%${rawQuery}%`)
+    }
+
+    if (hasSenderId) {
+      filters.push('messages.sender_id = ?')
+      params.push(senderId)
+    }
+
+    if (type === 'text') {
+      filters.push("messages.type = 'text'")
+    } else if (type === 'image') {
+      filters.push("messages.type = 'image'")
+    } else if (type === 'audio') {
+      filters.push("messages.type = 'audio'")
+    } else if (type === 'attachment') {
+      filters.push("messages.type IN ('image', 'audio', 'file', 'video')")
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateFrom)) {
+      filters.push('messages.created_at >= ?')
+      params.push(`${dateFrom} 00:00:00`)
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateTo)) {
+      filters.push('messages.created_at <= ?')
+      params.push(`${dateTo} 23:59:59`)
+    }
+
+    const [messageRows] = await connection.execute(
+      `SELECT
+        messages.id,
+        messages.parent_message_id,
+        messages.sender_id,
+        messages.type,
+        messages.body,
+        messages.status,
+        messages.edited_at,
+        messages.created_at,
+        messages.updated_at,
+        MIN(message_pins.created_at) AS pinned_at,
+        users.full_name AS sender_name,
+        users.avatar_url AS sender_avatar_url,
+        parent_messages.sender_id AS parent_sender_id,
+        parent_messages.type AS parent_type,
+        parent_messages.body AS parent_body,
+        parent_messages.deleted_at AS parent_deleted_at,
+        parent_users.full_name AS parent_sender_name,
+        MAX(message_receipts.delivered_at) AS latest_delivered_at,
+        MAX(message_receipts.read_at) AS latest_read_at
+      FROM messages
+      INNER JOIN users ON users.id = messages.sender_id
+      LEFT JOIN messages AS parent_messages
+        ON parent_messages.id = messages.parent_message_id
+        AND parent_messages.conversation_id = messages.conversation_id
+      LEFT JOIN users AS parent_users ON parent_users.id = parent_messages.sender_id
+      LEFT JOIN message_attachments ON message_attachments.message_id = messages.id
+      LEFT JOIN message_receipts
+        ON message_receipts.message_id = messages.id
+        AND message_receipts.user_id <> messages.sender_id
+      LEFT JOIN message_pins
+        ON message_pins.message_id = messages.id
+        AND (message_pins.conversation_id = messages.conversation_id OR message_pins.conversation_id IS NULL)
+      LEFT JOIN message_hidden_entries
+        ON message_hidden_entries.message_id = messages.id
+        AND message_hidden_entries.user_id = ?
+      WHERE ${filters.join('\n        AND ')}
+      GROUP BY
+        messages.id,
+        messages.parent_message_id,
+        messages.sender_id,
+        messages.type,
+        messages.body,
+        messages.status,
+        messages.edited_at,
+        messages.created_at,
+        messages.updated_at,
+        users.full_name,
+        users.avatar_url,
+        parent_messages.sender_id,
+        parent_messages.type,
+        parent_messages.body,
+        parent_messages.deleted_at,
+        parent_users.full_name
+      ORDER BY messages.created_at DESC, messages.id DESC
+      LIMIT ${limit}`,
+      params,
+    )
+
+    const messageIds = messageRows.map((row) => row.id)
+    let attachmentRows = []
+
+    if (messageIds.length > 0) {
+      const placeholders = messageIds.map(() => '?').join(',')
+      ;[attachmentRows] = await connection.execute(
+        `SELECT
+          message_id,
+          original_name,
+          mime_type,
+          file_size_bytes,
+          storage_url
+        FROM message_attachments
+        WHERE message_id IN (${placeholders})
+        ORDER BY created_at ASC`,
+        messageIds,
+      )
+    }
+
+    const attachmentsByMessage = attachmentRows.reduce((result, row) => {
+      result[row.message_id] = result[row.message_id] || []
+      result[row.message_id].push(mapAttachment(row))
+      return result
+    }, {})
+
+    response.json({
+      messages: messageRows.map((row) => mapMessage(row, currentUserId, attachmentsByMessage)),
     })
   } catch (error) {
     next(error)
@@ -2261,11 +3208,7 @@ async function createAttachmentMessage(request, response, next) {
 
     const normalizedFilename = request.file.cloudinary?.publicId || request.file.originalname
     const storageUrl = request.file.cloudinary?.secureUrl || request.file.cloudinary?.url
-    const messageType = request.file.mimetype.startsWith('image/')
-      ? 'image'
-      : request.file.mimetype.startsWith('audio/')
-        ? 'audio'
-        : 'file'
+    const messageType = request.file.mimetype.startsWith('audio/') ? 'audio' : 'image'
     const body = request.file.originalname
 
     const [result] = await connection.execute(
@@ -2638,22 +3581,24 @@ async function toggleMessagePin(request, response, next) {
 
     const [existingRows] = await connection.execute(
       `SELECT id FROM message_pins
-      WHERE message_id = ? AND user_id = ?
+      WHERE message_id = ?
+        AND (conversation_id = ? OR conversation_id IS NULL)
       LIMIT 1`,
-      [messageId, currentUserId],
+      [messageId, conversationId],
     )
 
     if (existingRows[0]) {
       await connection.execute(
         `DELETE FROM message_pins
-        WHERE message_id = ? AND user_id = ?`,
-        [messageId, currentUserId],
+        WHERE message_id = ?
+          AND (conversation_id = ? OR conversation_id IS NULL)`,
+        [messageId, conversationId],
       )
     } else {
       await connection.execute(
-        `INSERT INTO message_pins (message_id, user_id)
-        VALUES (?, ?)`,
-        [messageId, currentUserId],
+        `INSERT INTO message_pins (message_id, user_id, conversation_id)
+        VALUES (?, ?, ?)`,
+        [messageId, currentUserId, conversationId],
       )
     }
 
@@ -2663,7 +3608,7 @@ async function toggleMessagePin(request, response, next) {
     const message = messages.find((item) => item.id === String(messageId))
 
     await connection.commit()
-    emitToUsers([currentUserId], 'conversation:changed', {
+    emitToConversation(conversationId, 'conversation:changed', {
       conversationId: String(conversationId),
       actorUserId: String(currentUserId),
       eventType: 'message:pinned',
@@ -3308,23 +4253,31 @@ module.exports = {
   disbandGroupConversation,
   forwardMessage,
   getConversationMembers,
+  getGroupInvite,
   getMessages,
   getTypingStatus,
   hideConversation,
   leaveGroupConversation,
   listConversationCalls,
+  listGroupJoinRequests,
   listConversations,
   markConversationDelivered,
   markConversationRead,
+  requestGroupJoin,
+  resetGroupInvite,
   removeMessageReaction,
   recallMessage,
   removeGroupMember,
+  reviewGroupJoinRequest,
+  searchConversationMessages,
   toggleMessageReaction,
   toggleMessagePin,
+  transferGroupOwner,
   unarchiveConversation,
   updateConversationSettings,
   updateGroupConversation,
   updateGroupMemberNickname,
+  updateGroupMemberRole,
   updateTypingStatus,
   updateMessage,
 }

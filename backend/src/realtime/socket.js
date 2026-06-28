@@ -9,7 +9,7 @@ const activeCallTimers = new Map()
 
 function pushWebNotificationToUsers(userIds, payload) {
   sendWebPushToUsers(userIds, payload).catch((error) => {
-    console.error('Failed to send web push notification:', error)
+    console.error('Không thể gửi thông báo đẩy trên Web:', error)
   })
 }
 
@@ -124,6 +124,30 @@ async function loadCall(connection, callId) {
   )
 
   return rows[0]
+}
+
+async function loadActiveCallParticipants(connection, callLogId) {
+  const [rows] = await connection.execute(
+    `SELECT
+      users.id,
+      users.public_id,
+      users.full_name,
+      users.avatar_url
+    FROM call_participants
+    INNER JOIN users ON users.id = call_participants.user_id
+    WHERE call_participants.call_log_id = ?
+      AND call_participants.status = 'joined'
+      AND users.is_active = 1
+      AND users.deleted_at IS NULL`,
+    [callLogId],
+  )
+
+  return rows.map((row) => ({
+    id: String(row.public_id),
+    userId: Number(row.id),
+    fullName: row.full_name,
+    avatarUrl: row.avatar_url || null,
+  }))
 }
 
 function formatDateTime(value) {
@@ -243,6 +267,7 @@ async function emitCallChanged(connection, call, eventName, extraPayload = {}) {
       avatarUrl: call.caller_avatar_url || null,
     },
     participants: conversationPayload.participants,
+    activeParticipants: await loadActiveCallParticipants(connection, call.id),
     ...extraPayload,
   }
 
@@ -308,7 +333,7 @@ function scheduleMissedCall(callId) {
         })
       } catch (error) {
         await connection.rollback()
-        console.error('Failed to mark missed call:', error)
+        console.error('Không đánh dấu cuộc gọi nhỡ:', error)
       } finally {
         connection.release()
         activeCallTimers.delete(callId)
@@ -458,6 +483,9 @@ function initRealtime(server, corsOrigin) {
             avatarUrl: null,
           },
           participants: conversationPayload.participants,
+          activeParticipants: conversationPayload.participants.filter(
+            (participant) => participant.userId === Number(socket.user.id),
+          ),
         }
 
         socket.emit('call:ringing', callPayload)
@@ -477,7 +505,7 @@ function initRealtime(server, corsOrigin) {
         ack?.({ ok: true, call: callPayload })
       } catch (error) {
         await connection.rollback()
-        console.error('Failed to start call:', error)
+        console.error('Không thể bắt đầu cuộc gọi:', error)
         ack?.({ ok: false, message: 'Không thể bắt đầu cuộc gọi!' })
       } finally {
         connection.release()
@@ -493,7 +521,7 @@ function initRealtime(server, corsOrigin) {
         await connection.beginTransaction()
         const call = await loadCall(connection, callId)
 
-        if (!call || call.status !== 'ringing') {
+        if (!call || !['ringing', 'ongoing'].includes(call.status)) {
           await connection.rollback()
           ack?.({ ok: false, message: 'Cuộc gọi không khả dụng!' })
           return
@@ -511,12 +539,14 @@ function initRealtime(server, corsOrigin) {
           return
         }
 
-        await connection.execute(
-          `UPDATE call_logs
-          SET status = 'ongoing'
-          WHERE id = ?`,
-          [call.id],
-        )
+        if (call.status === 'ringing') {
+          await connection.execute(
+            `UPDATE call_logs
+            SET status = 'ongoing'
+            WHERE id = ?`,
+            [call.id],
+          )
+        }
         await connection.execute(
           `UPDATE call_participants
           SET status = 'joined', joined_at = COALESCE(joined_at, CURRENT_TIMESTAMP)
@@ -536,12 +566,13 @@ function initRealtime(server, corsOrigin) {
             id: String(socket.user.public_id),
             userId: Number(socket.user.id),
             fullName: socket.user.full_name,
+            avatarUrl: socket.user.avatar_url || null,
           },
         })
         ack?.({ ok: true })
       } catch (error) {
         await connection.rollback()
-        console.error('Failed to accept call:', error)
+        console.error('Không thể nhận cuộc gọi:', error)
         ack?.({ ok: false, message: 'Không thể nhận cuộc gọi!' })
       } finally {
         connection.release()
@@ -571,6 +602,36 @@ function initRealtime(server, corsOrigin) {
           await connection.rollback()
           ack?.({ ok: false })
           return
+        }
+
+        if (call.status === 'ongoing' && status === 'completed') {
+          await connection.execute(
+            `UPDATE call_participants
+            SET status = ?, left_at = CURRENT_TIMESTAMP
+            WHERE call_log_id = ? AND user_id = ?`,
+            [participantStatus, call.id, socket.user.id],
+          )
+
+          const activeParticipants = await loadActiveCallParticipants(connection, call.id)
+
+          if (activeParticipants.length >= 2) {
+            const updatedCall = {
+              ...call,
+              status: 'ongoing',
+            }
+
+            await connection.commit()
+            await emitCallChanged(connection, updatedCall, 'call:left', {
+              leftBy: {
+                id: String(socket.user.public_id),
+                userId: Number(socket.user.id),
+                fullName: socket.user.full_name,
+                avatarUrl: socket.user.avatar_url || null,
+              },
+            })
+            ack?.({ ok: true })
+            return
+          }
         }
 
         const nextStatus = call.status === 'ongoing' && status === 'cancelled' ? 'completed' : status
@@ -625,7 +686,7 @@ function initRealtime(server, corsOrigin) {
         ack?.({ ok: true })
       } catch (error) {
         await connection.rollback()
-        console.error('Failed to finish call:', error)
+        console.error('Không thể hoàn thành cuộc gọi:', error)
         ack?.({ ok: false })
       } finally {
         connection.release()
@@ -665,18 +726,27 @@ function initRealtime(server, corsOrigin) {
           return
         }
 
-        socket.to(getConversationRoom(call.conversation_id)).emit('call:signal', {
+        const signalPayload = {
           callId,
           conversationId: String(call.conversation_id),
+          toUserId: Number(payload.toUserId) || undefined,
           from: {
             id: String(socket.user.public_id),
             userId: Number(socket.user.id),
             fullName: socket.user.full_name,
+            avatarUrl: socket.user.avatar_url || null,
           },
           data: payload.data,
-        })
+        }
+
+        if (signalPayload.toUserId) {
+          io.to(getUserRoom(signalPayload.toUserId)).emit('call:signal', signalPayload)
+          return
+        }
+
+        socket.to(getConversationRoom(call.conversation_id)).emit('call:signal', signalPayload)
       } catch (error) {
-        console.error('Failed to relay call signal:', error)
+        console.error('Không thể chuyển tiếp tín hiệu cuộc gọi:', error)
       } finally {
         connection.release()
       }
@@ -709,3 +779,4 @@ module.exports = {
   emitToUsers,
   initRealtime,
 }
+

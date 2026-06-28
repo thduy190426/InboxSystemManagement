@@ -28,8 +28,6 @@ async function sendPasswordResetCode({ email, fullName, code }) {
       error.statusCode = 503
       throw error
     }
-
-    console.info(`Password reset code for ${email}: ${code}`)
     return {
       skipped: true,
     }

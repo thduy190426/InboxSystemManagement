@@ -87,6 +87,9 @@ export type CallSession = {
   direction: 'incoming' | 'outgoing'
   caller: CallParticipant
   participants: CallParticipant[]
+  activeParticipants?: CallParticipant[]
+  acceptedBy?: CallParticipant
+  leftBy?: CallParticipant
 }
 
 export type CallHistoryItem = {
@@ -176,6 +179,18 @@ export type ConversationMember = {
   joinedAt: string
   createdAt?: string
   updatedAt?: string
+}
+
+export type GroupJoinRequest = {
+  id: string
+  user: {
+    id: string
+    userId: number
+    fullName: string
+    email: string
+    avatarUrl: string | null
+  }
+  createdAt: string
 }
 
 export type ContactUser = {

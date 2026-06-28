@@ -19,6 +19,8 @@ import {
   fetchConversations,
   fetchConversationCalls,
   fetchConversationMembers,
+  fetchGroupInvite,
+  fetchGroupJoinRequests,
   fetchMessagesPage,
   fetchTypingStatus,
   forwardMessage,
@@ -29,16 +31,23 @@ import {
   recallMessage,
   removeGroupMember,
   removeMessageReaction,
+  requestGroupJoin,
+  resetGroupInvite,
+  reviewGroupJoinRequest,
+  searchConversationMessages,
   sendMessage,
   toggleMessageReaction,
   toggleMessagePin,
+  transferGroupOwner,
   unarchiveConversation,
   uploadMessageAttachment,
   updateConversationSettings,
   updateGroupConversation,
   updateGroupMemberNickname,
+  updateGroupMemberRole,
   updateTypingStatus,
   updateMessage,
+  type MessageSearchFilters,
 } from '../services/chatApi'
 import {
   blockContact,
@@ -47,7 +56,7 @@ import {
   unblockContact,
   updateContactNickname,
 } from '../services/contactApi'
-import { startRealtimeCall } from '../services/callRealtime'
+import { startRealtimeCall, type CallSignalPayload } from '../services/callRealtime'
 import {
   fetchNotifications,
   markAllNotificationsRead,
@@ -63,6 +72,7 @@ import type {
   ContactUser,
   Conversation,
   ConversationMember,
+  GroupJoinRequest,
   Message,
 } from '../types'
 import { CallOverlay } from './CallOverlay'
@@ -98,8 +108,17 @@ type MessagePaginationState = {
 }
 
 const SIDEBAR_STATE_KEY = 'sidebar_is_open'
+const OFFLINE_MESSAGE_QUEUE_KEY = 'offline_message_queue'
 const COMPACT_LAYOUT_MEDIA_QUERY = '(max-width: 1024px)'
 const MESSAGE_PAGE_LIMIT = 40
+
+type QueuedMessage = {
+  conversationId: string
+  message: Message
+  parentMessageId: string | null
+  userId: string
+  updatedAt: string
+}
 
 function mergeLatestMessages(existingMessages: Message[], incomingMessages: Message[]) {
   const incomingById = new Map(incomingMessages.map((message) => [message.id, message]))
@@ -123,6 +142,59 @@ function getInitialSidebarState() {
 
 function getInitialCompactLayoutState() {
   return typeof window !== 'undefined' && window.matchMedia(COMPACT_LAYOUT_MEDIA_QUERY).matches
+}
+
+function readOfflineMessageQueue() {
+  try {
+    const rawQueue = localStorage.getItem(OFFLINE_MESSAGE_QUEUE_KEY)
+
+    if (!rawQueue) {
+      return []
+    }
+
+    const queue = JSON.parse(rawQueue)
+
+    return Array.isArray(queue) ? (queue as QueuedMessage[]) : []
+  } catch {
+    return []
+  }
+}
+
+function writeOfflineMessageQueue(queue: QueuedMessage[]) {
+  localStorage.setItem(OFFLINE_MESSAGE_QUEUE_KEY, JSON.stringify(queue))
+}
+
+function getQueuedMessagesForUser(userId: string) {
+  if (!userId) {
+    return []
+  }
+
+  return readOfflineMessageQueue().filter((item) => item.userId === userId)
+}
+
+function upsertQueuedMessage(item: QueuedMessage) {
+  const queue = readOfflineMessageQueue()
+  const nextQueue = [
+    ...queue.filter((queuedItem) => queuedItem.message.id !== item.message.id),
+    item,
+  ]
+
+  writeOfflineMessageQueue(nextQueue)
+}
+
+function removeQueuedMessage(messageId: string) {
+  writeOfflineMessageQueue(
+    readOfflineMessageQueue().filter((queuedItem) => queuedItem.message.id !== messageId),
+  )
+}
+
+function mergeQueuedMessages(existingMessages: Message[], queuedMessages: Message[]) {
+  const queuedById = new Map(queuedMessages.map((message) => [message.id, message]))
+  const mergedMessages = existingMessages.map((message) => queuedById.get(message.id) ?? message)
+  const existingIds = new Set(existingMessages.map((message) => message.id))
+  const missingQueuedMessages = queuedMessages.filter((message) => !existingIds.has(message.id))
+
+  return [...mergedMessages, ...missingQueuedMessages]
 }
 
 function getAttachmentPreview(message?: Message) {
@@ -169,11 +241,14 @@ export function ChatApp({
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [archivedConversations, setArchivedConversations] = useState<Conversation[]>([])
   const [friends, setFriends] = useState<ContactUser[]>([])
+  const [profileContactToOpen, setProfileContactToOpen] = useState<ContactUser | null>(null)
   const [friendRequests, setFriendRequests] = useState<ContactUser[]>([])
   const [notifications, setNotifications] = useState<AppNotification[]>([])
   const [browserNotificationPermission, setBrowserNotificationPermission] =
     useState<BrowserNotificationPermission>(() => getBrowserNotificationPermission())
   const [membersByConversation, setMembersByConversation] = useState<Record<string, ConversationMember[]>>({})
+  const [groupInviteTokensByConversation, setGroupInviteTokensByConversation] = useState<Record<string, string>>({})
+  const [groupJoinRequestsByConversation, setGroupJoinRequestsByConversation] = useState<Record<string, GroupJoinRequest[]>>({})
   const [messagesByConversation, setMessagesByConversation] = useState<Record<string, Message[]>>(
     {},
   )
@@ -206,6 +281,8 @@ export function ChatApp({
   const notifiedNotificationIdsRef = useRef(new Set<string>())
   const recentBrowserNotificationKeysRef = useRef(new Set<string>())
   const hasSyncedWebPushRef = useRef(false)
+  const isFlushingOfflineQueueRef = useRef(false)
+  const hasHandledGroupInviteRef = useRef(false)
 
   useEffect(() => {
     activeIdRef.current = activeId
@@ -222,6 +299,27 @@ export function ChatApp({
 
   useEffect(() => {
     currentUserIdRef.current = currentUser?.id ?? ''
+  }, [currentUser?.id])
+
+  useEffect(() => {
+    const queuedMessages = getQueuedMessagesForUser(currentUser?.id ?? '')
+
+    if (queuedMessages.length === 0) {
+      return
+    }
+
+    setMessagesByConversation((current) => {
+      const nextMessagesByConversation = { ...current }
+
+      queuedMessages.forEach((queuedItem) => {
+        nextMessagesByConversation[queuedItem.conversationId] = mergeQueuedMessages(
+          nextMessagesByConversation[queuedItem.conversationId] ?? [],
+          [{ ...queuedItem.message, state: 'failed' }],
+        )
+      })
+
+      return nextMessagesByConversation
+    })
   }, [currentUser?.id])
 
   useEffect(() => {
@@ -287,6 +385,118 @@ export function ChatApp({
     },
     [dismissToast],
   )
+
+  useEffect(() => {
+    if (hasHandledGroupInviteRef.current) {
+      return
+    }
+
+    const token = new URLSearchParams(window.location.search).get('join')
+
+    if (!token) {
+      return
+    }
+
+    hasHandledGroupInviteRef.current = true
+
+    requestGroupJoin(token)
+      .then((response) => {
+        const nextPath = response.conversation
+          ? toAppPath({ view: 'chat', conversationId: response.conversation.id })
+          : toAppPath({ view: 'chat' })
+
+        const joinedConversation = response.conversation
+
+        if (joinedConversation) {
+          setConversations((current) => {
+            const withoutConversation = current.filter(
+              (conversation) => conversation.id !== joinedConversation.id,
+            )
+
+            return [joinedConversation, ...withoutConversation]
+          })
+          setActiveId(joinedConversation.id)
+        }
+
+        window.history.replaceState(null, '', nextPath)
+        pushToast(response.message || 'Da gui yeu cau tham gia nhom.', 'info')
+      })
+      .catch((error) => {
+        window.history.replaceState(null, '', toAppPath({ view: 'chat' }))
+        pushToast(getErrorMessage(error, 'Khong the mo link moi nhom!'))
+      })
+  }, [pushToast])
+
+  const flushOfflineMessageQueue = useCallback(async () => {
+    if (isFlushingOfflineQueueRef.current || !navigator.onLine) {
+      return
+    }
+
+    const queuedMessages = getQueuedMessagesForUser(currentUserIdRef.current)
+
+    if (queuedMessages.length === 0) {
+      return
+    }
+
+    isFlushingOfflineQueueRef.current = true
+
+    try {
+      for (const queuedItem of queuedMessages) {
+        try {
+          setMessagesByConversation((current) => ({
+            ...current,
+            [queuedItem.conversationId]: (current[queuedItem.conversationId] ?? []).map((message) =>
+              message.id === queuedItem.message.id ? { ...message, state: 'sending' } : message,
+            ),
+          }))
+
+          const createdMessage = await sendMessage(
+            queuedItem.conversationId,
+            queuedItem.message.text,
+            queuedItem.parentMessageId,
+          )
+
+          removeQueuedMessage(queuedItem.message.id)
+          setMessagesByConversation((current) => ({
+            ...current,
+            [queuedItem.conversationId]: (current[queuedItem.conversationId] ?? []).map((message) =>
+              message.id === queuedItem.message.id ? createdMessage : message,
+            ),
+          }))
+        } catch {
+          setMessagesByConversation((current) => ({
+            ...current,
+            [queuedItem.conversationId]: (current[queuedItem.conversationId] ?? []).map((message) =>
+              message.id === queuedItem.message.id ? { ...message, state: 'failed' } : message,
+            ),
+          }))
+          break
+        }
+      }
+    } finally {
+      isFlushingOfflineQueueRef.current = false
+    }
+  }, [])
+
+  useEffect(() => {
+    flushOfflineMessageQueue().catch(() => undefined)
+
+    function handleOnline() {
+      flushOfflineMessageQueue()
+        .then(() => {
+          if (getQueuedMessagesForUser(currentUserIdRef.current).length === 0) {
+            pushToast('Tin nhắn offline đã được gửi lại.', 'info')
+          }
+        })
+        .catch(() => undefined)
+    }
+
+    window.addEventListener('online', handleOnline)
+
+    return () => {
+      window.removeEventListener('online', handleOnline)
+    }
+  }, [flushOfflineMessageQueue, pushToast])
 
   const setErrorMessage = useCallback(
     (message: string) => {
@@ -683,14 +893,14 @@ export function ChatApp({
       loadCallHistory(payload.conversationId).catch(() => undefined)
     }
 
-    function handleCallSignal(payload: { callId?: string; data?: RTCSessionDescriptionInit | RTCIceCandidateInit }) {
+    function handleCallSignal(payload: Partial<CallSignalPayload>) {
       if (!payload.callId || !payload.data) {
         return
       }
 
       window.dispatchEvent(
         new CustomEvent(`call-signal:${payload.callId}`, {
-          detail: payload.data,
+          detail: payload,
         }),
       )
     }
@@ -706,6 +916,7 @@ export function ChatApp({
     realtimeSocket.on('call:missed', handleFinishedCall)
     realtimeSocket.on('call:cancelled', handleFinishedCall)
     realtimeSocket.on('call:completed', handleFinishedCall)
+    realtimeSocket.on('call:left', handleAcceptedCall)
     realtimeSocket.on('call:signal', handleCallSignal)
 
     return () => {
@@ -720,6 +931,7 @@ export function ChatApp({
       realtimeSocket.off('call:missed', handleFinishedCall)
       realtimeSocket.off('call:cancelled', handleFinishedCall)
       realtimeSocket.off('call:completed', handleFinishedCall)
+      realtimeSocket.off('call:left', handleAcceptedCall)
       realtimeSocket.off('call:signal', handleCallSignal)
     }
   }, [])
@@ -828,7 +1040,7 @@ export function ChatApp({
   }, [activeId, activeView, conversations])
 
   useEffect(() => {
-    if (!activeId || messagesByConversation[activeId]) {
+    if (!activeId || messagePaginationByConversation[activeId]) {
       return
     }
 
@@ -839,9 +1051,13 @@ export function ChatApp({
         const messagePage = await fetchMessagesPage(activeId, { limit: MESSAGE_PAGE_LIMIT })
 
         if (isMounted) {
+          const queuedMessages = getQueuedMessagesForUser(currentUserIdRef.current)
+            .filter((queuedItem) => queuedItem.conversationId === activeId)
+            .map((queuedItem) => ({ ...queuedItem.message, state: 'failed' as const }))
+
           setMessagesByConversation((current) => ({
             ...current,
-            [activeId]: messagePage.messages,
+            [activeId]: mergeQueuedMessages(messagePage.messages, queuedMessages),
           }))
           setMessagePaginationByConversation((current) => ({
             ...current,
@@ -868,7 +1084,7 @@ export function ChatApp({
     return () => {
       isMounted = false
     }
-  }, [activeId, messagesByConversation, syncDeliveredReceipts])
+  }, [activeId, messagePaginationByConversation, syncDeliveredReceipts])
 
   const activeConversation = conversations.find((conversation) => conversation.id === activeId)
   const messages = activeId ? messagesByConversation[activeId] ?? [] : []
@@ -877,6 +1093,46 @@ export function ChatApp({
   const isLoadingOlderMessages = Boolean(activeMessagePagination?.isLoadingOlder)
   const pinnedMessages = messages.filter((message) => message.isPinned)
   const activeMembers = activeId ? membersByConversation[activeId] ?? [] : []
+  const activeGroupInviteToken = activeId ? groupInviteTokensByConversation[activeId] || '' : ''
+  const activeGroupJoinRequests = activeId ? groupJoinRequestsByConversation[activeId] ?? [] : []
+  const activeMemberRole =
+    activeMembers.find((member) => member.id === currentUser?.id)?.role || 'member'
+  const canManageActiveGroup = activeMemberRole === 'owner' || activeMemberRole === 'admin'
+
+  function getContactProfileFromConversation(conversation: Conversation): ContactUser | null {
+    if (conversation.type !== 'direct') {
+      return null
+    }
+
+    const friend = friends.find((item) => {
+      if (conversation.contactId && item.contactId === conversation.contactId) {
+        return true
+      }
+
+      return item.fullName === conversation.name || item.nickname === conversation.name
+    })
+
+    if (friend) {
+      return friend
+    }
+
+    return {
+      id: conversation.contactId || conversation.id,
+      userId: Number(conversation.contactId || 0),
+      fullName: conversation.name,
+      email: '',
+      phone: null,
+      avatarUrl: conversation.avatar,
+      bio: null,
+      statusMessage: conversation.status || null,
+      presence: conversation.presence,
+      friendshipStatus: conversation.friendshipStatus || 'accepted',
+      requestDirection: null,
+      nickname: conversation.nickname,
+      contactId: conversation.contactId,
+      onlineSince: conversation.onlineSince,
+    }
+  }
 
   async function handleLoadOlderMessages() {
     if (!activeId || !activeMessagePagination?.hasMore || activeMessagePagination.isLoadingOlder) {
@@ -925,6 +1181,35 @@ export function ChatApp({
     }
   }
 
+  async function handleSearchMessages(filters: MessageSearchFilters) {
+    if (!activeConversation) {
+      return []
+    }
+
+    return searchConversationMessages(activeConversation.id, filters)
+  }
+
+  async function handleJumpToMessage(messageId: string) {
+    if (!activeConversation) {
+      return
+    }
+
+    const messagePage = await fetchMessagesPage(activeConversation.id, {
+      around: messageId,
+      limit: MESSAGE_PAGE_LIMIT,
+    })
+
+    setMessagesByConversation((current) => ({
+      ...current,
+      [activeConversation.id]: mergeLatestMessages(
+        current[activeConversation.id] ?? [],
+        messagePage.messages,
+      ).sort((left, right) => Number(left.id) - Number(right.id)),
+    }))
+    setFocusedMessageId(messageId)
+    window.setTimeout(() => setFocusedMessageId(''), 1600)
+  }
+
   useEffect(() => {
     if (!activeConversation || activeConversation.type !== 'group') {
       return
@@ -956,6 +1241,54 @@ export function ChatApp({
       isMounted = false
     }
   }, [activeConversation?.id, activeConversation?.type])
+
+  useEffect(() => {
+    if (!activeConversation || activeConversation.type !== 'group' || !canManageActiveGroup) {
+      return
+    }
+
+    let isMounted = true
+    const conversationId = activeConversation.id
+
+    async function loadAdvancedGroupManagement() {
+      try {
+        const [token, requests] = await Promise.all([
+          fetchGroupInvite(conversationId),
+          fetchGroupJoinRequests(conversationId),
+        ])
+
+        if (isMounted) {
+          setGroupInviteTokensByConversation((current) => ({
+            ...current,
+            [conversationId]: token,
+          }))
+          setGroupJoinRequestsByConversation((current) => ({
+            ...current,
+            [conversationId]: requests,
+          }))
+        }
+      } catch {
+        if (isMounted) {
+          setGroupInviteTokensByConversation((current) => {
+            const next = { ...current }
+            delete next[conversationId]
+            return next
+          })
+          setGroupJoinRequestsByConversation((current) => {
+            const next = { ...current }
+            delete next[conversationId]
+            return next
+          })
+        }
+      }
+    }
+
+    loadAdvancedGroupManagement()
+
+    return () => {
+      isMounted = false
+    }
+  }, [activeConversation?.id, activeConversation?.type, canManageActiveGroup])
 
   useEffect(() => {
     if (!isDetailOpen || !activeId) {
@@ -1003,14 +1336,17 @@ export function ChatApp({
   }, [activeId, activeView])
 
   useEffect(() => {
-    if (activeView !== 'chat' || !activeId || messages.length === 0) {
+    if (activeView !== 'chat' || !activeId) {
       return
     }
 
-    const hasIncomingMessage = messages.some((message) => message.author === 'them')
-    const nextReadSyncKey = `${activeId}:${messages.at(-1)?.id ?? ''}`
+    const activeConversationForRead = conversations.find(
+      (conversation) => conversation.id === activeId,
+    )
+    const unreadCount = activeConversationForRead?.unread ?? 0
+    const nextReadSyncKey = `${activeId}:${unreadCount}:${activeConversationForRead?.lastMessageAt ?? ''}`
 
-    if (!hasIncomingMessage || readSyncKey === nextReadSyncKey) {
+    if (unreadCount === 0 || readSyncKey === nextReadSyncKey) {
       return
     }
 
@@ -1034,6 +1370,7 @@ export function ChatApp({
               ? {
                 ...conversation,
                 unread: 0,
+                unreadSenders: [],
               }
               : conversation,
           ),
@@ -1049,7 +1386,7 @@ export function ChatApp({
     return () => {
       isMounted = false
     }
-  }, [activeId, activeView, messages, readSyncKey])
+  }, [activeId, activeView, conversations, readSyncKey])
 
   const filteredConversations = useMemo(() => {
     const keyword = query.trim().toLocaleLowerCase('vi-VN')
@@ -1166,11 +1503,33 @@ export function ChatApp({
   }
 
   function handleOpenContacts() {
+    setProfileContactToOpen(null)
     setActiveView('contacts')
     window.history.pushState(null, '', toAppPath({ view: 'contacts' }))
   }
 
+  function handleOpenActiveContactProfile() {
+    if (!activeConversation) {
+      return
+    }
+
+    const contactProfile = getContactProfileFromConversation(activeConversation)
+
+    if (!contactProfile) {
+      return
+    }
+
+    setProfileContactToOpen(contactProfile)
+    setActiveView('contacts')
+    setIsInboxOpen(false)
+    window.history.pushState(null, '', toAppPath({ view: 'contacts' }))
+  }
+
   function handleSelectConversation(conversationId: string) {
+    const selectedConversation = conversationsRef.current.find(
+      (conversation) => conversation.id === conversationId,
+    )
+
     if (lastSentTypingRef.current?.isTyping) {
       updateTypingStatus(lastSentTypingRef.current.conversationId, false).catch(() => undefined)
       lastSentTypingRef.current = null
@@ -1186,6 +1545,27 @@ export function ChatApp({
     setIsInboxOpen(false)
     setFocusedMessageId('')
     setReplyingTo(null)
+    setConversations((current) =>
+      current.map((conversation) =>
+        conversation.id === conversationId
+          ? {
+            ...conversation,
+            unread: 0,
+            unreadSenders: [],
+          }
+          : conversation,
+      ),
+    )
+    if ((selectedConversation?.unread ?? 0) > 0) {
+      markConversationRead(conversationId)
+        .then((response) => {
+          setMessagesByConversation((current) => ({
+            ...current,
+            [conversationId]: mergeLatestMessages(current[conversationId] ?? [], response.messages),
+          }))
+        })
+        .catch(() => undefined)
+    }
     markConversationNotificationsRead(conversationId)
       .then(() => fetchNotifications().then(setNotifications))
       .catch(() => undefined)
@@ -1284,6 +1664,7 @@ export function ChatApp({
       return
     }
 
+    const parentMessageId = retryMessage?.replyTo?.id ?? replyingTo?.id ?? null
     const temporaryMessage: Message =
       retryMessage ?? {
         id: `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -1306,9 +1687,20 @@ export function ChatApp({
         reactions: [],
         attachments: [],
       }
+    const queuedMessage: QueuedMessage = {
+      conversationId: activeConversation.id,
+      message: temporaryMessage,
+      parentMessageId,
+      userId: currentUserIdRef.current,
+      updatedAt: new Date().toISOString(),
+    }
 
     try {
       setIsSending(true)
+      upsertQueuedMessage({
+        ...queuedMessage,
+        message: { ...temporaryMessage, state: 'sending' },
+      })
 
       setMessagesByConversation((current) => ({
         ...current,
@@ -1345,8 +1737,9 @@ export function ChatApp({
       const createdMessage = await sendMessage(
         activeConversation.id,
         text,
-        retryMessage?.replyTo?.id ?? replyingTo?.id ?? null,
+        parentMessageId,
       )
+      removeQueuedMessage(temporaryMessage.id)
       updateTypingStatus(activeConversation.id, false).catch(() => undefined)
       lastSentTypingRef.current = {
         conversationId: activeConversation.id,
@@ -1371,6 +1764,11 @@ export function ChatApp({
           message.id === temporaryMessage.id ? { ...message, state: 'failed' } : message,
         ),
       }))
+      upsertQueuedMessage({
+        ...queuedMessage,
+        message: { ...temporaryMessage, state: 'failed' },
+        updatedAt: new Date().toISOString(),
+      })
       pushToast(
         error instanceof Error
           ? `${error.message} Tin nhắn đã được giữ lại, bạn có thể thử gửi lại!`
@@ -1925,9 +2323,11 @@ export function ChatApp({
 
   function handleOpenPinnedMessage(messageId: string) {
     setActiveView('chat')
-    setFocusedMessageId('')
-    window.requestAnimationFrame(() => {
-      setFocusedMessageId(messageId)
+    handleJumpToMessage(messageId).catch(() => {
+      setFocusedMessageId('')
+      window.requestAnimationFrame(() => {
+        setFocusedMessageId(messageId)
+      })
     })
   }
 
@@ -2192,6 +2592,134 @@ export function ChatApp({
     }
   }
 
+  async function handleUpdateMemberRole(userId: string, role: 'admin' | 'member') {
+    if (!activeConversation || activeConversation.type !== 'group' || busyConversationAction) {
+      return
+    }
+
+    try {
+      setBusyConversationAction(`member-role-${userId}`)
+      setErrorMessage('')
+      const members = await updateGroupMemberRole(activeConversation.id, userId, role)
+
+      setMembersByConversation((current) => ({
+        ...current,
+        [activeConversation.id]: members,
+      }))
+      await refreshActiveGroup(activeConversation.id)
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Không thể cập nhật quyền thành viên!')
+    } finally {
+      setBusyConversationAction('')
+    }
+  }
+
+  async function handleTransferOwner(userId: string) {
+    if (!activeConversation || activeConversation.type !== 'group' || busyConversationAction) {
+      return
+    }
+
+    setConfirmDialog({
+      title: 'Chuyển Owner nhóm?',
+      description: 'Bạn sẽ trở thành Admin và thành viên này sẽ có toàn quyền với nhóm!',
+      confirmLabel: 'Chuyển Owner',
+      tone: 'danger',
+      onConfirm: () => transferActiveGroupOwner(userId),
+    })
+  }
+
+  async function transferActiveGroupOwner(userId: string) {
+    if (!activeConversation || activeConversation.type !== 'group' || busyConversationAction) {
+      return
+    }
+
+    try {
+      setBusyConversationAction(`owner-${userId}`)
+      setErrorMessage('')
+      const members = await transferGroupOwner(activeConversation.id, userId)
+
+      setMembersByConversation((current) => ({
+        ...current,
+        [activeConversation.id]: members,
+      }))
+      await refreshActiveGroup(activeConversation.id)
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Không thể chuyển Owner!')
+    } finally {
+      setBusyConversationAction('')
+    }
+  }
+
+  async function handleCopyGroupInviteLink() {
+    if (!activeConversation || activeConversation.type !== 'group' || busyConversationAction) {
+      return
+    }
+
+    try {
+      setBusyConversationAction('invite')
+      const token = activeGroupInviteToken || await fetchGroupInvite(activeConversation.id)
+      const inviteUrl = `${window.location.origin}${toAppPath({ view: 'chat' })}?join=${encodeURIComponent(token)}`
+
+      setGroupInviteTokensByConversation((current) => ({
+        ...current,
+        [activeConversation.id]: token,
+      }))
+      await navigator.clipboard.writeText(inviteUrl)
+      pushToast('Đã copy link mới!', 'info')
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Không thể copy link mới!')
+    } finally {
+      setBusyConversationAction('')
+    }
+  }
+
+  async function handleResetGroupInviteLink() {
+    if (!activeConversation || activeConversation.type !== 'group' || busyConversationAction) {
+      return
+    }
+
+    try {
+      setBusyConversationAction('invite')
+      const token = await resetGroupInvite(activeConversation.id)
+
+      setGroupInviteTokensByConversation((current) => ({
+        ...current,
+        [activeConversation.id]: token,
+      }))
+      pushToast('Đã tạo link mời mới!', 'info')
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Không thể tạo link mời mới!')
+    } finally {
+      setBusyConversationAction('')
+    }
+  }
+
+  async function handleReviewGroupJoinRequest(requestId: string, action: 'approve' | 'decline') {
+    if (!activeConversation || activeConversation.type !== 'group' || busyConversationAction) {
+      return
+    }
+
+    try {
+      setBusyConversationAction(`join-request-${requestId}`)
+      const members = await reviewGroupJoinRequest(activeConversation.id, requestId, action)
+      const requests = await fetchGroupJoinRequests(activeConversation.id)
+
+      setMembersByConversation((current) => ({
+        ...current,
+        [activeConversation.id]: members,
+      }))
+      setGroupJoinRequestsByConversation((current) => ({
+        ...current,
+        [activeConversation.id]: requests,
+      }))
+      await refreshActiveGroup(activeConversation.id)
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Không thể duyệt yêu cầu tham gia!')
+    } finally {
+      setBusyConversationAction('')
+    }
+  }
+
   async function handleLeaveGroup() {
     if (!activeConversation || activeConversation.type !== 'group' || busyConversationAction) {
       return
@@ -2199,7 +2727,7 @@ export function ChatApp({
 
     setConfirmDialog({
       title: 'Rời nhóm chat?',
-      description: 'Bạn sẽ không còn thấy tin nhắn mới trong nhóm này.',
+      description: 'Bạn sẽ không còn thấy tin nhắn mới trong nhóm này!',
       confirmLabel: 'Rời nhóm',
       tone: 'danger',
       onConfirm: leaveActiveGroup,
@@ -2452,7 +2980,12 @@ export function ChatApp({
     return (
       <main className={`${shellClassName} contacts-shell`}>
         {renderNavRail()}
-        <ContactsPanel onAccepted={handleAcceptedFriend} pushToast={pushToast} />
+        <ContactsPanel
+          contactToOpen={profileContactToOpen}
+          onAccepted={handleAcceptedFriend}
+          onProfileOpened={() => setProfileContactToOpen(null)}
+          pushToast={pushToast}
+        />
         {renderCallOverlay()}
         {renderConfirmDialog()}
         {renderToasts()}
@@ -2467,6 +3000,7 @@ export function ChatApp({
         <ProfilePage
           currentUser={currentUser}
           onAccountDeleted={onAccountDeleted}
+          onLogout={handleLogout}
           onUserChange={onUserChange}
           pushToast={pushToast}
         />
@@ -2540,6 +3074,7 @@ export function ChatApp({
         isUploadingAttachment={isUploadingAttachment}
         members={activeMembers}
         messages={messages}
+        pinnedMessages={pinnedMessages}
         conversations={conversations}
         replyingTo={replyingTo}
         onCancelReply={() => setReplyingTo(null)}
@@ -2557,7 +3092,10 @@ export function ChatApp({
         onAutoScrollComplete={() => setShouldAutoScrollToLatest(false)}
         onToggleReaction={handleToggleMessageReaction}
         onUploadAttachment={handleUploadAttachment}
+        onSearchMessages={handleSearchMessages}
+        onJumpToMessage={handleJumpToMessage}
         onToggleDetails={() => setIsDetailOpen((current) => !current)}
+        onOpenContactProfile={handleOpenActiveContactProfile}
         onOpenConversationList={() => setIsInboxOpen(true)}
         onStartCall={handleStartCall}
         onSubmit={handleSubmit}
@@ -2567,21 +3105,28 @@ export function ChatApp({
         busyAction={busyConversationAction}
         currentUserId={currentUser?.id}
         friends={friends}
+        groupInviteToken={activeGroupInviteToken}
+        joinRequests={activeGroupJoinRequests}
         isOpen={isDetailOpen}
         members={activeMembers}
         pinnedMessages={pinnedMessages}
         onAddMember={handleAddMember}
         onArchive={handleArchiveConversation}
+        onCopyGroupInviteLink={handleCopyGroupInviteLink}
         onDisbandGroup={handleDisbandGroup}
         onLeaveGroup={handleLeaveGroup}
         onRemoveMember={handleRemoveMember}
         onOpenPinnedMessage={handleOpenPinnedMessage}
+        onResetGroupInviteLink={handleResetGroupInviteLink}
+        onReviewGroupJoinRequest={handleReviewGroupJoinRequest}
         onToggleBlocked={handleToggleBlocked}
         onToggleMuted={handleToggleMuted}
         onTogglePinned={handleTogglePinned}
+        onTransferOwner={handleTransferOwner}
         onUpdateContactNickname={handleUpdateContactNickname}
         onUpdateGroup={handleUpdateGroup}
         onUpdateMemberNickname={handleUpdateMemberNickname}
+        onUpdateMemberRole={handleUpdateMemberRole}
       />
       {renderCallOverlay()}
       {renderConfirmDialog()}

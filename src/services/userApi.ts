@@ -11,6 +11,22 @@ type ProfileResponse = {
   user: AuthUser
 }
 
+export type UserSession = {
+  id: string
+  deviceName: string | null
+  ipAddress: string | null
+  userAgent: string | null
+  isCurrent: boolean
+  expiresAt: string
+  revokedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+type SessionsResponse = {
+  sessions: UserSession[]
+}
+
 export type ProfilePayload = {
   displayName: string
   phone: string
@@ -55,6 +71,34 @@ export function changePassword(payload: ChangePasswordPayload) {
       body: JSON.stringify(payload),
     },
     'Không thể đổi mật khẩu!',
+  )
+}
+
+export function fetchSessions() {
+  return requestJson<SessionsResponse>(
+    '/users/me/sessions',
+    {},
+    'KhÃ´ng thá»ƒ táº£i danh sÃ¡ch phiÃªn Ä‘Äƒng nháº­p!',
+  )
+}
+
+export function revokeSession(sessionId: string) {
+  return requestJson<{ message: string; revokedCurrentSession: boolean }>(
+    `/users/me/sessions/${sessionId}`,
+    {
+      method: 'DELETE',
+    },
+    'KhÃ´ng thá»ƒ thu há»“i phiÃªn Ä‘Äƒng nháº­p!',
+  )
+}
+
+export function revokeOtherSessions() {
+  return requestJson<{ message: string; revokedCount: number }>(
+    '/users/me/sessions/others',
+    {
+      method: 'DELETE',
+    },
+    'KhÃ´ng thá»ƒ Ä‘Äƒng xuáº¥t khá»i thiáº¿t bá»‹ khÃ¡c!',
   )
 }
 

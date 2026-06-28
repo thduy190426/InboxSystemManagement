@@ -35,7 +35,9 @@ import type { ContactUser } from '../types'
 import { AvatarFallback } from './AvatarFallback'
 
 type ContactsPanelProps = {
+  contactToOpen?: ContactUser | null
   onAccepted: (conversationId: string) => void
+  onProfileOpened?: () => void
   pushToast: (text: string, tone?: 'info' | 'error') => void
 }
 
@@ -93,7 +95,12 @@ function formatProfileDate(value?: string | null) {
   }).format(date)
 }
 
-export function ContactsPanel({ onAccepted, pushToast }: ContactsPanelProps) {
+export function ContactsPanel({
+  contactToOpen = null,
+  onAccepted,
+  onProfileOpened,
+  pushToast,
+}: ContactsPanelProps) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<ContactUser[]>([])
   const [friends, setFriends] = useState<ContactUser[]>([])
@@ -143,6 +150,25 @@ export function ContactsPanel({ onAccepted, pushToast }: ContactsPanelProps) {
       socket.off('presence:changed', handleRealtimeContactsChanged)
     }
   }, [])
+
+  useEffect(() => {
+    if (!contactToOpen) {
+      return
+    }
+
+    const allKnownUsers = [...friends, ...requests, ...suggestions, ...results]
+    const latestUser =
+      allKnownUsers.find((user) => {
+        if (contactToOpen.contactId && user.contactId === contactToOpen.contactId) {
+          return true
+        }
+
+        return user.id === contactToOpen.id || user.userId === contactToOpen.userId
+      }) ?? contactToOpen
+
+    openContactProfile(latestUser)
+    onProfileOpened?.()
+  }, [contactToOpen, friends, onProfileOpened, requests, results, suggestions])
 
   async function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -305,12 +331,15 @@ export function ContactsPanel({ onAccepted, pushToast }: ContactsPanelProps) {
   }
 
   function renderContactProfile(user: ContactUser) {
+    const safePresence = ['online', 'away', 'busy'].includes(user.presence)
+      ? user.presence
+      : 'offline'
     const presenceLabel =
-      user.presence === 'online'
+      safePresence === 'online'
         ? 'Đang trực tuyến'
-        : user.presence === 'away'
+        : safePresence === 'away'
           ? 'Tạm vắng'
-          : user.presence === 'busy'
+          : safePresence === 'busy'
             ? 'Đang bận'
             : 'Ngoại tuyến'
 
@@ -325,7 +354,7 @@ export function ContactsPanel({ onAccepted, pushToast }: ContactsPanelProps) {
                   name={user.fullName}
                   src={user.avatarUrl}
                 />
-                <span className={`presence-dot ${user.presence}`} />
+                <span className={`presence-dot ${safePresence}`} />
               </span>
               <div>
                 <strong>{user.nickname || user.fullName}</strong>

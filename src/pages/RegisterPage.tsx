@@ -43,35 +43,35 @@ function validateRegisterForm(formData: FormData) {
   const errors: RegisterErrors = {}
 
   if (!fullName) {
-    errors.fullName = 'Vui lòng nhập họ và tên.'
+    errors.fullName = 'Vui lòng nhập họ và tên!'
   } else if (fullName.length < 2) {
-    errors.fullName = 'Họ và tên phải có ít nhất 2 ký tự.'
+    errors.fullName = 'Họ và tên phải có ít nhất 2 ký tự!'
   } else if (fullName.length > 120) {
-    errors.fullName = 'Họ và tên không được vượt quá 120 ký tự.'
+    errors.fullName = 'Họ và tên không được vượt quá 120 ký tự!'
   } else if (!fullNamePattern.test(fullName)) {
-    errors.fullName = 'Chỉ dùng chữ cái, khoảng trắng, dấu gạch nối hoặc dấu nháy.'
+    errors.fullName = 'Chỉ dùng chữ cái, khoảng trắng, dấu gạch nối hoặc dấu nháy!'
   }
 
   if (!email) {
-    errors.email = 'Vui lòng nhập email.'
+    errors.email = 'Vui lòng nhập Email!'
   } else if (email.length > 190) {
-    errors.email = 'Email không được vượt quá 190 ký tự.'
+    errors.email = 'Email không được vượt quá 190 ký tự!'
   } else if (!emailPattern.test(email)) {
-    errors.email = 'Email chưa đúng định dạng.'
+    errors.email = 'Email chưa đúng định dạng!'
   }
 
   if (phone && !phonePattern.test(phone)) {
-    errors.phone = 'Số điện thoại phải có 9-15 chữ số và có thể bắt đầu bằng dấu +.'
+    errors.phone = 'Số điện thoại phải có 9-15 chữ số và có thể bắt đầu bằng dấu +!'
   }
 
   const passwordRequirements = [
-    password.length >= 8 || 'ít nhất 8 ký tự',
-    password.length <= 72 || 'không quá 72 ký tự',
-    !/\s/.test(password) || 'không chứa khoảng trắng',
-    /[a-z]/.test(password) || 'có chữ thường',
-    /[A-Z]/.test(password) || 'có chữ hoa',
-    /[0-9]/.test(password) || 'có chữ số',
-    /[^A-Za-z0-9]/.test(password) || 'có ký tự đặc biệt',
+    password.length >= 8 || 'ít nhất 8 ký tự!',
+    password.length <= 72 || 'không quá 72 ký tự!',
+    !/\s/.test(password) || 'không chứa khoảng trắng!',
+    /[a-z]/.test(password) || 'có chữ thường!',
+    /[A-Z]/.test(password) || 'có chữ hoa!',
+    /[0-9]/.test(password) || 'có chữ số!',
+    /[^A-Za-z0-9]/.test(password) || 'có ký tự đặc biệt!',
   ].filter((requirement): requirement is string => typeof requirement === 'string')
 
   const normalizedPassword = password.toLowerCase()
@@ -82,23 +82,23 @@ function validateRegisterForm(formData: FormData) {
     .filter((part) => part.length >= 3)
 
   if (emailName && normalizedPassword.includes(emailName)) {
-    passwordRequirements.push('không chứa phần tên trong email')
+    passwordRequirements.push('không chứa phần tên trong Email!')
   }
 
   if (nameParts.some((part) => normalizedPassword.includes(part))) {
-    passwordRequirements.push('không chứa tên tài khoản')
+    passwordRequirements.push('không chứa tên tài khoản!')
   }
 
   if (!password) {
-    errors.password = 'Vui lòng nhập mật khẩu.'
+    errors.password = 'Vui lòng nhập mật khẩu!'
   } else if (passwordRequirements.length) {
-    errors.password = `Mật khẩu cần ${passwordRequirements.join(', ')}.`
+    errors.password = `Mật khẩu cần ${passwordRequirements.join(', ')}!`
   }
 
   if (!confirmPassword) {
-    errors.confirmPassword = 'Vui lòng nhập lại mật khẩu.'
+    errors.confirmPassword = 'Vui lòng nhập lại mật khẩu!'
   } else if (password && confirmPassword !== password) {
-    errors.confirmPassword = 'Mật khẩu xác nhận không khớp.'
+    errors.confirmPassword = 'Mật khẩu xác nhận không khớp!'
   }
 
   return {
@@ -131,7 +131,7 @@ export function RegisterPage({
 
     if (Object.keys(validation.errors).length > 0) {
       setFieldErrors(validation.errors)
-      setLocalError('Vui lòng kiểm tra lại thông tin đăng kí.')
+      setLocalError('Vui lòng kiểm tra lại thông tin đăng kí!')
       return
     }
 

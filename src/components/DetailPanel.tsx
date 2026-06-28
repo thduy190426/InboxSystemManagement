@@ -4,6 +4,8 @@ import {
   Archive,
   Bell,
   BellOff,
+  Check,
+  Copy,
   FileText,
   Image,
   ImagePlus,
@@ -11,13 +13,20 @@ import {
   Pin,
   PinOff,
   Save,
+  Shield,
+  ShieldCheck,
   Trash2,
+  UserCog,
   UserCheck,
   UserPlus,
   UserX,
   X,
+  Tag,
+  Users,
+  Settings2,
+  FolderOpen,
 } from 'lucide-react'
-import type { ContactUser, Conversation, ConversationMember, Message } from '../types'
+import type { ContactUser, Conversation, ConversationMember, GroupJoinRequest, Message } from '../types'
 import { AvatarFallback } from './AvatarFallback'
 import { OnlineDurationBadge } from './OnlineDurationBadge'
 
@@ -26,21 +35,28 @@ type DetailPanelProps = {
   busyAction?: string
   currentUserId?: string
   friends: ContactUser[]
+  groupInviteToken?: string
   isOpen: boolean
+  joinRequests?: GroupJoinRequest[]
   members: ConversationMember[]
   pinnedMessages: Message[]
   onAddMember: (userId: string) => Promise<void> | void
   onArchive: () => void
+  onCopyGroupInviteLink: () => Promise<void> | void
   onDisbandGroup: () => Promise<void> | void
   onLeaveGroup: () => Promise<void> | void
   onRemoveMember: (userId: string) => Promise<void> | void
   onOpenPinnedMessage: (messageId: string) => void
+  onResetGroupInviteLink: () => Promise<void> | void
+  onReviewGroupJoinRequest: (requestId: string, action: 'approve' | 'decline') => Promise<void> | void
   onToggleBlocked: () => void
   onToggleMuted: () => void
   onTogglePinned: () => void
+  onTransferOwner: (userId: string) => Promise<void> | void
   onUpdateContactNickname: (nickname: string) => Promise<void> | void
   onUpdateGroup: (payload: { title?: string; avatar?: File | null }) => Promise<void> | void
   onUpdateMemberNickname: (userId: string, nickname: string) => Promise<void> | void
+  onUpdateMemberRole: (userId: string, role: 'admin' | 'member') => Promise<void> | void
 }
 
 export function DetailPanel({
@@ -48,32 +64,42 @@ export function DetailPanel({
   busyAction = '',
   currentUserId = '',
   friends,
+  groupInviteToken = '',
   isOpen,
+  joinRequests = [],
   members,
   pinnedMessages,
   onAddMember,
   onArchive,
+  onCopyGroupInviteLink,
   onDisbandGroup,
   onLeaveGroup,
   onRemoveMember,
   onOpenPinnedMessage,
+  onResetGroupInviteLink,
+  onReviewGroupJoinRequest,
   onToggleBlocked,
   onToggleMuted,
   onTogglePinned,
+  onTransferOwner,
   onUpdateContactNickname,
   onUpdateGroup,
   onUpdateMemberNickname,
+  onUpdateMemberRole,
 }: DetailPanelProps) {
   const [groupTitle, setGroupTitle] = useState(activeConversation.name)
   const [groupAvatar, setGroupAvatar] = useState<File | null>(null)
   const [directNickname, setDirectNickname] = useState(activeConversation.nickname || '')
   const [memberNicknames, setMemberNicknames] = useState<Record<string, string>>({})
   const [selectedFriendId, setSelectedFriendId] = useState('')
+  const [showAllMembers, setShowAllMembers] = useState(false)
+
+  const MEMBER_PREVIEW_COUNT = 0
 
   const isGroup = activeConversation.type === 'group'
-  const isGroupOwner = members.some(
-    (member) => member.id === currentUserId && member.role === 'owner',
-  )
+  const currentMember = members.find((member) => member.id === currentUserId)
+  const isGroupOwner = currentMember?.role === 'owner'
+  const canManageGroup = currentMember?.role === 'owner' || currentMember?.role === 'admin'
   const memberIds = useMemo(() => new Set(members.map((member) => member.id)), [members])
   const addableFriends = friends.filter((friend) => !memberIds.has(friend.id))
 
@@ -177,6 +203,22 @@ export function DetailPanel({
     return message.senderName || activeConversation.name
   }
 
+  function getRoleLabel(role: ConversationMember['role']) {
+    if (role === 'owner') {
+      return 'Owner'
+    }
+
+    if (role === 'admin') {
+      return 'Admin'
+    }
+
+    if (role === 'moderator') {
+      return 'Moderator'
+    }
+
+    return 'Thành viên'
+  }
+
   return (
     <aside
       className={isOpen ? 'detail-panel is-open' : 'detail-panel'}
@@ -243,7 +285,9 @@ export function DetailPanel({
       {activeConversation.type === 'direct' && activeConversation.contactId ? (
         <section className="detail-section nickname-section">
           <div className="detail-section-title">
-            <h3>Biệt danh</h3>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Tag size={16} /> Biệt danh
+            </h3>
             <span>Riêng tư</span>
           </div>
           <form className="nickname-form" onSubmit={handleDirectNicknameSubmit}>
@@ -275,7 +319,9 @@ export function DetailPanel({
       {isGroup ? (
         <section className="detail-section group-management">
           <div className="detail-section-title">
-            <h3>Nhóm chat</h3>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Users size={16} /> Nhóm chat
+            </h3>
             <span>{members.length} thành viên</span>
           </div>
 
@@ -323,14 +369,90 @@ export function DetailPanel({
             </button>
           </div>
 
+          {canManageGroup ? (
+            <div className="group-advanced-management">
+              <div className="detail-section-title">
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Settings2 size={16} /> Quản trị nâng cao
+                </h3>
+                <span>{joinRequests.length} yêu cầu</span>
+              </div>
+
+              <div className="group-invite-row">
+                <input
+                  aria-label="Link mời nhóm"
+                  readOnly
+                  value={
+                    groupInviteToken
+                      ? `${window.location.origin}/chat?join=${groupInviteToken}`
+                      : 'Chưa tạo link mới!'
+                  }
+                />
+                <button
+                  disabled={Boolean(busyAction)}
+                  onClick={onCopyGroupInviteLink}
+                  title="Copy link mời"
+                  type="button"
+                >
+                  <Copy size={15} />
+                </button>
+                <button
+                  disabled={Boolean(busyAction)}
+                  onClick={onResetGroupInviteLink}
+                  title="Tạo link mới"
+                  type="button"
+                >
+                  <ShieldCheck size={15} />
+                </button>
+              </div>
+
+              {joinRequests.length > 0 ? (
+                <div className="group-join-request-stack">
+                  {joinRequests.map((joinRequest) => (
+                    <div className="group-join-request" key={joinRequest.id}>
+                      <AvatarFallback
+                        name={joinRequest.user.fullName}
+                        src={joinRequest.user.avatarUrl}
+                      />
+                      <span>
+                        <strong>{joinRequest.user.fullName}</strong>
+                        <small>{joinRequest.user.email}</small>
+                      </span>
+                      <button
+                        disabled={Boolean(busyAction)}
+                        onClick={() => onReviewGroupJoinRequest(joinRequest.id, 'approve')}
+                        title="Duyệt"
+                        type="button"
+                      >
+                        <Check size={14} />
+                      </button>
+                      <button
+                        disabled={Boolean(busyAction)}
+                        onClick={() => onReviewGroupJoinRequest(joinRequest.id, 'decline')}
+                        title="Từ chối"
+                        type="button"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
           <div className="group-member-stack">
-            {members.map((member) => (
+            {(showAllMembers ? members : members.slice(0, MEMBER_PREVIEW_COUNT)).map((member) => (
               <div className="group-detail-member" key={member.id}>
                 <AvatarFallback name={member.fullName} src={member.avatarUrl} />
                 <div className="group-member-body">
                   <span>
                     <strong>{member.nickname || member.fullName}</strong>
-                    <small>{member.nickname ? member.fullName : member.role}</small>
+                    <small>
+                      {member.nickname
+                        ? `${member.fullName} · ${getRoleLabel(member.role)}`
+                        : getRoleLabel(member.role)}
+                    </small>
                   </span>
                   <form
                     className="member-nickname-form"
@@ -364,6 +486,42 @@ export function DetailPanel({
                       <X size={14} />
                     </button>
                   </form>
+                  {isGroupOwner && member.id !== currentUserId ? (
+                    <div className="member-role-actions">
+                      {member.role === 'admin' ? (
+                        <button
+                          disabled={Boolean(busyAction)}
+                          onClick={() => onUpdateMemberRole(member.id, 'member')}
+                          title="Hạ quyền Admin"
+                          type="button"
+                        >
+                          <Shield size={14} />
+                          <span>Hạ Admin</span>
+                        </button>
+                      ) : member.role !== 'owner' ? (
+                        <button
+                          disabled={Boolean(busyAction)}
+                          onClick={() => onUpdateMemberRole(member.id, 'admin')}
+                          title="Nâng Admin"
+                          type="button"
+                        >
+                          <ShieldCheck size={14} />
+                          <span>Nâng Admin</span>
+                        </button>
+                      ) : null}
+                      {member.role !== 'owner' ? (
+                        <button
+                          disabled={Boolean(busyAction)}
+                          onClick={() => onTransferOwner(member.id)}
+                          title="Chuyển Owner"
+                          type="button"
+                        >
+                          <UserCog size={14} />
+                          <span>Owner</span>
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
                 <button
                   className="member-remove-button"
@@ -376,6 +534,15 @@ export function DetailPanel({
                 </button>
               </div>
             ))}
+            <button
+              className="group-member-toggle"
+              onClick={() => setShowAllMembers((prev) => !prev)}
+              type="button"
+            >
+              {showAllMembers
+                ? 'Thu gọn danh sách'
+                : `Xem tất cả ${members.length} thành viên`}
+            </button>
           </div>
 
           <button
@@ -403,7 +570,9 @@ export function DetailPanel({
 
       <section className="detail-section pinned-messages-section">
         <div className="detail-section-title">
-          <h3>Tin đã ghim</h3>
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Pin size={16} /> Tin đã ghim
+          </h3>
           <span>{pinnedMessages.length}</span>
         </div>
         <div className="pinned-message-list">
@@ -438,7 +607,9 @@ export function DetailPanel({
 
       <section className="detail-section">
         <div className="detail-section-title">
-          <h3>Tệp gần đây</h3>
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <FolderOpen size={16} /> Tệp gần đây
+          </h3>
           <span>{activeConversation.attachments.length}</span>
         </div>
         <div className="attachment-list">

@@ -53,7 +53,7 @@ export function TermsPage() {
         <section className="legal-summary" aria-label="Tóm tắt">
           <div>
             <ShieldCheck size={18} />
-            <span>Cập nhật gần nhất: 23/06/2026</span>
+            <span>Lần cập nhật gần nhất: 23/06/2026</span>
           </div>
           <div>
             <CheckCircle2 size={18} />

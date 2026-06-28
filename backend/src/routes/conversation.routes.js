@@ -9,10 +9,15 @@ const {
   disbandGroupConversation,
   forwardMessage,
   getConversationMembers,
+  getGroupInvite,
   hideConversation,
   listConversationCalls,
+  listGroupJoinRequests,
   getTypingStatus,
   leaveGroupConversation,
+  requestGroupJoin,
+  resetGroupInvite,
+  reviewGroupJoinRequest,
   updateMessage,
   getMessages,
   listConversations,
@@ -21,13 +26,16 @@ const {
   removeMessageReaction,
   recallMessage,
   removeGroupMember,
+  searchConversationMessages,
   toggleMessageReaction,
   toggleMessagePin,
   unarchiveConversation,
   updateConversationSettings,
   updateGroupConversation,
   updateGroupMemberNickname,
+  updateGroupMemberRole,
   updateTypingStatus,
+  transferGroupOwner,
 } = require('../controllers/conversation.controller')
 const { avatarUpload, messageUpload } = require('../config/upload')
 const { sendMessageRateLimit } = require('../middleware/rateLimit.middleware')
@@ -37,10 +45,16 @@ const router = express.Router()
 router.get('/', listConversations)
 router.post('/groups', avatarUpload.single('avatar'), createGroupConversation)
 router.get('/:conversationId/calls', listConversationCalls)
+router.get('/:conversationId/invite', getGroupInvite)
+router.get('/:conversationId/join-requests', listGroupJoinRequests)
 router.get('/:conversationId/members', getConversationMembers)
+router.get('/:conversationId/messages/search', searchConversationMessages)
 router.get('/:conversationId/messages', getMessages)
 router.get('/:conversationId/typing', getTypingStatus)
 router.post('/:conversationId/members', addGroupMember)
+router.post('/join/:token', requestGroupJoin)
+router.post('/:conversationId/invite/reset', resetGroupInvite)
+router.post('/:conversationId/join-requests/:requestId/review', reviewGroupJoinRequest)
 router.post('/:conversationId/messages', sendMessageRateLimit, createMessage)
 router.post(
   '/:conversationId/messages/attachments',
@@ -61,6 +75,8 @@ router.patch('/:conversationId/group', avatarUpload.single('avatar'), updateGrou
 router.patch('/:conversationId/settings', updateConversationSettings)
 router.patch('/:conversationId/messages/:messageId', updateMessage)
 router.patch('/:conversationId/members/:userId/nickname', updateGroupMemberNickname)
+router.patch('/:conversationId/members/:userId/role', updateGroupMemberRole)
+router.patch('/:conversationId/members/:userId/owner', transferGroupOwner)
 router.delete('/:conversationId/group', disbandGroupConversation)
 router.delete('/:conversationId/members/:userId', removeGroupMember)
 router.delete('/:conversationId/messages/:messageId/reactions/:emoji', removeMessageReaction)

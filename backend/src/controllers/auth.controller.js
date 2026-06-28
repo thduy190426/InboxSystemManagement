@@ -174,7 +174,7 @@ async function emitPresenceChanged(userId, presence) {
       },
     )
   } catch (error) {
-    console.error('Failed to emit presence realtime event:', error)
+    console.error('Không thể phát ra sự kiện hiện diện thời gian thực:', error)
   }
 }
 
@@ -430,7 +430,7 @@ async function resetPassword(request, response, next) {
       new Date(resetToken.expires_at).getTime() <= Date.now()
     ) {
       return response.status(400).json({
-        message: 'Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.',
+        message: 'Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn!',
       })
     }
 
@@ -462,7 +462,7 @@ async function resetPassword(request, response, next) {
     await updateUserPresenceFromSessions(resetToken.user_id)
 
     return response.json({
-      message: 'Đặt lại mật khẩu thành công. Vui lòng đăng nhập bằng mật khẩu mới.',
+      message: 'Đặt lại mật khẩu thành công. Vui lòng đăng nhập bằng mật khẩu mới!',
     })
   } catch (error) {
     next(error)

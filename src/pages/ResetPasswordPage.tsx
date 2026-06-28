@@ -23,37 +23,37 @@ function validateResetPasswordForm(formData: FormData) {
   const confirmPassword = String(formData.get('confirmPassword') ?? '')
   const errors: ResetPasswordErrors = {}
   const passwordRequirements = [
-    password.length >= 8 || 'ít nhất 8 ký tự',
-    password.length <= 72 || 'không quá 72 ký tự',
-    !/\s/.test(password) || 'không chứa khoảng trắng',
-    /[a-z]/.test(password) || 'có chữ thường',
-    /[A-Z]/.test(password) || 'có chữ hoa',
-    /[0-9]/.test(password) || 'có chữ số',
-    /[^A-Za-z0-9]/.test(password) || 'có ký tự đặc biệt',
+    password.length >= 8 || 'ít nhất 8 ký tự!',
+    password.length <= 72 || 'không quá 72 ký tự!',
+    !/\s/.test(password) || 'không chứa khoảng trắng!',
+    /[a-z]/.test(password) || 'có chữ thường!',
+    /[A-Z]/.test(password) || 'có chữ hoa!',
+    /[0-9]/.test(password) || 'có chữ số!',
+    /[^A-Za-z0-9]/.test(password) || 'có ký tự đặc biệt!',
   ].filter((requirement): requirement is string => typeof requirement === 'string')
 
   if (!email) {
-    errors.email = 'Vui lòng nhập email tài khoản.'
+    errors.email = 'Vui lòng nhập Email tài khoản!'
   } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(email)) {
-    errors.email = 'Email chưa đúng định dạng.'
+    errors.email = 'Email chưa đúng định dạng!'
   }
 
   if (!token) {
-    errors.token = 'Vui lòng nhập mã đặt lại mật khẩu.'
+    errors.token = 'Vui lòng nhập mã đặt lại mật khẩu!'
   } else if (!/^[0-9]{6}$/.test(token)) {
-    errors.token = 'Mã đặt lại mật khẩu phải gồm 6 chữ số.'
+    errors.token = 'Mã đặt lại mật khẩu phải gồm 6 chữ số!'
   }
 
   if (!password) {
-    errors.password = 'Vui lòng nhập mật khẩu mới.'
+    errors.password = 'Vui lòng nhập mật khẩu mới!'
   } else if (passwordRequirements.length) {
-    errors.password = `Mật khẩu mới cần ${passwordRequirements.join(', ')}.`
+    errors.password = `Mật khẩu mới cần ${passwordRequirements.join(', ')}!`
   }
 
   if (!confirmPassword) {
-    errors.confirmPassword = 'Vui lòng nhập lại mật khẩu mới.'
+    errors.confirmPassword = 'Vui lòng nhập lại mật khẩu mới!'
   } else if (password && confirmPassword !== password) {
-    errors.confirmPassword = 'Mật khẩu mới xác nhận không khớp.'
+    errors.confirmPassword = 'Mật khẩu mới xác nhận không khớp!'
   }
 
   return {
@@ -86,7 +86,7 @@ export function ResetPasswordPage({
 
     if (Object.keys(validation.errors).length > 0) {
       setFieldErrors(validation.errors)
-      setLocalError('Vui lòng kiểm tra lại mật khẩu mới.')
+      setLocalError('Vui lòng kiểm tra lại mật khẩu mới!')
       return
     }
 
@@ -106,7 +106,7 @@ export function ResetPasswordPage({
             Đặt lại mật khẩu
           </span>
           <h1 id="reset-password-title">Tạo mật khẩu mới</h1>
-          <p>Nhập email, mã 6 số đã gửi qua email và mật khẩu mới của bạn.</p>
+          <p>Nhập Email, mã 6 số đã gửi qua Email và mật khẩu mới của bạn.</p>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
@@ -119,7 +119,7 @@ export function ResetPasswordPage({
                 defaultValue={resetParams.email}
                 maxLength={190}
                 name="email"
-                placeholder="Nhập email của bạn tại đây"
+                placeholder="Nhập Email của bạn tại đây"
                 required
                 type="email"
               />

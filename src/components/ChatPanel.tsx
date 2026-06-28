@@ -7,6 +7,7 @@ import {
   ChevronDown,
   ChevronUp,
   Download,
+  Filter,
   FileText,
   Info,
   Menu,
@@ -29,23 +30,14 @@ import {
   X,
 } from 'lucide-react'
 import type { Conversation, Message, MessageAttachment } from '../types'
+import type { MessageSearchFilters, MessageSearchType } from '../services/chatApi'
 import { AvatarFallback } from './AvatarFallback'
 import { ConfirmDialog, type ConfirmDialogState } from './ConfirmDialog'
 import { OnlineDurationBadge } from './OnlineDurationBadge'
 
 const EmojiPicker = lazy(() => import('emoji-picker-react'))
-const MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024
-const ALLOWED_ATTACHMENT_TYPES = [
-  'image/',
-  'audio/',
-  'video/',
-  'application/pdf',
-  'text/plain',
-  'application/zip',
-  'application/x-zip-compressed',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument',
-]
+const MAX_ATTACHMENT_SIZE_BYTES = 2 * 1024 * 1024
+const ALLOWED_ATTACHMENT_TYPE_PREFIXES = ['image/', 'audio/']
 
 function parseMessageDate(message?: Message) {
   const value = message?.createdAt || message?.updatedAt
@@ -109,9 +101,11 @@ type ChatPanelProps = {
   isUploadingAttachment?: boolean
   focusedMessageId?: string
   messages: Message[]
+  pinnedMessages?: Message[]
   conversations: Conversation[]
   members?: {
     id: string
+    userId: number
     fullName: string
     nickname?: string | null
     avatarUrl: string | null
@@ -132,7 +126,10 @@ type ChatPanelProps = {
   onToggleMessagePin: (messageId: string) => Promise<void> | void
   onToggleReaction: (messageId: string, emoji: string) => Promise<void> | void
   onUploadAttachment: (file: File) => Promise<void> | void
+  onSearchMessages: (filters: MessageSearchFilters) => Promise<Message[]>
+  onJumpToMessage: (messageId: string) => Promise<void> | void
   onToggleDetails: () => void
+  onOpenContactProfile: () => void
   onOpenConversationList: () => void
   onStartCall: (type: 'audio' | 'video') => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
@@ -151,6 +148,7 @@ export function ChatPanel({
   isUploadingAttachment = false,
   focusedMessageId = '',
   messages,
+  pinnedMessages = [],
   conversations,
   members = [],
   replyingTo = null,
@@ -169,7 +167,10 @@ export function ChatPanel({
   onToggleMessagePin,
   onToggleReaction,
   onUploadAttachment,
+  onSearchMessages,
+  onJumpToMessage,
   onToggleDetails,
+  onOpenContactProfile,
   onOpenConversationList,
   onStartCall,
   onSubmit,
@@ -185,6 +186,13 @@ export function ChatPanel({
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null)
   const [isConfirming, setIsConfirming] = useState(false)
   const [messageSearch, setMessageSearch] = useState('')
+  const [searchDateFrom, setSearchDateFrom] = useState('')
+  const [searchDateTo, setSearchDateTo] = useState('')
+  const [searchSenderId, setSearchSenderId] = useState('')
+  const [searchType, setSearchType] = useState<MessageSearchType>('all')
+  const [searchResults, setSearchResults] = useState<Message[]>([])
+  const [isSearchingMessages, setIsSearchingMessages] = useState(false)
+  const [isSearchFilterOpen, setIsSearchFilterOpen] = useState(false)
   const [activeSearchIndex, setActiveSearchIndex] = useState(0)
   const [isRecordingAudio, setIsRecordingAudio] = useState(false)
   const [recordingDuration, setRecordingDuration] = useState(0)
@@ -217,15 +225,10 @@ export function ChatPanel({
       .slice(0, 5)
   }, [activeConversation.type, members, mentionQuery])
   const normalizedSearch = messageSearch.trim().toLocaleLowerCase('vi-VN')
-  const searchMatches = useMemo(() => {
-    if (!normalizedSearch) {
-      return []
-    }
-
-    return messages.filter((message) =>
-      message.text.toLocaleLowerCase('vi-VN').includes(normalizedSearch),
-    )
-  }, [messages, normalizedSearch])
+  const hasSearchFilters = Boolean(
+    normalizedSearch || searchDateFrom || searchDateTo || searchSenderId || searchType !== 'all',
+  )
+  const searchMatches = searchResults
   const activeSearchMessageId = searchMatches[activeSearchIndex]?.id ?? ''
   const forwardTargets = useMemo(() => {
     const normalizedForwardQuery = forwardQuery.trim().toLocaleLowerCase('vi-VN')
@@ -267,7 +270,7 @@ export function ChatPanel({
 
   useEffect(() => {
     setActiveSearchIndex(0)
-  }, [normalizedSearch])
+  }, [normalizedSearch, searchDateFrom, searchDateTo, searchSenderId, searchType])
 
   useEffect(() => {
     if (activeSearchIndex >= searchMatches.length) {
@@ -346,7 +349,7 @@ export function ChatPanel({
     }
 
     if (!isSupportedAttachment(file)) {
-      setRecordingError('File khong duoc ho tro hoac vuot qua 10MB!')
+      setRecordingError('Chỉ hỗ trợ gửi tệp hình ảnh tối đa 2MB!')
       event.target.value = ''
       return
     }
@@ -361,7 +364,7 @@ export function ChatPanel({
       return false
     }
 
-    return ALLOWED_ATTACHMENT_TYPES.some((type) => file.type.startsWith(type) || file.type === type)
+    return ALLOWED_ATTACHMENT_TYPE_PREFIXES.some((typePrefix) => file.type.startsWith(typePrefix))
   }
 
   function getSupportedAudioMimeType() {
@@ -642,18 +645,57 @@ export function ChatPanel({
     return 'Đã gửi!'
   }
 
-  function moveSearchResult(direction: 'next' | 'previous') {
+  async function moveSearchResult(direction: 'next' | 'previous') {
     if (searchMatches.length === 0) {
       return
     }
 
-    setActiveSearchIndex((current) => {
-      if (direction === 'next') {
-        return (current + 1) % searchMatches.length
-      }
+    const nextIndex =
+      direction === 'next'
+        ? (activeSearchIndex + 1) % searchMatches.length
+        : (activeSearchIndex - 1 + searchMatches.length) % searchMatches.length
 
-      return (current - 1 + searchMatches.length) % searchMatches.length
-    })
+    await jumpToSearchResult(nextIndex)
+  }
+
+  async function runAdvancedSearch() {
+    if (!hasSearchFilters || isSearchingMessages) {
+      setSearchResults([])
+      return
+    }
+
+    setIsSearchingMessages(true)
+
+    try {
+      const results = await onSearchMessages({
+        query: messageSearch,
+        dateFrom: searchDateFrom,
+        dateTo: searchDateTo,
+        senderId: searchSenderId,
+        type: searchType,
+        limit: 50,
+      })
+
+      setSearchResults(results)
+      setActiveSearchIndex(0)
+
+      if (results[0]) {
+        await onJumpToMessage(results[0].id)
+      }
+    } finally {
+      setIsSearchingMessages(false)
+    }
+  }
+
+  async function jumpToSearchResult(index: number) {
+    const result = searchMatches[index]
+
+    if (!result) {
+      return
+    }
+
+    setActiveSearchIndex(index)
+    await onJumpToMessage(result.id)
   }
 
   function renderHighlightedText(message: Message) {
@@ -951,19 +993,27 @@ export function ChatPanel({
           >
             <Menu size={20} />
           </button>
-          <span className="avatar-wrap compact">
-            <AvatarFallback name={activeConversation.name} src={activeConversation.avatar} />
-            <span className={`presence-dot ${activeConversation.presence}`} />
-            <OnlineDurationBadge
-              compact
-              onlineSince={activeConversation.onlineSince}
-              presence={activeConversation.presence}
-            />
-          </span>
-          <div>
-            <h2>{activeConversation.name}</h2>
-            <p>{activeConversation.status}</p>
-          </div>
+          <button
+            className="chat-profile-trigger"
+            disabled={activeConversation.type !== 'direct'}
+            onClick={onOpenContactProfile}
+            title="Xem hồ sơ liên hệ"
+            type="button"
+          >
+            <span className="avatar-wrap compact">
+              <AvatarFallback name={activeConversation.name} src={activeConversation.avatar} />
+              <span className={`presence-dot ${activeConversation.presence}`} />
+              <OnlineDurationBadge
+                compact
+                onlineSince={activeConversation.onlineSince}
+                presence={activeConversation.presence}
+              />
+            </span>
+            <span className="chat-profile-copy">
+              <h2>{activeConversation.name}</h2>
+              <p>{activeConversation.status}</p>
+            </span>
+          </button>
         </div>
 
         <div className="message-search">
@@ -977,7 +1027,69 @@ export function ChatPanel({
               value={messageSearch}
             />
           </label>
-          {normalizedSearch ? (
+          <span className="message-search-filter-wrap">
+            <button
+              className={isSearchFilterOpen ? 'message-search-button is-active' : 'message-search-button'}
+              onClick={() => setIsSearchFilterOpen((current) => !current)}
+              title="Bo loc"
+              type="button"
+            >
+              <Filter size={16} />
+            </button>
+            {isSearchFilterOpen ? (
+              <span className="message-search-filter-popover">
+                <input
+                  aria-label="Từ ngày"
+                  className="message-search-date"
+                  onChange={(event) => setSearchDateFrom(event.target.value)}
+                  type="date"
+                  value={searchDateFrom}
+                />
+                <input
+                  aria-label="Đến ngày"
+                  className="message-search-date"
+                  onChange={(event) => setSearchDateTo(event.target.value)}
+                  type="date"
+                  value={searchDateTo}
+                />
+                <select
+                  aria-label="Người gửi"
+                  className="message-search-select"
+                  onChange={(event) => setSearchSenderId(event.target.value)}
+                  value={searchSenderId}
+                >
+                  <option value="">Mọi người</option>
+                  {members.map((member) => (
+                    <option key={member.id} value={String(member.userId)}>
+                      {member.nickname || member.fullName}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  aria-label="Loại tin"
+                  className="message-search-select"
+                  onChange={(event) => setSearchType(event.target.value as MessageSearchType)}
+                  value={searchType}
+                >
+                  <option value="all">Tất cả</option>
+                  <option value="text">Văn bản</option>
+                  <option value="image">Ảnh</option>
+                  <option value="audio">Âm thanh</option>
+                  <option value="attachment">Đính kèm</option>
+                </select>
+              </span>
+            ) : null}
+          </span>
+          <button
+            className="message-search-button"
+            disabled={!hasSearchFilters || isSearchingMessages}
+            onClick={() => runAdvancedSearch().catch(() => undefined)}
+            title="Tìm"
+            type="button"
+          >
+            <Search size={16} />
+          </button>
+          {hasSearchFilters ? (
             <>
               <span className="message-search-count">
                 {searchMatches.length
@@ -986,8 +1098,8 @@ export function ChatPanel({
               </span>
               <button
                 className="message-search-button"
-                disabled={searchMatches.length === 0}
-                onClick={() => moveSearchResult('previous')}
+                disabled={searchMatches.length === 0 || isSearchingMessages}
+                onClick={() => moveSearchResult('previous').catch(() => undefined)}
                 title="Kết quả trước"
                 type="button"
               >
@@ -995,8 +1107,8 @@ export function ChatPanel({
               </button>
               <button
                 className="message-search-button"
-                disabled={searchMatches.length === 0}
-                onClick={() => moveSearchResult('next')}
+                disabled={searchMatches.length === 0 || isSearchingMessages}
+                onClick={() => moveSearchResult('next').catch(() => undefined)}
                 title="Kết quả tiếp theo"
                 type="button"
               >
@@ -1004,7 +1116,14 @@ export function ChatPanel({
               </button>
               <button
                 className="message-search-button"
-                onClick={() => setMessageSearch('')}
+                onClick={() => {
+                  setMessageSearch('')
+                  setSearchDateFrom('')
+                  setSearchDateTo('')
+                  setSearchSenderId('')
+                  setSearchType('all')
+                  setSearchResults([])
+                }}
                 title="Xóa tìm kiếm"
                 type="button"
               >
@@ -1043,6 +1162,37 @@ export function ChatPanel({
           </button>
         </div>
       </header>
+
+      {pinnedMessages.length > 0 ? (
+        <div className="chat-pinned-messages" aria-label="Tin nhan da ghim">
+          {pinnedMessages.slice(0, 3).map((message) => (
+            <button
+              className="chat-pinned-message"
+              disabled={Boolean(busyMessageId)}
+              key={message.id}
+              onClick={() => onJumpToMessage(message.id)}
+              title="Mo tin nhan da ghim"
+              type="button"
+            >
+              <Pin size={14} />
+              <span>
+                <strong>{getReplyAuthorLabel(message)}</strong>
+                <small>{getReplyText(message)}</small>
+              </span>
+            </button>
+          ))}
+          {pinnedMessages.length > 3 ? (
+            <button
+              className="chat-pinned-more"
+              onClick={onToggleDetails}
+              title="Xem tat ca tin nhan da ghim"
+              type="button"
+            >
+              +{pinnedMessages.length - 3}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="thread">
         {hasOlderMessages ? (
@@ -1292,7 +1442,7 @@ export function ChatPanel({
                                   type="button"
                                 >
                                   <Trash2 size={14} />
-                                  <span>Thu hồi với mọi người</span>
+                                  <span>Thu hồi</span>
                                 </button>
                               </>
                             ) : (
@@ -1341,11 +1491,11 @@ export function ChatPanel({
             </button>
           </div>
         ) : null}
-        <label className="icon-button attachment-picker" title="Đính kèm tài liệu">
+        <label className="icon-button attachment-picker" title="Gửi ảnh">
           <Paperclip size={20} />
           <input
             aria-label="Đính kèm file"
-            accept="image/*,audio/*,video/*,application/pdf,text/plain,.zip,.doc,.docx"
+            accept="image/*"
             disabled={isBlocked || isUploadingAttachment}
             onChange={handleAttachmentChange}
             type="file"

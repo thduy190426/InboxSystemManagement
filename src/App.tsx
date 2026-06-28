@@ -396,7 +396,7 @@ export function App() {
       pushToast(response.message, 'info')
     } catch (error) {
       setAuthError(
-        error instanceof ApiError ? error.message : 'Không thể tạo yêu cầu đặt lại mật khẩu.',
+        error instanceof ApiError ? error.message : 'Không thể tạo yêu cầu đặt lại mật khẩu!',
       )
     } finally {
       setIsSubmitting(false)
