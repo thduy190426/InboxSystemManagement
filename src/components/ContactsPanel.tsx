@@ -1,5 +1,5 @@
 import type { FormEvent } from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   BookUser,
   CalendarDays,
@@ -111,6 +111,7 @@ export function ContactsPanel({
   const [message, setMessage] = useState('')
   const [selectedUser, setSelectedUser] = useState<ContactUser | null>(null)
   const [isProfileClosing, setIsProfileClosing] = useState(false)
+  const pendingContactActionsRef = useRef(new Set<string>())
 
   async function loadDirectory() {
     const [nextFriends, nextRequests, nextSuggestions] = await Promise.all([
@@ -194,11 +195,21 @@ export function ContactsPanel({
   }
 
   async function handleSendRequest(user: ContactUser) {
+    const isCancellingRequest =
+      user.friendshipStatus === 'pending' && user.requestDirection === 'outgoing' && Boolean(user.contactId)
+    const actionKey = isCancellingRequest ? `cancel:${user.contactId}` : `send:${user.id}`
+
+    if (pendingContactActionsRef.current.has(actionKey)) {
+      return
+    }
+
+    pendingContactActionsRef.current.add(actionKey)
+
     try {
       setBusyId(user.id)
       setMessage('')
 
-      if (user.friendshipStatus === 'pending' && user.requestDirection === 'outgoing' && user.contactId) {
+      if (isCancellingRequest && user.contactId) {
         await cancelFriendRequest(user.contactId)
         await loadDirectory()
         setResults((current) =>
@@ -245,6 +256,7 @@ export function ContactsPanel({
     } catch (error) {
       pushToast(error instanceof Error ? error.message : 'Không thể xử lý lời mời!', 'error')
     } finally {
+      pendingContactActionsRef.current.delete(actionKey)
       setBusyId('')
     }
   }

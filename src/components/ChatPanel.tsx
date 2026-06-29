@@ -429,7 +429,7 @@ export function ChatPanel({
         setRecordingDuration((current) => current + 1)
       }, 1000)
     } catch {
-      setRecordingError('Không thể truy cập Micro!')
+      setRecordingError('Không thể truy cập micro!')
     }
   }
 

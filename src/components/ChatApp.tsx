@@ -419,11 +419,11 @@ export function ChatApp({
         }
 
         window.history.replaceState(null, '', nextPath)
-        pushToast(response.message || 'Da gui yeu cau tham gia nhom.', 'info')
+        pushToast(response.message || 'Đã gửi yêu cầu tham gia nhóm!', 'info')
       })
       .catch((error) => {
         window.history.replaceState(null, '', toAppPath({ view: 'chat' }))
-        pushToast(getErrorMessage(error, 'Khong the mo link moi nhom!'))
+        pushToast(getErrorMessage(error, 'Không thể mở link nhóm!'))
       })
   }, [pushToast])
 
@@ -626,7 +626,7 @@ export function ChatApp({
         })
       } catch (error) {
         if (isMounted) {
-          setPageErrorMessage(error instanceof Error ? error.message : 'Không thể tải hội thoại.')
+          setPageErrorMessage(error instanceof Error ? error.message : 'Không thể tải hội thoại!')
         }
       } finally {
         if (isMounted) {
@@ -2665,9 +2665,9 @@ export function ChatApp({
         [activeConversation.id]: token,
       }))
       await navigator.clipboard.writeText(inviteUrl)
-      pushToast('Đã copy link mới!', 'info')
+      pushToast('Đã sao chép link mới!', 'info')
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể copy link mới!')
+      setErrorMessage(error instanceof Error ? error.message : 'Không thể sao chép link mới!')
     } finally {
       setBusyConversationAction('')
     }

@@ -35,6 +35,7 @@ type PeerEntry = {
   peer: RTCPeerConnection
   stream: MediaStream
   pendingCandidates: RTCIceCandidateInit[]
+  isMakingOffer: boolean
 }
 
 type SinkSelectableMediaElement = HTMLMediaElement & {
@@ -308,13 +309,17 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
   function upsertRemotePeer(participant: CallParticipant, patch: Partial<RemotePeerState>) {
     setRemotePeers((current) => {
       const existing = current[participant.userId]
+      const nextStream = existing?.stream || patch.stream || new MediaStream()
+      const hasActiveVideo = nextStream
+        .getVideoTracks()
+        .some((track) => track.readyState === 'live' && track.enabled && !track.muted)
 
       return {
         ...current,
         [participant.userId]: {
           participant,
-          stream: existing?.stream || patch.stream || new MediaStream(),
-          hasVideo: patch.hasVideo ?? existing?.hasVideo ?? false,
+          stream: nextStream,
+          hasVideo: patch.hasVideo ?? (hasActiveVideo || existing?.hasVideo || false),
           connectionState: patch.connectionState ?? existing?.connectionState ?? 'new',
         },
       }
@@ -334,18 +339,31 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
       peer,
       stream,
       pendingCandidates: [],
+      isMakingOffer: false,
     }
 
     upsertRemotePeer(participant, { stream, connectionState: peer.connectionState })
 
+    peer.onnegotiationneeded = () => {
+      if (!shouldCreateOfferTo(participant.userId)) {
+        return
+      }
+
+      makeOffer(participant, entry).catch((error) => {
+        onError(error instanceof Error ? error.message : 'KhÃ´ng thá»ƒ káº¿t ná»‘i cuá»™c gá»i!')
+      })
+    }
+
     peer.ontrack = (event) => {
-      event.streams[0]?.getTracks().forEach((track) => {
+      const tracks = event.streams[0]?.getTracks().length ? event.streams[0].getTracks() : [event.track]
+
+      tracks.forEach((track) => {
         if (!stream.getTracks().some((existingTrack) => existingTrack.id === track.id)) {
           stream.addTrack(track)
         }
 
         if (track.kind === 'video') {
-          upsertRemotePeer(participant, { hasVideo: track.enabled && !track.muted })
+          upsertRemotePeer(participant, { stream, hasVideo: track.readyState === 'live' })
           track.onmute = () => upsertRemotePeer(participant, { hasVideo: false })
           track.onunmute = () => upsertRemotePeer(participant, { hasVideo: true })
           track.onended = () => upsertRemotePeer(participant, { hasVideo: false })
@@ -402,9 +420,23 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
     await addLocalTracks(entry.peer)
 
     if (shouldCreateOffer) {
+      await makeOffer(participant, entry)
+    }
+  }
+
+  async function makeOffer(participant: CallParticipant, entry: PeerEntry) {
+    if (entry.isMakingOffer || entry.peer.signalingState !== 'stable') {
+      return
+    }
+
+    entry.isMakingOffer = true
+
+    try {
       const offer = await entry.peer.createOffer()
       await entry.peer.setLocalDescription(offer)
       sendCallSignal(call.callId, offer, participant.userId)
+    } finally {
+      entry.isMakingOffer = false
     }
   }
 
@@ -442,11 +474,30 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
       const entry = createPeer(participant)
 
       if ('type' in payload.data && payload.data.type) {
-        await startPeer(participant, false)
-        await entry.peer.setRemoteDescription(payload.data)
+        await addLocalTracks(entry.peer)
+
+        const isOffer = payload.data.type === 'offer'
+        const shouldIgnoreOffer =
+          isOffer &&
+          (entry.isMakingOffer || entry.peer.signalingState !== 'stable') &&
+          !shouldCreateOfferTo(participant.userId)
+
+        if (shouldIgnoreOffer) {
+          return
+        }
+
+        if (isOffer && entry.peer.signalingState !== 'stable') {
+          await Promise.all([
+            entry.peer.setLocalDescription({ type: 'rollback' }),
+            entry.peer.setRemoteDescription(payload.data),
+          ])
+        } else {
+          await entry.peer.setRemoteDescription(payload.data)
+        }
+
         await flushPendingCandidates(entry)
 
-        if (payload.data.type === 'offer') {
+        if (isOffer) {
           const answer = await entry.peer.createAnswer()
           await entry.peer.setLocalDescription(answer)
           sendCallSignal(call.callId, answer, participant.userId)

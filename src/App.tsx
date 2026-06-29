@@ -251,7 +251,7 @@ export function App() {
       setIsAuthenticated(false)
       setCurrentUser(null)
       setAuthScreen('login')
-      setAuthError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+      setAuthError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!')
       setIsSubmitting(false)
     })
   }, [])
@@ -326,7 +326,7 @@ export function App() {
     setIsAuthenticated(false)
     setCurrentUser(null)
     setAuthScreen('login')
-    setAuthError('Tài khoản của bạn đã được xoá.')
+    setAuthError('Tài khoản của bạn đã được xoá!')
   }
 
   function handleUserChange(user: AuthUser) {
@@ -347,7 +347,7 @@ export function App() {
 
       handleAuthSuccess(response, payload.rememberLogin === 'true')
     } catch (error) {
-      setAuthError(error instanceof ApiError ? error.message : 'Không thể đăng nhập.')
+      setAuthError(error instanceof ApiError ? error.message : 'Không thể đăng nhập!')
     } finally {
       setIsSubmitting(false)
     }
@@ -374,7 +374,7 @@ export function App() {
 
       handleAuthSuccess(response, true, 'Đăng kí thành công!')
     } catch (error) {
-      setAuthError(error instanceof ApiError ? error.message : 'Không thể đăng kí.')
+      setAuthError(error instanceof ApiError ? error.message : 'Không thể đăng kí!')
     } finally {
       setIsSubmitting(false)
     }
@@ -424,7 +424,7 @@ export function App() {
       setAuthError('')
       pushToast(response.message, 'info')
     } catch (error) {
-      setAuthError(error instanceof ApiError ? error.message : 'Không thể đặt lại mật khẩu.')
+      setAuthError(error instanceof ApiError ? error.message : 'Không thể đặt lại mật khẩu!')
     } finally {
       setIsSubmitting(false)
     }

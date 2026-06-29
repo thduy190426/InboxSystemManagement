@@ -64,11 +64,11 @@ function getPasswordErrors(password, fullName, email) {
     .filter((part) => part.length >= 3)
 
   if (emailName && normalizedPassword.includes(emailName)) {
-    errors.push('không chứa phần tên trong email!')
+    errors.push('không chứa phần tên trong Email!')
   }
 
   if (nameParts.some((part) => normalizedPassword.includes(part))) {
-    errors.push('không chứa tên tài khoản')
+    errors.push('không chứa tên tài khoản!')
   }
 
   return errors
