@@ -1,5 +1,5 @@
 import { Mic, MicOff, Phone, PhoneOff, Volume2, VolumeX, Video, VideoOff, X } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import {
   acceptRealtimeCall,
   cancelRealtimeCall,
@@ -44,6 +44,83 @@ type SinkSelectableMediaElement = HTMLMediaElement & {
 
 const FINISHED_CALL_STATUSES: CallSession['status'][] = ['declined', 'missed', 'cancelled', 'completed', 'failed']
 
+function attachStream(node: HTMLMediaElement | null, stream: MediaStream) {
+  if (!node || node.srcObject === stream) {
+    return
+  }
+
+  node.srcObject = stream
+}
+
+type RemoteAudioProps = {
+  stream: MediaStream
+  isSpeakerOn: boolean
+  selectedAudioOutputId: string
+  canSelectAudioOutput: boolean
+}
+
+const RemoteAudio = memo(function RemoteAudio({
+  stream,
+  isSpeakerOn,
+  selectedAudioOutputId,
+  canSelectAudioOutput,
+}: RemoteAudioProps) {
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  useEffect(() => {
+    attachStream(audioRef.current, stream)
+  }, [stream])
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.muted = !isSpeakerOn
+    }
+  }, [isSpeakerOn])
+
+  useEffect(() => {
+    if (!canSelectAudioOutput || !audioRef.current) {
+      return
+    }
+
+    const media = audioRef.current as SinkSelectableMediaElement
+    media.setSinkId?.(selectedAudioOutputId || 'default').catch(() => undefined)
+  }, [canSelectAudioOutput, selectedAudioOutputId])
+
+  return <audio ref={audioRef} autoPlay hidden />
+})
+
+type RemoteVideoTileProps = {
+  remotePeer: RemotePeerState
+}
+
+const RemoteVideoTile = memo(function RemoteVideoTile({ remotePeer }: RemoteVideoTileProps) {
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+
+  useEffect(() => {
+    attachStream(videoRef.current, remotePeer.stream)
+  }, [remotePeer.stream])
+
+  return (
+    <div className="remote-video-tile">
+      <video
+        className={remotePeer.hasVideo ? 'remote-video' : 'remote-video is-hidden'}
+        ref={videoRef}
+        autoPlay
+        muted
+        playsInline
+      />
+      {!remotePeer.hasVideo ? (
+        <div className="call-video-avatar">
+          <AvatarFallback name={remotePeer.participant.fullName} src={remotePeer.participant.avatarUrl || null} />
+          <strong>{remotePeer.participant.fullName}</strong>
+        </div>
+      ) : (
+        <span>{remotePeer.participant.fullName}</span>
+      )}
+    </div>
+  )
+})
+
 export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverlayProps) {
   const [callStatus, setCallStatus] = useState(call.status)
   const [isMicOn, setIsMicOn] = useState(true)
@@ -60,7 +137,6 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
   const [isOverlayClosing, setIsOverlayClosing] = useState(false)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const localVideoRef = useRef<HTMLVideoElement | null>(null)
-  const remoteAudioRefs = useRef(new Map<number, HTMLAudioElement>())
   const localStreamRef = useRef<MediaStream | null>(null)
   const peersRef = useRef(new Map<number, PeerEntry>())
   const currentUser = call.participants.find((participant) => participant.id === currentUserId)
@@ -158,17 +234,6 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
     }
   }, [callStatus, isCameraOn])
 
-  useEffect(() => {
-    applyAudioOutputDevice(selectedAudioOutputId).catch((error) => {
-      onError(error instanceof Error ? error.message : 'Không thể chọn loa khác!')
-    })
-  }, [selectedAudioOutputId])
-
-  useEffect(() => {
-    remoteAudioRefs.current.forEach((audio) => {
-      audio.muted = !isSpeakerOn
-    })
-  }, [isSpeakerOn, remotePeers])
 
   async function ensureLocalStream() {
     if (localStreamRef.current) {
@@ -245,14 +310,6 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
     setSelectedVideoInputId((current) => current || nextVideoInputs[0]?.id || '')
   }
 
-  async function applyAudioOutputDevice(deviceId: string) {
-    const tasks = Array.from(remoteAudioRefs.current.values()).map((media) => {
-      const remoteMedia = media as SinkSelectableMediaElement
-      return remoteMedia.setSinkId?.(deviceId || 'default')
-    })
-
-    await Promise.all(tasks)
-  }
 
   async function updateNetworkQuality() {
     const peers = Array.from(peersRef.current.values())
@@ -534,7 +591,6 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
     entry?.peer.close()
     entry?.stream.getTracks().forEach((track) => track.stop())
     peersRef.current.delete(participantUserId)
-    remoteAudioRefs.current.delete(participantUserId)
     setRemotePeers((current) => {
       const next = { ...current }
       delete next[participantUserId]
@@ -548,7 +604,6 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
       entry.stream.getTracks().forEach((track) => track.stop())
     })
     peersRef.current.clear()
-    remoteAudioRefs.current.clear()
     localStreamRef.current?.getTracks().forEach((track) => track.stop())
     localStreamRef.current = null
     setRemotePeers({})
@@ -590,13 +645,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
   }
 
   function toggleSpeaker() {
-    const nextEnabled = !isSpeakerOn
-
-    remoteAudioRefs.current.forEach((audio) => {
-      audio.muted = !nextEnabled
-    })
-
-    setIsSpeakerOn(nextEnabled)
+    setIsSpeakerOn((current) => !current)
   }
 
   function toggleCamera() {
@@ -658,20 +707,12 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
 
         <div className={canShowVideo ? 'call-stage is-grid' : 'call-stage'}>
           {remotePeerList.map((remotePeer) => (
-            <audio
+            <RemoteAudio
               key={`audio-${remotePeer.participant.userId}`}
-              ref={(node) => {
-                if (node) {
-                  node.srcObject = remotePeer.stream
-                  node.muted = !isSpeakerOn
-                  remoteAudioRefs.current.set(remotePeer.participant.userId, node)
-                  applyAudioOutputDevice(selectedAudioOutputId).catch(() => undefined)
-                } else {
-                  remoteAudioRefs.current.delete(remotePeer.participant.userId)
-                }
-              }}
-              autoPlay
-              hidden
+              stream={remotePeer.stream}
+              isSpeakerOn={isSpeakerOn}
+              selectedAudioOutputId={selectedAudioOutputId}
+              canSelectAudioOutput={canSelectAudioOutput}
             />
           ))}
           {canShowVideo ? (
@@ -679,27 +720,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
               <div className={remotePeerList.length > 1 ? 'remote-video-grid' : 'remote-video-grid is-single'}>
                 {remotePeerList.length ? (
                   remotePeerList.map((remotePeer) => (
-                    <div className="remote-video-tile" key={remotePeer.participant.userId}>
-                      <video
-                        className={remotePeer.hasVideo ? 'remote-video' : 'remote-video is-hidden'}
-                        ref={(node) => {
-                          if (node) {
-                            node.srcObject = remotePeer.stream
-                            node.muted = true
-                          }
-                        }}
-                        autoPlay
-                        playsInline
-                      />
-                      {!remotePeer.hasVideo ? (
-                        <div className="call-video-avatar">
-                          <AvatarFallback name={remotePeer.participant.fullName} src={remotePeer.participant.avatarUrl || null} />
-                          <strong>{remotePeer.participant.fullName}</strong>
-                        </div>
-                      ) : (
-                        <span>{remotePeer.participant.fullName}</span>
-                      )}
-                    </div>
+                    <RemoteVideoTile key={remotePeer.participant.userId} remotePeer={remotePeer} />
                   ))
                 ) : (
                   <div className="call-video-avatar">
