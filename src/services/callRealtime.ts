@@ -74,6 +74,10 @@ export function cancelRealtimeCall(callId: string) {
   getRealtimeSocket()?.emit('call:cancel', { callId })
 }
 
+export function markRealtimeCallMissed(callId: string) {
+  getRealtimeSocket()?.emit('call:miss', { callId })
+}
+
 export function endRealtimeCall(callId: string) {
   getRealtimeSocket()?.emit('call:end', { callId })
 }

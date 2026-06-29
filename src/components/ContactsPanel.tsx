@@ -33,6 +33,7 @@ import {
 import { getRealtimeSocket } from '../services/realtime'
 import type { ContactUser } from '../types'
 import { AvatarFallback } from './AvatarFallback'
+import { ConfirmDialog, type ConfirmDialogState } from './ConfirmDialog'
 
 type ContactsPanelProps = {
   contactToOpen?: ContactUser | null
@@ -111,6 +112,8 @@ export function ContactsPanel({
   const [message, setMessage] = useState('')
   const [selectedUser, setSelectedUser] = useState<ContactUser | null>(null)
   const [isProfileClosing, setIsProfileClosing] = useState(false)
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null)
+  const [isConfirming, setIsConfirming] = useState(false)
   const pendingContactActionsRef = useRef(new Set<string>())
 
   async function loadDirectory() {
@@ -329,6 +332,30 @@ export function ContactsPanel({
     }
   }
 
+  async function handleConfirmDialog() {
+    if (!confirmDialog || isConfirming) {
+      return
+    }
+
+    try {
+      setIsConfirming(true)
+      await confirmDialog.onConfirm()
+      setConfirmDialog(null)
+    } finally {
+      setIsConfirming(false)
+    }
+  }
+
+  function confirmUnfriend(friend: ContactUser) {
+    setConfirmDialog({
+      title: 'Hủy bạn bè?',
+      description: `Bạn sẽ hủy kết bạn với ${friend.nickname || friend.fullName}. Sau đó hai bạn cần gửi lời mời lại nếu muốn kết bạn tiếp!`,
+      confirmLabel: 'Hủy bạn bè',
+      tone: 'danger',
+      onConfirm: () => handleUnfriend(friend),
+    })
+  }
+
   function openContactProfile(user: ContactUser) {
     setIsProfileClosing(false)
     setSelectedUser(user)
@@ -348,11 +375,11 @@ export function ContactsPanel({
       : 'offline'
     const presenceLabel =
       safePresence === 'online'
-        ? 'Đang trực tuyến'
+        ? 'Đang trực tuyến!'
         : safePresence === 'away'
-          ? 'Tạm vắng'
+          ? 'Tạm vắng!'
           : safePresence === 'busy'
-            ? 'Đang bận'
+            ? 'Đang bận!'
             : 'Ngoại tuyến'
 
     return (
@@ -516,11 +543,11 @@ export function ContactsPanel({
                   friend,
                   <button
                     disabled={busyId === friend.id}
-                    onClick={() => handleUnfriend(friend)}
+                    onClick={() => confirmUnfriend(friend)}
                     type="button"
                   >
                     <UserMinus size={16} />
-                    {busyId === friend.id ? 'Đang xử lý' : 'Hủy kết bạn'}
+                    {busyId === friend.id ? 'Đang xử lý' : 'Hủy bạn bè'}
                   </button>,
                 ),
               )
@@ -673,6 +700,12 @@ export function ContactsPanel({
         </section>
       </div>
       {selectedUser ? renderContactProfile(selectedUser) : null}
+      <ConfirmDialog
+        dialog={confirmDialog}
+        isWorking={isConfirming}
+        onCancel={() => setConfirmDialog(null)}
+        onConfirm={() => void handleConfirmDialog()}
+      />
     </section>
   )
 }

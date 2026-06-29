@@ -287,6 +287,10 @@ function formatCallDuration(seconds) {
 
 function getCallStatusLabel(status, participantStatus) {
   if (participantStatus === 'missed' || status === 'missed') {
+    return 'Không bắt máy'
+  }
+
+  if (participantStatus === 'missed' || status === 'missed') {
     return 'Cuộc gọi nhỡ'
   }
 
@@ -1876,7 +1880,7 @@ async function reviewGroupJoinRequest(request, response, next) {
         [conversationId, joinRequest.user_id],
       )
 
-      await createSystemMessage(connection, conversationId, currentUserId, `${joinRequest.full_name} da tham gia nhom`)
+      await createSystemMessage(connection, conversationId, currentUserId, `${joinRequest.full_name} đã tham gia nhóm chat!`)
     }
 
     const members = await loadConversationMembers(connection, conversationId, currentUserId)

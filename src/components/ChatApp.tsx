@@ -85,6 +85,7 @@ import { InboxPanel } from './InboxPanel'
 import { NavRail } from './NavRail'
 import { NotificationsPanel } from './NotificationsPanel'
 import { ProfilePage } from './ProfilePage'
+import { SettingsPage } from './SettingsPage'
 
 type ChatAppProps = {
   currentUser: AuthUser | null
@@ -2999,9 +3000,23 @@ export function ChatApp({
         {renderNavRail()}
         <ProfilePage
           currentUser={currentUser}
+          onUserChange={onUserChange}
+          pushToast={pushToast}
+        />
+        {renderCallOverlay()}
+        {renderConfirmDialog()}
+        {renderToasts()}
+      </main>
+    )
+  }
+
+  if (activeView === 'settings') {
+    return (
+      <main className={`${shellClassName} profile-shell settings-shell`}>
+        {renderNavRail()}
+        <SettingsPage
           onAccountDeleted={onAccountDeleted}
           onLogout={handleLogout}
-          onUserChange={onUserChange}
           pushToast={pushToast}
         />
         {renderCallOverlay()}

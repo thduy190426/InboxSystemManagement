@@ -6,6 +6,7 @@ const { sendWebPushToUsers } = require('../services/push.service')
 
 let io = null
 const activeCallTimers = new Map()
+const CALL_ANSWER_TIMEOUT_MS = 60_000
 
 function pushWebNotificationToUsers(userIds, payload) {
   sendWebPushToUsers(userIds, payload).catch((error) => {
@@ -184,6 +185,10 @@ function formatCallDuration(seconds) {
 }
 
 function getCallStatusLabel(status) {
+  if (status === 'missed') {
+    return 'Không bắt máy!'
+  }
+
   if (status === 'completed') {
     return 'Đã kết thúc!'
   }
@@ -210,14 +215,14 @@ async function createCallDetailMessage(connection, call, endedAt, durationSecond
 
   const durationLabel = formatCallDuration(durationSeconds)
   const body =
-    call.status === 'cancelled'
-      ? 'Cu\u1ed9c g\u1ecdi: \u0110\u00e3 h\u1ee7y.'
-      : call.status === 'completed'
-        ? `Cu\u1ed9c g\u1ecdi: K\u1ebft th\u00fac, Th\u1eddi l\u01b0\u1ee3ng: ${durationLabel}`
-        : call.status === 'ongoing'
-          ? `Cu\u1ed9c g\u1ecdi \u0111ang di\u1ec5n ra: Th\u1eddi l\u01b0\u1ee3ng ${durationLabel}`
-          : call.status === 'missed'
-            ? 'Cu\u1ed9c g\u1ecdi nh\u1ee1'
+    call.status === 'missed'
+      ? 'Cuộc gọi: Không bắt máy.'
+      : call.status === 'cancelled'
+        ? 'Cu\u1ed9c g\u1ecdi: \u0110\u00e3 h\u1ee7y.'
+        : call.status === 'completed'
+          ? `Cu\u1ed9c g\u1ecdi: K\u1ebft th\u00fac, Th\u1eddi l\u01b0\u1ee3ng: ${durationLabel}`
+          : call.status === 'ongoing'
+            ? `Cu\u1ed9c g\u1ecdi \u0111ang di\u1ec5n ra: Th\u1eddi l\u01b0\u1ee3ng ${durationLabel}`
             : getCallStatusLabel(call.status)
   const [result] = await connection.execute(
     `INSERT INTO messages (
@@ -338,7 +343,7 @@ function scheduleMissedCall(callId) {
         connection.release()
         activeCallTimers.delete(callId)
       }
-    }, 45_000),
+    }, CALL_ANSWER_TIMEOUT_MS),
   )
 }
 
@@ -701,6 +706,10 @@ function initRealtime(server, corsOrigin) {
       finishCall(String(payload.callId || ''), 'cancelled', 'left', ack)
     })
 
+    socket.on('call:miss', (payload = {}, ack) => {
+      finishCall(String(payload.callId || ''), 'missed', 'left', ack)
+    })
+
     socket.on('call:end', (payload = {}, ack) => {
       finishCall(String(payload.callId || ''), 'completed', 'left', ack)
     })
@@ -779,4 +788,3 @@ module.exports = {
   emitToUsers,
   initRealtime,
 }
-

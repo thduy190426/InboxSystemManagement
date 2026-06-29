@@ -5,6 +5,7 @@ import {
   cancelRealtimeCall,
   declineRealtimeCall,
   endRealtimeCall,
+  markRealtimeCallMissed,
   sendCallSignal,
 } from '../services/callRealtime'
 import type { CallSignalPayload } from '../services/callRealtime'
@@ -42,7 +43,22 @@ type SinkSelectableMediaElement = HTMLMediaElement & {
   setSinkId?: (sinkId: string) => Promise<void>
 }
 
+type RingbackTone = {
+  context: AudioContext
+  gain: GainNode
+  oscillators: OscillatorNode[]
+  timerId: number
+}
+
+type AudioWindow = Window & {
+  AudioContext?: typeof AudioContext
+  webkitAudioContext?: typeof AudioContext
+}
+
 const FINISHED_CALL_STATUSES: CallSession['status'][] = ['declined', 'missed', 'cancelled', 'completed', 'failed']
+const OUTGOING_CALL_ANSWER_TIMEOUT_MS = 60_000
+const LOCAL_FINISH_TONE_NOTES = [660, 440]
+const REMOTE_FINISH_TONE_NOTES = [520, 390, 260]
 
 function attachStream(node: HTMLMediaElement | null, stream: MediaStream) {
   if (!node || node.srcObject === stream) {
@@ -136,6 +152,30 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
   const [remotePeers, setRemotePeers] = useState<Record<number, RemotePeerState>>({})
   const [isOverlayClosing, setIsOverlayClosing] = useState(false)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null)
+  const [overlaySize, setOverlaySize] = useState<{ width: number; height: number } | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [isResizing, setIsResizing] = useState(false)
+  const callShellRef = useRef<HTMLDivElement | null>(null)
+  const dragStateRef = useRef<{
+    pointerId: number
+    offsetX: number
+    offsetY: number
+    width: number
+    height: number
+  } | null>(null)
+  const resizeStateRef = useRef<{
+    pointerId: number
+    startX: number
+    startY: number
+    startWidth: number
+    startHeight: number
+    left: number
+    top: number
+  } | null>(null)
+  const ringbackToneRef = useRef<RingbackTone | null>(null)
+  const finishedLocallyRef = useRef(false)
+  const hasPlayedFinishToneRef = useRef(false)
   const localVideoRef = useRef<HTMLVideoElement | null>(null)
   const localStreamRef = useRef<MediaStream | null>(null)
   const peersRef = useRef(new Map<number, PeerEntry>())
@@ -161,6 +201,21 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
   }, [])
 
   useEffect(() => {
+    function keepOverlayInsideViewport() {
+      if (!dragPosition || !callShellRef.current) {
+        return
+      }
+
+      const { width, height } = callShellRef.current.getBoundingClientRect()
+      setDragPosition(clampOverlayPosition(dragPosition.x, dragPosition.y, width, height))
+      setOverlaySize((current) => (current ? clampOverlaySize(current.width, current.height, call.type === 'video') : current))
+    }
+
+    window.addEventListener('resize', keepOverlayInsideViewport)
+    return () => window.removeEventListener('resize', keepOverlayInsideViewport)
+  }, [call.type, dragPosition])
+
+  useEffect(() => {
     setCallStatus(call.status)
 
     if (call.status === 'ringing' && isCaller && !localStreamRef.current) {
@@ -171,6 +226,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
     }
 
     if (FINISHED_CALL_STATUSES.includes(call.status)) {
+      playFinishTone(finishedLocallyRef.current ? 'local' : 'remote')
       stopMedia()
       window.setTimeout(closeOverlay, 760)
     }
@@ -210,6 +266,35 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
 
     return () => window.clearInterval(timer)
   }, [callStatus])
+
+  useEffect(() => {
+    if (callStatus === 'ringing' && isCaller) {
+      startRingbackTone()
+    } else {
+      stopRingbackTone()
+    }
+
+    return stopRingbackTone
+  }, [callStatus, isCaller])
+
+  useEffect(() => {
+    const isWaitingForAnswerOrConnection =
+      callStatus === 'ringing' || (callStatus === 'connecting' && remotePeerList.length === 0)
+
+    if (!isCaller || !isWaitingForAnswerOrConnection) {
+      return
+    }
+
+    const startedAtTime = call.startedAt ? new Date(call.startedAt).getTime() : Date.now()
+    const elapsedMs = Number.isNaN(startedAtTime) ? 0 : Math.max(Date.now() - startedAtTime, 0)
+    const remainingMs = Math.max(OUTGOING_CALL_ANSWER_TIMEOUT_MS - elapsedMs, 0)
+    const timeoutId = window.setTimeout(() => {
+      markRealtimeCallMissed(call.callId)
+      finishCall('missed', 'local')
+    }, remainingMs)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [call.callId, call.startedAt, callStatus, isCaller, remotePeerList.length])
 
   useEffect(() => {
     if (callStatus !== 'ongoing' && callStatus !== 'connecting') {
@@ -609,31 +694,273 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
     setRemotePeers({})
   }
 
-  function finishCall(status: CallSession['status']) {
+  function startRingbackTone() {
+    if (ringbackToneRef.current || typeof AudioContext === 'undefined') {
+      return
+    }
+
+    const audioWindow = window as AudioWindow
+    const AudioContextConstructor = audioWindow.AudioContext || audioWindow.webkitAudioContext
+    if (!AudioContextConstructor) {
+      return
+    }
+
+    const context = new AudioContextConstructor()
+    const gain = context.createGain()
+    const oscillators = [context.createOscillator(), context.createOscillator()]
+    const setAudible = (isAudible: boolean) => {
+      gain.gain.cancelScheduledValues(context.currentTime)
+      gain.gain.setTargetAtTime(isAudible ? 0.055 : 0.0001, context.currentTime, 0.025)
+    }
+
+    oscillators[0].frequency.value = 440
+    oscillators[1].frequency.value = 480
+    oscillators.forEach((oscillator) => {
+      oscillator.type = 'sine'
+      oscillator.connect(gain)
+      oscillator.start()
+    })
+    gain.gain.value = 0.0001
+    gain.connect(context.destination)
+
+    let isAudible = false
+    const pulseTone = () => {
+      isAudible = !isAudible
+      setAudible(isAudible)
+    }
+
+    pulseTone()
+    const timerId = window.setInterval(pulseTone, 2000)
+    ringbackToneRef.current = { context, gain, oscillators, timerId }
+
+    context.resume().catch(() => undefined)
+  }
+
+  function stopRingbackTone() {
+    const ringbackTone = ringbackToneRef.current
+    if (!ringbackTone) {
+      return
+    }
+
+    window.clearInterval(ringbackTone.timerId)
+    ringbackTone.gain.gain.setTargetAtTime(0.0001, ringbackTone.context.currentTime, 0.02)
+    ringbackTone.oscillators.forEach((oscillator) => {
+      oscillator.stop(ringbackTone.context.currentTime + 0.04)
+    })
+    window.setTimeout(() => {
+      ringbackTone.context.close().catch(() => undefined)
+    }, 80)
+    ringbackToneRef.current = null
+  }
+
+  function playToneSequence(notes: number[], noteDuration = 0.13) {
+    const audioWindow = window as AudioWindow
+    const AudioContextConstructor = audioWindow.AudioContext || audioWindow.webkitAudioContext
+    if (!AudioContextConstructor) {
+      return
+    }
+
+    const context = new AudioContextConstructor()
+    const gain = context.createGain()
+    gain.gain.value = 0.0001
+    gain.connect(context.destination)
+
+    notes.forEach((frequency, index) => {
+      const startAt = context.currentTime + index * noteDuration
+      const oscillator = context.createOscillator()
+      oscillator.type = 'sine'
+      oscillator.frequency.value = frequency
+      oscillator.connect(gain)
+      gain.gain.setTargetAtTime(0.075, startAt, 0.012)
+      gain.gain.setTargetAtTime(0.0001, startAt + noteDuration * 0.72, 0.018)
+      oscillator.start(startAt)
+      oscillator.stop(startAt + noteDuration)
+    })
+
+    context.resume().catch(() => undefined)
+    window.setTimeout(() => {
+      context.close().catch(() => undefined)
+    }, notes.length * noteDuration * 1000 + 160)
+  }
+
+  function playFinishTone(source: 'local' | 'remote') {
+    if (hasPlayedFinishToneRef.current) {
+      return
+    }
+
+    hasPlayedFinishToneRef.current = true
+    stopRingbackTone()
+    playToneSequence(source === 'local' ? LOCAL_FINISH_TONE_NOTES : REMOTE_FINISH_TONE_NOTES)
+  }
+
+  function finishCall(status: CallSession['status'], source: 'local' | 'remote' = 'remote') {
+    if (source === 'local') {
+      finishedLocallyRef.current = true
+    }
+    playFinishTone(source)
+    stopRingbackTone()
     stopMedia()
     setCallStatus(status)
     window.setTimeout(closeOverlay, 760)
   }
 
   function closeOverlay() {
+    stopRingbackTone()
     setIsOverlayClosing(true)
     window.setTimeout(onClear, 140)
   }
 
   function rejectCall() {
     declineRealtimeCall(call.callId)
-    finishCall('declined')
+    finishCall('declined', 'local')
   }
 
   function hangUp() {
     if (callStatus === 'ringing' && isCaller) {
       cancelRealtimeCall(call.callId)
-      finishCall('cancelled')
+      finishCall('cancelled', 'local')
       return
     }
 
     endRealtimeCall(call.callId)
-    finishCall('completed')
+    finishCall('completed', 'local')
+  }
+
+  function isDesktopDragAvailable() {
+    return window.matchMedia('(min-width: 769px) and (pointer: fine)').matches
+  }
+
+  function getOverlaySizeLimits(isVideoCall: boolean) {
+    const padding = 12
+    const minWidth = isVideoCall ? 520 : 360
+    const minHeight = isVideoCall ? 480 : 380
+
+    return {
+      minWidth: Math.min(minWidth, window.innerWidth - padding * 2),
+      minHeight: Math.min(minHeight, window.innerHeight - padding * 2),
+      maxWidth: Math.max(280, window.innerWidth - padding * 2),
+      maxHeight: Math.max(320, window.innerHeight - padding * 2),
+    }
+  }
+
+  function clampOverlaySize(width: number, height: number, isVideoCall: boolean) {
+    const limits = getOverlaySizeLimits(isVideoCall)
+
+    return {
+      width: Math.min(Math.max(limits.minWidth, width), limits.maxWidth),
+      height: Math.min(Math.max(limits.minHeight, height), limits.maxHeight),
+    }
+  }
+
+  function clampOverlayPosition(x: number, y: number, width: number, height: number) {
+    const padding = 12
+
+    return {
+      x: Math.min(Math.max(padding, x), Math.max(padding, window.innerWidth - width - padding)),
+      y: Math.min(Math.max(padding, y), Math.max(padding, window.innerHeight - height - padding)),
+    }
+  }
+
+  function startDraggingOverlay(event: React.PointerEvent<HTMLElement>) {
+    if (!isDesktopDragAvailable() || event.button !== 0 || !callShellRef.current) {
+      return
+    }
+
+    const target = event.target as HTMLElement
+    if (target.closest('button, select, input, textarea, a')) {
+      return
+    }
+
+    const rect = callShellRef.current.getBoundingClientRect()
+    dragStateRef.current = {
+      pointerId: event.pointerId,
+      offsetX: event.clientX - rect.left,
+      offsetY: event.clientY - rect.top,
+      width: rect.width,
+      height: rect.height,
+    }
+    setDragPosition({ x: rect.left, y: rect.top })
+    setOverlaySize((current) => current || { width: rect.width, height: rect.height })
+    setIsDragging(true)
+    event.currentTarget.setPointerCapture(event.pointerId)
+  }
+
+  function dragOverlay(event: React.PointerEvent<HTMLElement>) {
+    const dragState = dragStateRef.current
+    if (!dragState || dragState.pointerId !== event.pointerId) {
+      return
+    }
+
+    setDragPosition(
+      clampOverlayPosition(
+        event.clientX - dragState.offsetX,
+        event.clientY - dragState.offsetY,
+        dragState.width,
+        dragState.height,
+      ),
+    )
+  }
+
+  function stopDraggingOverlay(event: React.PointerEvent<HTMLElement>) {
+    if (dragStateRef.current?.pointerId !== event.pointerId) {
+      return
+    }
+
+    dragStateRef.current = null
+    setIsDragging(false)
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+  }
+
+  function startResizingOverlay(event: React.PointerEvent<HTMLButtonElement>) {
+    if (!isDesktopDragAvailable() || event.button !== 0 || !callShellRef.current) {
+      return
+    }
+
+    const rect = callShellRef.current.getBoundingClientRect()
+    resizeStateRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startWidth: rect.width,
+      startHeight: rect.height,
+      left: rect.left,
+      top: rect.top,
+    }
+    setDragPosition({ x: rect.left, y: rect.top })
+    setOverlaySize({ width: rect.width, height: rect.height })
+    setIsResizing(true)
+    event.currentTarget.setPointerCapture(event.pointerId)
+    event.preventDefault()
+  }
+
+  function resizeOverlay(event: React.PointerEvent<HTMLButtonElement>) {
+    const resizeState = resizeStateRef.current
+    if (!resizeState || resizeState.pointerId !== event.pointerId) {
+      return
+    }
+
+    const nextSize = clampOverlaySize(
+      Math.min(resizeState.startWidth + event.clientX - resizeState.startX, window.innerWidth - resizeState.left - 12),
+      Math.min(resizeState.startHeight + event.clientY - resizeState.startY, window.innerHeight - resizeState.top - 12),
+      canShowVideo,
+    )
+
+    setOverlaySize(nextSize)
+    setDragPosition(clampOverlayPosition(resizeState.left, resizeState.top, nextSize.width, nextSize.height))
+  }
+
+  function stopResizingOverlay(event: React.PointerEvent<HTMLButtonElement>) {
+    if (resizeStateRef.current?.pointerId !== event.pointerId) {
+      return
+    }
+
+    resizeStateRef.current = null
+    setIsResizing(false)
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
   }
 
   function toggleMic() {
@@ -686,16 +1013,39 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
             : callStatus === 'missed'
               ? 'Cuộc gọi nhỡ'
               : 'Đã kết thúc!'
-
+  const displayStatusLabel = callStatus === 'missed' ? 'Không bắt máy' : statusLabel
   const fullStatusLabel =
     networkQualityLabel && ['connecting', 'ongoing'].includes(callStatus)
       ? `${statusLabel} · ${networkQualityLabel}`
-      : statusLabel
+      : displayStatusLabel
 
   return (
     <div className={isOverlayClosing ? 'call-overlay is-exiting' : 'call-overlay'} role="dialog" aria-modal="true">
-      <section className={canShowVideo ? 'call-window is-video' : 'call-window'}>
-        <header className="call-header">
+      <div
+        className={[
+          'call-window-shell',
+          canShowVideo ? 'is-video' : '',
+          dragPosition ? 'is-positioned' : '',
+          overlaySize ? 'is-sized' : '',
+          isDragging ? 'is-dragging' : '',
+          isResizing ? 'is-resizing' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        ref={callShellRef}
+        style={{
+          ...(dragPosition ? { left: `${dragPosition.x}px`, top: `${dragPosition.y}px` } : {}),
+          ...(overlaySize ? { width: `${overlaySize.width}px`, height: `${overlaySize.height}px` } : {}),
+        }}
+      >
+        <section className={canShowVideo ? 'call-window is-video' : 'call-window'}>
+          <header
+            className="call-header"
+            onPointerCancel={stopDraggingOverlay}
+            onPointerDown={startDraggingOverlay}
+            onPointerMove={dragOverlay}
+            onPointerUp={stopDraggingOverlay}
+          >
           <div>
             <strong>{remoteName}</strong>
             <span>{fullStatusLabel}</span>
@@ -846,8 +1196,19 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
               </button>
             </>
           )}
-        </footer>
-      </section>
+          </footer>
+          <button
+            aria-label="Resize call overlay"
+            className="call-resize-handle"
+            onPointerCancel={stopResizingOverlay}
+            onPointerDown={startResizingOverlay}
+            onPointerMove={resizeOverlay}
+            onPointerUp={stopResizingOverlay}
+            title="Thay đổi kích thước"
+            type="button"
+          />
+        </section>
+      </div>
     </div>
   )
 }

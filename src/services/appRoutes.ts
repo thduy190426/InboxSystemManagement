@@ -49,6 +49,10 @@ export function readAppRouteFromLocation(location: RouteLocation = window.locati
     return { view: 'profile' }
   }
 
+  if (firstSegment === 'settings' || legacyHash === 'settings') {
+    return { view: 'settings' }
+  }
+
   if (firstSegment === 'notifications' || legacyHash === 'notifications') {
     return { view: 'notifications' }
   }
@@ -88,10 +92,12 @@ export function isAppRoute(location: RouteLocation = window.location) {
     firstSegment === 'contacts' ||
     firstSegment === 'notifications' ||
     firstSegment === 'profile' ||
+    firstSegment === 'settings' ||
     legacyHash === 'chat' ||
     legacyHash === 'contacts' ||
     legacyHash === 'notifications' ||
-    legacyHash === 'profile'
+    legacyHash === 'profile' ||
+    legacyHash === 'settings'
   )
 }
 
@@ -108,6 +114,7 @@ export function isKnownRoute(location: RouteLocation = window.location) {
     'contacts',
     'notifications',
     'profile',
+    'settings',
     'terms',
     'privacy',
   ]
@@ -121,6 +128,7 @@ export function isKnownRoute(location: RouteLocation = window.location) {
     'contacts',
     'notifications',
     'profile',
+    'settings',
     'terms',
     'privacy',
   ]
@@ -151,6 +159,10 @@ export function toAppPath(route: AppRoute) {
 
   if (route.view === 'profile') {
     return '/profile'
+  }
+
+  if (route.view === 'settings') {
+    return '/settings'
   }
 
   if (route.view === 'notifications') {

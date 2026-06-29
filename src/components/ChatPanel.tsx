@@ -83,7 +83,7 @@ function formatDateHeader(date: Date | null, now = new Date()) {
   return new Intl.DateTimeFormat('vi-VN', {
     day: '2-digit',
     month: '2-digit',
-    year: date.getFullYear() === now.getFullYear() ? undefined : 'numeric',
+    year: 'numeric',
   }).format(date)
 }
 
@@ -1164,14 +1164,14 @@ export function ChatPanel({
       </header>
 
       {pinnedMessages.length > 0 ? (
-        <div className="chat-pinned-messages" aria-label="Tin nhan da ghim">
+        <div className="chat-pinned-messages" aria-label="Tin nhắn đã ghim">
           {pinnedMessages.slice(0, 3).map((message) => (
             <button
               className="chat-pinned-message"
               disabled={Boolean(busyMessageId)}
               key={message.id}
               onClick={() => onJumpToMessage(message.id)}
-              title="Mo tin nhan da ghim"
+              title="Mở tin nhắn đã ghim"
               type="button"
             >
               <Pin size={14} />
@@ -1185,7 +1185,7 @@ export function ChatPanel({
             <button
               className="chat-pinned-more"
               onClick={onToggleDetails}
-              title="Xem tat ca tin nhan da ghim"
+              title="Xem tất cả tin nhắn đã ghim"
               type="button"
             >
               +{pinnedMessages.length - 3}
@@ -1466,9 +1466,6 @@ export function ChatPanel({
             </Fragment>
           )
         })}
-        <div ref={threadEndRef} />
-      </div>
-
       {isTyping ? (
         <div className="typing-indicator" aria-live="polite">
           <span className="typing-dot" />
@@ -1477,6 +1474,9 @@ export function ChatPanel({
           <strong>{activeConversation.name} đang nhập...</strong>
         </div>
       ) : null}
+        <div ref={threadEndRef} />
+      </div>
+
 
       <form className="composer" onSubmit={onSubmit}>
         {replyingTo ? (
