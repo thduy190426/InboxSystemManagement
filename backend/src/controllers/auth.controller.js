@@ -201,6 +201,26 @@ async function sendVerificationCode({ user, channel, code }) {
   }
 }
 
+async function trySendVerificationCode(options) {
+  try {
+    return await sendVerificationCode(options)
+  } catch (error) {
+    console.error('Khong the gui ma xac thuc:', {
+      channel: options.channel,
+      userId: options.user?.id,
+      message: error.message,
+      statusCode: error.statusCode,
+      code: error.code,
+    })
+
+    return {
+      skipped: true,
+      failed: true,
+      error: error.message,
+    }
+  }
+}
+
 function getTokenFromRequest(request) {
   const authorization = request.get('authorization') || ''
   const [scheme, token] = authorization.split(' ')
@@ -339,7 +359,6 @@ async function register(request, response, next) {
     )
 
     const emailCode = createVerificationCode()
-    const phoneCode = phone ? createVerificationCode() : null
 
     await createVerificationToken({
       channel: 'email',
@@ -349,42 +368,25 @@ async function register(request, response, next) {
       userId: result.insertId,
     })
 
-    if (phone && phoneCode) {
-      await createVerificationToken({
-        channel: 'phone',
-        code: phoneCode,
-        connection,
-        email,
-        userId: result.insertId,
-      })
-    }
 
     await connection.commit()
     connection.release()
     connection = null
 
     const createdUser = await getUserById(result.insertId)
-    const mailResult = await sendVerificationCode({
+    const mailResult = await trySendVerificationCode({
       channel: 'email',
       code: emailCode,
       user: createdUser,
     })
-    const phoneResult =
-      phone && phoneCode
-        ? await sendVerificationCode({
-            channel: 'phone',
-            code: phoneCode,
-            user: createdUser,
-          })
-        : { skipped: false }
 
     return response.status(201).json({
-      message: 'Đăng kí tài khoản thành công!',
+      message: 'Dang ki tai khoan thanh cong!',
       user: toPublicUser(createdUser),
       verification: {
-        requiredChannels: phone ? ['email', 'phone'] : ['email'],
+        requiredChannels: ['email'],
         emailCode: process.env.NODE_ENV === 'production' || !mailResult.skipped ? undefined : emailCode,
-        phoneCode: process.env.NODE_ENV === 'production' || !phoneResult.skipped ? undefined : phoneCode,
+        deliveryFailed: Boolean(mailResult.failed),
       },
     })
   } catch (error) {
