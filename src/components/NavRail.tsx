@@ -5,6 +5,7 @@ import {
   LogOut,
   MessageCircle,
   Settings,
+  Shield,
   UserRound,
   Users,
 } from 'lucide-react'
@@ -15,6 +16,7 @@ const navItems = [
   { label: 'Tin nhắn', value: 'chat' as const, icon: MessageCircle },
   { label: 'Danh bạ', value: 'contacts' as const, icon: Users },
   { label: 'Hồ sơ', value: 'profile' as const, icon: UserRound },
+  { label: 'Quản trị', value: 'admin' as const, icon: Shield },
   { label: 'Cài đặt', value: 'settings' as const, icon: Settings },
   { label: 'Thông báo', value: 'notifications' as const, icon: Bell },
 ]

@@ -152,7 +152,7 @@ export function RegisterPage({
 
     if (Object.keys(validation.errors).length > 0) {
       setFieldErrors(validation.errors)
-      pushToast('Vui lòng kiểm tra lại thông tin đăng kí!', 'error')
+      pushToast('Vui lòng kiểm tra lại thông tin đăng ký!', 'error')
       return
     }
 
@@ -166,7 +166,7 @@ export function RegisterPage({
         <div className="auth-card-header">
           <span className="section-kicker" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <UserPlus size={14} />
-            Đăng kí
+            Đăng ký
           </span>
           <h1 id="register-title">Tạo tài khoản mới</h1>
           <p>Tạo tài khoản để bắt đầu quản lý chat ngay hôm nay!</p>
@@ -301,7 +301,7 @@ export function RegisterPage({
 
           <button className="auth-primary" disabled={isSubmitting || !isFormFilled} type="submit">
             <UserPlus size={18} />
-            {isSubmitting ? 'Đang đăng kí...' : 'Đăng kí'}
+            {isSubmitting ? 'Đang đăng ký...' : 'Đăng ký'}
           </button>
         </form>
 

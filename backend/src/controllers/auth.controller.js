@@ -272,7 +272,7 @@ async function register(request, response, next) {
 
     if (!validation.isValid) {
       return response.status(422).json({
-        message: 'Dữ liệu đăng kí không hợp lệ!',
+        message: 'Dữ liệu đăng ký không hợp lệ!',
         errors: validation.errors,
       })
     }
@@ -345,10 +345,10 @@ async function register(request, response, next) {
 
     return response.status(201).json({
       message: mailResult.failed
-        ? 'Đăng ký tài khoản thành công nhưng chưa gửi được mã xác thực Email. Vui lòng bấm gửi lại mã sau ít phút.'
+        ? 'Đăng ký tài khoản thành công nhưng chưa gửi được mã xác thực Email. Vui lòng bấm gửi lại mã sau ít phút!'
         : mailResult.skipped
-          ? 'Đăng ký tài khoản thành công! Mã xác thực đang hiển thị ở môi trường phát triển.'
-          : 'Đăng ký tài khoản thành công! Vui lòng kiểm tra Gmail để lấy mã xác thực.',
+          ? 'Đăng ký tài khoản thành công! Mã xác thực đang hiển thị ở môi trường phát triển!'
+          : 'Đăng ký tài khoản thành công! Vui lòng kiểm tra Gmail để lấy mã xác thực!',
       user: toPublicUser(createdUser),
       verification: {
         requiredChannels: ['email'],

@@ -1,6 +1,6 @@
 export type AuthScreen = 'login' | 'register' | 'verify-account' | 'forgot-password' | 'reset-password'
 
-export type AppView = 'chat' | 'contacts' | 'notifications' | 'profile' | 'settings'
+export type AppView = 'chat' | 'contacts' | 'notifications' | 'profile' | 'settings' | 'admin'
 
 export type Message = {
   id: string

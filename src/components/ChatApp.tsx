@@ -75,6 +75,7 @@ import type {
   GroupJoinRequest,
   Message,
 } from '../types'
+import { AdminPage } from './AdminPage'
 import { CallOverlay } from './CallOverlay'
 import { ChatPanel } from './ChatPanel'
 import { ConfirmDialog, type ConfirmDialogState } from './ConfirmDialog'
@@ -1465,7 +1466,7 @@ export function ChatApp({
       })
 
       if (!pushResult.enabled && pushResult.reason === 'missing-vapid') {
-        pushToast('Đã bật thông báo khi app đang mở. Muốn nhận khi đóng tab, hãy cấu hình VAPID keys cho backend!')
+        pushToast('Đã bật thông báo khi App đang mở. Muốn nhận khi đóng tab, hãy cấu hình VAPID keys cho Backend!')
       }
 
       if (!pushResult.enabled && pushResult.reason === 'register-failed') {
@@ -3021,6 +3022,21 @@ export function ChatApp({
         <SettingsPage
           onAccountDeleted={onAccountDeleted}
           onLogout={handleLogout}
+          pushToast={pushToast}
+        />
+        {renderCallOverlay()}
+        {renderConfirmDialog()}
+        {renderToasts()}
+      </main>
+    )
+  }
+
+  if (activeView === 'admin') {
+    return (
+      <main className={`${shellClassName} admin-shell`}>
+        {renderNavRail()}
+        <AdminPage
+          currentUser={currentUser}
           pushToast={pushToast}
         />
         {renderCallOverlay()}

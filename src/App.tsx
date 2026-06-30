@@ -387,7 +387,7 @@ export function App() {
       pushToast(response.message, 'info')
 
     } catch (error) {
-      pushToast(error instanceof ApiError ? error.message : 'Không thể đăng kí!', 'error')
+      pushToast(error instanceof ApiError ? error.message : 'Không thể đăng ký!', 'error')
     } finally {
       setIsSubmitting(false)
     }
