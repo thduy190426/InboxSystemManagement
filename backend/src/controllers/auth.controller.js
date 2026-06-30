@@ -3,10 +3,6 @@ const { createHash, randomBytes, randomUUID } = require('crypto')
 const { pool } = require('../config/db')
 const { emitToUsers } = require('../realtime/socket')
 const {
-  sendEmailVerificationCode,
-  sendPasswordResetCode,
-} = require('../services/mail.service')
-const {
   validateForgotPasswordPayload,
   validateLoginPayload,
   validateRegisterPayload,
@@ -143,7 +139,6 @@ function hashVerificationCode(email, channel, code) {
 function getUnverifiedChannels(user) {
   return [
     !user.is_email_verified ? 'email' : null,
-    Boolean(user.phone) && !user.is_phone_verified ? 'phone' : null,
   ].filter(Boolean)
 }
 
@@ -173,52 +168,6 @@ async function createVerificationToken({ userId, email, channel, code, connectio
   )
 
   return expiresAt
-}
-
-async function sendVerificationCode({ user, channel, code }) {
-  if (channel === 'email') {
-    return sendEmailVerificationCode({
-      code,
-      email: user.email,
-      fullName: user.full_name,
-    })
-  }
-
-  if (!user.phone) {
-    const error = new Error('Tai khoan chua co so dien thoai de xac thuc!')
-    error.statusCode = 400
-    throw error
-  }
-
-  if (process.env.NODE_ENV === 'production') {
-    const error = new Error('Dich vu gui SMS chua duoc cau hinh!')
-    error.statusCode = 503
-    throw error
-  }
-
-  return {
-    skipped: true,
-  }
-}
-
-async function trySendVerificationCode(options) {
-  try {
-    return await sendVerificationCode(options)
-  } catch (error) {
-    console.error('Khong the gui ma xac thuc:', {
-      channel: options.channel,
-      userId: options.user?.id,
-      message: error.message,
-      statusCode: error.statusCode,
-      code: error.code,
-    })
-
-    return {
-      skipped: true,
-      failed: true,
-      error: error.message,
-    }
-  }
 }
 
 function getTokenFromRequest(request) {
@@ -374,19 +323,13 @@ async function register(request, response, next) {
     connection = null
 
     const createdUser = await getUserById(result.insertId)
-    const mailResult = await trySendVerificationCode({
-      channel: 'email',
-      code: emailCode,
-      user: createdUser,
-    })
 
     return response.status(201).json({
-      message: 'Dang ki tai khoan thanh cong!',
+      message: 'Đăng ký tài khoản thành công!',
       user: toPublicUser(createdUser),
       verification: {
         requiredChannels: ['email'],
-        emailCode: process.env.NODE_ENV === 'production' || !mailResult.skipped ? undefined : emailCode,
-        deliveryFailed: Boolean(mailResult.failed),
+        emailCode,
       },
     })
   } catch (error) {
@@ -598,15 +541,10 @@ async function resendVerification(request, response, next) {
       userId: user.id,
     })
 
-    const sendResult = await sendVerificationCode({
-      channel,
-      code,
-      user,
-    })
 
     return response.json({
       message: channel === 'email' ? 'Đã gửi lại mã xác thực Email!' : 'Đã tạo lại mã xác thực số điện thoại!',
-      verificationCode: process.env.NODE_ENV === 'production' || !sendResult.skipped ? undefined : code,
+      verificationCode: code,
     })
   } catch (error) {
     next(error)
@@ -649,20 +587,12 @@ async function forgotPassword(request, response, next) {
         [user.id, tokenHash, expiresAt],
       )
 
-      const mailResult = await sendPasswordResetCode({
-        code,
-        email,
-        fullName: user.full_name,
-      })
-
-      if (mailResult.skipped) {
-        devResetCode = code
-      }
+      devResetCode = code
     }
 
     return response.json({
       message: 'Nếu Email tồn tại, hệ thống đã gửi mã đặt lại mật khẩu!',
-      resetCode: process.env.NODE_ENV === 'production' ? undefined : devResetCode,
+      resetCode: devResetCode,
     })
   } catch (error) {
     next(error)
