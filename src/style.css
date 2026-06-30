@@ -7424,12 +7424,12 @@ h3 {
   text-transform: capitalize;
 }
 
-.role-admin {
+.role-badge.role-admin {
   background: rgba(37, 99, 235, 0.1);
   color: var(--blue);
 }
 
-.role-moderator {
+.role-badge.role-moderator {
   background: rgba(249, 115, 22, 0.1);
   color: var(--orange);
 }
@@ -7487,7 +7487,7 @@ h3 {
   }
 
   .admin-loading-row svg,
-  .admin-edit-actions svg {
+  .admin-edit-actions .lucide-loader-2 {
     animation: confirm-dialog-spin 760ms linear infinite;
   }
 
@@ -7521,6 +7521,9 @@ h3 {
 
   .admin-pagination button,
   .admin-edit-actions button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     border: 1px solid var(--line);
     border-radius: 6px;
     background: var(--surface);
@@ -7548,6 +7551,15 @@ h3 {
     background: rgba(15, 23, 42, 0.42);
     padding: 20px;
     animation: modal-backdrop-in var(--modal-motion-duration) var(--modal-motion-ease) both;
+  }
+
+  .admin-edit-backdrop.is-exiting {
+    animation: modal-backdrop-out 140ms ease-in both;
+    pointer-events: none;
+  }
+
+  .admin-edit-backdrop.is-exiting .admin-edit-modal {
+    animation: modal-panel-out 140ms ease-in both;
   }
 
   .admin-edit-modal {
@@ -7613,9 +7625,6 @@ h3 {
   }
 
   .admin-edit-actions button:last-child {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
     border-color: var(--primary);
     background: var(--primary);
     color: #fff;

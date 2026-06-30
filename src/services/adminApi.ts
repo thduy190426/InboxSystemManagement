@@ -1,6 +1,6 @@
 import { requestJson } from './apiClient'
 
-export type AdminUserRole = 'user' | 'agent' | 'admin' | 'owner'
+export type AdminUserRole = 'user' | 'agent' | 'owner'
 export type AdminUserStatus = 'active' | 'inactive' | 'suspended'
 
 export type AdminStats = {

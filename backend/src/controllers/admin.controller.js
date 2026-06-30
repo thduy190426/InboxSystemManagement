@@ -1,6 +1,6 @@
 const { pool } = require('../config/db')
 
-const ALLOWED_ROLES = new Set(['user', 'agent', 'admin', 'owner'])
+const ALLOWED_ROLES = new Set(['user', 'agent', 'owner'])
 const ALLOWED_STATUSES = new Set(['active', 'inactive', 'suspended'])
 const MAX_PAGE_SIZE = 100
 
@@ -64,7 +64,8 @@ async function getAdminStats(_request, response, next) {
           SUM(CASE WHEN is_active = 0 AND deleted_at IS NULL THEN 1 ELSE 0 END) AS suspended_users,
           SUM(CASE WHEN presence <> 'offline' AND is_active = 1 AND deleted_at IS NULL THEN 1 ELSE 0 END) AS online_users
         FROM users
-        WHERE deleted_at IS NULL`,
+        WHERE deleted_at IS NULL
+          AND role <> 'admin'`,
       ),
       pool.execute(
         `SELECT COUNT(*) AS unread_system_alerts
@@ -97,8 +98,8 @@ async function getAdminUsers(request, response, next) {
     const limit = Math.min(toPositiveInteger(request.query.limit, 20), MAX_PAGE_SIZE)
     const offset = (page - 1) * limit
     const search = typeof request.query.search === 'string' ? request.query.search.trim() : ''
-    const filters = ['deleted_at IS NULL']
-    const params = []
+    const filters = ['deleted_at IS NULL', 'role <> ?']
+    const params = ['admin']
 
     if (search) {
       const term = `%${escapeLike(search)}%`
@@ -203,7 +204,8 @@ async function updateAdminUser(request, response, next) {
       `UPDATE users
       SET ${assignments.join(', ')}
       WHERE public_id = ?
-        AND deleted_at IS NULL`,
+        AND deleted_at IS NULL
+        AND role <> 'admin'`,
       [...params, userId],
     )
 
@@ -240,6 +242,7 @@ async function updateAdminUser(request, response, next) {
         updated_at
       FROM users
       WHERE public_id = ?
+        AND role <> 'admin'
       LIMIT 1`,
       [userId],
     )
@@ -259,10 +262,11 @@ async function deleteAdminUser(request, response, next) {
   try {
     const userId = String(request.params.id || '').trim()
     const [rows] = await connection.execute(
-      `SELECT id, email
+      `SELECT id
       FROM users
       WHERE public_id = ?
         AND deleted_at IS NULL
+        AND role <> 'admin'
       LIMIT 1`,
       [userId],
     )
@@ -274,38 +278,36 @@ async function deleteAdminUser(request, response, next) {
       })
     }
 
-    const deletedMarker = `deleted-${user.id}-${Date.now()}`
-
     await connection.beginTransaction()
     await connection.execute(
-      `UPDATE users
-      SET
-        full_name = 'Tai khoan da xoa',
-        display_name = NULL,
-        email = ?,
-        phone = NULL,
-        avatar_url = NULL,
-        bio = NULL,
-        status_message = NULL,
-        presence = 'offline',
-        online_since = NULL,
-        is_active = 0,
-        deleted_at = CURRENT_TIMESTAMP,
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?`,
-      [`${deletedMarker}@deleted.local`, user.id],
+      `DELETE FROM conversations
+      WHERE created_by = ?`,
+      [user.id],
     )
     await connection.execute(
-      `UPDATE user_sessions
-      SET revoked_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-      WHERE user_id = ?
-        AND revoked_at IS NULL`,
+      `DELETE FROM message_attachments
+      WHERE uploader_id = ?`,
+      [user.id],
+    )
+    await connection.execute(
+      `DELETE FROM messages
+      WHERE sender_id = ?`,
+      [user.id],
+    )
+    await connection.execute(
+      `DELETE FROM call_logs
+      WHERE started_by = ?`,
+      [user.id],
+    )
+    await connection.execute(
+      `DELETE FROM users
+      WHERE id = ?`,
       [user.id],
     )
     await connection.commit()
 
     response.json({
-      message: 'Đã xóa người dùng khỏi hệ thống!',
+      message: 'Đã xóa vĩnh viễn người dùng khỏi hệ thống!',
       deletedUserId: userId,
     })
   } catch (error) {

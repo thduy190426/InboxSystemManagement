@@ -7,7 +7,6 @@ import {
   Loader2,
   MoreVertical,
   Search,
-  Shield,
   Trash2,
   Users,
   X,
@@ -101,11 +100,33 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
   const [page, setPage] = useState(1)
   const [pageError, setPageError] = useState<string | null>(null)
   const [editUser, setEditUser] = useState<EditUserState | null>(null)
+  const [visibleEditUser, setVisibleEditUser] = useState<EditUserState | null>(null)
+  const [isEditExiting, setIsEditExiting] = useState(false)
   const [isSavingUser, setIsSavingUser] = useState(false)
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null)
   const [isConfirmWorking, setIsConfirmWorking] = useState(false)
 
   const isLoading = isStatsLoading || isUsersLoading
+
+  useEffect(() => {
+    if (editUser) {
+      setVisibleEditUser(editUser)
+      setIsEditExiting(false)
+      return
+    }
+
+    if (!visibleEditUser) {
+      return
+    }
+
+    setIsEditExiting(true)
+    const timer = window.setTimeout(() => {
+      setVisibleEditUser(null)
+      setIsEditExiting(false)
+    }, 140) // Match EXIT_DURATION_MS
+
+    return () => window.clearTimeout(timer)
+  }, [editUser, visibleEditUser])
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -228,7 +249,6 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
         </td>
         <td>
           <span className={`role-badge role-${user.role}`}>
-            {user.role === 'admin' ? <Shield size={12} /> : null}
             {user.role}
           </span>
         </td>
@@ -274,7 +294,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
   }
 
   async function handleSaveUser() {
-    if (!editUser) {
+    if (!editUser || !visibleEditUser) {
       return
     }
 
@@ -282,8 +302,8 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
 
     try {
       const response = await updateUserStatus(editUser.user.id, {
-        role: editUser.role,
-        status: editUser.status,
+        role: visibleEditUser.role,
+        status: visibleEditUser.status,
       })
 
       setUsers((currentUsers) =>
@@ -432,32 +452,32 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
         </div>
       </div>
 
-      {editUser ? (
-        <div className="admin-edit-backdrop" role="presentation">
+      {visibleEditUser ? (
+        <div className={isEditExiting ? 'admin-edit-backdrop is-exiting' : 'admin-edit-backdrop'} role="presentation">
           <section aria-labelledby="admin-edit-title" aria-modal="true" className="admin-edit-modal" role="dialog">
             <button
               className="admin-edit-close"
-              disabled={isSavingUser}
-              title="Dong"
+              disabled={isSavingUser || isEditExiting}
+              title="Đóng"
               type="button"
               onClick={() => setEditUser(null)}
             >
               <X size={18} />
             </button>
             <h2 id="admin-edit-title">Chỉnh sửa người dùng</h2>
-            <p>{editUser.user.name}</p>
+            <p>{visibleEditUser.user.name}</p>
             <label>
               Vai trò
               <select
-                value={editUser.role}
+                value={visibleEditUser.role}
                 onChange={(event) =>
-                  setEditUser((current) =>
+                  setVisibleEditUser((current) =>
                     current ? { ...current, role: event.target.value as AdminUserRole } : current,
                   )
                 }
               >
                 <option value="user">user</option>
-                <option value="agent">agent</option>
+                <option value="moderator">moderator</option>
                 <option value="admin">admin</option>
                 <option value="owner">owner</option>
               </select>
@@ -465,9 +485,9 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
             <label>
               Trạng thái
               <select
-                value={editUser.status}
+                value={visibleEditUser.status}
                 onChange={(event) =>
-                  setEditUser((current) =>
+                  setVisibleEditUser((current) =>
                     current ? { ...current, status: event.target.value as AdminUserStatus } : current,
                   )
                 }
@@ -478,10 +498,11 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
               </select>
             </label>
             <div className="admin-edit-actions">
-              <button disabled={isSavingUser} type="button" onClick={() => setEditUser(null)}>
+              <button disabled={isSavingUser || isEditExiting} type="button" onClick={() => setEditUser(null)}>
+                <X size={16} />
                 Hủy
               </button>
-              <button disabled={isSavingUser} type="button" onClick={() => void handleSaveUser()}>
+              <button disabled={isSavingUser || isEditExiting} type="button" onClick={() => void handleSaveUser()}>
                 {isSavingUser ? <Loader2 size={16} /> : <CheckCircle2 size={16} />}
                 {isSavingUser ? 'Đang lưu...' : 'Lưu thay đổi'}
               </button>
