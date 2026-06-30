@@ -147,6 +147,19 @@ function isVerificationRequired(user) {
   return getUnverifiedChannels(user).length > 0
 }
 
+async function deliverEmailVerificationCode(payload) {
+  try {
+    return await sendEmailVerificationCode(payload)
+  } catch (error) {
+    console.error('Không thể gửi mã xác thực Email:', error)
+
+    return {
+      failed: true,
+      skipped: false,
+    }
+  }
+}
+
 async function createVerificationToken({ userId, email, channel, code, connection = pool }) {
   const tokenHash = hashVerificationCode(email, channel, code)
   const expiresAt = new Date(Date.now() + 1000 * 60 * 30)
@@ -323,7 +336,7 @@ async function register(request, response, next) {
     connection.release()
     connection = null
 
-    const mailResult = await sendEmailVerificationCode({
+    const mailResult = await deliverEmailVerificationCode({
       code: emailCode,
       email,
       fullName,
@@ -331,9 +344,11 @@ async function register(request, response, next) {
     const createdUser = await getUserById(result.insertId)
 
     return response.status(201).json({
-      message: mailResult.skipped
-        ? 'Đăng ký tài khoản thành công! Mã xác thực đang hiển thị ở môi trường phát triển.'
-        : 'Đăng ký tài khoản thành công! Vui lòng kiểm tra Gmail để lấy mã xác thực.',
+      message: mailResult.failed
+        ? 'Đăng ký tài khoản thành công nhưng chưa gửi được mã xác thực Email. Vui lòng bấm gửi lại mã sau ít phút.'
+        : mailResult.skipped
+          ? 'Đăng ký tài khoản thành công! Mã xác thực đang hiển thị ở môi trường phát triển.'
+          : 'Đăng ký tài khoản thành công! Vui lòng kiểm tra Gmail để lấy mã xác thực.',
       user: toPublicUser(createdUser),
       verification: {
         requiredChannels: ['email'],
@@ -551,7 +566,7 @@ async function resendVerification(request, response, next) {
 
     const mailResult =
       channel === 'email'
-        ? await sendEmailVerificationCode({
+        ? await deliverEmailVerificationCode({
             code,
             email,
             fullName: user.full_name,
@@ -561,9 +576,11 @@ async function resendVerification(request, response, next) {
     return response.json({
       message:
         channel === 'email'
-          ? mailResult.skipped
-            ? 'Đã tạo lại mã xác thực Email! Mã đang hiển thị ở môi trường phát triển.'
-            : 'Đã gửi lại mã xác thực Email! Vui lòng kiểm tra Gmail.'
+          ? mailResult.failed
+            ? 'Chưa gửi được mã xác thực Email. Vui lòng thử lại sau ít phút.'
+            : mailResult.skipped
+              ? 'Đã tạo lại mã xác thực Email! Mã đang hiển thị ở môi trường phát triển.'
+              : 'Đã gửi lại mã xác thực Email! Vui lòng kiểm tra Gmail.'
           : 'Đã tạo lại mã xác thực số điện thoại!',
       verificationCode: mailResult.skipped ? code : null,
     })
