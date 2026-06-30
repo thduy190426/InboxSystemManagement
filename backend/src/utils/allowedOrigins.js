@@ -1,7 +1,8 @@
 const defaultAllowedOrigins = [
-  'https://tduymessage.netlify.app',
+  'https://tduyymessage.netlify.app',
   'http://127.0.0.1:5173',
   'http://localhost:5173',
+  'https://inboxsystem.netlify.app'
 ]
 
 function getAllowedOrigins() {
