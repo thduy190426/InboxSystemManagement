@@ -130,8 +130,8 @@ async function getAdminUsers(request, response, next) {
         FROM users
         WHERE ${whereClause}
         ORDER BY created_at DESC, id DESC
-        LIMIT ? OFFSET ?`,
-        [...params, limit, offset],
+        LIMIT ${limit} OFFSET ${offset}`,
+        params,
       ),
     ])
 
