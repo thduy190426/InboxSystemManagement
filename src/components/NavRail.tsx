@@ -68,6 +68,10 @@ export function NavRail({
 
       <nav className="nav-items">
         {navItems.map((item) => {
+          if (item.value === 'admin' && currentUser?.role !== 'admin') {
+            return null
+          }
+
           const Icon = item.icon
           const badgeCount = item.value === 'notifications' ? notificationCount : 0
 

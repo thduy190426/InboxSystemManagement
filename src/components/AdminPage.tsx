@@ -58,13 +58,13 @@ function formatNumber(value: number) {
 
 function formatLastLogin(value: string | null) {
   if (!value) {
-    return 'Chua dang nhap'
+    return 'Chưa đăng nhập'
   }
 
   const date = new Date(value)
 
   if (Number.isNaN(date.getTime())) {
-    return 'Khong ro'
+    return 'Không rõ!'
   }
 
   return new Intl.DateTimeFormat('vi-VN', {
@@ -75,14 +75,14 @@ function formatLastLogin(value: string | null) {
 
 function getStatusLabel(status: AdminUserStatus) {
   if (status === 'active') {
-    return 'Hoat dong'
+    return 'Hoạt động'
   }
 
   if (status === 'inactive') {
-    return 'Khong hoat dong'
+    return 'Không hoạt động'
   }
 
-  return 'Da khoa'
+  return 'Đã khóa'
 }
 
 export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
@@ -129,7 +129,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
           setStats(nextStats)
         }
       } catch (error) {
-        const message = getErrorMessage(error, 'Khong the tai thong ke quan tri!')
+        const message = getErrorMessage(error, 'Không thể tải thống kê quản trị!')
 
         if (isMounted) {
           setPageError(message)
@@ -168,7 +168,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
           setPageError(null)
         }
       } catch (error) {
-        const message = getErrorMessage(error, 'Khong the tai danh sach nguoi dung!')
+        const message = getErrorMessage(error, 'Không thể tải danh sách người dùng!')
 
         if (isMounted) {
           setUsers([])
@@ -196,7 +196,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
           <td colSpan={5}>
             <div className="admin-loading-row">
               <Loader2 size={18} />
-              Dang tai danh sach nguoi dung...
+              Đang tải danh sách người dùng...
             </div>
           </td>
         </tr>
@@ -208,7 +208,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
         <tr>
           <td colSpan={5}>
             <div className="admin-empty-row">
-              {debouncedSearch ? 'Khong tim thay nguoi dung phu hop.' : 'Chua co nguoi dung nao.'}
+              {debouncedSearch ? 'Không tìm thấy người dùng phù hợp!' : 'Chưa có người dùng nào!'}
             </div>
           </td>
         </tr>
@@ -242,21 +242,21 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
         <td>
           <div className="action-buttons">
             <button
-              title="Chinh sua"
+              title="Chỉnh sửa"
               type="button"
               onClick={() => setEditUser({ user, role: user.role, status: user.status })}
             >
               <Edit2 size={16} />
             </button>
             <button
-              title="Xoa"
+              title="Xoá"
               className="text-danger"
               type="button"
               onClick={() => openDeleteDialog(user)}
             >
               <Trash2 size={16} />
             </button>
-            <button title="Tuy chon khac" type="button">
+            <button title="Tùy chọn khác" type="button">
               <MoreVertical size={16} />
             </button>
           </div>
@@ -269,7 +269,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
     try {
       setStats(await fetchAdminStats())
     } catch (error) {
-      pushToast?.(getErrorMessage(error, 'Khong the tai lai thong ke quan tri!'), 'error')
+      pushToast?.(getErrorMessage(error, 'Không thể tải lại thống kê quản trị!'), 'error')
     }
   }
 
@@ -290,10 +290,10 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
         currentUsers.map((user) => (user.id === response.user.id ? response.user : user)),
       )
       setEditUser(null)
-      pushToast?.('Cap nhat nguoi dung thanh cong!')
+      pushToast?.('Cập nhật người dùng thành công!')
       void refreshStats()
     } catch (error) {
-      pushToast?.(getErrorMessage(error, 'Khong the cap nhat nguoi dung!'), 'error')
+      pushToast?.(getErrorMessage(error, 'Không thể cập nhật người dùng!'), 'error')
     } finally {
       setIsSavingUser(false)
     }
@@ -301,10 +301,10 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
 
   function openDeleteDialog(user: AdminUser) {
     setConfirmDialog({
-      title: 'Xoa nguoi dung',
-      description: `Ban co chac muon xoa ${user.name} khoi he thong?`,
-      confirmLabel: 'Xoa',
-      cancelLabel: 'Huy',
+      title: 'Xóa người dùng',
+      description: `Bạn có chắc muốn xóa ${user.name} khỏi hệ thống?`,
+      confirmLabel: 'Xóa',
+      cancelLabel: 'Hủy',
       tone: 'danger',
       onConfirm: async () => {
         await deleteUser(user.id)
@@ -313,7 +313,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
           ...currentPagination,
           total: Math.max(0, currentPagination.total - 1),
         }))
-        pushToast?.('Da xoa nguoi dung thanh cong!')
+        pushToast?.('Đã xóa người dùng thành công!')
         void refreshStats()
       },
     })
@@ -330,7 +330,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
       await confirmDialog.onConfirm()
       setConfirmDialog(null)
     } catch (error) {
-      pushToast?.(getErrorMessage(error, 'Khong the thuc hien thao tac!'), 'error')
+      pushToast?.(getErrorMessage(error, 'Không thể thực hiện thao tác!'), 'error')
     } finally {
       setIsConfirmWorking(false)
     }
@@ -340,14 +340,14 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
     <div className="admin-page-container">
       <header className="admin-header">
         <div className="admin-header-title">
-          <h1>Quan tri he thong</h1>
-          <p>Xin chao, {currentUser?.displayName || currentUser?.fullName || 'Admin'}!</p>
+          <h1>Quản trị hệ thống</h1>
+          <p>Xin chào, {currentUser?.displayName || currentUser?.fullName || 'Admin'}!</p>
         </div>
         <div className="admin-search">
           <Search size={18} className="search-icon" />
           <input
             type="text"
-            placeholder="Tim kiem nguoi dung theo ten hoac email..."
+            placeholder="Tìm kiếm người dùng..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -360,34 +360,34 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
         <div className="stat-card">
           <div className="stat-icon users-icon"><Users size={24} /></div>
           <div className="stat-info">
-            <h3>Tong nguoi dung</h3>
+            <h3>Tổng người dùng</h3>
             <p className="stat-value">{isStatsLoading ? '...' : formatNumber(stats.totalUsers)}</p>
-            <span className="stat-trend positive">{formatNumber(stats.suspendedUsers)} tai khoan bi khoa</span>
+            <span className="stat-trend positive">{formatNumber(stats.suspendedUsers)} tài khoản bị khóa</span>
           </div>
         </div>
         <div className="stat-card">
           <div className="stat-icon active-icon"><Activity size={24} /></div>
           <div className="stat-info">
-            <h3>Dang hoat dong</h3>
+            <h3>Đang hoạt động</h3>
             <p className="stat-value">{isStatsLoading ? '...' : formatNumber(stats.activeUsers)}</p>
-            <span className="stat-trend">{formatNumber(stats.onlineUsers)} dang online</span>
+            <span className="stat-trend">{formatNumber(stats.onlineUsers)} đang online</span>
           </div>
         </div>
         <div className="stat-card">
           <div className="stat-icon alert-icon"><AlertCircle size={24} /></div>
           <div className="stat-info">
-            <h3>Canh bao he thong</h3>
+            <h3>Cảnh báo hệ thống</h3>
             <p className="stat-value">{isStatsLoading ? '...' : formatNumber(stats.alertCount)}</p>
-            <span className="stat-trend negative">Can xu ly</span>
+            <span className="stat-trend negative">Cần xử lý</span>
           </div>
         </div>
       </div>
 
       <div className="admin-content-section">
         <div className="section-header">
-          <h2>Danh sach nguoi dung</h2>
-          <button className="btn-primary" onClick={() => pushToast?.('Tinh nang them nguoi dung chua duoc implement')} type="button">
-            + Them nguoi dung
+          <h2>Danh sách người dùng</h2>
+          <button className="btn-primary" onClick={() => pushToast?.('Tính năng thêm người dùng chưa được Implement!')} type="button">
+            + Thêm người dùng
           </button>
         </div>
 
@@ -395,11 +395,11 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>Nguoi dung</th>
-                <th>Vai tro</th>
-                <th>Trang thai</th>
-                <th>Dang nhap cuoi</th>
-                <th>Thao tac</th>
+                <th>Người dùng</th>
+                <th>Vai trò</th>
+                <th>Trạng thái</th>
+                <th>Đăng nhập cuối</th>
+                <th>Thao tác</th>
               </tr>
             </thead>
             <tbody>{tableContent}</tbody>
@@ -408,7 +408,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
 
         <div className="admin-pagination">
           <span>
-            {isLoading ? 'Dang tai...' : `${formatNumber(pagination.total)} nguoi dung`}
+            {isLoading ? 'Đang tải...' : `${formatNumber(pagination.total)} người dùng`}
           </span>
           <div>
             <button
@@ -416,7 +416,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
               type="button"
               onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
             >
-              Truoc
+              Trước
             </button>
             <span>
               Trang {pagination.page}/{pagination.totalPages}
@@ -444,10 +444,10 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
             >
               <X size={18} />
             </button>
-            <h2 id="admin-edit-title">Chinh sua nguoi dung</h2>
+            <h2 id="admin-edit-title">Chỉnh sửa người dùng</h2>
             <p>{editUser.user.name}</p>
             <label>
-              Vai tro
+              Vai trò
               <select
                 value={editUser.role}
                 onChange={(event) =>
@@ -463,7 +463,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
               </select>
             </label>
             <label>
-              Trang thai
+              Trạng thái
               <select
                 value={editUser.status}
                 onChange={(event) =>
@@ -472,18 +472,18 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
                   )
                 }
               >
-                <option value="active">Hoat dong</option>
-                <option value="inactive">Khong hoat dong</option>
-                <option value="suspended">Da khoa</option>
+                <option value="active">Hoạt động</option>
+                <option value="inactive">Không hoạt động</option>
+                <option value="suspended">Đã khóa</option>
               </select>
             </label>
             <div className="admin-edit-actions">
               <button disabled={isSavingUser} type="button" onClick={() => setEditUser(null)}>
-                Huy
+                Hủy
               </button>
               <button disabled={isSavingUser} type="button" onClick={() => void handleSaveUser()}>
                 {isSavingUser ? <Loader2 size={16} /> : <CheckCircle2 size={16} />}
-                {isSavingUser ? 'Dang luu...' : 'Luu thay doi'}
+                {isSavingUser ? 'Đang lưu...' : 'Lưu thay đổi'}
               </button>
             </div>
           </section>

@@ -160,20 +160,20 @@ async function updateAdminUser(request, response, next) {
     const errors = {}
 
     if (role !== undefined && !ALLOWED_ROLES.has(role)) {
-      errors.role = 'Vai tro nguoi dung khong hop le!'
+      errors.role = 'Vai trò không hợp lệ!'
     }
 
     if (status !== undefined && !ALLOWED_STATUSES.has(status)) {
-      errors.status = 'Trang thai nguoi dung khong hop le!'
+      errors.status = 'Trạng thái người dùng không hợp lệ!'
     }
 
     if (role === undefined && status === undefined) {
-      errors.form = 'Vui long chon thong tin can cap nhat!'
+      errors.form = 'Vui lòng chọn thông tin cần cập nhật!'
     }
 
     if (Object.keys(errors).length > 0) {
       return response.status(422).json({
-        message: 'Du lieu cap nhat nguoi dung khong hop le!',
+        message: 'Dữ liệu cập nhật người dùng không hợp lệ!',
         errors,
       })
     }
@@ -209,7 +209,7 @@ async function updateAdminUser(request, response, next) {
 
     if (!result.affectedRows) {
       return response.status(404).json({
-        message: 'Khong tim thay nguoi dung!',
+        message: 'Không tìm thấy người dùng!',
       })
     }
 
@@ -245,7 +245,7 @@ async function updateAdminUser(request, response, next) {
     )
 
     response.json({
-      message: 'Cap nhat nguoi dung thanh cong!',
+      message: 'Cập nhật người dùng thành công!',
       user: toAdminUser(rows[0]),
     })
   } catch (error) {
@@ -270,7 +270,7 @@ async function deleteAdminUser(request, response, next) {
 
     if (!user) {
       return response.status(404).json({
-        message: 'Khong tim thay nguoi dung!',
+        message: 'Không tìm thấy người dùng!',
       })
     }
 
@@ -305,7 +305,7 @@ async function deleteAdminUser(request, response, next) {
     await connection.commit()
 
     response.json({
-      message: 'Da xoa nguoi dung khoi he thong!',
+      message: 'Đã xóa người dùng khỏi hệ thống!',
       deletedUserId: userId,
     })
   } catch (error) {
