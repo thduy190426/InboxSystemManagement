@@ -73,7 +73,7 @@ function formatConversationLastTime(conversation: Conversation) {
   return new Intl.DateTimeFormat('vi-VN', {
     day: '2-digit',
     month: '2-digit',
-  }).format(sentAt)
+  }).format(sentAt).replace(/-/g, '/')
 }
 
 export function InboxPanel({

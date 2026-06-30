@@ -15,6 +15,7 @@ export type AuthUser = {
   role: string
   presence: string
   isEmailVerified: boolean
+  isPhoneVerified: boolean
   lastSeenAt: string | null
   onlineSince?: string | null
   createdAt: string
@@ -28,6 +29,15 @@ export type AuthResponse = {
     refreshToken: string
     expiresAt: string
   }
+  verification?: VerificationState
+}
+
+export type VerificationChannel = 'email' | 'phone'
+
+export type VerificationState = {
+  requiredChannels: VerificationChannel[]
+  emailCode?: string | null
+  phoneCode?: string | null
 }
 
 export type LoginPayload = {
@@ -63,6 +73,28 @@ export type ResetPasswordResponse = {
   message: string
 }
 
+export type VerifyAccountPayload = {
+  email: string
+  channel: VerificationChannel
+  code: string
+}
+
+export type VerifyAccountResponse = {
+  message: string
+  user: AuthUser
+  verification: Pick<VerificationState, 'requiredChannels'>
+}
+
+export type ResendVerificationPayload = {
+  email: string
+  channel: VerificationChannel
+}
+
+export type ResendVerificationResponse = {
+  message: string
+  verificationCode?: string | null
+}
+
 export class ApiError extends ApiRequestError {}
 
 async function requestAuth(path: string, payload: LoginPayload | RegisterPayload) {
@@ -87,7 +119,11 @@ async function requestAuth(path: string, payload: LoginPayload | RegisterPayload
 
 async function requestAuthJson<T>(
   path: string,
-  payload: ForgotPasswordPayload | ResetPasswordPayload,
+  payload:
+    | ForgotPasswordPayload
+    | ResetPasswordPayload
+    | VerifyAccountPayload
+    | ResendVerificationPayload,
 ) {
   try {
     return await requestJson<T>(
@@ -122,6 +158,14 @@ export function forgotPassword(payload: ForgotPasswordPayload) {
 
 export function resetPassword(payload: ResetPasswordPayload) {
   return requestAuthJson<ResetPasswordResponse>('/auth/reset-password', payload)
+}
+
+export function verifyAccount(payload: VerifyAccountPayload) {
+  return requestAuthJson<VerifyAccountResponse>('/auth/verify', payload)
+}
+
+export function resendVerification(payload: ResendVerificationPayload) {
+  return requestAuthJson<ResendVerificationResponse>('/auth/resend-verification', payload)
 }
 
 async function requestAuthenticated(path: string, options: RequestInit = {}) {

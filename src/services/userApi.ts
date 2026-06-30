@@ -78,7 +78,7 @@ export function fetchSessions() {
   return requestJson<SessionsResponse>(
     '/users/me/sessions',
     {},
-    'KhÃ´ng thá»ƒ táº£i danh sÃ¡ch phiÃªn Ä‘Äƒng nháº­p!',
+    'Không thể tải danh sách phiên đăng nhập!',
   )
 }
 
@@ -88,7 +88,7 @@ export function revokeSession(sessionId: string) {
     {
       method: 'DELETE',
     },
-    'KhÃ´ng thá»ƒ thu há»“i phiÃªn Ä‘Äƒng nháº­p!',
+    'Không thể thu hồi phiên đăng nhập!',
   )
 }
 
@@ -98,7 +98,7 @@ export function revokeOtherSessions() {
     {
       method: 'DELETE',
     },
-    'KhÃ´ng thá»ƒ Ä‘Äƒng xuáº¥t khá»i thiáº¿t bá»‹ khÃ¡c!',
+    'Không thể đăng xuất khỏi thiết bị khác!',
   )
 }
 

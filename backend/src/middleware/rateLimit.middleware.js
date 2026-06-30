@@ -82,6 +82,22 @@ const resetPasswordRateLimit = createRateLimiter({
   message: 'Thử đặt lại mật khẩu quá nhiều lần. Vui lòng thử lại sau!',
 })
 
+const verificationRateLimit = createRateLimiter({
+  keyPrefix: 'auth:verification',
+  keyGenerator: authRateLimitKey,
+  limit: 10,
+  windowMs: 60 * 60 * 1000,
+  message: 'Thử xác thực quá nhiều lần. Vui lòng thử lại sau!',
+})
+
+const resendVerificationRateLimit = createRateLimiter({
+  keyPrefix: 'auth:resend-verification',
+  keyGenerator: authRateLimitKey,
+  limit: 5,
+  windowMs: 60 * 60 * 1000,
+  message: 'Yêu cầu gửi lại mã quá nhiều lần. Vui lòng thử lại sau!',
+})
+
 const searchRateLimit = createRateLimiter({
   keyPrefix: 'contacts:search',
   keyGenerator: userRateLimitKey,
@@ -98,12 +114,23 @@ const sendMessageRateLimit = createRateLimiter({
   message: 'Gửi tin nhắn quá nhanh. Vui lòng thử lại sau!',
 })
 
+const uploadAvatarRateLimit = createRateLimiter({
+  keyPrefix: 'user:upload-avatar',
+  keyGenerator: userRateLimitKey,
+  limit: 2,
+  windowMs: 60 * 1000,
+  message: 'Bạn thay đổi ảnh đại diện quá nhiều lần. Vui lòng thử lại sau!',
+})
+
 module.exports = {
   createRateLimiter,
   forgotPasswordRateLimit,
   loginRateLimit,
   registerRateLimit,
+  resendVerificationRateLimit,
   resetPasswordRateLimit,
   searchRateLimit,
   sendMessageRateLimit,
+  uploadAvatarRateLimit,
+  verificationRateLimit,
 }

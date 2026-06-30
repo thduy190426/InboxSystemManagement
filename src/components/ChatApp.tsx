@@ -209,6 +209,10 @@ function getAttachmentPreview(message?: Message) {
     return 'Đã gửi một tin nhắn thoại!'
   }
 
+  if (attachmentType === 'video') {
+    return 'Da gui mot video!'
+  }
+
   if (attachmentType === 'file') {
     return 'Đã gửi một tệp!'
   }

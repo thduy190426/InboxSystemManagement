@@ -15,7 +15,7 @@ function getVapidConfig() {
   return {
     publicKey,
     privateKey,
-    subject: process.env.VAPID_SUBJECT || 'mailto:admin@example.com',
+    subject: process.env.VAPID_SUBJECT || 'mailto:duyhoangtran2006@gmail.com',
   }
 }
 

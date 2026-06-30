@@ -3,7 +3,7 @@ const { v2: cloudinary } = require('cloudinary')
 
 const avatarStorage = multer.memoryStorage()
 const messageStorage = multer.memoryStorage()
-const MESSAGE_UPLOAD_SIZE_BYTES = 2 * 1024 * 1024
+const MESSAGE_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -24,7 +24,7 @@ function assertCloudinaryConfigured() {
     !process.env.CLOUDINARY_API_KEY ||
     !process.env.CLOUDINARY_API_SECRET
   ) {
-    const error = new Error('Cloudinary chua duoc cau hinh. Vui long kiem tra bien moi truong!')
+    const error = new Error('Cloudinary chưa được cấu hình. Vui lòng kiểm tra biến môi trường!')
     error.statusCode = 500
     throw error
   }
@@ -40,8 +40,16 @@ function imageFileFilter(_request, file, callback) {
 }
 
 function messageFileFilter(_request, file, callback) {
-  if (!file.mimetype.startsWith('image/') && !file.mimetype.startsWith('audio/')) {
-    callback(new Error('Chỉ hỗ trợ gửi ảnh hoặc tin nhắn thoại trong cuộc trò chuyện!'))
+  const originalName = String(file.originalname || '').toLowerCase()
+  const hasSupportedMessageExtension =
+    /\.(jpe?g|png|gif|webp|avif|mp3|m4a|ogg|wav|webm|mp4|mov|m4v)$/i.test(originalName)
+  if (
+    !file.mimetype.startsWith('image/') &&
+    !file.mimetype.startsWith('audio/') &&
+    !file.mimetype.startsWith('video/') &&
+    !hasSupportedMessageExtension
+  ) {
+    callback(new Error('Chỉ hỗ trợ gửi ảnh, tin nhắn thoại hoặc video trong cuộc trò chuyện!'))
     return
   }
 

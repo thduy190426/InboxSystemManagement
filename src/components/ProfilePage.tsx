@@ -1,6 +1,6 @@
 import type { ChangeEvent, FormEvent } from 'react'
-import { useEffect, useState } from 'react'
-import { AlignLeft, CalendarDays, Camera, IdCard, MapPin, MessageSquare, Phone, Save, User, Users } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { AlignLeft, CalendarDays, Camera, IdCard, MapPin, MessageSquare, Phone, Save, Shield, User, Users } from 'lucide-react'
 import type { AuthUser } from '../services/authApi'
 import {
   fetchProfile,
@@ -55,6 +55,26 @@ function getGenderLabel(gender: string) {
   }
 
   return 'Chưa cập nhật'
+}
+
+function getGlobalRoleLabel(role: string) {
+  if (role === 'owner') {
+    return 'Người sáng lập'
+  }
+
+  if (role === 'admin') {
+    return 'Quản trị viên'
+  }
+
+  if (role === 'moderator') {
+    return 'Người kiểm duyệt'
+  }
+
+  if (role === 'user') {
+    return 'Thành viên'
+  }
+
+  return role ? role.charAt(0).toUpperCase() + role.slice(1) : 'Thành viên'
 }
 
 function validateProfileForm(form: ProfilePayload) {
@@ -112,6 +132,10 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
   const [isUploading, setIsUploading] = useState(false)
   const [profileErrors, setProfileErrors] = useState<ProfileErrors>({})
   const [isBioExpanded, setIsBioExpanded] = useState(false)
+  const [avatarCooldownLeft, setAvatarCooldownLeft] = useState(0)
+  const lastUploadRef = useRef<number>(0)
+  const cooldownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const AVATAR_COOLDOWN_SECONDS = 10
   const hasChanges = JSON.stringify(form) !== JSON.stringify(initialForm)
   const hasLongBio = form.bio.trim().length > 120
 
@@ -139,6 +163,9 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
 
     return () => {
       isMounted = false
+      if (cooldownTimerRef.current) {
+        clearInterval(cooldownTimerRef.current)
+      }
     }
   }, [])
 
@@ -162,12 +189,39 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
       return
     }
 
+    const now = Date.now()
+    const elapsed = (now - lastUploadRef.current) / 1000
+
+    if (lastUploadRef.current > 0 && elapsed < AVATAR_COOLDOWN_SECONDS) {
+      const remaining = Math.ceil(AVATAR_COOLDOWN_SECONDS - elapsed)
+      pushToast(`Vui lòng chờ ${remaining}s trước khi đổi ảnh lại!`, 'error')
+      event.target.value = ''
+      return
+    }
+
     try {
       setIsUploading(true)
       const response = await uploadAvatar(file)
       onUserChange(response.user)
       setAvatarUrl(response.user.avatarUrl ?? '')
       pushToast('Đã cập nhật ảnh đại diện!', 'info')
+      lastUploadRef.current = Date.now()
+      setAvatarCooldownLeft(AVATAR_COOLDOWN_SECONDS)
+
+      if (cooldownTimerRef.current) {
+        clearInterval(cooldownTimerRef.current)
+      }
+
+      cooldownTimerRef.current = setInterval(() => {
+        setAvatarCooldownLeft((current) => {
+          if (current <= 1) {
+            clearInterval(cooldownTimerRef.current!)
+            cooldownTimerRef.current = null
+            return 0
+          }
+          return current - 1
+        })
+      }, 1000)
     } catch (error) {
       pushToast(error instanceof Error ? error.message : 'Không thể cập nhật ảnh đại diện!', 'error')
     } finally {
@@ -229,10 +283,16 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
           </div>
           <label className="profile-upload-button">
             <Camera size={18} />
-            {isUploading ? 'Đang tải ảnh...' : 'Đổi ảnh đại diện'}
-            <input accept="image/*" disabled={isUploading} onChange={handleAvatarChange} type="file" />
+            {isUploading ? 'Đang tải ảnh...' : avatarCooldownLeft > 0 ? `Đổi ảnh đại diện (${avatarCooldownLeft}s)` : 'Đổi ảnh đại diện'}
+            <input accept="image/*" disabled={isUploading || avatarCooldownLeft > 0} onChange={handleAvatarChange} type="file" />
           </label>
           <strong>{form.displayName || fullName || 'Người dùng Inbox'}</strong>
+          {currentUser?.role && (
+            <div className={`profile-role-badge role-${currentUser.role.toLowerCase()}`}>
+              <Shield size={14} />
+              <span>{getGlobalRoleLabel(currentUser.role)}</span>
+            </div>
+          )}
           <div className="profile-preview-meta">
             <span>{form.statusMessage || 'Chưa cập nhật trạng thái'}</span>
             <span>{getGenderLabel(form.gender)}</span>
@@ -270,7 +330,7 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
 
           <label className="profile-field">
             <span><Users size={16} /> Giới tính</span>
-            <select name="gender" onChange={handleChange} required value={form.gender}>
+            <select className={form.gender ? 'has-value' : ''} name="gender" onChange={handleChange} required value={form.gender}>
               <option value="">Chưa cập nhật</option>
               <option value="male">Nam</option>
               <option value="female">Nữ</option>
@@ -300,7 +360,7 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
 
           <label className="profile-field profile-field-wide">
             <span><AlignLeft size={16} /> Giới thiệu</span>
-            <textarea maxLength={255} name="bio" onChange={handleChange} placeholder="Một vài dòng giới thiệu về bạn" required rows={5} value={form.bio} />
+            <textarea className={form.bio ? 'has-value' : ''} maxLength={255} name="bio" onChange={handleChange} placeholder="Một vài dòng giới thiệu về bạn" required rows={5} value={form.bio} />
             {profileErrors.bio ? <span className="profile-field-error">{profileErrors.bio}</span> : null}
           </label>
 

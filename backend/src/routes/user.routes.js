@@ -1,5 +1,6 @@
 const express = require('express')
 const { avatarUpload } = require('../config/upload')
+const { uploadAvatarRateLimit } = require('../middleware/rateLimit.middleware')
 const {
   changePassword,
   deleteAccount,
@@ -16,7 +17,7 @@ const router = express.Router()
 router.get('/me', getProfile)
 router.patch('/me', updateProfile)
 router.patch('/me/password', changePassword)
-router.patch('/me/avatar', avatarUpload.single('avatar'), updateAvatar)
+router.patch('/me/avatar', uploadAvatarRateLimit, avatarUpload.single('avatar'), updateAvatar)
 router.get('/me/sessions', listSessions)
 router.delete('/me/sessions/others', revokeOtherSessions)
 router.delete('/me/sessions/:sessionId', revokeSession)

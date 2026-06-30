@@ -131,7 +131,7 @@ export function ContactsPanel({
 
   useEffect(() => {
     loadDirectory().catch((error) => {
-      setMessage(error instanceof Error ? error.message : 'Không thể tải danh bạ!')
+      pushToast(error instanceof Error ? error.message : 'Không thể tải danh bạ!', 'error')
     })
   }, [])
 
@@ -191,7 +191,7 @@ export function ContactsPanel({
       const users = await searchUsers(keyword)
       setResults(users)
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Không thể tìm kiếm người dùng!')
+      pushToast(error instanceof Error ? error.message : 'Không thể tìm kiếm người dùng!', 'error')
     } finally {
       setIsLoading(false)
     }

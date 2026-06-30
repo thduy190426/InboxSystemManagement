@@ -1,4 +1,4 @@
-export type AuthScreen = 'login' | 'register' | 'forgot-password' | 'reset-password'
+export type AuthScreen = 'login' | 'register' | 'verify-account' | 'forgot-password' | 'reset-password'
 
 export type AppView = 'chat' | 'contacts' | 'notifications' | 'profile' | 'settings'
 
@@ -7,7 +7,7 @@ export type Message = {
   author: 'me' | 'them' | 'system'
   text: string
   time: string
-  type?: 'text' | 'image' | 'file' | 'audio' | 'system'
+  type?: 'text' | 'image' | 'file' | 'audio' | 'video' | 'system'
   state?: 'sending' | 'sent' | 'delivered' | 'seen' | 'failed'
   createdAt?: string
   updatedAt?: string
@@ -27,7 +27,7 @@ export type MessageReply = {
   id: string
   author: 'me' | 'them' | 'system'
   text: string
-  type?: 'text' | 'image' | 'file' | 'audio' | 'system'
+  type?: 'text' | 'image' | 'file' | 'audio' | 'video' | 'system'
   senderName?: string | null
 }
 
@@ -116,7 +116,7 @@ export type MessageReaction = {
 export type MessageAttachment = {
   name: string
   meta: string
-  type: 'image' | 'file' | 'audio'
+  type: 'image' | 'file' | 'audio' | 'video'
   url: string
   mimeType: string
   sizeBytes: number
@@ -125,7 +125,7 @@ export type MessageAttachment = {
 export type Attachment = {
   name: string
   meta: string
-  type: 'image' | 'file' | 'audio'
+  type: 'image' | 'file' | 'audio' | 'video'
   url?: string
 }
 

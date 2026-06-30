@@ -15,6 +15,15 @@ export function LoginPage({
   onSwitchMode,
 }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false)
+  const [isFormFilled, setIsFormFilled] = useState(false)
+
+  function handleFormChange(event: FormEvent<HTMLFormElement>) {
+    const formData = new FormData(event.currentTarget)
+    const email = String(formData.get('email') ?? '').trim()
+    const password = String(formData.get('password') ?? '').trim()
+    
+    setIsFormFilled(email.length > 0 && password.length > 0)
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -40,7 +49,7 @@ export function LoginPage({
           <p>Tiếp tục quản lý hội thoại khách hàng và đội nhóm của bạn.</p>
         </div>
 
-        <form className="auth-form" onSubmit={handleSubmit}>
+        <form className="auth-form" onChange={handleFormChange} onSubmit={handleSubmit}>
           <label className="auth-field">
             <span>Email</span>
             <div className="auth-input-row">
@@ -96,7 +105,7 @@ export function LoginPage({
 
           {errorMessage ? <p className="auth-error">{errorMessage}</p> : null}
 
-          <button className="auth-primary" disabled={isSubmitting} type="submit">
+          <button className="auth-primary" disabled={isSubmitting || !isFormFilled} type="submit">
             {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
             <ArrowRight size={18} />
           </button>

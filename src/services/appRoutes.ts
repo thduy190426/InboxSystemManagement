@@ -30,6 +30,10 @@ export function readAuthScreenFromLocation(location: RouteLocation = window.loca
     return 'forgot-password'
   }
 
+  if (firstSegment === 'verify-account' || legacyHash === 'verify-account') {
+    return 'verify-account'
+  }
+
   if (firstSegment === 'reset-password' || legacyHash === 'reset-password') {
     return 'reset-password'
   }
@@ -75,10 +79,12 @@ export function isAuthRoute(location: RouteLocation = window.location) {
     firstSegment === 'login' ||
     firstSegment === 'register' ||
     firstSegment === 'forgot-password' ||
+    firstSegment === 'verify-account' ||
     firstSegment === 'reset-password' ||
     legacyHash === 'login' ||
     legacyHash === 'register' ||
     legacyHash === 'forgot-password' ||
+    legacyHash === 'verify-account' ||
     legacyHash === 'reset-password'
   )
 }
@@ -109,6 +115,7 @@ export function isKnownRoute(location: RouteLocation = window.location) {
     'login',
     'register',
     'forgot-password',
+    'verify-account',
     'reset-password',
     'chat',
     'contacts',
@@ -123,6 +130,7 @@ export function isKnownRoute(location: RouteLocation = window.location) {
     'login',
     'register',
     'forgot-password',
+    'verify-account',
     'reset-password',
     'chat',
     'contacts',

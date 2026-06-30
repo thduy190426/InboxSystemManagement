@@ -218,11 +218,11 @@ async function createCallDetailMessage(connection, call, endedAt, durationSecond
     call.status === 'missed'
       ? 'Cuộc gọi: Không bắt máy.'
       : call.status === 'cancelled'
-        ? 'Cu\u1ed9c g\u1ecdi: \u0110\u00e3 h\u1ee7y.'
+        ? 'Cuộc gọi: Đã hủy!'
         : call.status === 'completed'
-          ? `Cu\u1ed9c g\u1ecdi: K\u1ebft th\u00fac, Th\u1eddi l\u01b0\u1ee3ng: ${durationLabel}`
+          ? `Cuộc gọi: Kết thúc, Thời lượng: ${durationLabel}`
           : call.status === 'ongoing'
-            ? `Cu\u1ed9c g\u1ecdi \u0111ang di\u1ec5n ra: Th\u1eddi l\u01b0\u1ee3ng ${durationLabel}`
+            ? `Cuộc gọi đang diễn ra: Thời lượng ${durationLabel}`
             : getCallStatusLabel(call.status)
   const [result] = await connection.execute(
     `INSERT INTO messages (

@@ -110,7 +110,7 @@ function validateRegisterPayload(payload) {
   }
 
   if (phone && !phonePattern.test(phone)) {
-    errors.phone = 'Số điện thoại phải có 9-15 chữ số và có thể bắt đầu bằng dấu +.'
+    errors.phone = 'Số điện thoại phải có 9-15 chữ số và có thể bắt đầu bằng dấu +!'
   }
 
   if (!password) {
@@ -242,6 +242,58 @@ function validateResetPasswordPayload(payload, user = {}) {
   }
 }
 
+function validateVerificationPayload(payload) {
+  const source = payload && typeof payload === 'object' ? payload : {}
+  const email = normalizeEmail(source.email)
+  const channel = source.channel === 'phone' ? 'phone' : 'email'
+  const code = typeof source.code === 'string' ? source.code.trim() : ''
+  const errors = {}
+
+  if (!email) {
+    errors.email = 'Email là bắt buộc!'
+  } else if (!emailPattern.test(email)) {
+    errors.email = 'Email không hợp lệ!'
+  }
+
+  if (!code) {
+    errors.code = 'Mã xác thực là bắt buộc!'
+  } else if (!/^[0-9]{6}$/.test(code)) {
+    errors.code = 'Mã xác thực phải gồm 6 chữ số!'
+  }
+
+  return {
+    data: {
+      channel,
+      code,
+      email,
+    },
+    errors,
+    isValid: Object.keys(errors).length === 0,
+  }
+}
+
+function validateResendVerificationPayload(payload) {
+  const source = payload && typeof payload === 'object' ? payload : {}
+  const email = normalizeEmail(source.email)
+  const channel = source.channel === 'phone' ? 'phone' : 'email'
+  const errors = {}
+
+  if (!email) {
+    errors.email = 'Email là bắt buộc!'
+  } else if (!emailPattern.test(email)) {
+    errors.email = 'Email không hợp lệ!'
+  }
+
+  return {
+    data: {
+      channel,
+      email,
+    },
+    errors,
+    isValid: Object.keys(errors).length === 0,
+  }
+}
+
 function validateChangePasswordPayload(payload, user = {}) {
   const source = payload && typeof payload === 'object' ? payload : {}
   const currentPassword =
@@ -293,5 +345,7 @@ module.exports = {
   validateForgotPasswordPayload,
   validateLoginPayload,
   validateRegisterPayload,
+  validateResendVerificationPayload,
   validateResetPasswordPayload,
+  validateVerificationPayload,
 }

@@ -2,12 +2,17 @@ const bcrypt = require('bcryptjs')
 const { createHash, randomBytes, randomUUID } = require('crypto')
 const { pool } = require('../config/db')
 const { emitToUsers } = require('../realtime/socket')
-const { sendPasswordResetCode } = require('../services/mail.service')
+const {
+  sendEmailVerificationCode,
+  sendPasswordResetCode,
+} = require('../services/mail.service')
 const {
   validateForgotPasswordPayload,
   validateLoginPayload,
   validateRegisterPayload,
+  validateResendVerificationPayload,
   validateResetPasswordPayload,
+  validateVerificationPayload,
 } = require('../utils/validation')
 const { ensureUserProfileColumns } = require('../utils/userProfileColumns')
 
@@ -25,6 +30,7 @@ function toPublicUser(row) {
     role: row.role,
     presence: row.presence,
     isEmailVerified: Boolean(row.is_email_verified),
+    isPhoneVerified: Boolean(row.is_phone_verified),
     lastSeenAt: row.last_seen_at,
     onlineSince: row.online_since,
     createdAt: row.created_at,
@@ -63,6 +69,7 @@ async function getUserById(userId) {
       role,
       presence,
       is_email_verified,
+      is_phone_verified,
       last_seen_at,
       online_since,
       created_at,
@@ -94,6 +101,7 @@ async function getUserByEmail(email) {
       role,
       presence,
       is_email_verified,
+      is_phone_verified,
       is_active,
       last_seen_at,
       online_since,
@@ -120,8 +128,77 @@ function createPasswordResetCode() {
   return String(randomBytes(4).readUInt32BE(0) % 1000000).padStart(6, '0')
 }
 
+function createVerificationCode() {
+  return String(randomBytes(4).readUInt32BE(0) % 1000000).padStart(6, '0')
+}
+
 function hashPasswordResetCode(email, code) {
   return hashToken(`${email}:${code}`)
+}
+
+function hashVerificationCode(email, channel, code) {
+  return hashToken(`${email}:${channel}:${code}`)
+}
+
+function getUnverifiedChannels(user) {
+  return [
+    !user.is_email_verified ? 'email' : null,
+    Boolean(user.phone) && !user.is_phone_verified ? 'phone' : null,
+  ].filter(Boolean)
+}
+
+function isVerificationRequired(user) {
+  return getUnverifiedChannels(user).length > 0
+}
+
+async function createVerificationToken({ userId, email, channel, code, connection = pool }) {
+  const tokenHash = hashVerificationCode(email, channel, code)
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 30)
+
+  await connection.execute(
+    `UPDATE user_verification_tokens
+    SET used_at = CURRENT_TIMESTAMP
+    WHERE user_id = ? AND channel = ? AND used_at IS NULL`,
+    [userId, channel],
+  )
+
+  await connection.execute(
+    `INSERT INTO user_verification_tokens (
+      user_id,
+      channel,
+      token_hash,
+      expires_at
+    ) VALUES (?, ?, ?, ?)`,
+    [userId, channel, tokenHash, expiresAt],
+  )
+
+  return expiresAt
+}
+
+async function sendVerificationCode({ user, channel, code }) {
+  if (channel === 'email') {
+    return sendEmailVerificationCode({
+      code,
+      email: user.email,
+      fullName: user.full_name,
+    })
+  }
+
+  if (!user.phone) {
+    const error = new Error('Tai khoan chua co so dien thoai de xac thuc!')
+    error.statusCode = 400
+    throw error
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    const error = new Error('Dich vu gui SMS chua duoc cau hinh!')
+    error.statusCode = 503
+    throw error
+  }
+
+  return {
+    skipped: true,
+  }
 }
 
 function getTokenFromRequest(request) {
@@ -205,6 +282,8 @@ async function createUserSession(userId, request) {
 }
 
 async function register(request, response, next) {
+  let connection
+
   try {
     const validation = validateRegisterPayload(request.body)
 
@@ -222,11 +301,11 @@ async function register(request, response, next) {
       const errors = {}
 
       if (existingUser.email === email) {
-        errors.email = 'Email đã được sử dụng!'
+        errors.email = 'Email này đã được sử dụng!'
       }
 
       if (phone && existingUser.phone === phone) {
-        errors.phone = 'Số điện thoại đã được sử dụng!'
+        errors.phone = 'Số điện thoại này đã được sử dụng!'
       }
 
       return response.status(409).json({
@@ -239,7 +318,10 @@ async function register(request, response, next) {
     const passwordHash = await bcrypt.hash(password, saltRounds)
     const publicId = randomUUID()
 
-    const [result] = await pool.execute(
+    connection = await pool.getConnection()
+    await connection.beginTransaction()
+
+    const [result] = await connection.execute(
       `INSERT INTO users (
         public_id,
         full_name,
@@ -250,21 +332,70 @@ async function register(request, response, next) {
         presence,
         role,
         is_email_verified,
+        is_phone_verified,
         is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, 'offline', 'user', 0, 1)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, 'offline', 'user', 0, 0, 1)`,
       [publicId, fullName, fullName, email, phone, passwordHash],
     )
 
+    const emailCode = createVerificationCode()
+    const phoneCode = phone ? createVerificationCode() : null
+
+    await createVerificationToken({
+      channel: 'email',
+      code: emailCode,
+      connection,
+      email,
+      userId: result.insertId,
+    })
+
+    if (phone && phoneCode) {
+      await createVerificationToken({
+        channel: 'phone',
+        code: phoneCode,
+        connection,
+        email,
+        userId: result.insertId,
+      })
+    }
+
+    await connection.commit()
+    connection.release()
+    connection = null
+
     const createdUser = await getUserById(result.insertId)
+    const mailResult = await sendVerificationCode({
+      channel: 'email',
+      code: emailCode,
+      user: createdUser,
+    })
+    const phoneResult =
+      phone && phoneCode
+        ? await sendVerificationCode({
+            channel: 'phone',
+            code: phoneCode,
+            user: createdUser,
+          })
+        : { skipped: false }
 
     return response.status(201).json({
       message: 'Đăng kí tài khoản thành công!',
       user: toPublicUser(createdUser),
+      verification: {
+        requiredChannels: phone ? ['email', 'phone'] : ['email'],
+        emailCode: process.env.NODE_ENV === 'production' || !mailResult.skipped ? undefined : emailCode,
+        phoneCode: process.env.NODE_ENV === 'production' || !phoneResult.skipped ? undefined : phoneCode,
+      },
     })
   } catch (error) {
+    if (connection) {
+      await connection.rollback().catch(() => undefined)
+      connection.release()
+    }
+
     if (error.code === 'ER_DUP_ENTRY') {
       error.statusCode = 409
-      error.message = 'Email hoặc số điện thoại đã được sử dụng!'
+      error.message = 'Email hoặc số điện thoại này đã được sử dụng!'
     }
 
     next(error)
@@ -299,6 +430,15 @@ async function login(request, response, next) {
       })
     }
 
+    if (isVerificationRequired(user)) {
+      return response.status(403).json({
+        message: 'Tài khoản chưa được xác thực. Vui lòng xác thực Email/Số điện thoại trước khi đăng nhập!',
+        errors: {
+          verification: getUnverifiedChannels(user),
+        },
+      })
+    }
+
     const session = await createUserSession(user.id, request)
 
     await pool.execute(
@@ -323,6 +463,148 @@ async function login(request, response, next) {
         refreshToken: session.refreshToken,
         expiresAt: session.expiresAt,
       },
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+async function verifyAccount(request, response, next) {
+  try {
+    const validation = validateVerificationPayload(request.body)
+
+    if (!validation.isValid) {
+      return response.status(422).json({
+        message: 'Dữ liệu xác thực không hợp lệ!',
+        errors: validation.errors,
+      })
+    }
+
+    const { channel, code, email } = validation.data
+    const user = await getUserByEmail(email)
+
+    if (!user || !user.is_active) {
+      return response.status(404).json({
+        message: 'Không tìm thấy tài khoản cần xác thực!',
+      })
+    }
+
+    if (channel === 'phone' && !user.phone) {
+      return response.status(400).json({
+        message: 'ài khoản chưa có số điện thoại để xác thực!',
+      })
+    }
+
+    if (channel === 'email' && user.is_email_verified) {
+      return response.json({
+        message: 'Email này đã được xác thực trước đó!',
+        user: toPublicUser(user),
+        verification: { requiredChannels: getUnverifiedChannels(user) },
+      })
+    }
+
+    if (channel === 'phone' && user.is_phone_verified) {
+      return response.json({
+        message: 'Số điện thoại này đã được xác thực trước đó!',
+        user: toPublicUser(user),
+        verification: { requiredChannels: getUnverifiedChannels(user) },
+      })
+    }
+
+    const tokenHash = hashVerificationCode(email, channel, code)
+    const [rows] = await pool.execute(
+      `SELECT id, expires_at, used_at
+      FROM user_verification_tokens
+      WHERE user_id = ? AND channel = ? AND token_hash = ?
+      LIMIT 1`,
+      [user.id, channel, tokenHash],
+    )
+    const token = rows[0] || null
+
+    if (!token || token.used_at || new Date(token.expires_at).getTime() <= Date.now()) {
+      return response.status(400).json({
+        message: 'Mã xác thực không hợp lệ hoặc đã hết hạn!',
+      })
+    }
+
+    await pool.execute(
+      `UPDATE users
+      SET ${channel === 'email' ? 'is_email_verified' : 'is_phone_verified'} = 1,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?`,
+      [user.id],
+    )
+
+    await pool.execute(
+      `UPDATE user_verification_tokens
+      SET used_at = CURRENT_TIMESTAMP
+      WHERE id = ?`,
+      [token.id],
+    )
+
+    const updatedUser = await getUserByEmail(email)
+
+    return response.json({
+      message: channel === 'email' ? 'Xác thực Email thành công!' : 'Xác thực số điện thoại thành công!',
+      user: toPublicUser(updatedUser),
+      verification: {
+        requiredChannels: getUnverifiedChannels(updatedUser),
+      },
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+async function resendVerification(request, response, next) {
+  try {
+    const validation = validateResendVerificationPayload(request.body)
+
+    if (!validation.isValid) {
+      return response.status(422).json({
+        message: 'Dữ liệu gửi lại mã không hợp lệ!',
+        errors: validation.errors,
+      })
+    }
+
+    const { channel, email } = validation.data
+    const user = await getUserByEmail(email)
+
+    if (!user || !user.is_active) {
+      return response.status(404).json({
+        message: 'Không tìm thấy tài khoản cần xác thực!',
+      })
+    }
+
+    if (channel === 'email' && user.is_email_verified) {
+      return response.json({
+        message: 'Email này đã được xác thực trước đó!',
+      })
+    }
+
+    if (channel === 'phone' && (!user.phone || user.is_phone_verified)) {
+      return response.json({
+        message: user.phone ? 'Số điện thoại này đã được xác thực trước đó!' : 'Tài khoản chưa có số điện thoại để xác thực!',
+      })
+    }
+
+    const code = createVerificationCode()
+    await createVerificationToken({
+      channel,
+      code,
+      email,
+      userId: user.id,
+    })
+
+    const sendResult = await sendVerificationCode({
+      channel,
+      code,
+      user,
+    })
+
+    return response.json({
+      message: channel === 'email' ? 'Đã gửi lại mã xác thực Email!' : 'Đã tạo lại mã xác thực số điện thoại!',
+      verificationCode: process.env.NODE_ENV === 'production' || !sendResult.skipped ? undefined : code,
     })
   } catch (error) {
     next(error)
@@ -518,6 +800,8 @@ module.exports = {
   login,
   logout,
   register,
+  resendVerification,
   resetPassword,
   touchPresence,
+  verifyAccount,
 }

@@ -1,4 +1,5 @@
 import type { ChangeEvent, FormEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { useEffect, useMemo, useState } from 'react'
 import {
   Archive,
@@ -21,6 +22,7 @@ import {
   UserPlus,
   UserX,
   X,
+  MoreHorizontal,
   Tag,
   Users,
   Settings2,
@@ -92,9 +94,60 @@ export function DetailPanel({
   const [directNickname, setDirectNickname] = useState(activeConversation.nickname || '')
   const [memberNicknames, setMemberNicknames] = useState<Record<string, string>>({})
   const [selectedFriendId, setSelectedFriendId] = useState('')
-  const [showAllMembers, setShowAllMembers] = useState(false)
+  const [isMembersModalOpen, setIsMembersModalOpen] = useState(false)
+  const [isMembersModalClosing, setIsMembersModalClosing] = useState(false)
+  const [actionMenuMemberId, setActionMenuMemberId] = useState<string | null>(null)
+  const [editingNicknameId, setEditingNicknameId] = useState<string | null>(null)
+
+  const [isEditGroupModalOpen, setIsEditGroupModalOpen] = useState(false)
+  const [isEditGroupModalClosing, setIsEditGroupModalClosing] = useState(false)
+
+  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false)
+  const [isAddMemberModalClosing, setIsAddMemberModalClosing] = useState(false)
 
   const MEMBER_PREVIEW_COUNT = 0
+
+  function openMembersModal() {
+    setIsMembersModalClosing(false)
+    setIsMembersModalOpen(true)
+  }
+
+  function closeMembersModal() {
+    setIsMembersModalClosing(true)
+    setTimeout(() => {
+      setIsMembersModalOpen(false)
+      setIsMembersModalClosing(false)
+    }, 140)
+  }
+
+  function openEditGroupModal() {
+    setGroupTitle(activeConversation.name)
+    setGroupAvatar(null)
+    setIsEditGroupModalClosing(false)
+    setIsEditGroupModalOpen(true)
+  }
+
+  function closeEditGroupModal() {
+    setIsEditGroupModalClosing(true)
+    setTimeout(() => {
+      setIsEditGroupModalOpen(false)
+      setIsEditGroupModalClosing(false)
+    }, 140)
+  }
+
+  function openAddMemberModal() {
+    setSelectedFriendId('')
+    setIsAddMemberModalClosing(false)
+    setIsAddMemberModalOpen(true)
+  }
+
+  function closeAddMemberModal() {
+    setIsAddMemberModalClosing(true)
+    setTimeout(() => {
+      setIsAddMemberModalOpen(false)
+      setIsAddMemberModalClosing(false)
+    }, 140)
+  }
 
   const isGroup = activeConversation.type === 'group'
   const currentMember = members.find((member) => member.id === currentUserId)
@@ -136,7 +189,7 @@ export function DetailPanel({
       title: title && title !== activeConversation.name ? title : undefined,
       avatar: groupAvatar,
     })
-    setGroupAvatar(null)
+    closeEditGroupModal()
   }
 
   async function handleAddMember() {
@@ -145,7 +198,7 @@ export function DetailPanel({
     }
 
     await onAddMember(selectedFriendId)
-    setSelectedFriendId('')
+    closeAddMemberModal()
   }
 
   async function handleDirectNicknameSubmit(event: FormEvent<HTMLFormElement>) {
@@ -325,47 +378,20 @@ export function DetailPanel({
             <span>{members.length} thành viên</span>
           </div>
 
-          <form className="group-edit-form" onSubmit={handleGroupSubmit}>
-            <input
-              aria-label="Tên nhóm"
-              onChange={(event) => setGroupTitle(event.target.value)}
-              value={groupTitle}
-            />
-            <label className="group-small-upload" title="Đổi avatar">
-              <ImagePlus size={16} />
-              <input accept="image/*" onChange={handleAvatarChange} type="file" />
-            </label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
             <button
-              disabled={
-                Boolean(busyAction) ||
-                (!groupAvatar && groupTitle.trim() === activeConversation.name)
-              }
-              type="submit"
-            >
-              Lưu
-            </button>
-          </form>
-
-          <div className="group-add-row">
-            <select
-              aria-label="Chọn thành viên"
-              onChange={(event) => setSelectedFriendId(event.target.value)}
-              value={selectedFriendId}
-            >
-              <option value="">Thêm thành viên</option>
-              {addableFriends.map((friend) => (
-                <option key={friend.id} value={friend.id}>
-                  {friend.fullName}
-                </option>
-              ))}
-            </select>
-            <button
-              disabled={Boolean(busyAction) || !selectedFriendId}
-              onClick={handleAddMember}
-              title="Thêm"
+              onClick={openEditGroupModal}
               type="button"
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', background: 'var(--surface-soft)', border: '1px solid var(--line)', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}
             >
-              <UserPlus size={17} />
+              <Settings2 size={16} color="var(--primary-strong)" /> Cập nhật thông tin nhóm
+            </button>
+            <button
+              onClick={openAddMemberModal}
+              type="button"
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', background: 'var(--surface-soft)', border: '1px solid var(--line)', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}
+            >
+              <UserPlus size={16} color="var(--primary-strong)" /> Thêm thành viên
             </button>
           </div>
 
@@ -442,7 +468,7 @@ export function DetailPanel({
           ) : null}
 
           <div className="group-member-stack">
-            {(showAllMembers ? members : members.slice(0, MEMBER_PREVIEW_COUNT)).map((member) => (
+            {members.slice(0, MEMBER_PREVIEW_COUNT).map((member) => (
               <div className="group-detail-member" key={member.id}>
                 <AvatarFallback name={member.fullName} src={member.avatarUrl} />
                 <div className="group-member-body">
@@ -454,94 +480,17 @@ export function DetailPanel({
                         : getRoleLabel(member.role)}
                     </small>
                   </span>
-                  <form
-                    className="member-nickname-form"
-                    onSubmit={(event) => handleMemberNicknameSubmit(event, member.id)}
-                  >
-                    <input
-                      aria-label={`Biệt danh của ${member.fullName}`}
-                      maxLength={80}
-                      onChange={(event) =>
-                        setMemberNicknames((current) => ({
-                          ...current,
-                          [member.id]: event.target.value,
-                        }))
-                      }
-                      placeholder="Biệt danh"
-                      value={memberNicknames[member.id] || ''}
-                    />
-                    <button
-                      disabled={Boolean(busyAction)}
-                      title="Lưu biệt danh"
-                      type="submit"
-                    >
-                      <Save size={14} />
-                    </button>
-                    <button
-                      disabled={Boolean(busyAction) || !memberNicknames[member.id]?.trim()}
-                      onClick={() => handleClearMemberNickname(member.id)}
-                      title="Xóa biệt danh"
-                      type="button"
-                    >
-                      <X size={14} />
-                    </button>
-                  </form>
-                  {isGroupOwner && member.id !== currentUserId ? (
-                    <div className="member-role-actions">
-                      {member.role === 'admin' ? (
-                        <button
-                          disabled={Boolean(busyAction)}
-                          onClick={() => onUpdateMemberRole(member.id, 'member')}
-                          title="Hạ quyền Admin"
-                          type="button"
-                        >
-                          <Shield size={14} />
-                          <span>Hạ Admin</span>
-                        </button>
-                      ) : member.role !== 'owner' ? (
-                        <button
-                          disabled={Boolean(busyAction)}
-                          onClick={() => onUpdateMemberRole(member.id, 'admin')}
-                          title="Nâng Admin"
-                          type="button"
-                        >
-                          <ShieldCheck size={14} />
-                          <span>Nâng Admin</span>
-                        </button>
-                      ) : null}
-                      {member.role !== 'owner' ? (
-                        <button
-                          disabled={Boolean(busyAction)}
-                          onClick={() => onTransferOwner(member.id)}
-                          title="Chuyển Owner"
-                          type="button"
-                        >
-                          <UserCog size={14} />
-                          <span>Owner</span>
-                        </button>
-                      ) : null}
-                    </div>
-                  ) : null}
                 </div>
-                <button
-                  className="member-remove-button"
-                  disabled={Boolean(busyAction)}
-                  onClick={() => onRemoveMember(member.id)}
-                  title="Xóa thành viên"
-                  type="button"
-                >
-                  <X size={15} />
-                </button>
               </div>
             ))}
             <button
               className="group-member-toggle"
-              onClick={() => setShowAllMembers((prev) => !prev)}
+              onClick={openMembersModal}
               type="button"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', background: 'var(--surface-soft)', border: '1px solid var(--line)', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, color: 'var(--text)' }}
             >
-              {showAllMembers
-                ? 'Thu gọn danh sách'
-                : `Xem tất cả ${members.length} thành viên`}
+              <Users size={16} color="var(--primary-strong)" />
+              <span>{`Xem tất cả ${members.length} thành viên`}</span>
             </button>
           </div>
 
@@ -597,7 +546,7 @@ export function DetailPanel({
             <div className="detail-empty-state">
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                 <PinOff size={24} strokeWidth={1.5} style={{ opacity: 0.5 }} />
-                <span>Chưa có tin nhắn nào được ghim.</span>
+                <span>Chưa có tin nhắn nào được ghim!</span>
               </div>
             </div>
           ) : null}
@@ -633,6 +582,282 @@ export function DetailPanel({
           ))}
         </div>
       </section>
+
+      {isMembersModalOpen ? createPortal(
+        <div className={isMembersModalClosing ? 'modal-backdrop is-exiting' : 'modal-backdrop'} role="presentation" style={{ zIndex: 100 }}>
+          <div className="group-modal" style={{ maxWidth: '440px', width: '100%' }}>
+            <div className="group-modal-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 24px 16px', borderBottom: '1px solid var(--line)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '44px', height: '44px', borderRadius: '50%', background: 'var(--primary)', color: '#fff' }}>
+                  <Users size={22} />
+                </div>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '18px' }}>Thành viên nhóm</h2>
+                  <p style={{ margin: 0, marginTop: '4px', color: 'var(--muted)', fontSize: '14px' }}>{members.length} thành viên</p>
+                </div>
+              </div>
+              <button className="icon-button" onClick={closeMembersModal} type="button" title="Đóng" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--subtle)' }}>
+                <X size={18} />
+              </button>
+            </div>
+            
+            <div className="group-member-stack" style={{ padding: '16px 24px 24px', maxHeight: '65vh', overflowY: 'auto' }}>
+              {members.map((member) => (
+                <div className="group-detail-member" key={member.id} style={{ position: 'relative' }}>
+                  <AvatarFallback name={member.fullName} src={member.avatarUrl} />
+                  <div className="group-member-body">
+                    {editingNicknameId === member.id ? (
+                      <form
+                        className="member-nickname-form"
+                        onSubmit={(event) => {
+                          handleMemberNicknameSubmit(event, member.id);
+                          setEditingNicknameId(null);
+                        }}
+                        style={{ display: 'flex', gap: '4px', width: '100%', alignItems: 'center' }}
+                      >
+                        <input
+                          aria-label={`Biệt danh của ${member.fullName}`}
+                          maxLength={80}
+                          onChange={(event) =>
+                            setMemberNicknames((current) => ({
+                              ...current,
+                              [member.id]: event.target.value,
+                            }))
+                          }
+                          placeholder="Biệt danh"
+                          value={memberNicknames[member.id] || ''}
+                          style={{ flex: 1, minWidth: 0, padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--line-strong)', outline: 'none' }}
+                          autoFocus
+                        />
+                        <button
+                          disabled={Boolean(busyAction)}
+                          title="Lưu biệt danh"
+                          type="submit"
+                          style={{ display: 'grid', placeItems: 'center', width: '28px', height: '28px', background: 'var(--primary)', color: '#fff', borderRadius: '4px', cursor: 'pointer', border: 'none' }}
+                        >
+                          <Save size={14} />
+                        </button>
+                        <button
+                          disabled={Boolean(busyAction) || !memberNicknames[member.id]?.trim()}
+                          onClick={() => {
+                            handleClearMemberNickname(member.id);
+                            setEditingNicknameId(null);
+                          }}
+                          title="Xóa biệt danh"
+                          type="button"
+                          style={{ display: 'grid', placeItems: 'center', width: '28px', height: '28px', background: 'var(--surface-soft)', color: '#ef4444', borderRadius: '4px', cursor: 'pointer', border: '1px solid var(--line)' }}
+                        >
+                          <X size={14} />
+                        </button>
+                        <button
+                          onClick={() => setEditingNicknameId(null)}
+                          title="Hủy"
+                          type="button"
+                          style={{ display: 'grid', placeItems: 'center', width: '28px', height: '28px', background: 'var(--surface-soft)', color: 'var(--muted)', borderRadius: '4px', cursor: 'pointer', border: '1px solid var(--line)' }}
+                        >
+                          <X size={14} />
+                        </button>
+                      </form>
+                    ) : (
+                      <span>
+                        <strong>{member.nickname || member.fullName}</strong>
+                        <small>
+                          {member.nickname
+                            ? `${member.fullName} · ${getRoleLabel(member.role)}`
+                            : getRoleLabel(member.role)}
+                        </small>
+                      </span>
+                    )}
+                  </div>
+                  
+                  {!editingNicknameId || editingNicknameId !== member.id ? (
+                    <button
+                      onClick={() => setActionMenuMemberId((prev) => prev === member.id ? null : member.id)}
+                      title="Hành động"
+                      type="button"
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%', background: actionMenuMemberId === member.id ? 'var(--surface-soft)' : 'transparent', border: 'none', cursor: 'pointer', color: 'var(--subtle)' }}
+                    >
+                      <MoreHorizontal size={18} />
+                    </button>
+                  ) : null}
+
+                  {actionMenuMemberId === member.id ? (
+                    <div style={{ position: 'absolute', right: '36px', top: '10px', background: '#fff', border: '1px solid var(--line)', borderRadius: '8px', padding: '4px', zIndex: 10, boxShadow: 'var(--shadow)', display: 'flex', flexDirection: 'column', minWidth: '170px' }}>
+                      <button
+                        onClick={() => {
+                          setEditingNicknameId(member.id);
+                          setActionMenuMemberId(null);
+                        }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'transparent', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}
+                      >
+                        <Tag size={14} /> Đổi biệt danh
+                      </button>
+
+                      {isGroupOwner && member.id !== currentUserId ? (
+                        <>
+                          {member.role === 'admin' ? (
+                            <button
+                              disabled={Boolean(busyAction)}
+                              onClick={() => { onUpdateMemberRole(member.id, 'member'); setActionMenuMemberId(null); }}
+                              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'transparent', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}
+                            >
+                              <Shield size={14} /> Hạ quyền Admin
+                            </button>
+                          ) : member.role !== 'owner' ? (
+                            <button
+                              disabled={Boolean(busyAction)}
+                              onClick={() => { onUpdateMemberRole(member.id, 'admin'); setActionMenuMemberId(null); }}
+                              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'transparent', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}
+                            >
+                              <ShieldCheck size={14} /> Nâng quyền Admin
+                            </button>
+                          ) : null}
+
+                          {member.role !== 'owner' ? (
+                            <button
+                              disabled={Boolean(busyAction)}
+                              onClick={() => { onTransferOwner(member.id); setActionMenuMemberId(null); }}
+                              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'transparent', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}
+                            >
+                              <UserCog size={14} /> Chuyển Owner
+                            </button>
+                          ) : null}
+                          <div style={{ height: '1px', background: 'var(--line)', margin: '4px 0' }} />
+                        </>
+                      ) : null}
+                      
+                      <button
+                        disabled={Boolean(busyAction)}
+                        onClick={() => { onRemoveMember(member.id); setActionMenuMemberId(null); }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'transparent', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#ef4444' }}
+                      >
+                        <Trash2 size={14} /> Xóa thành viên
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      , document.body) : null}
+
+      {isEditGroupModalOpen ? createPortal(
+        <div className={isEditGroupModalClosing ? 'modal-backdrop is-exiting' : 'modal-backdrop'} role="presentation" style={{ zIndex: 100 }}>
+          <form className="group-modal" style={{ maxWidth: '400px', width: '100%' }} onSubmit={handleGroupSubmit}>
+            <div className="group-modal-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 24px 16px', borderBottom: '1px solid var(--line)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '44px', height: '44px', borderRadius: '50%', background: 'var(--primary)', color: '#fff' }}>
+                  <Settings2 size={22} />
+                </div>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '18px' }}>Cập nhật nhóm</h2>
+                  <p style={{ margin: 0, marginTop: '4px', color: 'var(--muted)', fontSize: '14px' }}>Đổi tên và ảnh đại diện</p>
+                </div>
+              </div>
+              <button className="icon-button" onClick={closeEditGroupModal} type="button" title="Đóng" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--subtle)' }}>
+                <X size={18} />
+              </button>
+            </div>
+            
+            <div style={{ padding: '24px' }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>Tên nhóm</span>
+                <input
+                  aria-label="Tên nhóm"
+                  onChange={(event) => setGroupTitle(event.target.value)}
+                  value={groupTitle}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--line-strong)', outline: 'none' }}
+                />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>Ảnh đại diện</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '48px', height: '48px', flexShrink: 0, borderRadius: '50%', background: 'var(--surface-soft)', border: '1px dashed var(--line-strong)', display: 'grid', placeItems: 'center', color: 'var(--subtle)' }}>
+                    {groupAvatar ? <Check size={20} color="var(--primary)" /> : <ImagePlus size={20} />}
+                  </div>
+                  <input accept="image/*" onChange={handleAvatarChange} type="file" style={{ fontSize: '14px' }} />
+                </div>
+              </label>
+            </div>
+
+            <div style={{ padding: '16px 24px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'flex-end', gap: '12px', background: 'var(--surface-soft)', borderBottomLeftRadius: '12px', borderBottomRightRadius: '12px' }}>
+              <button
+                onClick={closeEditGroupModal}
+                type="button"
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '6px', border: '1px solid var(--line)', background: '#fff', cursor: 'pointer', fontWeight: 600, color: 'var(--text)' }}
+              >
+                <X size={16} /> Hủy
+              </button>
+              <button
+                disabled={Boolean(busyAction) || (!groupAvatar && groupTitle.trim() === activeConversation.name)}
+                type="submit"
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '6px', border: 'none', background: 'var(--primary)', color: '#fff', cursor: 'pointer', fontWeight: 600 }}
+              >
+                <Save size={16} /> Lưu thay đổi
+              </button>
+            </div>
+          </form>
+        </div>
+      , document.body) : null}
+
+      {isAddMemberModalOpen ? createPortal(
+        <div className={isAddMemberModalClosing ? 'modal-backdrop is-exiting' : 'modal-backdrop'} role="presentation" style={{ zIndex: 100 }}>
+          <div className="group-modal" style={{ maxWidth: '400px', width: '100%' }}>
+            <div className="group-modal-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 24px 16px', borderBottom: '1px solid var(--line)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '44px', height: '44px', borderRadius: '50%', background: 'var(--primary)', color: '#fff' }}>
+                  <UserPlus size={22} />
+                </div>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '18px' }}>Thêm thành viên</h2>
+                  <p style={{ margin: 0, marginTop: '4px', color: 'var(--muted)', fontSize: '14px' }}>Mời bạn bè vào nhóm</p>
+                </div>
+              </div>
+              <button className="icon-button" onClick={closeAddMemberModal} type="button" title="Đóng" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--subtle)' }}>
+                <X size={18} />
+              </button>
+            </div>
+            
+            <div style={{ padding: '24px' }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>Chọn bạn bè</span>
+                <select
+                  aria-label="Chọn thành viên"
+                  onChange={(event) => setSelectedFriendId(event.target.value)}
+                  value={selectedFriendId}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--line-strong)', outline: 'none', background: '#fff' }}
+                >
+                  <option value="">-- Chọn một người --</option>
+                  {addableFriends.map((friend) => (
+                    <option key={friend.id} value={friend.id}>
+                      {friend.fullName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div style={{ padding: '16px 24px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'flex-end', gap: '12px', background: 'var(--surface-soft)', borderBottomLeftRadius: '12px', borderBottomRightRadius: '12px' }}>
+              <button
+                onClick={closeAddMemberModal}
+                type="button"
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '6px', border: '1px solid var(--line)', background: '#fff', cursor: 'pointer', fontWeight: 600, color: 'var(--text)' }}
+              >
+                <X size={16} /> Hủy
+              </button>
+              <button
+                disabled={Boolean(busyAction) || !selectedFriendId}
+                onClick={handleAddMember}
+                type="button"
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '6px', border: 'none', background: 'var(--primary)', color: '#fff', cursor: 'pointer', fontWeight: 600 }}
+              >
+                <Check size={16} /> Thêm ngay
+              </button>
+            </div>
+          </div>
+        </div>
+      , document.body) : null}
     </aside>
   )
 }

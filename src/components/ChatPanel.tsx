@@ -36,8 +36,8 @@ import { ConfirmDialog, type ConfirmDialogState } from './ConfirmDialog'
 import { OnlineDurationBadge } from './OnlineDurationBadge'
 
 const EmojiPicker = lazy(() => import('emoji-picker-react'))
-const MAX_ATTACHMENT_SIZE_BYTES = 2 * 1024 * 1024
-const ALLOWED_ATTACHMENT_TYPE_PREFIXES = ['image/', 'audio/']
+const MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024
+const ALLOWED_ATTACHMENT_TYPE_PREFIXES = ['image/', 'audio/', 'video/']
 
 function parseMessageDate(message?: Message) {
   const value = message?.createdAt || message?.updatedAt
@@ -194,11 +194,12 @@ export function ChatPanel({
   const [isSearchingMessages, setIsSearchingMessages] = useState(false)
   const [isSearchFilterOpen, setIsSearchFilterOpen] = useState(false)
   const [activeSearchIndex, setActiveSearchIndex] = useState(0)
-  const [isRecordingAudio, setIsRecordingAudio] = useState(false)
+  const [recordingKind, setRecordingKind] = useState<'audio' | 'video' | null>(null)
   const [recordingDuration, setRecordingDuration] = useState(0)
   const [recordingError, setRecordingError] = useState('')
-  const [recordedAudioUrl, setRecordedAudioUrl] = useState('')
-  const [recordedAudioFile, setRecordedAudioFile] = useState<File | null>(null)
+  const [recordedMediaUrl, setRecordedMediaUrl] = useState('')
+  const [recordedMediaFile, setRecordedMediaFile] = useState<File | null>(null)
+  const [recordedMediaKind, setRecordedMediaKind] = useState<'audio' | 'video' | null>(null)
   const [galleryImage, setGalleryImage] = useState<MessageAttachment | null>(null)
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const threadEndRef = useRef<HTMLDivElement | null>(null)
@@ -320,11 +321,11 @@ export function ChatPanel({
 
       recordingStreamRef.current?.getTracks().forEach((track) => track.stop())
 
-      if (recordedAudioUrl) {
-        URL.revokeObjectURL(recordedAudioUrl)
+      if (recordedMediaUrl) {
+        URL.revokeObjectURL(recordedMediaUrl)
       }
     },
-    [recordedAudioUrl],
+    [recordedMediaUrl],
   )
 
   function handleDraftChange(event: ChangeEvent<HTMLInputElement>) {
@@ -373,28 +374,49 @@ export function ChatPanel({
     return candidates.find((candidate) => MediaRecorder.isTypeSupported(candidate)) || ''
   }
 
-  function clearRecordedAudio() {
-    if (recordedAudioUrl) {
-      URL.revokeObjectURL(recordedAudioUrl)
+  function getSupportedVideoMimeType() {
+    const candidates = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4']
+
+    return candidates.find((candidate) => MediaRecorder.isTypeSupported(candidate)) || ''
+  }
+
+  function getMediaFileExtension(type: string, kind: 'audio' | 'video') {
+    if (type.includes('mp4')) {
+      return kind === 'audio' ? 'm4a' : 'mp4'
     }
 
-    setRecordedAudioUrl('')
-    setRecordedAudioFile(null)
+    if (type.includes('ogg')) {
+      return 'ogg'
+    }
+
+    return 'webm'
+  }
+
+  function clearRecordedMedia() {
+    if (recordedMediaUrl) {
+      URL.revokeObjectURL(recordedMediaUrl)
+    }
+
+    setRecordedMediaUrl('')
+    setRecordedMediaFile(null)
+    setRecordedMediaKind(null)
     setRecordingDuration(0)
   }
 
-  async function startAudioRecording() {
+  async function startMediaRecording(kind: 'audio' | 'video') {
     if (!navigator.mediaDevices?.getUserMedia || isBlocked) {
       setRecordingError('Trình duyệt không hỗ trợ ghi âm!')
       return
     }
 
     try {
-      clearRecordedAudio()
+      clearRecordedMedia()
       setRecordingError('')
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const mimeType = getSupportedAudioMimeType()
+      const stream = await navigator.mediaDevices.getUserMedia(
+        kind === 'audio' ? { audio: true } : { audio: true, video: true },
+      )
+      const mimeType = kind === 'audio' ? getSupportedAudioMimeType() : getSupportedVideoMimeType()
       const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
 
       recordingChunksRef.current = []
@@ -408,14 +430,15 @@ export function ChatPanel({
       }
 
       recorder.onstop = () => {
-        const type = recorder.mimeType || mimeType || 'audio/webm'
+        const type = recorder.mimeType || mimeType || (kind === 'audio' ? 'audio/webm' : 'video/webm')
         const blob = new Blob(recordingChunksRef.current, { type })
-        const extension = type.includes('mp4') ? 'm4a' : type.includes('ogg') ? 'ogg' : 'webm'
-        const file = new File([blob], `voice-message-${Date.now()}.${extension}`, { type })
+        const extension = getMediaFileExtension(type, kind)
+        const file = new File([blob], `${kind}-message-${Date.now()}.${extension}`, { type })
         const url = URL.createObjectURL(blob)
 
-        setRecordedAudioFile(file)
-        setRecordedAudioUrl(url)
+        setRecordedMediaFile(file)
+        setRecordedMediaUrl(url)
+        setRecordedMediaKind(kind)
         recordingChunksRef.current = []
         recordingStreamRef.current?.getTracks().forEach((track) => track.stop())
         recordingStreamRef.current = null
@@ -423,7 +446,7 @@ export function ChatPanel({
       }
 
       recorder.start()
-      setIsRecordingAudio(true)
+      setRecordingKind(kind)
       setRecordingDuration(0)
       recordingTimerRef.current = window.setInterval(() => {
         setRecordingDuration((current) => current + 1)
@@ -433,13 +456,13 @@ export function ChatPanel({
     }
   }
 
-  function stopAudioRecording() {
+  function stopMediaRecording() {
     if (recordingTimerRef.current) {
       window.clearInterval(recordingTimerRef.current)
       recordingTimerRef.current = null
     }
 
-    setIsRecordingAudio(false)
+    setRecordingKind(null)
 
     if (mediaRecorderRef.current?.state === 'recording') {
       mediaRecorderRef.current.stop()
@@ -450,7 +473,7 @@ export function ChatPanel({
     recordingStreamRef.current = null
   }
 
-  function cancelAudioRecording() {
+  function cancelMediaRecording() {
     if (recordingTimerRef.current) {
       window.clearInterval(recordingTimerRef.current)
       recordingTimerRef.current = null
@@ -465,17 +488,17 @@ export function ChatPanel({
     recordingStreamRef.current = null
     mediaRecorderRef.current = null
     recordingChunksRef.current = []
-    setIsRecordingAudio(false)
-    clearRecordedAudio()
+    setRecordingKind(null)
+    clearRecordedMedia()
   }
 
-  async function sendRecordedAudio() {
-    if (!recordedAudioFile) {
+  async function sendRecordedMedia() {
+    if (!recordedMediaFile) {
       return
     }
 
-    await onUploadAttachment(recordedAudioFile)
-    clearRecordedAudio()
+    await onUploadAttachment(recordedMediaFile)
+    clearRecordedMedia()
   }
 
   function formatRecordingDuration(seconds: number) {
@@ -1495,7 +1518,7 @@ export function ChatPanel({
           <Paperclip size={20} />
           <input
             aria-label="Đính kèm file"
-            accept="image/*"
+            accept="image/*,audio/*,video/*"
             disabled={isBlocked || isUploadingAttachment}
             onChange={handleAttachmentChange}
             type="file"
@@ -1552,16 +1575,20 @@ export function ChatPanel({
             ))}
           </div>
         ) : null}
-        {recordedAudioUrl ? (
+        {recordedMediaUrl ? (
           <div className="voice-preview">
-            <Mic size={16} />
-            <audio controls src={recordedAudioUrl} />
-            <button onClick={clearRecordedAudio} title="Hủy ghi âm" type="button">
+            {recordedMediaKind === 'video' ? <Video size={16} /> : <Mic size={16} />}
+            {recordedMediaKind === 'video' ? (
+              <video controls src={recordedMediaUrl} />
+            ) : (
+              <audio controls src={recordedMediaUrl} />
+            )}
+            <button onClick={clearRecordedMedia} title="Huy ban ghi" type="button">
               <X size={16} />
             </button>
             <button
               disabled={isUploadingAttachment}
-              onClick={sendRecordedAudio}
+              onClick={sendRecordedMedia}
               title="Gửi tin nhắn thoại"
               type="button"
             >
@@ -1569,31 +1596,42 @@ export function ChatPanel({
             </button>
           </div>
         ) : null}
-        {isRecordingAudio ? (
+        {recordingKind ? (
           <button
             className="icon-button composer-extra voice-record-button is-recording"
-            onClick={stopAudioRecording}
+            onClick={stopMediaRecording}
             title="Dừng ghi âm"
             type="button"
           >
             <Square size={18} />
           </button>
         ) : (
+          <>
           <button
             className="icon-button composer-extra voice-record-button"
             disabled={isBlocked || isUploadingAttachment}
-            onClick={startAudioRecording}
+            onClick={() => startMediaRecording('audio')}
             title="Ghi âm"
             type="button"
           >
             <Mic size={20} />
           </button>
+          <button
+            className="icon-button composer-extra voice-record-button"
+            disabled={isBlocked || isUploadingAttachment}
+            onClick={() => startMediaRecording('video')}
+            title="Quay video"
+            type="button"
+          >
+            <Video size={20} />
+          </button>
+          </>
         )}
-        {isRecordingAudio ? (
+        {recordingKind ? (
           <div className="recording-status">
             <span />
-            <strong>{formatRecordingDuration(recordingDuration)}</strong>
-            <button onClick={cancelAudioRecording} title="Hủy ghi âm" type="button">
+            <strong>{recordingKind === 'video' ? 'Video' : 'Audio'} {formatRecordingDuration(recordingDuration)}</strong>
+            <button onClick={cancelMediaRecording} title="Huy ghi" type="button">
               <X size={14} />
             </button>
           </div>

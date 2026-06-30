@@ -6,6 +6,77 @@ const { sendWebPushToUsers } = require('../services/push.service')
 const accentColors = ['#14b8a6', '#f97316', '#4f46e5', '#db2777', '#2563eb']
 const typingIndicators = new Map()
 const TYPING_TTL_MS = 5000
+const SCHEMA_LOCK_TIMEOUT_SECONDS = 10
+const RETRYABLE_SCHEMA_ERRORS = new Set(['ER_LOCK_DEADLOCK', 'ER_LOCK_WAIT_TIMEOUT', 'ER_LOCK_NOWAIT'])
+
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms)
+  })
+}
+
+async function executeSchemaChangeWithRetry(connection, sql, retries = 3) {
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      return await connection.execute(sql)
+    } catch (error) {
+      if (!error || !RETRYABLE_SCHEMA_ERRORS.has(error.code) || attempt === retries) {
+        throw error
+      }
+
+      await delay(250 * (attempt + 1))
+    }
+  }
+}
+
+async function withSchemaLock(lockName, callback) {
+  const connection = await pool.getConnection()
+
+  try {
+    const [rows] = await connection.execute('SELECT GET_LOCK(?, ?) AS acquired', [
+      lockName,
+      SCHEMA_LOCK_TIMEOUT_SECONDS,
+    ])
+
+    if (Number(rows[0]?.acquired || 0) !== 1) {
+      const error = new Error(`Could not acquire schema lock: ${lockName}`)
+      error.code = 'SCHEMA_LOCK_TIMEOUT'
+      throw error
+    }
+
+    try {
+      return await callback(connection)
+    } finally {
+      await connection.execute('SELECT RELEASE_LOCK(?)', [lockName])
+    }
+  } finally {
+    connection.release()
+  }
+}
+
+async function ensureMessageTypeSupportsPoll() {
+  await withSchemaLock('inbox_system_management:messages:type:poll', async (connection) => {
+    const [columns] = await connection.execute(
+      `SELECT COLUMN_TYPE AS columnType
+       FROM INFORMATION_SCHEMA.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE()
+         AND TABLE_NAME = 'messages'
+         AND COLUMN_NAME = 'type'
+       LIMIT 1`,
+    )
+    const columnType = String(columns[0]?.columnType || '')
+
+    if (columnType.includes("'poll'")) {
+      return
+    }
+
+    await executeSchemaChangeWithRetry(
+      connection,
+      `ALTER TABLE messages
+        MODIFY type ENUM('text', 'image', 'file', 'audio', 'video', 'system', 'poll') NOT NULL DEFAULT 'text'`,
+    )
+  })
+}
 const messagePinsTableReady = pool
   .execute(
     `CREATE TABLE IF NOT EXISTS message_pins (
@@ -62,26 +133,22 @@ const messageHiddenEntriesTableReady = pool
   })
 const messagePollsTablesReady = pool
   .execute(
-    `ALTER TABLE messages
-      MODIFY type ENUM('text', 'image', 'file', 'audio', 'video', 'system', 'poll') NOT NULL DEFAULT 'text'`,
+    `CREATE TABLE IF NOT EXISTS message_polls (
+      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+      message_id BIGINT UNSIGNED NOT NULL,
+      question VARCHAR(255) NOT NULL,
+      allow_multiple TINYINT(1) NOT NULL DEFAULT 0,
+      is_closed TINYINT(1) NOT NULL DEFAULT 0,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_message_polls_message (message_id)
+    )`,
   )
   .catch((error) => {
     console.error('Không thể đảm bảo loại tin nhắn khảo sát:', error)
     throw error
   })
   .then(async () => {
-    await pool.execute(
-      `CREATE TABLE IF NOT EXISTS message_polls (
-        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-        message_id BIGINT UNSIGNED NOT NULL,
-        question VARCHAR(255) NOT NULL,
-        allow_multiple TINYINT(1) NOT NULL DEFAULT 0,
-        is_closed TINYINT(1) NOT NULL DEFAULT 0,
-        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        UNIQUE KEY uq_message_polls_message (message_id)
-      )`,
-    )
     await pool.execute(
       `CREATE TABLE IF NOT EXISTS message_poll_options (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -172,6 +239,7 @@ async function ensureMessageHiddenEntriesTable() {
 }
 
 async function ensureMessagePollsTables() {
+  await ensureMessageTypeSupportsPoll()
   await messagePollsTablesReady
 }
 
@@ -318,7 +386,9 @@ function mapAttachment(row) {
     ? 'image'
     : row.mime_type.startsWith('audio/')
       ? 'audio'
-      : 'file'
+      : row.mime_type.startsWith('video/')
+        ? 'video'
+        : 'file'
 
   return {
     name: row.original_name,
@@ -339,7 +409,11 @@ function getAttachmentPreview(type) {
     return 'Đã gửi một tin nhắn thoại!'
   }
 
-  if (type === 'file' || type === 'video') {
+  if (type === 'video') {
+    return 'Da gui mot video!'
+  }
+
+  if (type === 'file') {
     return 'Đã gửi một tệp!'
   }
 
@@ -686,34 +760,141 @@ function resolveMentionedMembers(text, members, currentUserId) {
       return
     }
 
-    const matchingMembers = members.filter((member) => {
-      if (member.userId === currentUserId) {
-        return false
-      }
+    const matchingMembers = members
+      .map((member) => {
+        if (member.userId === currentUserId) {
+          return null
+        }
 
-      const aliases = [
-        member.fullName,
-        member.nickname,
-        member.email?.split('@')[0],
-      ].filter(Boolean)
+        const aliases = [
+          member.fullName,
+          member.nickname,
+          member.email?.split('@')[0],
+        ].filter(Boolean)
 
-      return aliases.some((alias) => {
-        const normalizedAlias = normalizeMentionToken(alias)
+        const matchedAliases = aliases
+          .map((alias) => {
+            const normalizedAlias = normalizeMentionToken(alias)
 
-        return (
-          normalizedAlias === normalizedCandidate ||
-          normalizedAlias.startsWith(`${normalizedCandidate} `) ||
-          normalizedCandidate.startsWith(`${normalizedAlias} `)
-        )
+            if (
+              normalizedAlias === normalizedCandidate ||
+              normalizedAlias.startsWith(`${normalizedCandidate} `) ||
+              normalizedCandidate.startsWith(`${normalizedAlias} `)
+            ) {
+              return normalizedAlias
+            }
+
+            return null
+          })
+          .filter(Boolean)
+
+        if (matchedAliases.length === 0) {
+          return null
+        }
+
+        return {
+          member,
+          score: Math.max(...matchedAliases.map((alias) => alias.length)),
+        }
       })
-    })
+      .filter(Boolean)
+      .sort((left, right) => right.score - left.score)
 
-    if (matchingMembers.length === 1) {
-      mentionedByUserId.set(matchingMembers[0].userId, matchingMembers[0])
+    if (matchingMembers.length > 0 && matchingMembers[0].score > (matchingMembers[1]?.score || 0)) {
+      mentionedByUserId.set(matchingMembers[0].member.userId, matchingMembers[0].member)
     }
   })
 
   return [...mentionedByUserId.values()]
+}
+
+async function syncMentionNotifications(
+  connection,
+  {
+    conversationId,
+    messageId,
+    actorUserId,
+    actorName,
+    text,
+    members,
+    notifyNewMentions = false,
+  },
+) {
+  const mentionedMembers = resolveMentionedMembers(text, members || [], actorUserId)
+  const mentionedUserIds = mentionedMembers.map((member) => member.userId)
+
+  const [existingMentionRows] = await connection.execute(
+    `SELECT user_id
+    FROM notifications
+    WHERE conversation_id = ?
+      AND message_id = ?
+      AND type = 'mention'`,
+    [conversationId, messageId],
+  )
+  const existingMentionUserIds = existingMentionRows.map((row) => Number(row.user_id))
+  const staleMentionUserIds = existingMentionUserIds.filter((userId) => !mentionedUserIds.includes(userId))
+  const newMentionMembers = mentionedMembers.filter(
+    (member) => !existingMentionUserIds.includes(member.userId),
+  )
+
+  if (staleMentionUserIds.length > 0) {
+    const placeholders = staleMentionUserIds.map(() => '?').join(',')
+
+    await connection.execute(
+      `DELETE FROM notifications
+      WHERE conversation_id = ?
+        AND message_id = ?
+        AND type = 'mention'
+        AND user_id IN (${placeholders})`,
+      [conversationId, messageId, ...staleMentionUserIds],
+    )
+  }
+
+  for (const member of newMentionMembers) {
+    await connection.execute(
+      `INSERT INTO notifications (
+        user_id,
+        actor_id,
+        conversation_id,
+        message_id,
+        type,
+        title,
+        body
+      ) VALUES (?, ?, ?, ?, 'mention', ?, ?)`,
+      [
+        member.userId,
+        actorUserId,
+        conversationId,
+        messageId,
+        `${actorName} đã nhắc đến bạn!`,
+        text.slice(0, 500),
+      ],
+    )
+  }
+
+  const newMentionUserIds = newMentionMembers.map((member) => member.userId)
+
+  if (notifyNewMentions && newMentionUserIds.length > 0) {
+    emitToUsers(newMentionUserIds, 'notifications:changed', {
+      eventType: 'mention',
+      conversationId: String(conversationId),
+      messageId: String(messageId),
+      actorUserId: String(actorUserId),
+    })
+    pushWebNotificationToUsers(newMentionUserIds, {
+      title: `${actorName} đã nhắc đến bạn!`,
+      body: text.slice(0, 500),
+      tag: `mention:${messageId}`,
+      url: `/chat/${conversationId}`,
+    })
+  }
+
+  return {
+    mentionedMembers,
+    mentionedUserIds,
+    newMentionUserIds,
+    staleMentionUserIds,
+  }
 }
 
 async function updateConversationLastMessage(connection, conversationId) {
@@ -3070,29 +3251,15 @@ async function createMessage(request, response, next) {
 
       if (conversation?.type === 'group' || conversation?.type === 'support') {
         const members = await loadConversationMembers(connection, conversationId, currentUserId)
-        mentionedMembers = resolveMentionedMembers(text, members || [], currentUserId)
+        ;({ mentionedMembers } = await syncMentionNotifications(connection, {
+          conversationId,
+          messageId: result.insertId,
+          actorUserId: currentUserId,
+          actorName: request.user.full_name,
+          text,
+          members,
+        }))
 
-        for (const member of mentionedMembers) {
-          await connection.execute(
-            `INSERT INTO notifications (
-              user_id,
-              actor_id,
-              conversation_id,
-              message_id,
-              type,
-              title,
-              body
-            ) VALUES (?, ?, ?, ?, 'mention', ?, ?)`,
-            [
-              member.userId,
-              currentUserId,
-              conversationId,
-              result.insertId,
-              `${request.user.full_name} đã nhắc đến bạn!`,
-              text.slice(0, 500),
-            ],
-          )
-        }
       }
 
       await connection.execute(
@@ -3212,7 +3379,11 @@ async function createAttachmentMessage(request, response, next) {
 
     const normalizedFilename = request.file.cloudinary?.publicId || request.file.originalname
     const storageUrl = request.file.cloudinary?.secureUrl || request.file.cloudinary?.url
-    const messageType = request.file.mimetype.startsWith('audio/') ? 'audio' : 'image'
+    const messageType = request.file.mimetype.startsWith('audio/')
+      ? 'audio'
+      : request.file.mimetype.startsWith('video/')
+        ? 'video'
+        : 'image'
     const body = request.file.originalname
 
     const [result] = await connection.execute(
@@ -3246,7 +3417,7 @@ async function createAttachmentMessage(request, response, next) {
         request.file.mimetype,
         request.file.size,
         storageUrl,
-        messageType === 'image' ? storageUrl : null,
+        messageType === 'image' || messageType === 'video' ? storageUrl : null,
       ],
     )
 
@@ -3372,6 +3543,28 @@ async function updateMessage(request, response, next) {
       WHERE id = ?`,
       [text, messageId],
     )
+
+    const [conversationRows] = await connection.execute(
+      `SELECT type
+      FROM conversations
+      WHERE id = ?
+      LIMIT 1`,
+      [conversationId],
+    )
+    const conversation = conversationRows[0]
+
+    if (conversation?.type === 'group' || conversation?.type === 'support') {
+      const members = await loadConversationMembers(connection, conversationId, currentUserId)
+      await syncMentionNotifications(connection, {
+        conversationId,
+        messageId,
+        actorUserId: currentUserId,
+        actorName: request.user.full_name,
+        text,
+        members,
+        notifyNewMentions: true,
+      })
+    }
 
     const { messages } = await loadConversationMessages(connection, conversationId, currentUserId, {
       messageId,

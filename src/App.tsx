@@ -6,6 +6,7 @@ import { NotFoundPage } from './pages/NotFoundPage'
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
+import { VerifyAccountPage } from './pages/VerifyAccountPage'
 import { TermsPage } from './pages/TermsPage'
 import {
   ApiError,
@@ -13,8 +14,11 @@ import {
   login,
   logout,
   register,
+  resendVerification,
   resetPassword,
+  verifyAccount,
   type AuthUser,
+  type VerificationChannel,
 } from './services/authApi'
 import { onSessionExpired } from './services/apiClient'
 import {
@@ -67,7 +71,6 @@ function shouldShowRouteTransitionLoader(
   currentPathname: string,
   currentHash = window.location.hash,
 ) {
-  // Không hiện loader khi chỉ chuyển giữa các cuộc trò chuyện trong chat
   if (isLoaderDisabledRoute(previousPathname) || isLoaderDisabledRoute(currentPathname, currentHash)) {
     return false
   }
@@ -205,6 +208,10 @@ export function App() {
   const [authError, setAuthError] = useState('')
   const [authSuccessMessage, setAuthSuccessMessage] = useState('')
   const [passwordResetCode, setPasswordResetCode] = useState('')
+  const [verificationEmail, setVerificationEmail] = useState('')
+  const [verificationChannels, setVerificationChannels] = useState<VerificationChannel[]>(['email'])
+  const [devEmailVerificationCode, setDevEmailVerificationCode] = useState('')
+  const [devPhoneVerificationCode, setDevPhoneVerificationCode] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [toasts, setToasts] = useState<AppToast[]>([])
   const toastTimersRef = useRef<Record<string, number>>({})
@@ -286,6 +293,8 @@ export function App() {
     setAuthError('')
     setAuthSuccessMessage('')
     setPasswordResetCode('')
+    setDevEmailVerificationCode('')
+    setDevPhoneVerificationCode('')
   }
 
   function handleAuthSuccess(
@@ -359,7 +368,7 @@ export function App() {
     setAuthSuccessMessage('')
 
     try {
-      await register({
+      const response = await register({
         fullName: payload.fullName,
         email: payload.email,
         phone: payload.phone,
@@ -367,14 +376,83 @@ export function App() {
         confirmPassword: payload.confirmPassword,
       })
 
-      const response = await login({
-        email: payload.email,
-        password: payload.password,
-      })
+      setVerificationEmail(payload.email)
+      setVerificationChannels(response.verification?.requiredChannels || ['email'])
+      setDevEmailVerificationCode(response.verification?.emailCode || '')
+      setDevPhoneVerificationCode(response.verification?.phoneCode || '')
+      setAuthSuccessMessage(response.message)
+      window.history.replaceState(null, '', toAuthPath('verify-account'))
+      setIsRouteKnown(true)
+      setAuthScreen('verify-account')
+      pushToast(response.message, 'info')
 
-      handleAuthSuccess(response, true, 'Đăng kí thành công!')
     } catch (error) {
       setAuthError(error instanceof ApiError ? error.message : 'Không thể đăng kí!')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  async function handleVerifyAccount(payload: Record<string, string>) {
+    setIsSubmitting(true)
+    setAuthError('')
+
+    try {
+      const response = await verifyAccount({
+        channel: payload.channel as VerificationChannel,
+        code: payload.code,
+        email: payload.email,
+      })
+      const requiredChannels = response.verification.requiredChannels
+
+      setVerificationEmail(payload.email)
+      setVerificationChannels(requiredChannels)
+      setAuthSuccessMessage(response.message)
+
+      if (payload.channel === 'email') {
+        setDevEmailVerificationCode('')
+      } else {
+        setDevPhoneVerificationCode('')
+      }
+
+      if (requiredChannels.length === 0) {
+        window.history.replaceState(null, '', toAuthPath('login'))
+        setIsRouteKnown(true)
+        setAuthScreen('login')
+        setAuthSuccessMessage('')
+        pushToast('Tài khoản đã được xác thực. Vui lòng đăng nhập!', 'info')
+      } else {
+        pushToast(response.message, 'info')
+      }
+    } catch (error) {
+      setAuthError(error instanceof ApiError ? error.message : 'Không thể xác thực tài khoản!')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  async function handleResendVerification(payload: Record<string, string>) {
+    setIsSubmitting(true)
+    setAuthError('')
+
+    try {
+      const response = await resendVerification({
+        channel: payload.channel as VerificationChannel,
+        email: payload.email,
+      })
+
+      setVerificationEmail(payload.email)
+      setAuthSuccessMessage(response.message)
+
+      if (payload.channel === 'email') {
+        setDevEmailVerificationCode(response.verificationCode || '')
+      } else {
+        setDevPhoneVerificationCode(response.verificationCode || '')
+      }
+
+      pushToast(response.message, 'info')
+    } catch (error) {
+      setAuthError(error instanceof ApiError ? error.message : 'Không thể gửi lại mã xác thực!')
     } finally {
       setIsSubmitting(false)
     }
@@ -484,6 +562,23 @@ export function App() {
           isSubmitting={isSubmitting}
           onSubmit={handleRegister}
           onSwitchMode={() => navigateAuth('login')}
+        />
+      )
+    }
+
+    if (authScreen === 'verify-account') {
+      return (
+        <VerifyAccountPage
+          defaultEmail={verificationEmail}
+          devEmailCode={devEmailVerificationCode}
+          devPhoneCode={devPhoneVerificationCode}
+          errorMessage={authError}
+          isSubmitting={isSubmitting}
+          onResend={handleResendVerification}
+          onSubmit={handleVerifyAccount}
+          onSwitchMode={() => navigateAuth('login')}
+          requiredChannels={verificationChannels}
+          successMessage={authSuccessMessage}
         />
       )
     }

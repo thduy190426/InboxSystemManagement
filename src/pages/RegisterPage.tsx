@@ -123,6 +123,24 @@ export function RegisterPage({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [localError, setLocalError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<RegisterErrors>({})
+  const [isFormFilled, setIsFormFilled] = useState(false)
+
+  function handleFormChange(event: FormEvent<HTMLFormElement>) {
+    const formData = new FormData(event.currentTarget)
+    const fullName = String(formData.get('fullName') ?? '').trim()
+    const email = String(formData.get('email') ?? '').trim()
+    const password = String(formData.get('password') ?? '').trim()
+    const confirmPassword = String(formData.get('confirmPassword') ?? '').trim()
+    const terms = formData.get('terms')
+    
+    setIsFormFilled(
+      fullName.length > 0 &&
+      email.length > 0 &&
+      password.length > 0 &&
+      confirmPassword.length > 0 &&
+      terms === 'on'
+    )
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -151,10 +169,10 @@ export function RegisterPage({
             Đăng kí
           </span>
           <h1 id="register-title">Tạo tài khoản mới</h1>
-          <p>Thiết lập Workspace chat để quản lý khách hàng, nhóm và tin nhắn.</p>
+          <p>Tạo tài khoản để bắt đầu quản lý chat ngay hôm nay!</p>
         </div>
 
-        <form className="auth-form" onSubmit={handleSubmit}>
+        <form className="auth-form" onChange={handleFormChange} onSubmit={handleSubmit}>
           <label className="auth-field">
             <span>Họ và tên</span>
             <div className="auth-input-row">
@@ -267,7 +285,7 @@ export function RegisterPage({
           </label>
 
           <label className="auth-check auth-policy">
-            <input required type="checkbox" />
+            <input name="terms" required type="checkbox" />
             <span>
               Tôi đồng ý với{' '}
               <a href="/terms" target="_blank" rel="noreferrer">
@@ -283,7 +301,7 @@ export function RegisterPage({
 
           {visibleError ? <p className="auth-error">{visibleError}</p> : null}
 
-          <button className="auth-primary" disabled={isSubmitting} type="submit">
+          <button className="auth-primary" disabled={isSubmitting || !isFormFilled} type="submit">
             <UserPlus size={18} />
             {isSubmitting ? 'Đang đăng kí...' : 'Đăng kí'}
           </button>

@@ -1,6 +1,6 @@
 function notFoundHandler(request, response) {
   response.status(404).json({
-    message: `Route ${request.method} ${request.originalUrl} not found!`,
+    message: `Tuyến đường ${request.method} ${request.originalUrl} không tìm thấy!`,
   })
 }
 

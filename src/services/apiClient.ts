@@ -43,7 +43,7 @@ export async function apiFetch(path: string, options: ApiFetchOptions = {}) {
 
   if (auth && !token) {
     expireSession()
-    throw new ApiRequestError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 401)
+    throw new ApiRequestError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!', 401)
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {

@@ -1,5 +1,5 @@
 import type { ChangeEvent, FormEvent } from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   AlertTriangle,
   ChevronDown,
@@ -35,6 +35,7 @@ type SessionViewModel = UserSession & {
 }
 
 const RECENT_SESSION_DISPLAY_LIMIT = 5
+const REFRESH_COOLDOWN_SECONDS = 10
 
 const initialPasswordForm: ChangePasswordPayload = {
   currentPassword: '',
@@ -141,6 +142,8 @@ export function SettingsPage({ onAccountDeleted, onLogout, pushToast }: Settings
   const [deleteErrors, setDeleteErrors] = useState<Partial<Record<keyof DeleteAccountPayload, string>>>({})
   const [showAllSessions, setShowAllSessions] = useState(false)
   const [renderExpandedSessions, setRenderExpandedSessions] = useState(false)
+  const [refreshCooldown, setRefreshCooldown] = useState(0)
+  const cooldownIntervalRef = useRef<ReturnType<typeof window.setInterval> | null>(null)
 
   const sortedSessions = [...sessions].sort((left, right) => {
     if (left.isCurrent !== right.isCurrent) {
@@ -202,7 +205,27 @@ export function SettingsPage({ onAccountDeleted, onLogout, pushToast }: Settings
       pushToast(error instanceof Error ? error.message : 'Không thể tải phiên đăng nhập!', 'error')
     } finally {
       setIsLoadingSessions(false)
+      startRefreshCooldown()
     }
+  }
+
+  function startRefreshCooldown() {
+    if (cooldownIntervalRef.current) {
+      window.clearInterval(cooldownIntervalRef.current)
+    }
+
+    setRefreshCooldown(REFRESH_COOLDOWN_SECONDS)
+
+    cooldownIntervalRef.current = window.setInterval(() => {
+      setRefreshCooldown((prev) => {
+        if (prev <= 1) {
+          window.clearInterval(cooldownIntervalRef.current!)
+          cooldownIntervalRef.current = null
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
   }
 
   function handleToggleSessionHistory() {
@@ -448,7 +471,11 @@ export function SettingsPage({ onAccountDeleted, onLogout, pushToast }: Settings
               ) : null}
             </label>
 
-            <button className="profile-save-button" disabled={isChangingPassword} type="submit">
+            <button
+              className="profile-save-button"
+              disabled={isChangingPassword || (!passwordForm.currentPassword && !passwordForm.newPassword && !passwordForm.confirmNewPassword)}
+              type="submit"
+            >
               <KeyRound size={18} />
               {isChangingPassword ? 'Đang đổi mật khẩu...' : 'Đổi mật khẩu'}
             </button>
@@ -464,9 +491,14 @@ export function SettingsPage({ onAccountDeleted, onLogout, pushToast }: Settings
             </div>
 
             <div className="profile-session-toolbar">
-              <button className="profile-session-button" disabled={isLoadingSessions} onClick={() => void loadSessions()} type="button">
-                <RefreshCw size={14} />
-                {isLoadingSessions ? 'Đang tải...' : 'Làm mới'}
+              <button
+                className="profile-session-button"
+                disabled={isLoadingSessions || refreshCooldown > 0}
+                onClick={() => void loadSessions()}
+                type="button"
+              >
+                <RefreshCw size={14} className={isLoadingSessions ? 'spin' : ''} />
+                {isLoadingSessions ? 'Đang tải...' : refreshCooldown > 0 ? `Làm mới (${refreshCooldown}s)` : 'Làm mới'}
               </button>
               <button
                 className="profile-session-button profile-session-danger"
@@ -589,7 +621,11 @@ export function SettingsPage({ onAccountDeleted, onLogout, pushToast }: Settings
               ) : null}
             </label>
 
-            <button className="profile-save-button profile-delete-button" disabled={isDeletingAccount} type="submit">
+            <button
+              className="profile-save-button profile-delete-button"
+              disabled={isDeletingAccount || (!deleteForm.password && !deleteForm.confirmationText)}
+              type="submit"
+            >
               <Trash2 size={18} />
               {isDeletingAccount ? 'Đang xoá tài khoản...' : 'Xoá tài khoản'}
             </button>

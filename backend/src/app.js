@@ -31,7 +31,7 @@ app.use(
         return
       }
 
-      callback(new Error('Origin is not allowed by CORS!'))
+      callback(new Error('Nguồn gốc không được phép bởi CORS!'))
     },
     credentials: true,
   }),
