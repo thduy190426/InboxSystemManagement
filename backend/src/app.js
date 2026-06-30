@@ -10,13 +10,10 @@ const searchRoutes = require('./routes/search.routes')
 const userRoutes = require('./routes/user.routes')
 const { authenticate } = require('./middleware/auth.middleware')
 const { notFoundHandler, errorHandler } = require('./middleware/error.middleware')
+const { getAllowedOrigins } = require('./utils/allowedOrigins')
 
 const app = express()
-const allowedOrigins = new Set([
-  process.env.CLIENT_ORIGIN || 'http://127.0.0.1:5173',
-  'http://127.0.0.1:5173',
-  'http://localhost:5173',
-])
+const allowedOrigins = new Set(getAllowedOrigins())
 
 app.use(
   helmet({
