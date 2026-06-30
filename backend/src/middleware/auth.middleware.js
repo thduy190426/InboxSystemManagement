@@ -49,6 +49,23 @@ async function authenticate(request, response, next) {
   }
 }
 
+function requireAdmin(request, response, next) {
+  if (!request.user) {
+    return response.status(401).json({
+      message: 'Ban can dang nhap de tiep tuc!',
+    })
+  }
+
+  if (request.user.role !== 'admin') {
+    return response.status(403).json({
+      message: 'Ban khong co quyen truy cap khu vuc quan tri!',
+    })
+  }
+
+  next()
+}
+
 module.exports = {
   authenticate,
+  requireAdmin,
 }

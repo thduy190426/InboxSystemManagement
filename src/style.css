@@ -7470,7 +7470,153 @@ h3 {
   color: var(--text);
 }
 
-.action-buttons button.text-danger:hover {
-  background: rgba(219, 39, 119, 0.1);
-  color: var(--rose);
-}
+  .action-buttons button.text-danger:hover {
+    background: rgba(219, 39, 119, 0.1);
+    color: var(--rose);
+  }
+
+  .admin-loading-row,
+  .admin-empty-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 96px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .admin-loading-row svg,
+  .admin-edit-actions svg {
+    animation: confirm-dialog-spin 760ms linear infinite;
+  }
+
+  .admin-error-message {
+    margin: 0 0 20px 0;
+    padding: 12px 14px;
+    border: 1px solid rgba(219, 39, 119, 0.22);
+    border-radius: 8px;
+    background: rgba(219, 39, 119, 0.08);
+    color: var(--rose);
+    font-size: 14px;
+  }
+
+  .admin-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 14px;
+    flex-wrap: wrap;
+  }
+
+  .admin-pagination div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .admin-pagination button,
+  .admin-edit-actions button {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 12px;
+  }
+
+  .admin-pagination button:disabled,
+  .admin-edit-actions button:disabled,
+  .admin-edit-close:disabled {
+    cursor: not-allowed;
+    opacity: 0.62;
+  }
+
+  .admin-edit-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.42);
+    padding: 20px;
+    animation: modal-backdrop-in var(--modal-motion-duration) var(--modal-motion-ease) both;
+  }
+
+  .admin-edit-modal {
+    position: relative;
+    width: min(420px, 100%);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.18);
+    padding: 24px;
+    animation: modal-panel-in var(--modal-motion-duration) var(--modal-motion-ease) both;
+  }
+
+  .admin-edit-modal h2 {
+    margin: 0 0 4px 0;
+    font-size: 20px;
+  }
+
+  .admin-edit-modal p {
+    margin: 0 0 18px 0;
+    color: var(--muted);
+  }
+
+  .admin-edit-modal label {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 14px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .admin-edit-modal select {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+
+  .admin-edit-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--subtle);
+    cursor: pointer;
+  }
+
+  .admin-edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .admin-edit-actions button:last-child {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-color: var(--primary);
+    background: var(--primary);
+    color: #fff;
+  }
