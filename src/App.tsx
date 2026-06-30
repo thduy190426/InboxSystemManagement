@@ -356,7 +356,7 @@ export function App() {
 
       handleAuthSuccess(response, payload.rememberLogin === 'true')
     } catch (error) {
-      setAuthError(error instanceof ApiError ? error.message : 'Không thể đăng nhập!')
+      pushToast(error instanceof ApiError ? error.message : 'Không thể đăng nhập!', 'error')
     } finally {
       setIsSubmitting(false)
     }
@@ -387,7 +387,7 @@ export function App() {
       pushToast(response.message, 'info')
 
     } catch (error) {
-      setAuthError(error instanceof ApiError ? error.message : 'Không thể đăng kí!')
+      pushToast(error instanceof ApiError ? error.message : 'Không thể đăng kí!', 'error')
     } finally {
       setIsSubmitting(false)
     }
@@ -558,10 +558,10 @@ export function App() {
     if (authScreen === 'register') {
       return (
         <RegisterPage
-          errorMessage={authError}
           isSubmitting={isSubmitting}
           onSubmit={handleRegister}
           onSwitchMode={() => navigateAuth('login')}
+          pushToast={pushToast}
         />
       )
     }
@@ -610,7 +610,6 @@ export function App() {
 
     return (
       <LoginPage
-        errorMessage={authError}
         isSubmitting={isSubmitting}
         onSubmit={handleLogin}
         onForgotPassword={() => navigateAuth('forgot-password')}

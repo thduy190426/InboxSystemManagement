@@ -1459,24 +1459,24 @@ export function ChatApp({
       }))
 
       showBrowserNotification('Đã bật thông báo trình duyệt', {
-        body: 'Bạn sẽ nhận cảnh báo khi có tin nhắn, mention, lời mời hoặc cuộc gọi mới.',
+        body: 'Bạn sẽ nhận cảnh báo khi có tin nhắn, mention, lời mời hoặc cuộc gọi mới!',
         tag: 'browser-notifications-enabled',
         url: toAppPath({ view: 'notifications' }),
       })
 
       if (!pushResult.enabled && pushResult.reason === 'missing-vapid') {
-        pushToast('Đã bật thông báo khi app đang mở. Muốn nhận khi đóng tab, hãy cấu hình VAPID keys cho backend.')
+        pushToast('Đã bật thông báo khi app đang mở. Muốn nhận khi đóng tab, hãy cấu hình VAPID keys cho backend!')
       }
 
       if (!pushResult.enabled && pushResult.reason === 'register-failed') {
-        pushToast('Không thể đăng ký Web Push lúc này. Thông báo trong tab vẫn hoạt động.')
+        pushToast('Không thể đăng ký Web Push lúc này. Thông báo trong tab vẫn hoạt động!')
       }
 
       return
     }
 
     if (permission === 'denied') {
-      pushToast('Trình duyệt đang chặn thông báo. Hãy bật lại trong cài đặt trình duyệt.')
+      pushToast('Trình duyệt đang chặn thông báo. Hãy bật lại trong cài đặt trình duyệt!')
     }
   }
 

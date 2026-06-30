@@ -115,6 +115,11 @@ export function ContactsPanel({
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null)
   const [isConfirming, setIsConfirming] = useState(false)
   const pendingContactActionsRef = useRef(new Set<string>())
+  const queryRef = useRef(query)
+
+  useEffect(() => {
+    queryRef.current = query
+  }, [query])
 
   async function loadDirectory() {
     const [nextFriends, nextRequests, nextSuggestions] = await Promise.all([
@@ -126,6 +131,17 @@ export function ContactsPanel({
     setFriends(nextFriends)
     setRequests(nextRequests)
     setSuggestions(nextSuggestions)
+  }
+
+  async function loadDirectoryAndCurrentSearch() {
+    await loadDirectory()
+
+    const keyword = queryRef.current.trim()
+
+    if (keyword.length >= 2) {
+      const users = await searchUsers(keyword)
+      setResults(users)
+    }
   }
 
 
@@ -143,7 +159,7 @@ export function ContactsPanel({
     }
 
     function handleRealtimeContactsChanged() {
-      loadDirectory().catch(() => undefined)
+      loadDirectoryAndCurrentSearch().catch(() => undefined)
     }
 
     socket.on('contacts:changed', handleRealtimeContactsChanged)

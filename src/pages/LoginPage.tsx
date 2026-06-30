@@ -8,7 +8,6 @@ type LoginPageProps = AuthPageProps & {
 }
 
 export function LoginPage({
-  errorMessage,
   isSubmitting = false,
   onForgotPassword,
   onSubmit,
@@ -102,8 +101,6 @@ export function LoginPage({
               Quên mật khẩu?
             </button>
           </div>
-
-          {errorMessage ? <p className="auth-error">{errorMessage}</p> : null}
 
           <button className="auth-primary" disabled={isSubmitting || !isFormFilled} type="submit">
             {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}

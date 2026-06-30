@@ -11,6 +11,7 @@ const {
   validateVerificationPayload,
 } = require('../utils/validation')
 const { ensureUserProfileColumns } = require('../utils/userProfileColumns')
+const { sendEmailVerificationCode } = require('../services/mail.service')
 
 function toPublicUser(row) {
   return {
@@ -322,14 +323,21 @@ async function register(request, response, next) {
     connection.release()
     connection = null
 
+    const mailResult = await sendEmailVerificationCode({
+      code: emailCode,
+      email,
+      fullName,
+    })
     const createdUser = await getUserById(result.insertId)
 
     return response.status(201).json({
-      message: 'Đăng ký tài khoản thành công!',
+      message: mailResult.skipped
+        ? 'Đăng ký tài khoản thành công! Mã xác thực đang hiển thị ở môi trường phát triển.'
+        : 'Đăng ký tài khoản thành công! Vui lòng kiểm tra Gmail để lấy mã xác thực.',
       user: toPublicUser(createdUser),
       verification: {
         requiredChannels: ['email'],
-        emailCode,
+        emailCode: mailResult.skipped ? emailCode : null,
       },
     })
   } catch (error) {
@@ -541,10 +549,23 @@ async function resendVerification(request, response, next) {
       userId: user.id,
     })
 
+    const mailResult =
+      channel === 'email'
+        ? await sendEmailVerificationCode({
+            code,
+            email,
+            fullName: user.full_name,
+          })
+        : { skipped: true }
 
     return response.json({
-      message: channel === 'email' ? 'Đã gửi lại mã xác thực Email!' : 'Đã tạo lại mã xác thực số điện thoại!',
-      verificationCode: code,
+      message:
+        channel === 'email'
+          ? mailResult.skipped
+            ? 'Đã tạo lại mã xác thực Email! Mã đang hiển thị ở môi trường phát triển.'
+            : 'Đã gửi lại mã xác thực Email! Vui lòng kiểm tra Gmail.'
+          : 'Đã tạo lại mã xác thực số điện thoại!',
+      verificationCode: mailResult.skipped ? code : null,
     })
   } catch (error) {
     next(error)

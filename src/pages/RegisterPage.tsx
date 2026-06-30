@@ -12,6 +12,10 @@ import {
 } from 'lucide-react'
 import type { AuthPageProps } from '../types'
 
+type RegisterPageProps = AuthPageProps & {
+  pushToast: (text: string, tone?: 'info' | 'error') => void
+}
+
 type RegisterErrors = Partial<
   Record<'fullName' | 'email' | 'phone' | 'password' | 'confirmPassword', string>
 >
@@ -114,14 +118,13 @@ function validateRegisterForm(formData: FormData) {
 }
 
 export function RegisterPage({
-  errorMessage,
   isSubmitting = false,
   onSubmit,
   onSwitchMode,
-}: AuthPageProps) {
+  pushToast,
+}: RegisterPageProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [localError, setLocalError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<RegisterErrors>({})
   const [isFormFilled, setIsFormFilled] = useState(false)
 
@@ -149,16 +152,13 @@ export function RegisterPage({
 
     if (Object.keys(validation.errors).length > 0) {
       setFieldErrors(validation.errors)
-      setLocalError('Vui lòng kiểm tra lại thông tin đăng kí!')
+      pushToast('Vui lòng kiểm tra lại thông tin đăng kí!', 'error')
       return
     }
 
     setFieldErrors({})
-    setLocalError('')
     onSubmit(validation.data)
   }
-
-  const visibleError = localError || errorMessage
 
   return (
     <main className="auth-shell">
@@ -298,8 +298,6 @@ export function RegisterPage({
               .
             </span>
           </label>
-
-          {visibleError ? <p className="auth-error">{visibleError}</p> : null}
 
           <button className="auth-primary" disabled={isSubmitting || !isFormFilled} type="submit">
             <UserPlus size={18} />
