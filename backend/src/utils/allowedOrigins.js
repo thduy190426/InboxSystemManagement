@@ -2,8 +2,12 @@ const defaultAllowedOrigins = [
   'https://tduyymessage.netlify.app',
   'http://127.0.0.1:5173',
   'http://localhost:5173',
-  'https://inboxsystem.netlify.app'
+  'https://inboxsystem.netlify.app',
 ]
+
+function normalizeOrigin(origin) {
+  return String(origin || '').trim().replace(/\/+$/, '')
+}
 
 function getAllowedOrigins() {
   const envOrigins = [
@@ -12,12 +16,13 @@ function getAllowedOrigins() {
   ]
     .filter(Boolean)
     .flatMap((value) => value.split(','))
-    .map((origin) => origin.trim())
+    .map(normalizeOrigin)
     .filter(Boolean)
 
-  return [...new Set([...envOrigins, ...defaultAllowedOrigins])]
+  return [...new Set([...envOrigins, ...defaultAllowedOrigins.map(normalizeOrigin)])]
 }
 
 module.exports = {
   getAllowedOrigins,
+  normalizeOrigin,
 }
