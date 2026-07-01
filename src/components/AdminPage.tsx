@@ -4,10 +4,13 @@ import {
   AlertCircle,
   CheckCircle2,
   Edit2,
+  Lock,
   Loader2,
-  MoreVertical,
+  Mail,
   Search,
+  ShieldCheck,
   Trash2,
+  Unlock,
   Users,
   X,
   XCircle,
@@ -16,7 +19,9 @@ import {
   deleteUser,
   fetchAdminStats,
   fetchAdminUsers,
-  updateUserStatus,
+  lockAdminUser,
+  unlockAdminUser,
+  updateAdminUser,
   type AdminStats,
   type AdminUser,
   type AdminUserRole,
@@ -33,11 +38,14 @@ type AdminPageProps = {
 
 type EditUserState = {
   user: AdminUser
+  fullName: string
+  displayName: string
+  email: string
   role: AdminUserRole
-  status: AdminUserStatus
 }
 
 const USER_PAGE_SIZE = 20
+const EDIT_EXIT_DURATION_MS = 140
 
 const emptyStats: AdminStats = {
   totalUsers: 0,
@@ -57,7 +65,7 @@ function formatNumber(value: number) {
 
 function formatLastLogin(value: string | null) {
   if (!value) {
-    return 'Chưa đăng nhập'
+    return 'Chưa đăng nhập!'
   }
 
   const date = new Date(value)
@@ -73,15 +81,25 @@ function formatLastLogin(value: string | null) {
 }
 
 function getStatusLabel(status: AdminUserStatus) {
+  if (status === 'suspended') {
+    return 'Đã khóa!'
+  }
+
   if (status === 'active') {
-    return 'Hoạt động'
+    return 'Đang online!'
   }
 
-  if (status === 'inactive') {
-    return 'Không hoạt động'
-  }
+  return 'Đang mở khóa...'
+}
 
-  return 'Đã khóa'
+function createEditState(user: AdminUser): EditUserState {
+  return {
+    user,
+    fullName: user.fullName,
+    displayName: user.displayName || '',
+    email: user.email,
+    role: user.role,
+  }
 }
 
 export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
@@ -103,6 +121,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
   const [visibleEditUser, setVisibleEditUser] = useState<EditUserState | null>(null)
   const [isEditExiting, setIsEditExiting] = useState(false)
   const [isSavingUser, setIsSavingUser] = useState(false)
+  const [busyLockUserId, setBusyLockUserId] = useState<string | null>(null)
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null)
   const [isConfirmWorking, setIsConfirmWorking] = useState(false)
 
@@ -123,7 +142,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
     const timer = window.setTimeout(() => {
       setVisibleEditUser(null)
       setIsEditExiting(false)
-    }, 140) // Match EXIT_DURATION_MS
+    }, EDIT_EXIT_DURATION_MS)
 
     return () => window.clearTimeout(timer)
   }, [editUser, visibleEditUser])
@@ -236,54 +255,65 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
       )
     }
 
-    return users.map((user) => (
-      <tr key={user.id}>
-        <td>
-          <div className="user-cell">
-            <div className="user-avatar">{user.name.charAt(0).toUpperCase()}</div>
-            <div>
-              <strong>{user.name}</strong>
-              <span>{user.email}</span>
+    return users.map((user) => {
+      const isLocked = !user.isActive
+      const isLockBusy = busyLockUserId === user.id
+
+      return (
+        <tr key={user.id}>
+          <td>
+            <div className="user-cell">
+              <div className="user-avatar">{user.name.charAt(0).toUpperCase()}</div>
+              <div>
+                <strong>{user.name}</strong>
+                <span>{user.email}</span>
+              </div>
             </div>
-          </div>
-        </td>
-        <td>
-          <span className={`role-badge role-${user.role}`}>
-            {user.role}
-          </span>
-        </td>
-        <td>
-          <span className={`status-badge status-${user.status}`}>
-            {user.status === 'active' ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
-            {getStatusLabel(user.status)}
-          </span>
-        </td>
-        <td className="text-muted">{formatLastLogin(user.lastLogin)}</td>
-        <td>
-          <div className="action-buttons">
-            <button
-              title="Chỉnh sửa"
-              type="button"
-              onClick={() => setEditUser({ user, role: user.role, status: user.status })}
-            >
-              <Edit2 size={16} />
-            </button>
-            <button
-              title="Xoá"
-              className="text-danger"
-              type="button"
-              onClick={() => openDeleteDialog(user)}
-            >
-              <Trash2 size={16} />
-            </button>
-            <button title="Tùy chọn khác" type="button">
-              <MoreVertical size={16} />
-            </button>
-          </div>
-        </td>
-      </tr>
-    ))
-  }, [debouncedSearch, isUsersLoading, users])
+          </td>
+          <td>
+            <span className={`role-badge role-${user.role}`}>
+              {user.role}
+            </span>
+          </td>
+          <td>
+            <span className={`status-badge status-${user.status}`}>
+              {isLocked ? <Lock size={12} /> : user.status === 'active' ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
+              {getStatusLabel(user.status)}
+            </span>
+          </td>
+          <td className="text-muted">{formatLastLogin(user.lastLogin)}</td>
+          <td>
+            <div className="action-buttons">
+              <button
+                title="Chỉnh sửa"
+                type="button"
+                onClick={() => setEditUser(createEditState(user))}
+              >
+                <Edit2 size={16} />
+              </button>
+              <button
+                className={isLocked ? 'text-success' : 'text-warning'}
+                disabled={isLockBusy}
+                title={isLocked ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}
+                type="button"
+                onClick={() => openLockDialog(user)}
+              >
+                {isLockBusy ? <Loader2 size={16} /> : isLocked ? <Unlock size={16} /> : <Lock size={16} />}
+              </button>
+              <button
+                title="Xóa"
+                className="text-danger"
+                type="button"
+                onClick={() => openDeleteDialog(user)}
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          </td>
+        </tr>
+      )
+    })
+  }, [busyLockUserId, debouncedSearch, isUsersLoading, users])
 
   async function refreshStats() {
     try {
@@ -293,22 +323,42 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
     }
   }
 
+  function updateUserInList(updatedUser: AdminUser) {
+    setUsers((currentUsers) =>
+      currentUsers.map((user) => (user.id === updatedUser.id ? updatedUser : user)),
+    )
+  }
+
   async function handleSaveUser() {
     if (!editUser || !visibleEditUser) {
+      return
+    }
+
+    const fullName = visibleEditUser.fullName.trim()
+    const displayName = visibleEditUser.displayName.trim()
+    const email = visibleEditUser.email.trim()
+
+    if (fullName.length < 2) {
+      pushToast?.('Họ tên phải có ít nhất 2 ký tự!', 'error')
+      return
+    }
+
+    if (!email) {
+      pushToast?.('Email không được để trống!', 'error')
       return
     }
 
     setIsSavingUser(true)
 
     try {
-      const response = await updateUserStatus(editUser.user.id, {
+      const response = await updateAdminUser(editUser.user.id, {
+        fullName,
+        displayName: displayName || null,
+        email,
         role: visibleEditUser.role,
-        status: visibleEditUser.status,
       })
 
-      setUsers((currentUsers) =>
-        currentUsers.map((user) => (user.id === response.user.id ? response.user : user)),
-      )
+      updateUserInList(response.user)
       setEditUser(null)
       pushToast?.('Cập nhật người dùng thành công!')
       void refreshStats()
@@ -317,6 +367,33 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
     } finally {
       setIsSavingUser(false)
     }
+  }
+
+  function openLockDialog(user: AdminUser) {
+    const isLocked = !user.isActive
+
+    setConfirmDialog({
+      title: isLocked ? 'Mở khóa tài khoản' : 'Khóa tài khoản',
+      description: isLocked
+        ? `Tài khoản ${user.name} sẽ có thể đăng nhập và sử dụng hệ thống trở lại!`
+        : `Tài khoản ${user.name} sẽ bị đăng xuất khỏi các phiên hiện tại và không thể đăng nhập cho đến khi được mở khóa!`,
+      confirmLabel: isLocked ? 'Mở khóa' : 'Khóa tài khoản',
+      cancelLabel: 'Hủy',
+      tone: isLocked ? 'default' : 'danger',
+      onConfirm: async () => {
+        setBusyLockUserId(user.id)
+
+        try {
+          const response = isLocked ? await unlockAdminUser(user.id) : await lockAdminUser(user.id)
+
+          updateUserInList(response.user)
+          pushToast?.(isLocked ? 'Đã mở khóa tài khoản!' : 'Đã khóa tài khoản!')
+          void refreshStats()
+        } finally {
+          setBusyLockUserId(null)
+        }
+      },
+    })
   }
 
   function openDeleteDialog(user: AdminUser) {
@@ -388,7 +465,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
         <div className="stat-card">
           <div className="stat-icon active-icon"><Activity size={24} /></div>
           <div className="stat-info">
-            <h3>Đang hoạt động</h3>
+            <h3>Tài khoản mở khóa</h3>
             <p className="stat-value">{isStatsLoading ? '...' : formatNumber(stats.activeUsers)}</p>
             <span className="stat-trend">{formatNumber(stats.onlineUsers)} đang online</span>
           </div>
@@ -398,7 +475,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
           <div className="stat-info">
             <h3>Cảnh báo hệ thống</h3>
             <p className="stat-value">{isStatsLoading ? '...' : formatNumber(stats.alertCount)}</p>
-            <span className="stat-trend negative">Cần xử lý</span>
+            <span className="stat-trend negative">cần xử lý</span>
           </div>
         </div>
       </div>
@@ -406,7 +483,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
       <div className="admin-content-section">
         <div className="section-header">
           <h2>Danh sách người dùng</h2>
-          <button className="btn-primary" onClick={() => pushToast?.('Tính năng thêm người dùng chưa được Implement!')} type="button">
+          <button className="btn-primary" onClick={() => pushToast?.('Tính năng thêm người dùng chưa được implement!')} type="button">
             + Thêm người dùng
           </button>
         </div>
@@ -417,7 +494,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
               <tr>
                 <th>Người dùng</th>
                 <th>Vai trò</th>
-                <th>Trạng thái</th>
+                <th>Tài khoản</th>
                 <th>Đăng nhập cuối</th>
                 <th>Thao tác</th>
               </tr>
@@ -464,39 +541,83 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
             >
               <X size={18} />
             </button>
-            <h2 id="admin-edit-title">Chỉnh sửa người dùng</h2>
-            <p>{visibleEditUser.user.name}</p>
-            <label>
-              Vai trò
-              <select
-                value={visibleEditUser.role}
-                onChange={(event) =>
-                  setVisibleEditUser((current) =>
-                    current ? { ...current, role: event.target.value as AdminUserRole } : current,
-                  )
-                }
-              >
-                <option value="user">user</option>
-                <option value="moderator">moderator</option>
-                <option value="admin">admin</option>
-                <option value="owner">owner</option>
-              </select>
-            </label>
-            <label>
-              Trạng thái
-              <select
-                value={visibleEditUser.status}
-                onChange={(event) =>
-                  setVisibleEditUser((current) =>
-                    current ? { ...current, status: event.target.value as AdminUserStatus } : current,
-                  )
-                }
-              >
-                <option value="active">Hoạt động</option>
-                <option value="inactive">Không hoạt động</option>
-                <option value="suspended">Đã khóa</option>
-              </select>
-            </label>
+            <div className="admin-edit-hero">
+              <div className="admin-edit-avatar">{visibleEditUser.user.name.charAt(0).toUpperCase()}</div>
+              <div>
+                <span className={`admin-lock-pill ${visibleEditUser.user.isActive ? 'is-open' : 'is-locked'}`}>
+                  {visibleEditUser.user.isActive ? <Unlock size={13} /> : <Lock size={13} />}
+                  {visibleEditUser.user.isActive ? 'Đang mở khóa' : 'Đã khóa'}
+                </span>
+                <h2 id="admin-edit-title">Chỉnh sửa người dùng</h2>
+                <p>{visibleEditUser.user.id}</p>
+              </div>
+            </div>
+
+            <div className="admin-edit-grid">
+              <label>
+                Họ tên
+                <input
+                  value={visibleEditUser.fullName}
+                  onChange={(event) =>
+                    setVisibleEditUser((current) =>
+                      current ? { ...current, fullName: event.target.value } : current,
+                    )
+                  }
+                />
+              </label>
+              <label>
+                Tên hiển thị
+                <input
+                  placeholder="Để trống để dùng họ tên"
+                  value={visibleEditUser.displayName}
+                  onChange={(event) =>
+                    setVisibleEditUser((current) =>
+                      current ? { ...current, displayName: event.target.value } : current,
+                    )
+                  }
+                />
+              </label>
+              <label>
+                Email
+                <span className="admin-input-with-icon">
+                  <Mail size={16} />
+                  <input
+                    type="email"
+                    value={visibleEditUser.email}
+                    onChange={(event) =>
+                      setVisibleEditUser((current) =>
+                        current ? { ...current, email: event.target.value } : current,
+                      )
+                    }
+                  />
+                </span>
+              </label>
+              <label>
+                Vai trò
+                <span className="admin-input-with-icon">
+                  <ShieldCheck size={16} />
+                  <select
+                    value={visibleEditUser.role}
+                    onChange={(event) =>
+                      setVisibleEditUser((current) =>
+                        current ? { ...current, role: event.target.value as AdminUserRole } : current,
+                      )
+                    }
+                  >
+                    <option value="user">user</option>
+                    <option value="agent">agent</option>
+                    <option value="owner">owner</option>
+                  </select>
+                </span>
+              </label>
+            </div>
+
+            <div className="admin-edit-note">
+              {visibleEditUser.user.isActive
+                ? 'Thao tác khóa/mở khóa được thực hiện riêng để đảm bảo revoke phiên đăng nhập đúng nghiệp vụ.'
+                : 'Tài khoản đang bị khóa. Mở khóa tài khoản từ nút khóa/mở khóa trong bảng danh sách.'}
+            </div>
+
             <div className="admin-edit-actions">
               <button disabled={isSavingUser || isEditExiting} type="button" onClick={() => setEditUser(null)}>
                 <X size={16} />

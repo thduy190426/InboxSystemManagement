@@ -47,7 +47,9 @@ export type FetchAdminUsersResponse = {
 
 export type UpdateAdminUserPayload = {
   role?: AdminUserRole
-  status?: AdminUserStatus
+  fullName?: string
+  displayName?: string | null
+  email?: string
 }
 
 export type UpdateAdminUserResponse = {
@@ -94,7 +96,7 @@ export function fetchAdminUsers(params: FetchAdminUsersParams = {}) {
   )
 }
 
-export function updateUserStatus(userId: string, payload: UpdateAdminUserPayload) {
+export function updateAdminUser(userId: string, payload: UpdateAdminUserPayload) {
   return requestJson<UpdateAdminUserResponse>(
     `/admin/users/${encodeURIComponent(userId)}`,
     {
@@ -102,6 +104,26 @@ export function updateUserStatus(userId: string, payload: UpdateAdminUserPayload
       body: JSON.stringify(payload),
     },
     'Khong the cap nhat nguoi dung!',
+  )
+}
+
+export function lockAdminUser(userId: string) {
+  return requestJson<UpdateAdminUserResponse>(
+    `/admin/users/${encodeURIComponent(userId)}/lock`,
+    {
+      method: 'PATCH',
+    },
+    'Khong the khoa tai khoan!',
+  )
+}
+
+export function unlockAdminUser(userId: string) {
+  return requestJson<UpdateAdminUserResponse>(
+    `/admin/users/${encodeURIComponent(userId)}/unlock`,
+    {
+      method: 'PATCH',
+    },
+    'Khong the mo khoa tai khoan!',
   )
 }
 
