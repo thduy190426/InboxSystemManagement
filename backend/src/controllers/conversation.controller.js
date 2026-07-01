@@ -431,7 +431,11 @@ function mapAttachment(row) {
   }
 }
 
-function getAttachmentPreview(type) {
+function getAttachmentPreview(type, mimeType = '') {
+  if (type === 'image' && mimeType === 'image/gif') {
+    return 'Đã gửi một GIF!'
+  }
+
   if (type === 'image') {
     return 'Đã gửi một ảnh!'
   }
@@ -452,7 +456,10 @@ function getAttachmentPreview(type) {
 }
 
 function getConversationLastMessagePreview(row) {
-  const attachmentPreview = getAttachmentPreview(row.last_message_type)
+  const attachmentPreview = getAttachmentPreview(
+    row.last_message_type,
+    row.last_message_attachment_mime,
+  )
 
   if (attachmentPreview) {
     return {
@@ -1224,6 +1231,7 @@ async function loadConversationSummary(connection, conversationId, currentUserId
       participant_settings.last_read_message_id,
       last_messages.body AS last_message_body,
       last_messages.type AS last_message_type,
+      last_message_attachments.mime_type AS last_message_attachment_mime,
       last_messages.sender_id AS last_message_sender_id,
       other_users.full_name AS direct_name,
       other_users.avatar_url AS direct_avatar_url,
@@ -1259,6 +1267,14 @@ async function loadConversationSummary(connection, conversationId, currentUserId
           AND visible_messages.deleted_at IS NULL
           AND hidden_messages.id IS NULL
         ORDER BY visible_messages.created_at DESC, visible_messages.id DESC
+        LIMIT 1
+      )
+    LEFT JOIN message_attachments AS last_message_attachments
+      ON last_message_attachments.id = (
+        SELECT message_attachments.id
+        FROM message_attachments
+        WHERE message_attachments.message_id = last_messages.id
+        ORDER BY message_attachments.created_at ASC, message_attachments.id ASC
         LIMIT 1
       )
     LEFT JOIN (
@@ -1358,6 +1374,7 @@ async function listConversations(request, response, next) {
         last_messages.body AS last_message_body,
         last_messages.type AS last_message_type,
         last_messages.id AS last_message_id,
+        last_message_attachments.mime_type AS last_message_attachment_mime,
         last_messages.sender_id AS last_message_sender_id,
         other_users.full_name AS direct_name,
         other_users.avatar_url AS direct_avatar_url,
@@ -1393,6 +1410,14 @@ async function listConversations(request, response, next) {
             AND visible_messages.deleted_at IS NULL
             AND hidden_messages.id IS NULL
           ORDER BY visible_messages.created_at DESC, visible_messages.id DESC
+          LIMIT 1
+        )
+      LEFT JOIN message_attachments AS last_message_attachments
+        ON last_message_attachments.id = (
+          SELECT message_attachments.id
+          FROM message_attachments
+          WHERE message_attachments.message_id = last_messages.id
+          ORDER BY message_attachments.created_at ASC, message_attachments.id ASC
           LIMIT 1
         )
       LEFT JOIN (

@@ -8,6 +8,7 @@ import {
   ChevronUp,
   Download,
   Filter,
+  Film,
   FileText,
   Flag,
   Image,
@@ -17,7 +18,6 @@ import {
   MessageSquare,
   Mic,
   MoreHorizontal,
-  Paperclip,
   Pencil,
   Phone,
   Pin,
@@ -1592,7 +1592,7 @@ export function ChatPanel({
           </div>
         ) : null}
         <label className="icon-button attachment-picker" title="Gửi ảnh">
-          <Paperclip size={20} />
+          <Image size={20} />
           <input
             aria-label="Đính kèm file"
             accept="image/*,audio/*,video/*"
@@ -1652,7 +1652,7 @@ export function ChatPanel({
             title="GIF"
             type="button"
           >
-            <Image size={20} />
+            <Film size={20} />
           </button>
           {isGifPickerOpen ? (
             <span className="composer-gif-picker">

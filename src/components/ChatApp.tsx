@@ -203,7 +203,12 @@ function mergeQueuedMessages(existingMessages: Message[], queuedMessages: Messag
 }
 
 function getAttachmentPreview(message?: Message) {
-  const attachmentType = message?.attachments?.[0]?.type
+  const attachment = message?.attachments?.[0]
+  const attachmentType = attachment?.type
+
+  if (attachment?.mimeType === 'image/gif') {
+    return 'Đã gửi một GIF!'
+  }
 
   if (attachmentType === 'image') {
     return 'Đã gửi một ảnh!'
