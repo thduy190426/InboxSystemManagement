@@ -3542,13 +3542,13 @@ async function createGifMessage(request, response, next) {
 
     if (!Number.isInteger(conversationId)) {
       return response.status(400).json({
-        message: 'Duong dan hoi thoai khong hop le!',
+        message: 'Đường dẫn hội thoại không hợp lệ!',
       })
     }
 
     if (!isGiphyUrl) {
       return response.status(422).json({
-        message: 'Chi ho tro GIF tu GIPHY!',
+        message: 'Chỉ hỗ trợ GIF từ GIPHY!',
       })
     }
 
@@ -3559,14 +3559,14 @@ async function createGifMessage(request, response, next) {
     if (!participant) {
       await connection.rollback()
       return response.status(404).json({
-        message: 'Khong tim thay hoi thoai!',
+        message: 'Không tìm thấy hội thoại!',
       })
     }
 
     if (await hasBlockedDirectContact(connection, conversationId, currentUserId)) {
       await connection.rollback()
       return response.status(403).json({
-        message: 'Hoi thoai da bi chan!',
+        message: 'Hội thoại đã bị chặn!',
       })
     }
 
@@ -3633,7 +3633,7 @@ async function createGifMessage(request, response, next) {
     await emitConversationChanged(connection, conversationId, currentUserId, 'message:created')
     pushWebNotificationToUsers(pushRecipientIds, {
       title: request.user.full_name,
-      body: 'Da gui mot GIF!',
+      body: 'Đã gửi một GIF!',
       tag: `conversation:${conversationId}`,
       url: `/chat/${conversationId}`,
     })

@@ -1871,7 +1871,7 @@ export function ChatApp({
           conversation.id === activeConversation.id
             ? {
               ...conversation,
-              lastMessage: 'Da gui mot GIF!',
+              lastMessage: 'Đã gửi một GIF!',
               lastMessageByMe: true,
               lastMessageIsAttachment: true,
               lastMessageAt: createdMessage.createdAt ?? null,
@@ -1885,7 +1885,7 @@ export function ChatApp({
         ),
       )
     } catch (error) {
-      pushToast(getErrorMessage(error, 'Khong the gui GIF!'))
+      pushToast(getErrorMessage(error, 'Không thể gửi GIF!'))
       throw error
     } finally {
       setIsUploadingAttachment(false)

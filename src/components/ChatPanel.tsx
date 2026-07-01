@@ -345,7 +345,7 @@ export function ChatPanel({
         .catch((error) => {
           if (isMounted) {
             setGifResults([])
-            setGifError(error instanceof Error ? error.message : 'Khong the tai GIF.')
+            setGifError(error instanceof Error ? error.message : 'Không thể tải GIF!')
           }
         })
         .finally(() => {
@@ -1659,14 +1659,14 @@ export function ChatPanel({
               <label className="gif-search-field">
                 <Search size={16} />
                 <input
-                  aria-label="Tim GIF"
+                  aria-label="Tìm GIF"
                   onChange={(event) => setGifQuery(event.target.value)}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter') {
                       event.preventDefault()
                     }
                   }}
-                  placeholder="Tim GIF"
+                  placeholder="Tìm GIF"
                   type="search"
                   value={gifQuery}
                 />
@@ -1675,11 +1675,11 @@ export function ChatPanel({
               {isLoadingGifs ? (
                 <span className="gif-picker-message">
                   <Loader2 size={16} />
-                  Dang tai GIF...
+                  Đang tải GIF...
                 </span>
               ) : null}
               {!isLoadingGifs && !gifError && gifResults.length === 0 ? (
-                <span className="gif-picker-message">Khong co GIF phu hop.</span>
+                <span className="gif-picker-message">Không có GIF phù hợp!</span>
               ) : null}
               <span className="gif-result-grid">
                 {gifResults.map((gif) => (
@@ -1719,7 +1719,7 @@ export function ChatPanel({
             ) : (
               <audio controls src={recordedMediaUrl} />
             )}
-            <button onClick={clearRecordedMedia} title="Huy ban ghi" type="button">
+            <button onClick={clearRecordedMedia} title="Huỷ bản ghi" type="button">
               <X size={16} />
             </button>
             <button

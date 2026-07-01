@@ -59,7 +59,7 @@ function mapGif(item: GiphyItem): GifSearchResult | null {
 
 export async function fetchGifs(query: string, limit = 24) {
   if (!GIPHY_API_KEY) {
-    throw new Error('Chua cau hinh VITE_GIPHY_API_KEY de tim GIF.')
+    throw new Error('Chưa cấu hình VITE_GIPHY_API_KEY để tìm GIF!')
   }
 
   const params = new URLSearchParams({
@@ -78,7 +78,7 @@ export async function fetchGifs(query: string, limit = 24) {
   const body = (await response.json().catch(() => ({}))) as GiphyResponse
 
   if (!response.ok) {
-    throw new Error('Khong the tai GIF tu GIPHY.')
+    throw new Error('Không thể tải GIF từ GIPHY!')
   }
 
   return (body.data || [])
