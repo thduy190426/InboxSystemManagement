@@ -577,10 +577,10 @@ async function resendVerification(request, response, next) {
       message:
         channel === 'email'
           ? mailResult.failed
-            ? 'Chưa gửi được mã xác thực Email. Vui lòng thử lại sau ít phút.'
+            ? 'Chưa gửi được mã xác thực Email. Vui lòng thử lại sau ít phút!'
             : mailResult.skipped
-              ? 'Đã tạo lại mã xác thực Email! Mã đang hiển thị ở môi trường phát triển.'
-              : 'Đã gửi lại mã xác thực Email! Vui lòng kiểm tra Gmail.'
+              ? 'Đã tạo lại mã xác thực Email! Mã đang hiển thị ở môi trường phát triển!'
+              : 'Đã gửi lại mã xác thực Email! Vui lòng kiểm tra Gmail!'
           : 'Đã tạo lại mã xác thực số điện thoại!',
       verificationCode: mailResult.skipped ? code : null,
     })

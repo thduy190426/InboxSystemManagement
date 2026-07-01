@@ -66,7 +66,7 @@ export async function fetchAdminStats() {
   const response = await requestJson<{ stats: AdminStats }>(
     '/admin/stats',
     {},
-    'Khong the tai thong ke quan tri!',
+    'Không thể tải thống kê quản trị!',
   )
 
   return response.stats
@@ -92,7 +92,7 @@ export function fetchAdminUsers(params: FetchAdminUsersParams = {}) {
   return requestJson<FetchAdminUsersResponse>(
     `/admin/users${suffix}`,
     {},
-    'Khong the tai danh sach nguoi dung!',
+    'Không thể tải danh sách người dùng!',
   )
 }
 
@@ -103,7 +103,7 @@ export function updateAdminUser(userId: string, payload: UpdateAdminUserPayload)
       method: 'PUT',
       body: JSON.stringify(payload),
     },
-    'Khong the cap nhat nguoi dung!',
+    'Không thể cập nhật người dùng!',
   )
 }
 
@@ -113,7 +113,7 @@ export function lockAdminUser(userId: string) {
     {
       method: 'PATCH',
     },
-    'Khong the khoa tai khoan!',
+    'Không thể khóa tài khoản!',
   )
 }
 
@@ -123,7 +123,7 @@ export function unlockAdminUser(userId: string) {
     {
       method: 'PATCH',
     },
-    'Khong the mo khoa tai khoan!',
+    'Không thể mở khóa tài khoản!',
   )
 }
 
@@ -133,6 +133,6 @@ export function deleteUser(userId: string) {
     {
       method: 'DELETE',
     },
-    'Khong the xoa nguoi dung!',
+    'Không thể xóa người dùng!',
   )
 }

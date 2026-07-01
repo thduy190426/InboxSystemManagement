@@ -254,6 +254,7 @@ async function listSuggestions(request, response, next) {
       WHERE users.id <> ?
         AND users.deleted_at IS NULL
         AND users.is_active = 1
+        AND users.is_email_verified = 1
         AND (
           contacts.id IS NULL
           OR (

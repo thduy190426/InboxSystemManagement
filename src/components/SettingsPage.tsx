@@ -142,6 +142,8 @@ export function SettingsPage({ onAccountDeleted, onLogout, pushToast }: Settings
   const [deleteErrors, setDeleteErrors] = useState<Partial<Record<keyof DeleteAccountPayload, string>>>({})
   const [showAllSessions, setShowAllSessions] = useState(false)
   const [renderExpandedSessions, setRenderExpandedSessions] = useState(false)
+  const [expandedSessionHeight, setExpandedSessionHeight] = useState(0)
+  const expandedSessionsRef = useRef<HTMLDivElement | null>(null)
   const [refreshCooldown, setRefreshCooldown] = useState(0)
   const cooldownIntervalRef = useRef<ReturnType<typeof window.setInterval> | null>(null)
 
@@ -170,14 +172,12 @@ export function SettingsPage({ onAccountDeleted, onLogout, pushToast }: Settings
   ].filter(Boolean)
   const sessionItems: SessionViewModel[] = [
     ...(currentSession ? [{ ...currentSession, viewGroup: 'current' as const }] : []),
-    ...(renderExpandedSessions
-      ? otherRecentSessions.map((session) => ({
-          ...session,
-          viewGroup: session.revokedAt ? ('history' as const) : ('active' as const),
-          isCollapsible: true,
-        }))
-      : []),
   ]
+  const expandedSessionItems: SessionViewModel[] = otherRecentSessions.map((session) => ({
+    ...session,
+    viewGroup: session.revokedAt ? ('history' as const) : ('active' as const),
+    isCollapsible: true,
+  }))
 
   useEffect(() => {
     loadSessions()
@@ -195,6 +195,35 @@ export function SettingsPage({ onAccountDeleted, onLogout, pushToast }: Settings
 
     return () => window.clearTimeout(removeHiddenSessionsTimer)
   }, [showAllSessions])
+
+  useEffect(() => {
+    if (!renderExpandedSessions) {
+      setExpandedSessionHeight(0)
+      return
+    }
+
+    const expandedSessionsElement = expandedSessionsRef.current
+
+    if (expandedSessionsElement === null) {
+      return
+    }
+
+    const expansionElement = expandedSessionsElement
+
+    function updateExpandedSessionHeight() {
+      setExpandedSessionHeight(expansionElement.scrollHeight)
+    }
+
+    updateExpandedSessionHeight()
+
+    const resizeObserver =
+      typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(updateExpandedSessionHeight)
+    resizeObserver?.observe(expansionElement)
+
+    return () => {
+      resizeObserver?.disconnect()
+    }
+  }, [renderExpandedSessions, sessions])
 
   async function loadSessions() {
     try {
@@ -575,6 +604,61 @@ export function SettingsPage({ onAccountDeleted, onLogout, pushToast }: Settings
                   </button>
                 </article>
               ))}
+              {renderExpandedSessions ? (
+                <div
+                  aria-hidden={!showAllSessions}
+                  className={
+                    showAllSessions
+                      ? 'profile-session-expansion is-open'
+                      : 'profile-session-expansion'
+                  }
+                  style={{ maxHeight: showAllSessions ? expandedSessionHeight : 0 }}
+                >
+                  <div className="profile-session-expansion-inner" ref={expandedSessionsRef}>
+                    {expandedSessionItems.map((session) => (
+                      <article
+                        className={[
+                          'profile-session-item',
+                          session.revokedAt ? 'is-revoked' : '',
+                          session.viewGroup === 'history' ? 'is-history' : '',
+                          session.isCurrent ? 'is-current' : '',
+                          session.isCollapsible ? 'is-collapsible' : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        key={session.id}
+                      >
+                        <div className="profile-session-icon">
+                          <Laptop size={18} />
+                        </div>
+                        <div className="profile-session-main">
+                          <div className="profile-session-title-row">
+                            <strong>{getSessionTitle(session)}</strong>
+                            {session.isCurrent ? <span>Hiện tại</span> : null}
+                            {session.revokedAt ? <span>Đã thu hồi</span> : null}
+                          </div>
+                          <p>{session.userAgent || 'Không có thông tin trình duyệt!'}</p>
+                          <div className="profile-session-meta">
+                            <span>IP: {session.ipAddress || 'Không rõ!'}</span>
+                            <span>Tạo lúc: {formatDateTime(session.createdAt)}</span>
+                            <span>Hết hạn: {formatDateTime(session.expiresAt)}</span>
+                          </div>
+                        </div>
+                        <button
+                          className="profile-session-revoke"
+                          disabled={Boolean(session.revokedAt) || revokingSessionId === session.id}
+                          onClick={() => confirmRevokeSession(session)}
+                          tabIndex={showAllSessions ? undefined : -1}
+                          type="button"
+                        >
+                          <LogOut size={16} />
+                          {revokingSessionId === session.id ? 'Đang thu hồi...' : 'Thu hồi'}
+                        </button>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
               {/* {!showAllSessions && hiddenSessionCount > 0 ? (
                 <p className="profile-session-empty">
                   Đã ẩn {hiddenSessionCount} phiên cũ để giao diện gọn hơn.
