@@ -30,6 +30,10 @@ type UploadAttachmentResponse = {
   message: Message
 }
 
+type SendGifResponse = {
+  message: Message
+}
+
 type UpdateMessageResponse = {
   message: Message
 }
@@ -217,6 +221,21 @@ export async function uploadMessageAttachment(conversationId: string, file: File
   return (body as UploadAttachmentResponse).message
 }
 
+export async function sendGifMessage(
+  conversationId: string,
+  gif: { url: string; title: string; width?: number; height?: number; sizeBytes?: number },
+) {
+  const response = await request<SendGifResponse>(
+    `/conversations/${conversationId}/messages/gif`,
+    {
+      method: 'POST',
+      body: JSON.stringify(gif),
+    },
+  )
+
+  return response.message
+}
+
 export async function updateMessage(conversationId: string, messageId: string, text: string) {
   const response = await request<UpdateMessageResponse>(
     `/conversations/${conversationId}/messages/${messageId}`,
@@ -269,6 +288,22 @@ export async function forwardMessage(
       body: JSON.stringify({ targetConversationId }),
     },
   )
+}
+
+export async function reportMessage(
+  conversationId: string,
+  messageId: string,
+  reason?: string,
+) {
+  const response = await request<{ message: string }>(
+    `/conversations/${conversationId}/messages/${messageId}/report`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    },
+  )
+
+  return response.message
 }
 
 export async function toggleMessageReaction(

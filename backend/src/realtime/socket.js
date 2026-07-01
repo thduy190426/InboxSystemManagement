@@ -3,6 +3,7 @@ const { randomUUID } = require('crypto')
 const { Server } = require('socket.io')
 const { pool } = require('../config/db')
 const { sendWebPushToUsers } = require('../services/push.service')
+const { sanitizeValue } = require('../middleware/requestLogger.middleware')
 
 let io = null
 const activeCallTimers = new Map()
@@ -24,6 +25,59 @@ function getUserRoom(userId) {
 
 function getConversationRoom(conversationId) {
   return `conversation:${conversationId}`
+}
+
+function getSocketUserContext(socket) {
+  if (!socket.user) {
+    return null
+  }
+
+  return {
+    id: socket.user.public_id || socket.user.id,
+    fullName: socket.user.full_name,
+  }
+}
+
+function sanitizeSocketPayload(payload) {
+  const sanitizedPayload = sanitizeValue(payload)
+
+  if (sanitizedPayload && typeof sanitizedPayload === 'object' && 'data' in sanitizedPayload) {
+    sanitizedPayload.data = '[REDACTED_SIGNAL_DATA]'
+  }
+
+  return sanitizedPayload
+}
+
+function logSocketEvent(socket, eventName, payload, ack) {
+  const startedAt = process.hrtime.bigint()
+
+  console.info('[BE][SOCKET][START]', {
+    socketId: socket.id,
+    event: eventName,
+    user: getSocketUserContext(socket),
+    payload: sanitizeSocketPayload(payload),
+  })
+
+  if (typeof ack !== 'function') {
+    return ack
+  }
+
+  return (response) => {
+    const durationMs = Number(process.hrtime.bigint() - startedAt) / 1_000_000
+    const isError = response && response.ok === false
+    const level = isError ? 'warn' : 'info'
+    const label = isError ? 'ERROR' : 'SUCCESS'
+
+    console[level](`[BE][SOCKET][${label}]`, {
+      socketId: socket.id,
+      event: eventName,
+      durationMs: Number(durationMs.toFixed(2)),
+      user: getSocketUserContext(socket),
+      response: sanitizeValue(response),
+    })
+
+    return ack(response)
+  }
 }
 
 async function findConversationParticipant(connection, conversationId, userId) {
@@ -408,14 +462,46 @@ function initRealtime(server, corsOrigin) {
   io.use(authenticateSocket)
 
   io.on('connection', async (socket) => {
-    socket.join(getUserRoom(socket.user.id))
-    await joinConversationRooms(socket)
+    console.info('[BE][SOCKET][CONNECTED]', {
+      socketId: socket.id,
+      user: getSocketUserContext(socket),
+      ip: socket.handshake.address,
+      userAgent: socket.handshake.headers['user-agent'],
+    })
+
+    try {
+      socket.join(getUserRoom(socket.user.id))
+      await joinConversationRooms(socket)
+    } catch (error) {
+      console.error('[BE][SOCKET][ERROR]', {
+        socketId: socket.id,
+        event: 'connection:join-rooms',
+        user: getSocketUserContext(socket),
+        message: error.message,
+        stack: error.stack,
+      })
+    }
+
+    socket.on('disconnect', (reason) => {
+      console.info('[BE][SOCKET][DISCONNECTED]', {
+        socketId: socket.id,
+        user: getSocketUserContext(socket),
+        reason,
+      })
+    })
 
     socket.on('realtime:refresh-conversations', async () => {
+      logSocketEvent(socket, 'realtime:refresh-conversations')
       await joinConversationRooms(socket)
+      console.info('[BE][SOCKET][SUCCESS]', {
+        socketId: socket.id,
+        event: 'realtime:refresh-conversations',
+        user: getSocketUserContext(socket),
+      })
     })
 
     socket.on('call:start', async (payload = {}, ack) => {
+      ack = logSocketEvent(socket, 'call:start', payload, ack)
       const connection = await pool.getConnection()
 
       try {
@@ -518,6 +604,7 @@ function initRealtime(server, corsOrigin) {
     })
 
     socket.on('call:accept', async (payload = {}, ack) => {
+      ack = logSocketEvent(socket, 'call:accept', payload, ack)
       const connection = await pool.getConnection()
 
       try {
@@ -699,22 +786,27 @@ function initRealtime(server, corsOrigin) {
     }
 
     socket.on('call:decline', (payload = {}, ack) => {
+      ack = logSocketEvent(socket, 'call:decline', payload, ack)
       finishCall(String(payload.callId || ''), 'declined', 'declined', ack)
     })
 
     socket.on('call:cancel', (payload = {}, ack) => {
+      ack = logSocketEvent(socket, 'call:cancel', payload, ack)
       finishCall(String(payload.callId || ''), 'cancelled', 'left', ack)
     })
 
     socket.on('call:miss', (payload = {}, ack) => {
+      ack = logSocketEvent(socket, 'call:miss', payload, ack)
       finishCall(String(payload.callId || ''), 'missed', 'left', ack)
     })
 
     socket.on('call:end', (payload = {}, ack) => {
+      ack = logSocketEvent(socket, 'call:end', payload, ack)
       finishCall(String(payload.callId || ''), 'completed', 'left', ack)
     })
 
     socket.on('call:signal', async (payload = {}) => {
+      logSocketEvent(socket, 'call:signal', payload)
       const callId = String(payload.callId || '')
       const connection = await pool.getConnection()
 
@@ -750,10 +842,22 @@ function initRealtime(server, corsOrigin) {
 
         if (signalPayload.toUserId) {
           io.to(getUserRoom(signalPayload.toUserId)).emit('call:signal', signalPayload)
+          console.info('[BE][SOCKET][SUCCESS]', {
+            socketId: socket.id,
+            event: 'call:signal',
+            user: getSocketUserContext(socket),
+            targetUserId: signalPayload.toUserId,
+          })
           return
         }
 
         socket.to(getConversationRoom(call.conversation_id)).emit('call:signal', signalPayload)
+        console.info('[BE][SOCKET][SUCCESS]', {
+          socketId: socket.id,
+          event: 'call:signal',
+          user: getSocketUserContext(socket),
+          conversationId: String(call.conversation_id),
+        })
       } catch (error) {
         console.error('Không thể chuyển tiếp tín hiệu cuộc gọi:', error)
       } finally {

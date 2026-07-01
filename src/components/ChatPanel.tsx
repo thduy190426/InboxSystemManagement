@@ -9,7 +9,10 @@ import {
   Download,
   Filter,
   FileText,
+  Flag,
+  Image,
   Info,
+  Loader2,
   Menu,
   MessageSquare,
   Mic,
@@ -31,6 +34,7 @@ import {
 } from 'lucide-react'
 import type { Conversation, Message, MessageAttachment } from '../types'
 import type { MessageSearchFilters, MessageSearchType } from '../services/chatApi'
+import { fetchGifs, type GifSearchResult } from '../services/gifApi'
 import { AvatarFallback } from './AvatarFallback'
 import { ConfirmDialog, type ConfirmDialogState } from './ConfirmDialog'
 import { OnlineDurationBadge } from './OnlineDurationBadge'
@@ -117,9 +121,11 @@ type ChatPanelProps = {
   onDraftChange: (draft: string) => void
   onEditMessage: (messageId: string, text: string) => Promise<void> | void
   onForwardMessage: (messageId: string, targetConversationId: string) => Promise<void> | void
+  onReportMessage: (messageId: string) => Promise<void> | void
   onReplyMessage: (message: Message) => void
   onRemoveReaction: (messageId: string, emoji: string) => Promise<void> | void
   onRetryMessage: (message: Message) => Promise<void> | void
+  onSendGif: (gif: GifSearchResult) => Promise<void> | void
   onLoadOlderMessages: () => Promise<void> | void
   onSendQuickMessage: (text: string) => Promise<void> | void
   onAutoScrollComplete: () => void
@@ -158,9 +164,11 @@ export function ChatPanel({
   onDraftChange,
   onEditMessage,
   onForwardMessage,
+  onReportMessage,
   onReplyMessage,
   onRemoveReaction,
   onRetryMessage,
+  onSendGif,
   onLoadOlderMessages,
   onSendQuickMessage,
   onAutoScrollComplete,
@@ -179,6 +187,11 @@ export function ChatPanel({
   const [editingText, setEditingText] = useState('')
   const [openActionMenuId, setOpenActionMenuId] = useState('')
   const [isComposerEmojiOpen, setIsComposerEmojiOpen] = useState(false)
+  const [isGifPickerOpen, setIsGifPickerOpen] = useState(false)
+  const [gifQuery, setGifQuery] = useState('')
+  const [gifResults, setGifResults] = useState<GifSearchResult[]>([])
+  const [isLoadingGifs, setIsLoadingGifs] = useState(false)
+  const [gifError, setGifError] = useState('')
   const [openReactionPickerId, setOpenReactionPickerId] = useState('')
   const [forwardingMessage, setForwardingMessage] = useState<Message | null>(null)
   const [isForwardDialogClosing, setIsForwardDialogClosing] = useState(false)
@@ -312,6 +325,41 @@ export function ChatPanel({
     })
     onAutoScrollComplete()
   }, [onAutoScrollComplete, shouldAutoScrollToLatest])
+
+  useEffect(() => {
+    if (!isGifPickerOpen) {
+      return
+    }
+
+    let isMounted = true
+    const timer = window.setTimeout(() => {
+      setIsLoadingGifs(true)
+      setGifError('')
+
+      fetchGifs(gifQuery)
+        .then((results) => {
+          if (isMounted) {
+            setGifResults(results)
+          }
+        })
+        .catch((error) => {
+          if (isMounted) {
+            setGifResults([])
+            setGifError(error instanceof Error ? error.message : 'Khong the tai GIF.')
+          }
+        })
+        .finally(() => {
+          if (isMounted) {
+            setIsLoadingGifs(false)
+          }
+        })
+    }, 320)
+
+    return () => {
+      isMounted = false
+      window.clearTimeout(timer)
+    }
+  }, [gifQuery, isGifPickerOpen])
 
   useEffect(
     () => () => {
@@ -620,6 +668,19 @@ export function ChatPanel({
     await onToggleMessagePin(messageId)
   }
 
+  function handleReport(message: Message) {
+    setConfirmDialog({
+      title: 'Báo cáo tin nhắn?',
+      description: 'Báo cáo sẽ được gửi đến admin để xem xét nội dung vi phạm!',
+      confirmLabel: 'Gửi báo cáo',
+      tone: 'danger',
+      onConfirm: async () => {
+        setOpenActionMenuId('')
+        await onReportMessage(message.id)
+      },
+    })
+  }
+
   async function handleForward(targetConversationId: string) {
     if (!forwardingMessage) {
       return
@@ -646,6 +707,12 @@ export function ChatPanel({
   async function handleSendComposerEmoji(emojiData: EmojiClickData) {
     setIsComposerEmojiOpen(false)
     await onSendQuickMessage(emojiData.emoji)
+  }
+
+  async function handleSendGif(gif: GifSearchResult) {
+    await onSendGif(gif)
+    setIsGifPickerOpen(false)
+    setGifQuery('')
   }
 
   function getMessageStateLabel(message: Message) {
@@ -1469,6 +1536,15 @@ export function ChatPanel({
                                 </button>
                               </>
                             ) : (
+                              <>
+                                <button
+                                  disabled={Boolean(busyMessageId)}
+                                  onClick={() => handleReport(message)}
+                                  type="button"
+                                >
+                                  <Flag size={14} />
+                                  <span>Báo cáo</span>
+                                </button>
                               <button
                                 className="is-danger"
                                 disabled={Boolean(busyMessageId)}
@@ -1478,6 +1554,7 @@ export function ChatPanel({
                                 <Trash2 size={14} />
                                 <span>Xoá phía tôi</span>
                               </button>
+                              </>
                             )}
                           </span>
                         ) : null}
@@ -1537,7 +1614,10 @@ export function ChatPanel({
           <button
             className={isComposerEmojiOpen ? 'icon-button composer-extra is-active' : 'icon-button composer-extra'}
             disabled={isBlocked || isUploadingAttachment}
-            onClick={() => setIsComposerEmojiOpen((current) => !current)}
+            onClick={() => {
+              setIsGifPickerOpen(false)
+              setIsComposerEmojiOpen((current) => !current)
+            }}
             title="Biểu cảm"
             type="button"
           >
@@ -1558,6 +1638,62 @@ export function ChatPanel({
                   width={320}
                 />
               </Suspense>
+            </span>
+          ) : null}
+        </span>
+        <span className="composer-gif-wrap">
+          <button
+            className={isGifPickerOpen ? 'icon-button composer-extra is-active' : 'icon-button composer-extra'}
+            disabled={isBlocked || isUploadingAttachment}
+            onClick={() => {
+              setIsComposerEmojiOpen(false)
+              setIsGifPickerOpen((current) => !current)
+            }}
+            title="GIF"
+            type="button"
+          >
+            <Image size={20} />
+          </button>
+          {isGifPickerOpen ? (
+            <span className="composer-gif-picker">
+              <label className="gif-search-field">
+                <Search size={16} />
+                <input
+                  aria-label="Tim GIF"
+                  onChange={(event) => setGifQuery(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault()
+                    }
+                  }}
+                  placeholder="Tim GIF"
+                  type="search"
+                  value={gifQuery}
+                />
+              </label>
+              {gifError ? <span className="gif-picker-message">{gifError}</span> : null}
+              {isLoadingGifs ? (
+                <span className="gif-picker-message">
+                  <Loader2 size={16} />
+                  Dang tai GIF...
+                </span>
+              ) : null}
+              {!isLoadingGifs && !gifError && gifResults.length === 0 ? (
+                <span className="gif-picker-message">Khong co GIF phu hop.</span>
+              ) : null}
+              <span className="gif-result-grid">
+                {gifResults.map((gif) => (
+                  <button
+                    disabled={isUploadingAttachment}
+                    key={gif.id}
+                    onClick={() => void handleSendGif(gif)}
+                    title={gif.title}
+                    type="button"
+                  >
+                    <img alt={gif.title} loading="lazy" src={gif.previewUrl} />
+                  </button>
+                ))}
+              </span>
             </span>
           ) : null}
         </span>

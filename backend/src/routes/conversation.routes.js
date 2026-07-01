@@ -3,6 +3,7 @@ const {
   addGroupMember,
   archiveConversation,
   createAttachmentMessage,
+  createGifMessage,
   createGroupConversation,
   createMessage,
   deleteMessage,
@@ -26,6 +27,7 @@ const {
   removeMessageReaction,
   recallMessage,
   removeGroupMember,
+  reportMessage,
   searchConversationMessages,
   toggleMessageReaction,
   toggleMessagePin,
@@ -62,10 +64,12 @@ router.post(
   messageUpload.single('attachment'),
   createAttachmentMessage,
 )
+router.post('/:conversationId/messages/gif', sendMessageRateLimit, createGifMessage)
 router.post('/:conversationId/read', markConversationRead)
 router.post('/:conversationId/delivered', markConversationDelivered)
 router.post('/:conversationId/messages/:messageId/forward', sendMessageRateLimit, forwardMessage)
 router.post('/:conversationId/messages/:messageId/pin', toggleMessagePin)
+router.post('/:conversationId/messages/:messageId/report', reportMessage)
 router.post('/:conversationId/messages/:messageId/reactions', toggleMessageReaction)
 router.post('/:conversationId/typing', updateTypingStatus)
 router.post('/:conversationId/archive', archiveConversation)

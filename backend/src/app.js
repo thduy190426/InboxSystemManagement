@@ -11,6 +11,7 @@ const searchRoutes = require('./routes/search.routes')
 const userRoutes = require('./routes/user.routes')
 const { authenticate, requireAdmin } = require('./middleware/auth.middleware')
 const { notFoundHandler, errorHandler } = require('./middleware/error.middleware')
+const { logRequest } = require('./middleware/requestLogger.middleware')
 const { getAllowedOrigins, normalizeOrigin } = require('./utils/allowedOrigins')
 
 const app = express()
@@ -37,6 +38,7 @@ app.use(
 app.use(cors(corsOptions))
 app.options('*', cors(corsOptions))
 app.use(express.json({ limit: '1mb' }))
+app.use(logRequest)
 
 app.get('/api/health', (_request, response) => {
   response.json({

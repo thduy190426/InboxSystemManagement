@@ -230,6 +230,33 @@ const groupJoinRequestsTableReady = pool
     throw error
   })
 
+const messageReportsTableReady = pool
+  .execute(
+    `CREATE TABLE IF NOT EXISTS message_reports (
+      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+      public_id CHAR(36) NOT NULL,
+      message_id BIGINT UNSIGNED NOT NULL,
+      conversation_id BIGINT UNSIGNED NOT NULL,
+      reporter_id BIGINT UNSIGNED NOT NULL,
+      reported_user_id BIGINT UNSIGNED NOT NULL,
+      reason VARCHAR(255) NULL,
+      status ENUM('pending', 'reviewed', 'dismissed') NOT NULL DEFAULT 'pending',
+      reviewed_by BIGINT UNSIGNED NULL,
+      reviewed_at DATETIME NULL,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_message_reports_public_id (public_id),
+      UNIQUE KEY uq_message_reports_message_reporter (message_id, reporter_id),
+      INDEX idx_message_reports_status_created (status, created_at),
+      INDEX idx_message_reports_reporter (reporter_id, created_at),
+      INDEX idx_message_reports_reported_user (reported_user_id, created_at)
+    )`,
+  )
+  .catch((error) => {
+    console.error('Không thể đảm bảo bảng message_reports:', error)
+    throw error
+  })
+
 async function ensureMessagePinsTable() {
   await messagePinsTableReady
 }
@@ -250,6 +277,10 @@ async function ensureConversationParticipantHiddenAtColumn() {
 async function ensureGroupInviteTables() {
   await groupInviteTokensTableReady
   await groupJoinRequestsTableReady
+}
+
+async function ensureMessageReportsTable() {
+  await messageReportsTableReady
 }
 
 function formatOfflineDuration(lastSeenAt) {
@@ -3479,6 +3510,145 @@ async function createAttachmentMessage(request, response, next) {
   }
 }
 
+async function createGifMessage(request, response, next) {
+  const connection = await pool.getConnection()
+
+  try {
+    const currentUserId = request.user.id
+    const conversationId = Number(request.params.conversationId)
+    const title =
+      typeof request.body.title === 'string' && request.body.title.trim()
+        ? request.body.title.trim().slice(0, 120)
+        : 'GIF'
+    const gifUrl = typeof request.body.url === 'string' ? request.body.url.trim() : ''
+    const sizeBytes = Number.isFinite(Number(request.body.sizeBytes))
+      ? Math.max(0, Math.floor(Number(request.body.sizeBytes)))
+      : 0
+
+    let parsedUrl
+
+    try {
+      parsedUrl = new URL(gifUrl)
+    } catch {
+      return response.status(422).json({
+        message: 'Duong dan GIF khong hop le!',
+      })
+    }
+
+    const hostname = parsedUrl.hostname.toLowerCase()
+    const isGiphyUrl =
+      (parsedUrl.protocol === 'https:' || parsedUrl.protocol === 'http:') &&
+      (hostname === 'giphy.com' || hostname.endsWith('.giphy.com'))
+
+    if (!Number.isInteger(conversationId)) {
+      return response.status(400).json({
+        message: 'Duong dan hoi thoai khong hop le!',
+      })
+    }
+
+    if (!isGiphyUrl) {
+      return response.status(422).json({
+        message: 'Chi ho tro GIF tu GIPHY!',
+      })
+    }
+
+    await connection.beginTransaction()
+
+    const participant = await findActiveParticipant(connection, conversationId, currentUserId)
+
+    if (!participant) {
+      await connection.rollback()
+      return response.status(404).json({
+        message: 'Khong tim thay hoi thoai!',
+      })
+    }
+
+    if (await hasBlockedDirectContact(connection, conversationId, currentUserId)) {
+      await connection.rollback()
+      return response.status(403).json({
+        message: 'Hoi thoai da bi chan!',
+      })
+    }
+
+    const [result] = await connection.execute(
+      `INSERT INTO messages (
+        public_id,
+        conversation_id,
+        sender_id,
+        type,
+        body,
+        status
+      ) VALUES (?, ?, ?, 'image', ?, 'sent')`,
+      [randomUUID(), conversationId, currentUserId, title],
+    )
+
+    await connection.execute(
+      `INSERT INTO message_attachments (
+        message_id,
+        uploader_id,
+        file_name,
+        original_name,
+        mime_type,
+        file_size_bytes,
+        storage_url,
+        thumbnail_url
+      ) VALUES (?, ?, ?, ?, 'image/gif', ?, ?, ?)`,
+      [result.insertId, currentUserId, `giphy-${result.insertId}.gif`, title, sizeBytes, gifUrl, gifUrl],
+    )
+
+    await connection.execute(
+      `UPDATE conversations
+      SET last_message_id = ?, last_message_at = CURRENT_TIMESTAMP
+      WHERE id = ?`,
+      [result.insertId, conversationId],
+    )
+
+    await connection.execute(
+      `UPDATE conversation_participants
+      SET last_read_message_id = ?, last_read_at = CURRENT_TIMESTAMP
+      WHERE conversation_id = ? AND user_id = ?`,
+      [result.insertId, conversationId, currentUserId],
+    )
+
+    await connection.execute(
+      `INSERT INTO message_receipts (message_id, user_id, delivered_at, read_at)
+      VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      ON DUPLICATE KEY UPDATE
+        delivered_at = COALESCE(delivered_at, VALUES(delivered_at)),
+        read_at = COALESCE(read_at, VALUES(read_at))`,
+      [result.insertId, currentUserId],
+    )
+
+    const { messages } = await loadConversationMessages(connection, conversationId, currentUserId, {
+      messageId: result.insertId,
+    })
+    const createdMessage = messages.find((message) => message.id === String(result.insertId))
+    const pushRecipientIds = await loadConversationPushRecipientIds(
+      connection,
+      conversationId,
+      currentUserId,
+    )
+
+    await connection.commit()
+    await emitConversationChanged(connection, conversationId, currentUserId, 'message:created')
+    pushWebNotificationToUsers(pushRecipientIds, {
+      title: request.user.full_name,
+      body: 'Da gui mot GIF!',
+      tag: `conversation:${conversationId}`,
+      url: `/chat/${conversationId}`,
+    })
+
+    response.status(201).json({
+      message: createdMessage,
+    })
+  } catch (error) {
+    await connection.rollback()
+    next(error)
+  } finally {
+    connection.release()
+  }
+}
+
 async function updateMessage(request, response, next) {
   const connection = await pool.getConnection()
 
@@ -4117,6 +4287,100 @@ async function removeMessageReaction(request, response, next) {
   }
 }
 
+async function reportMessage(request, response, next) {
+  const connection = await pool.getConnection()
+
+  try {
+    await ensureMessageReportsTable()
+
+    const currentUserId = request.user.id
+    const conversationId = Number(request.params.conversationId)
+    const messageId = Number(request.params.messageId)
+    const reason =
+      typeof request.body.reason === 'string' && request.body.reason.trim()
+        ? request.body.reason.trim().slice(0, 255)
+        : null
+
+    if (!Number.isInteger(conversationId) || !Number.isInteger(messageId)) {
+      return response.status(400).json({
+        message: 'Đường dẫn báo cáo tin nhắn không hợp lệ!',
+      })
+    }
+
+    await connection.beginTransaction()
+
+    const participant = await findActiveParticipant(connection, conversationId, currentUserId)
+
+    if (!participant) {
+      await connection.rollback()
+      return response.status(404).json({
+        message: 'Không tìm thấy hội thoại!',
+      })
+    }
+
+    const [messageRows] = await connection.execute(
+      `SELECT id, sender_id, type, deleted_at
+      FROM messages
+      WHERE id = ?
+        AND conversation_id = ?
+      LIMIT 1`,
+      [messageId, conversationId],
+    )
+    const message = messageRows[0]
+
+    if (!message || message.deleted_at) {
+      await connection.rollback()
+      return response.status(404).json({
+        message: 'Không tìm thấy tin nhắn cần báo cáo!',
+      })
+    }
+
+    if (message.sender_id === currentUserId) {
+      await connection.rollback()
+      return response.status(422).json({
+        message: 'Bạn không thể báo cáo tin nhắn của chính mình!',
+      })
+    }
+
+    if (message.type === 'system') {
+      await connection.rollback()
+      return response.status(422).json({
+        message: 'Không thể báo cáo tin nhắn hệ thống!',
+      })
+    }
+
+    await connection.execute(
+      `INSERT INTO message_reports (
+        public_id,
+        message_id,
+        conversation_id,
+        reporter_id,
+        reported_user_id,
+        reason
+      )
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        reason = VALUES(reason),
+        status = 'pending',
+        reviewed_by = NULL,
+        reviewed_at = NULL,
+        updated_at = CURRENT_TIMESTAMP`,
+      [randomUUID(), messageId, conversationId, currentUserId, message.sender_id, reason],
+    )
+
+    await connection.commit()
+
+    response.status(201).json({
+      message: 'Đã gửi báo cáo đến Admin!',
+    })
+  } catch (error) {
+    await connection.rollback()
+    next(error)
+  } finally {
+    connection.release()
+  }
+}
+
 async function markConversationRead(request, response, next) {
   const connection = await pool.getConnection()
 
@@ -4444,6 +4708,7 @@ module.exports = {
   addGroupMember,
   archiveConversation,
   createAttachmentMessage,
+  createGifMessage,
   createGroupConversation,
   createMessage,
   deleteMessage,
@@ -4461,6 +4726,7 @@ module.exports = {
   markConversationDelivered,
   markConversationRead,
   requestGroupJoin,
+  reportMessage,
   resetGroupInvite,
   removeMessageReaction,
   recallMessage,

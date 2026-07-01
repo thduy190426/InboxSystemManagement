@@ -34,6 +34,41 @@ export type AdminUsersPagination = {
   totalPages: number
 }
 
+export type MessageReportStatus = 'pending' | 'reviewed' | 'dismissed'
+
+export type MessageReport = {
+  id: string
+  status: MessageReportStatus
+  reason: string | null
+  messageId: string
+  messageText: string
+  messageType: string
+  conversationId: string
+  conversationName: string
+  reporter: {
+    id: string
+    name: string
+    email: string
+  }
+  reportedUser: {
+    id: string
+    name: string
+    email: string
+  }
+  reviewedBy: {
+    id: string
+    name: string
+  } | null
+  reviewedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type FetchMessageReportsResponse = {
+  reports: MessageReport[]
+  pagination: AdminUsersPagination
+}
+
 export type FetchAdminUsersParams = {
   page?: number
   limit?: number
@@ -93,6 +128,46 @@ export function fetchAdminUsers(params: FetchAdminUsersParams = {}) {
     `/admin/users${suffix}`,
     {},
     'Không thể tải danh sách người dùng!',
+  )
+}
+
+export function fetchMessageReports(
+  params: { page?: number; limit?: number; status?: MessageReportStatus | 'all' } = {},
+) {
+  const query = new URLSearchParams()
+
+  if (params.page) {
+    query.set('page', String(params.page))
+  }
+
+  if (params.limit) {
+    query.set('limit', String(params.limit))
+  }
+
+  if (params.status && params.status !== 'all') {
+    query.set('status', params.status)
+  }
+
+  const suffix = query.toString() ? `?${query.toString()}` : ''
+
+  return requestJson<FetchMessageReportsResponse>(
+    `/admin/message-reports${suffix}`,
+    {},
+    'Không thể tải danh sách báo cáo!',
+  )
+}
+
+export function updateMessageReportStatus(
+  reportId: string,
+  status: Exclude<MessageReportStatus, 'pending'>,
+) {
+  return requestJson<{ message: string; report: MessageReport }>(
+    `/admin/message-reports/${encodeURIComponent(reportId)}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    },
+    'Không thể cập nhật báo cáo!',
   )
 }
 

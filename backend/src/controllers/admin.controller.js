@@ -1,8 +1,39 @@
 const { pool } = require('../config/db')
 
 const ALLOWED_ROLES = new Set(['user', 'agent', 'owner'])
+const ALLOWED_REPORT_STATUSES = new Set(['pending', 'reviewed', 'dismissed'])
 const MAX_PAGE_SIZE = 100
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const messageReportsTableReady = pool
+  .execute(
+    `CREATE TABLE IF NOT EXISTS message_reports (
+      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+      public_id CHAR(36) NOT NULL,
+      message_id BIGINT UNSIGNED NOT NULL,
+      conversation_id BIGINT UNSIGNED NOT NULL,
+      reporter_id BIGINT UNSIGNED NOT NULL,
+      reported_user_id BIGINT UNSIGNED NOT NULL,
+      reason VARCHAR(255) NULL,
+      status ENUM('pending', 'reviewed', 'dismissed') NOT NULL DEFAULT 'pending',
+      reviewed_by BIGINT UNSIGNED NULL,
+      reviewed_at DATETIME NULL,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_message_reports_public_id (public_id),
+      UNIQUE KEY uq_message_reports_message_reporter (message_id, reporter_id),
+      INDEX idx_message_reports_status_created (status, created_at),
+      INDEX idx_message_reports_reporter (reporter_id, created_at),
+      INDEX idx_message_reports_reported_user (reported_user_id, created_at)
+    )`,
+  )
+  .catch((error) => {
+    console.error('Không thể đảm bảo bảng message_reports:', error)
+    throw error
+  })
+
+async function ensureMessageReportsTable() {
+  await messageReportsTableReady
+}
 
 function toPositiveInteger(value, fallback) {
   const parsed = Number.parseInt(String(value), 10)
@@ -40,8 +71,42 @@ function toAdminUser(row) {
   }
 }
 
+function toMessageReport(row) {
+  return {
+    id: row.public_id,
+    status: row.status,
+    reason: row.reason,
+    messageId: String(row.message_id),
+    messageText: row.message_text || '',
+    messageType: row.message_type,
+    conversationId: String(row.conversation_id),
+    conversationName: row.conversation_name || 'Hoi thoai',
+    reporter: {
+      id: row.reporter_public_id,
+      name: row.reporter_name,
+      email: row.reporter_email,
+    },
+    reportedUser: {
+      id: row.reported_public_id,
+      name: row.reported_name,
+      email: row.reported_email,
+    },
+    reviewedBy: row.reviewer_public_id
+      ? {
+          id: row.reviewer_public_id,
+          name: row.reviewer_name,
+        }
+      : null,
+    reviewedAt: row.reviewed_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }
+}
+
 async function getAdminStats(_request, response, next) {
   try {
+    await ensureMessageReportsTable()
+
     const [[userStats], [alertStats]] = await Promise.all([
       pool.execute(
         `SELECT
@@ -54,10 +119,17 @@ async function getAdminStats(_request, response, next) {
           AND role <> 'admin'`,
       ),
       pool.execute(
-        `SELECT COUNT(*) AS unread_system_alerts
-        FROM notifications
-        WHERE type = 'system'
-          AND read_at IS NULL`,
+        `SELECT
+          (
+            SELECT COUNT(*)
+            FROM notifications
+            WHERE type = 'system'
+              AND read_at IS NULL
+          ) + (
+            SELECT COUNT(*)
+            FROM message_reports
+            WHERE status = 'pending'
+          ) AS unread_system_alerts`,
       ),
     ])
 
@@ -132,6 +204,153 @@ async function getAdminUsers(request, response, next) {
         total,
         totalPages: Math.max(1, Math.ceil(total / limit)),
       },
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+async function getMessageReports(request, response, next) {
+  try {
+    await ensureMessageReportsTable()
+
+    const page = toPositiveInteger(request.query.page, 1)
+    const limit = Math.min(toPositiveInteger(request.query.limit, 20), MAX_PAGE_SIZE)
+    const offset = (page - 1) * limit
+    const status = typeof request.query.status === 'string' ? request.query.status.trim() : ''
+    const filters = []
+    const params = []
+
+    if (status && ALLOWED_REPORT_STATUSES.has(status)) {
+      filters.push('message_reports.status = ?')
+      params.push(status)
+    }
+
+    const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : ''
+    const [[countRows], [reportRows]] = await Promise.all([
+      pool.execute(
+        `SELECT COUNT(*) AS total
+        FROM message_reports
+        ${whereClause}`,
+        params,
+      ),
+      pool.execute(
+        `SELECT
+          message_reports.public_id,
+          message_reports.message_id,
+          message_reports.conversation_id,
+          message_reports.reason,
+          message_reports.status,
+          message_reports.reviewed_at,
+          message_reports.created_at,
+          message_reports.updated_at,
+          messages.body AS message_text,
+          messages.type AS message_type,
+          COALESCE(conversations.title, CONCAT('Hoi thoai #', conversations.id)) AS conversation_name,
+          reporters.public_id AS reporter_public_id,
+          reporters.full_name AS reporter_name,
+          reporters.email AS reporter_email,
+          reported_users.public_id AS reported_public_id,
+          reported_users.full_name AS reported_name,
+          reported_users.email AS reported_email,
+          reviewers.public_id AS reviewer_public_id,
+          reviewers.full_name AS reviewer_name
+        FROM message_reports
+        INNER JOIN messages ON messages.id = message_reports.message_id
+        INNER JOIN conversations ON conversations.id = message_reports.conversation_id
+        INNER JOIN users AS reporters ON reporters.id = message_reports.reporter_id
+        INNER JOIN users AS reported_users ON reported_users.id = message_reports.reported_user_id
+        LEFT JOIN users AS reviewers ON reviewers.id = message_reports.reviewed_by
+        ${whereClause}
+        ORDER BY
+          CASE message_reports.status WHEN 'pending' THEN 0 ELSE 1 END,
+          message_reports.created_at DESC,
+          message_reports.id DESC
+        LIMIT ${limit} OFFSET ${offset}`,
+        params,
+      ),
+    ])
+
+    const total = Number((countRows[0] && countRows[0].total) || 0)
+
+    response.json({
+      reports: reportRows.map(toMessageReport),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+      },
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+async function updateMessageReport(request, response, next) {
+  try {
+    await ensureMessageReportsTable()
+
+    const reportId = String(request.params.id || '').trim()
+    const status = String(request.body?.status || '').trim()
+
+    if (!ALLOWED_REPORT_STATUSES.has(status) || status === 'pending') {
+      return response.status(422).json({
+        message: 'Trạng thái báo cáo không hợp lệ!',
+      })
+    }
+
+    const [result] = await pool.execute(
+      `UPDATE message_reports
+      SET status = ?,
+        reviewed_by = ?,
+        reviewed_at = CURRENT_TIMESTAMP,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE public_id = ?`,
+      [status, request.user.id, reportId],
+    )
+
+    if (!result.affectedRows) {
+      return response.status(404).json({
+        message: 'Không tìm thấy báo cáo!',
+      })
+    }
+
+    const [rows] = await pool.execute(
+      `SELECT
+        message_reports.public_id,
+        message_reports.message_id,
+        message_reports.conversation_id,
+        message_reports.reason,
+        message_reports.status,
+        message_reports.reviewed_at,
+        message_reports.created_at,
+        message_reports.updated_at,
+        messages.body AS message_text,
+        messages.type AS message_type,
+        COALESCE(conversations.title, CONCAT('Hoi thoai #', conversations.id)) AS conversation_name,
+        reporters.public_id AS reporter_public_id,
+        reporters.full_name AS reporter_name,
+        reporters.email AS reporter_email,
+        reported_users.public_id AS reported_public_id,
+        reported_users.full_name AS reported_name,
+        reported_users.email AS reported_email,
+        reviewers.public_id AS reviewer_public_id,
+        reviewers.full_name AS reviewer_name
+      FROM message_reports
+      INNER JOIN messages ON messages.id = message_reports.message_id
+      INNER JOIN conversations ON conversations.id = message_reports.conversation_id
+      INNER JOIN users AS reporters ON reporters.id = message_reports.reporter_id
+      INNER JOIN users AS reported_users ON reported_users.id = message_reports.reported_user_id
+      LEFT JOIN users AS reviewers ON reviewers.id = message_reports.reviewed_by
+      WHERE message_reports.public_id = ?
+      LIMIT 1`,
+      [reportId],
+    )
+
+    response.json({
+      message: 'Đã cập nhật báo cáo!',
+      report: toMessageReport(rows[0]),
     })
   } catch (error) {
     next(error)
@@ -413,7 +632,9 @@ module.exports = {
   deleteAdminUser,
   getAdminStats,
   getAdminUsers,
+  getMessageReports,
   lockAdminUser,
   unlockAdminUser,
+  updateMessageReport,
   updateAdminUser,
 }

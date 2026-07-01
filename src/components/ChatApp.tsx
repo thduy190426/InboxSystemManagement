@@ -32,10 +32,12 @@ import {
   removeGroupMember,
   removeMessageReaction,
   requestGroupJoin,
+  reportMessage,
   resetGroupInvite,
   reviewGroupJoinRequest,
   searchConversationMessages,
   sendMessage,
+  sendGifMessage,
   toggleMessageReaction,
   toggleMessagePin,
   transferGroupOwner,
@@ -64,6 +66,7 @@ import {
   markNotificationRead,
 } from '../services/notificationApi'
 import { disconnectRealtimeSocket, getRealtimeSocket } from '../services/realtime'
+import type { GifSearchResult } from '../services/gifApi'
 import type {
   AppNotification,
   AppView,
@@ -1837,6 +1840,58 @@ export function ChatApp({
     }
   }
 
+  async function handleSendGif(gif: GifSearchResult) {
+    if (!activeConversation || isUploadingAttachment) {
+      return
+    }
+
+    if (activeConversation.blocked) {
+      pushToast('Bạn đã chặn người dùng này!')
+      return
+    }
+
+    try {
+      setIsUploadingAttachment(true)
+
+      const createdMessage = await sendGifMessage(activeConversation.id, {
+        url: gif.url,
+        title: gif.title,
+        width: gif.width,
+        height: gif.height,
+        sizeBytes: gif.sizeBytes,
+      })
+
+      setMessagesByConversation((current) => ({
+        ...current,
+        [activeConversation.id]: [...(current[activeConversation.id] ?? []), createdMessage],
+      }))
+
+      setConversations((current) =>
+        current.map((conversation) =>
+          conversation.id === activeConversation.id
+            ? {
+              ...conversation,
+              lastMessage: 'Da gui mot GIF!',
+              lastMessageByMe: true,
+              lastMessageIsAttachment: true,
+              lastMessageAt: createdMessage.createdAt ?? null,
+              lastTime: createdMessage.time,
+              attachments: [
+                ...(createdMessage.attachments ?? []),
+                ...conversation.attachments,
+              ],
+            }
+            : conversation,
+        ),
+      )
+    } catch (error) {
+      pushToast(getErrorMessage(error, 'Khong the gui GIF!'))
+      throw error
+    } finally {
+      setIsUploadingAttachment(false)
+    }
+  }
+
   async function handleEditMessage(messageId: string, text: string) {
     if (!activeConversation || busyMessageId) {
       return
@@ -2053,6 +2108,27 @@ export function ChatApp({
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Không thể chuyển tiếp tin nhắn!')
       throw error
+    } finally {
+      setBusyMessageId('')
+    }
+  }
+
+  async function handleReportMessage(messageId: string) {
+    if (!activeConversation || busyMessageId) {
+      return
+    }
+
+    try {
+      setBusyMessageId(messageId)
+      const message = await reportMessage(
+        activeConversation.id,
+        messageId,
+        'Tin nhắn có nội dung không phù hợp hoặc spam!',
+      )
+
+      pushToast(message || 'Đã gửi báo cáo đến Admin!', 'info')
+    } catch (error) {
+      pushToast(getErrorMessage(error, 'Không thể gửi báo cáo tin nhắn!'))
     } finally {
       setBusyMessageId('')
     }
@@ -3118,6 +3194,8 @@ export function ChatApp({
         onDraftChange={handleDraftChange}
         onEditMessage={handleEditMessage}
         onForwardMessage={handleForwardMessage}
+        onReportMessage={handleReportMessage}
+        onSendGif={handleSendGif}
         onToggleMessagePin={handleToggleMessagePin}
         onReplyMessage={setReplyingTo}
         onRemoveReaction={handleRemoveMessageReaction}

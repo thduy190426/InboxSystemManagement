@@ -4,6 +4,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Edit2,
+  Flag,
   Lock,
   Loader2,
   Mail,
@@ -19,14 +20,18 @@ import {
   deleteUser,
   fetchAdminStats,
   fetchAdminUsers,
+  fetchMessageReports,
   lockAdminUser,
   unlockAdminUser,
   updateAdminUser,
+  updateMessageReportStatus,
   type AdminStats,
   type AdminUser,
   type AdminUserRole,
   type AdminUserStatus,
   type AdminUsersPagination,
+  type MessageReport,
+  type MessageReportStatus,
 } from '../services/adminApi'
 import type { AuthUser } from '../services/authApi'
 import { ConfirmDialog, type ConfirmDialogState } from './ConfirmDialog'
@@ -45,6 +50,7 @@ type EditUserState = {
 }
 
 const USER_PAGE_SIZE = 20
+const REPORT_PAGE_SIZE = 10
 const EDIT_EXIT_DURATION_MS = 140
 
 const emptyStats: AdminStats = {
@@ -80,6 +86,31 @@ function formatLastLogin(value: string | null) {
   }).format(date)
 }
 
+function formatReportTime(value: string) {
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return 'Không rõ!'
+  }
+
+  return new Intl.DateTimeFormat('vi-VN', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(date)
+}
+
+function getReportStatusLabel(status: MessageReportStatus) {
+  if (status === 'reviewed') {
+    return 'Đã xử lý!'
+  }
+
+  if (status === 'dismissed') {
+    return 'Bỏ qua!'
+  }
+
+  return 'Chờ xử lý!'
+}
+
 function getStatusLabel(status: AdminUserStatus) {
   if (status === 'suspended') {
     return 'Đã khóa!'
@@ -107,6 +138,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [stats, setStats] = useState<AdminStats>(emptyStats)
   const [users, setUsers] = useState<AdminUser[]>([])
+  const [reports, setReports] = useState<MessageReport[]>([])
   const [pagination, setPagination] = useState<AdminUsersPagination>({
     page: 1,
     limit: USER_PAGE_SIZE,
@@ -115,6 +147,9 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
   })
   const [isStatsLoading, setIsStatsLoading] = useState(true)
   const [isUsersLoading, setIsUsersLoading] = useState(true)
+  const [isReportsLoading, setIsReportsLoading] = useState(true)
+  const [reportStatus, setReportStatus] = useState<MessageReportStatus | 'all'>('pending')
+  const [busyReportId, setBusyReportId] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [pageError, setPageError] = useState<string | null>(null)
   const [editUser, setEditUser] = useState<EditUserState | null>(null)
@@ -229,6 +264,100 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
     }
   }, [debouncedSearch, page, pushToast])
 
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadReports() {
+      setIsReportsLoading(true)
+
+      try {
+        const response = await fetchMessageReports({
+          page: 1,
+          limit: REPORT_PAGE_SIZE,
+          status: reportStatus,
+        })
+
+        if (isMounted) {
+          setReports(response.reports)
+          setPageError(null)
+        }
+      } catch (error) {
+        const message = getErrorMessage(error, 'Không thể tải danh sách báo cáo!')
+
+        if (isMounted) {
+          setReports([])
+          setPageError(message)
+          pushToast?.(message, 'error')
+        }
+      } finally {
+        if (isMounted) {
+          setIsReportsLoading(false)
+        }
+      }
+    }
+
+    void loadReports()
+
+    return () => {
+      isMounted = false
+    }
+  }, [pushToast, reportStatus])
+
+  const reportsContent = useMemo(() => {
+    if (isReportsLoading) {
+      return (
+        <div className="admin-loading-row">
+          <Loader2 size={18} />
+          Đang tải báo cáo...
+        </div>
+      )
+    }
+
+    if (reports.length === 0) {
+      return (
+        <div className="admin-empty-row">
+          {reportStatus === 'pending' ? 'Chưa có báo cáo đang chờ xử lý!' : 'Không có báo cáo phù hợp!'}
+        </div>
+      )
+    }
+
+    return reports.map((report) => (
+      <article className="message-report-row" key={report.id}>
+        <div className="message-report-main">
+          <div className="message-report-topline">
+            <span className={`report-status-badge status-${report.status}`}>
+              {getReportStatusLabel(report.status)}
+            </span>
+            <small>{formatReportTime(report.createdAt)}</small>
+          </div>
+          <strong>{report.reportedUser.name}</strong>
+          <p>{report.messageText || `[${report.messageType}]`}</p>
+          <small>
+            Báo cáo bởi {report.reporter.name} trong {report.conversationName}
+          </small>
+        </div>
+        <div className="message-report-actions">
+          <button
+            disabled={busyReportId === report.id || report.status === 'reviewed'}
+            onClick={() => void handleUpdateReportStatus(report, 'reviewed')}
+            type="button"
+          >
+            {busyReportId === report.id ? <Loader2 size={15} /> : <CheckCircle2 size={15} />}
+            Xử lý
+          </button>
+          <button
+            disabled={busyReportId === report.id || report.status === 'dismissed'}
+            onClick={() => void handleUpdateReportStatus(report, 'dismissed')}
+            type="button"
+          >
+            <XCircle size={15} />
+            Bỏ qua
+          </button>
+        </div>
+      </article>
+    ))
+  }, [busyReportId, isReportsLoading, reportStatus, reports])
+
   const tableContent = useMemo(() => {
     if (isUsersLoading) {
       return (
@@ -320,6 +449,41 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
       setStats(await fetchAdminStats())
     } catch (error) {
       pushToast?.(getErrorMessage(error, 'Không thể tải lại thống kê quản trị!'), 'error')
+    }
+  }
+
+  async function refreshReports() {
+    try {
+      const response = await fetchMessageReports({
+        page: 1,
+        limit: REPORT_PAGE_SIZE,
+        status: reportStatus,
+      })
+
+      setReports(response.reports)
+    } catch (error) {
+      pushToast?.(getErrorMessage(error, 'Không thể tải lại báo cáo!'), 'error')
+    }
+  }
+
+  async function handleUpdateReportStatus(
+    report: MessageReport,
+    status: Exclude<MessageReportStatus, 'pending'>,
+  ) {
+    setBusyReportId(report.id)
+
+    try {
+      const response = await updateMessageReportStatus(report.id, status)
+
+      setReports((currentReports) =>
+        currentReports.map((item) => (item.id === response.report.id ? response.report : item)),
+      )
+      pushToast?.(status === 'reviewed' ? 'Đã đánh dấu báo cáo đã xử lý!' : 'Đã bỏ qua báo cáo!', 'info')
+      void refreshStats()
+    } catch (error) {
+      pushToast?.(getErrorMessage(error, 'Không thể cập nhật báo cáo!'), 'error')
+    } finally {
+      setBusyReportId(null)
     }
   }
 
@@ -477,6 +641,33 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
             <p className="stat-value">{isStatsLoading ? '...' : formatNumber(stats.alertCount)}</p>
             <span className="stat-trend negative">cần xử lý</span>
           </div>
+        </div>
+      </div>
+
+      <div className="admin-content-section message-report-section">
+        <div className="section-header">
+          <h2>
+            <Flag size={18} />
+            Báo cáo tin nhắn
+          </h2>
+          <div className="report-toolbar">
+            <select
+              value={reportStatus}
+              onChange={(event) => setReportStatus(event.target.value as MessageReportStatus | 'all')}
+            >
+              <option value="pending">Chờ xử lý</option>
+              <option value="reviewed">Đã xử lý</option>
+              <option value="dismissed">Bỏ qua</option>
+              <option value="all">Tất cả</option>
+            </select>
+            <button disabled={isReportsLoading} onClick={() => void refreshReports()} type="button">
+              {isReportsLoading ? <Loader2 size={15} /> : <Flag size={15} />}
+              Tải lại
+            </button>
+          </div>
+        </div>
+        <div className="message-report-list">
+          {reportsContent}
         </div>
       </div>
 
