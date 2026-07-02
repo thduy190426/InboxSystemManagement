@@ -8740,3 +8740,13 @@ html.dark {
 .theme-transition *::after {
   transition: background-color 0.4s ease, background 0.4s ease, color 0.4s ease, border-color 0.4s ease, fill 0.4s ease, stroke 0.4s ease, box-shadow 0.4s ease !important;
 }
+html.dark .attachment-download-button {
+  background: rgba(15, 159, 142, 0.2);
+  border-color: rgba(15, 159, 142, 0.3);
+  color: var(--primary);
+}
+
+html.dark .attachment-download-button:hover {
+  background: rgba(15, 159, 142, 0.3);
+  border-color: rgba(15, 159, 142, 0.45);
+}
