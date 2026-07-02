@@ -8421,3 +8421,18 @@ html.dark .profile-preview-meta span {
   background: rgba(255, 255, 255, 0.08);
   color: #e2e8f0;
 }
+html.dark .profile-field input,
+html.dark .profile-field select,
+html.dark .profile-field textarea {
+  background: var(--bg);
+  color: var(--text);
+  border-color: var(--line);
+}
+html.dark .profile-field select.has-value,
+html.dark .profile-field textarea.has-value {
+  color: var(--text);
+}
+html.dark .profile-field input[readonly] {
+  background: var(--surface-soft);
+  color: var(--muted);
+}
