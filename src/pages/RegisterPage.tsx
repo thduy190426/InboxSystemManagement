@@ -11,6 +11,7 @@ import {
   UserPlus,
 } from 'lucide-react'
 import type { AuthPageProps } from '../types'
+import { CaptchaChallenge } from '../components/CaptchaChallenge'
 
 type RegisterPageProps = AuthPageProps & {
   pushToast: (text: string, tone?: 'info' | 'error') => void
@@ -127,6 +128,7 @@ export function RegisterPage({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<RegisterErrors>({})
   const [isFormFilled, setIsFormFilled] = useState(false)
+  const [isCaptchaSolved, setIsCaptchaSolved] = useState(false)
 
   function handleFormChange(event: FormEvent<HTMLFormElement>) {
     const formData = new FormData(event.currentTarget)
@@ -147,6 +149,11 @@ export function RegisterPage({
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    if (!isCaptchaSolved) {
+      pushToast('Vui lòng xác thực CAPTCHA trước khi đăng ký!', 'error')
+      return
+    }
 
     const validation = validateRegisterForm(new FormData(event.currentTarget))
 
@@ -299,7 +306,17 @@ export function RegisterPage({
             </span>
           </label>
 
-          <button className="auth-primary" disabled={isSubmitting || !isFormFilled} type="submit">
+          <CaptchaChallenge
+            disabled={isSubmitting}
+            id="registerCaptcha"
+            onSolvedChange={setIsCaptchaSolved}
+          />
+
+          <button
+            className="auth-primary"
+            disabled={isSubmitting || !isFormFilled || !isCaptchaSolved}
+            type="submit"
+          >
             <UserPlus size={18} />
             {isSubmitting ? 'Đang đăng ký...' : 'Đăng ký'}
           </button>

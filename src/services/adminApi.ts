@@ -87,6 +87,14 @@ export type UpdateAdminUserPayload = {
   email?: string
 }
 
+export type CreateAdminUserPayload = {
+  fullName: string
+  displayName?: string | null
+  email: string
+  password: string
+  role: AdminUserRole
+}
+
 export type UpdateAdminUserResponse = {
   message: string
   user: AdminUser
@@ -179,6 +187,17 @@ export function updateAdminUser(userId: string, payload: UpdateAdminUserPayload)
       body: JSON.stringify(payload),
     },
     'Không thể cập nhật người dùng!',
+  )
+}
+
+export function createAdminUser(payload: CreateAdminUserPayload) {
+  return requestJson<UpdateAdminUserResponse>(
+    '/admin/users',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+    'Không thể tạo người dùng!',
   )
 }
 

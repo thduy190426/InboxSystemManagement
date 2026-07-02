@@ -2,6 +2,7 @@ import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { ArrowRight, Eye, EyeOff, Lock, LogIn, Mail } from 'lucide-react'
 import type { AuthPageProps } from '../types'
+import { CaptchaChallenge } from '../components/CaptchaChallenge'
 
 type LoginPageProps = AuthPageProps & {
   onForgotPassword: () => void
@@ -15,6 +16,7 @@ export function LoginPage({
 }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [isFormFilled, setIsFormFilled] = useState(false)
+  const [isCaptchaSolved, setIsCaptchaSolved] = useState(false)
 
   function handleFormChange(event: FormEvent<HTMLFormElement>) {
     const formData = new FormData(event.currentTarget)
@@ -28,6 +30,10 @@ export function LoginPage({
     event.preventDefault()
 
     const formData = new FormData(event.currentTarget)
+
+    if (!isCaptchaSolved) {
+      return
+    }
 
     onSubmit({
       email: String(formData.get('email') ?? ''),
@@ -102,7 +108,17 @@ export function LoginPage({
             </button>
           </div>
 
-          <button className="auth-primary" disabled={isSubmitting || !isFormFilled} type="submit">
+          <CaptchaChallenge
+            disabled={isSubmitting}
+            id="loginCaptcha"
+            onSolvedChange={setIsCaptchaSolved}
+          />
+
+          <button
+            className="auth-primary"
+            disabled={isSubmitting || !isFormFilled || !isCaptchaSolved}
+            type="submit"
+          >
             {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
             <ArrowRight size={18} />
           </button>

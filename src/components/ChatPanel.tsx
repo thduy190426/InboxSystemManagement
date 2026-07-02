@@ -1060,7 +1060,7 @@ export function ChatPanel({
             onClick={() =>
               handleReactionBadgeClick(message, reaction.emoji, reaction.reactedByMe)
             }
-            title={reaction.reactedByMe ? 'Thu hồi Reaction' : 'Reaction'}
+            title={reaction.reactedByMe ? 'Thu hồi reaction' : 'reaction'}
             type="button"
           >
             <span>{reaction.emoji}</span>

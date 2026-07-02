@@ -212,6 +212,7 @@ export type ContactUser = {
   contactId: string | null
   lastSeenAt?: string | null
   onlineSince?: string | null
+  showActivityStatus?: boolean
   createdAt?: string | null
   updatedAt?: string | null
   contactCreatedAt?: string | null

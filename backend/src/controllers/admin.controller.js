@@ -1,4 +1,7 @@
+const bcrypt = require('bcryptjs')
+const { randomUUID } = require('crypto')
 const { pool } = require('../config/db')
+const { validateRegisterPayload } = require('../utils/validation')
 
 const ALLOWED_ROLES = new Set(['user', 'agent', 'owner'])
 const ALLOWED_REPORT_STATUSES = new Set(['pending', 'reviewed', 'dismissed'])
@@ -206,6 +209,110 @@ async function getAdminUsers(request, response, next) {
       },
     })
   } catch (error) {
+    next(error)
+  }
+}
+
+async function createAdminUser(request, response, next) {
+  try {
+    const source = request.body && typeof request.body === 'object' ? request.body : {}
+    const role = typeof source.role === 'string' ? source.role.trim() : 'user'
+    const displayName = typeof source.displayName === 'string' ? source.displayName.trim() : ''
+    const validation = validateRegisterPayload({
+      fullName: source.fullName,
+      email: source.email,
+      phone: source.phone || '',
+      password: source.password,
+      confirmPassword: source.password,
+    })
+    const errors = { ...validation.errors }
+
+    if (!ALLOWED_ROLES.has(role)) {
+      errors.role = 'Vai trò không hợp lệ!'
+    }
+
+    if (displayName.length > 80) {
+      errors.displayName = 'Tên hiển thị không được vượt quá 80 ký tự!'
+    }
+
+    if (Object.keys(errors).length > 0) {
+      return response.status(422).json({
+        message: 'Dữ liệu tạo người dùng không hợp lệ!',
+        errors,
+      })
+    }
+
+    const { fullName, email, phone, password } = validation.data
+    const [existingRows] = await pool.execute(
+      `SELECT email, phone
+      FROM users
+      WHERE deleted_at IS NULL
+        AND (email = ?${phone ? ' OR phone = ?' : ''})
+      LIMIT 1`,
+      phone ? [email, phone] : [email],
+    )
+    const existingUser = existingRows[0]
+
+    if (existingUser) {
+      return response.status(409).json({
+        message: 'Tài khoản đã tồn tại!',
+        errors: {
+          ...(existingUser.email === email ? { email: 'Email này đã được sử dụng!' } : {}),
+          ...(phone && existingUser.phone === phone ? { phone: 'Số điện thoại này đã được sử dụng!' } : {}),
+        },
+      })
+    }
+
+    const saltRounds = Number(process.env.BCRYPT_SALT_ROUNDS || 10)
+    const passwordHash = await bcrypt.hash(password, saltRounds)
+    const publicId = randomUUID()
+
+    await pool.execute(
+      `INSERT INTO users (
+        public_id,
+        full_name,
+        display_name,
+        email,
+        phone,
+        password_hash,
+        presence,
+        role,
+        is_email_verified,
+        is_active
+      ) VALUES (?, ?, ?, ?, ?, ?, 'offline', ?, 1, 1)`,
+      [publicId, fullName, displayName || fullName, email, phone, passwordHash, role],
+    )
+
+    const [rows] = await pool.execute(
+      `SELECT
+        public_id,
+        full_name,
+        display_name,
+        email,
+        avatar_url,
+        role,
+        presence,
+        is_active,
+        last_seen_at,
+        created_at,
+        updated_at
+      FROM users
+      WHERE public_id = ?
+        AND role <> 'admin'
+      LIMIT 1`,
+      [publicId],
+    )
+
+    response.status(201).json({
+      message: 'Tạo người dùng thành công!',
+      user: toAdminUser(rows[0]),
+    })
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      error.statusCode = 409
+      error.message = 'Email hoặc số điện thoại này đã được sử dụng!'
+    }
+
     next(error)
   }
 }
@@ -629,6 +736,7 @@ async function deleteAdminUser(request, response, next) {
 }
 
 module.exports = {
+  createAdminUser,
   deleteAdminUser,
   getAdminStats,
   getAdminUsers,

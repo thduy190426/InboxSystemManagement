@@ -712,6 +712,7 @@ async function loadConversationMembers(connection, conversationId, currentUserId
       users.full_name,
       users.email,
       users.avatar_url,
+      users.show_activity_status,
       users.online_since,
       conversation_participants.role,
       conversation_participants.custom_title,
@@ -719,10 +720,12 @@ async function loadConversationMembers(connection, conversationId, currentUserId
       conversation_participants.created_at,
       conversation_participants.updated_at,
       CASE
-        WHEN users.presence = 'online'
+        WHEN users.show_activity_status = 1
+          AND users.presence = 'online'
           AND users.last_seen_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 2 MINUTE)
           THEN 'online'
-        WHEN users.presence IN ('away', 'busy') THEN users.presence
+        WHEN users.show_activity_status = 1
+          AND users.presence IN ('away', 'busy') THEN users.presence
         ELSE 'offline'
       END AS presence
     FROM conversation_participants
@@ -745,7 +748,7 @@ async function loadConversationMembers(connection, conversationId, currentUserId
     avatarUrl: row.avatar_url,
     role: row.role,
     presence: row.presence,
-    onlineSince: row.online_since || null,
+    onlineSince: row.show_activity_status ? row.online_since || null : null,
     joinedAt: formatRelativeTime(row.joined_at),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -1237,6 +1240,7 @@ async function loadConversationSummary(connection, conversationId, currentUserId
       other_users.avatar_url AS direct_avatar_url,
       other_users.bio AS direct_role,
       other_users.status_message AS direct_status,
+      other_users.show_activity_status AS direct_show_activity_status,
       other_users.last_seen_at AS direct_last_seen_at,
       other_users.online_since AS direct_online_since,
       direct_contacts.id AS direct_contact_id,
@@ -1244,10 +1248,12 @@ async function loadConversationSummary(connection, conversationId, currentUserId
       direct_contacts.nickname AS direct_nickname,
       member_counts.member_count,
       CASE
-        WHEN other_users.presence = 'online'
+        WHEN other_users.show_activity_status = 1
+          AND other_users.presence = 'online'
           AND other_users.last_seen_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 2 MINUTE)
           THEN 'online'
-        WHEN other_users.presence IN ('away', 'busy') THEN other_users.presence
+        WHEN other_users.show_activity_status = 1
+          AND other_users.presence IN ('away', 'busy') THEN other_users.presence
         ELSE 'offline'
       END AS direct_presence
     FROM conversations
@@ -1316,6 +1322,7 @@ async function loadConversationSummary(connection, conversationId, currentUserId
   const avatar = isDirect ? row.direct_avatar_url : row.avatar_url
   const memberCount = Number(row.member_count || 0)
   const lastMessagePreview = getConversationLastMessagePreview(row)
+  const directActivityVisible = row.direct_show_activity_status === undefined || Boolean(row.direct_show_activity_status)
 
   return {
     id: String(row.id),
@@ -1324,7 +1331,7 @@ async function loadConversationSummary(connection, conversationId, currentUserId
     name: name || 'Hội thoại',
     role: isDirect ? row.direct_role || 'Thành viên' : row.type === 'support' ? 'Nhóm hỗ trợ' : `${memberCount} thành viên`,
     status: isDirect
-      ? row.direct_status || getPresenceLabel(row.direct_presence, row.direct_last_seen_at)
+      ? row.direct_status || (directActivityVisible ? getPresenceLabel(row.direct_presence, row.direct_last_seen_at) : 'Ngoại tuyến')
       : row.type === 'support'
         ? 'Đang xử lý hỗ trợ'
         : `${memberCount} thành viên`,
@@ -1341,7 +1348,7 @@ async function loadConversationSummary(connection, conversationId, currentUserId
     archived: Boolean(row.is_archived),
     contactId: row.direct_contact_id ? String(row.direct_contact_id) : null,
     nickname: isDirect ? row.direct_nickname || null : null,
-    onlineSince: isDirect ? row.direct_online_since || null : null,
+    onlineSince: isDirect && directActivityVisible ? row.direct_online_since || null : null,
     friendshipStatus: row.direct_friendship_status || null,
     blocked: row.direct_friendship_status === 'blocked',
     presence: isDirect ? row.direct_presence || 'offline' : 'online',
@@ -1380,6 +1387,7 @@ async function listConversations(request, response, next) {
         other_users.avatar_url AS direct_avatar_url,
         other_users.bio AS direct_role,
         other_users.status_message AS direct_status,
+        other_users.show_activity_status AS direct_show_activity_status,
         other_users.last_seen_at AS direct_last_seen_at,
         other_users.online_since AS direct_online_since,
         direct_contacts.id AS direct_contact_id,
@@ -1387,10 +1395,12 @@ async function listConversations(request, response, next) {
         direct_contacts.nickname AS direct_nickname,
         member_counts.member_count,
         CASE
-          WHEN other_users.presence = 'online'
+          WHEN other_users.show_activity_status = 1
+            AND other_users.presence = 'online'
             AND other_users.last_seen_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 2 MINUTE)
             THEN 'online'
-          WHEN other_users.presence IN ('away', 'busy') THEN other_users.presence
+          WHEN other_users.show_activity_status = 1
+            AND other_users.presence IN ('away', 'busy') THEN other_users.presence
           ELSE 'offline'
         END AS direct_presence
       FROM conversations
@@ -1504,10 +1514,12 @@ async function listConversations(request, response, next) {
           users.full_name,
           users.avatar_url,
           CASE
-            WHEN users.presence = 'online'
+            WHEN users.show_activity_status = 1
+              AND users.presence = 'online'
               AND users.last_seen_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 2 MINUTE)
               THEN 'online'
-            WHEN users.presence IN ('away', 'busy') THEN users.presence
+            WHEN users.show_activity_status = 1
+              AND users.presence IN ('away', 'busy') THEN users.presence
             ELSE 'offline'
           END AS presence,
           MAX(messages.created_at) AS latest_unread_at
@@ -1532,6 +1544,7 @@ async function listConversations(request, response, next) {
           users.public_id,
           users.full_name,
           users.avatar_url,
+          users.show_activity_status,
           users.presence,
           users.last_seen_at
         ORDER BY latest_unread_at DESC`,
@@ -1569,6 +1582,7 @@ async function listConversations(request, response, next) {
       const avatar = isDirect ? row.direct_avatar_url : row.avatar_url
       const memberCount = Number(row.member_count || 0)
       const lastMessagePreview = getConversationLastMessagePreview(row)
+      const directActivityVisible = row.direct_show_activity_status === undefined || Boolean(row.direct_show_activity_status)
 
       return {
         id: String(row.id),
@@ -1577,7 +1591,7 @@ async function listConversations(request, response, next) {
         name: name || 'Hội thoại',
         role: isDirect ? row.direct_role || 'Thành viên' : row.type === 'support' ? 'Nhóm hỗ trợ' : `${memberCount} thành viên`,
         status: isDirect
-          ? row.direct_status || getPresenceLabel(row.direct_presence, row.direct_last_seen_at)
+          ? row.direct_status || (directActivityVisible ? getPresenceLabel(row.direct_presence, row.direct_last_seen_at) : 'Ngoại tuyến')
           : row.type === 'support'
             ? 'Đang xử lý hỗ trợ'
             : `${memberCount} thành viên`,
@@ -1594,7 +1608,7 @@ async function listConversations(request, response, next) {
         archived: Boolean(row.is_archived),
         contactId: row.direct_contact_id ? String(row.direct_contact_id) : null,
         nickname: isDirect ? row.direct_nickname || null : null,
-        onlineSince: isDirect ? row.direct_online_since || null : null,
+        onlineSince: isDirect && directActivityVisible ? row.direct_online_since || null : null,
         friendshipStatus: row.direct_friendship_status || null,
         blocked: row.direct_friendship_status === 'blocked',
         presence: isDirect ? row.direct_presence || 'offline' : 'online',
@@ -4272,7 +4286,7 @@ async function removeMessageReaction(request, response, next) {
 
     if (!Number.isInteger(conversationId) || !Number.isInteger(messageId) || !emoji) {
       return response.status(400).json({
-        message: 'Yêu cầu thu hồi Reaction không hợp lệ!',
+        message: 'Yêu cầu thu hồi reaction không hợp lệ!',
       })
     }
 

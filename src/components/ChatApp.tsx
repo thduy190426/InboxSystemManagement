@@ -116,6 +116,7 @@ const SIDEBAR_STATE_KEY = 'sidebar_is_open'
 const OFFLINE_MESSAGE_QUEUE_KEY = 'offline_message_queue'
 const COMPACT_LAYOUT_MEDIA_QUERY = '(max-width: 1024px)'
 const MESSAGE_PAGE_LIMIT = 40
+const CONVERSATION_FILTERS: ConversationFilter[] = ['all', 'unread', 'group', 'archived']
 
 type QueuedMessage = {
   conversationId: string
@@ -229,6 +230,33 @@ function getAttachmentPreview(message?: Message) {
   return message?.text ?? 'Chưa có tin nhắn!'
 }
 
+function readChatQueryParams() {
+  const params = new URLSearchParams(window.location.search)
+  const filterParam = params.get('filter') as ConversationFilter | null
+
+  return {
+    query: params.get('q')?.trim() ?? '',
+    filter: filterParam && CONVERSATION_FILTERS.includes(filterParam) ? filterParam : 'all',
+  }
+}
+
+function appendChatQueryParams(path: string, params: { query: string; filter: ConversationFilter }) {
+  const query = new URLSearchParams()
+  const keyword = params.query.trim()
+
+  if (keyword) {
+    query.set('q', keyword)
+  }
+
+  if (params.filter !== 'all') {
+    query.set('filter', params.filter)
+  }
+
+  const queryString = query.toString()
+
+  return queryString ? `${path}?${queryString}` : path
+}
+
 export function ChatApp({
   currentUser,
   onAccountDeleted,
@@ -236,10 +264,13 @@ export function ChatApp({
   onUserChange,
 }: ChatAppProps) {
   const initialRoute = readAppRouteFromLocation()
+  const initialChatQueryParams = readChatQueryParams()
   const [activeView, setActiveView] = useState<AppView>(initialRoute.view)
   const [activeId, setActiveId] = useState(initialRoute.conversationId ?? '')
-  const [query, setQuery] = useState('')
-  const [conversationFilter, setConversationFilter] = useState<ConversationFilter>('all')
+  const [query, setQuery] = useState(initialRoute.view === 'chat' ? initialChatQueryParams.query : '')
+  const [conversationFilter, setConversationFilter] = useState<ConversationFilter>(
+    initialRoute.view === 'chat' ? initialChatQueryParams.filter : 'all',
+  )
   const [draft, setDraft] = useState('')
   const [replyingTo, setReplyingTo] = useState<Message | null>(null)
   const [focusedMessageId, setFocusedMessageId] = useState('')
@@ -1015,9 +1046,12 @@ export function ChatApp({
   useEffect(() => {
     function handleLocationChange() {
       const route = readAppRouteFromLocation()
+      const params = readChatQueryParams()
 
       setActiveView(route.view)
       setActiveId(route.conversationId ?? '')
+      setQuery(route.view === 'chat' ? params.query : '')
+      setConversationFilter(route.view === 'chat' ? params.filter : 'all')
       setIsInboxOpen(
         isCompactLayout && route.view === 'chat' && !route.conversationId,
       )
@@ -1033,6 +1067,22 @@ export function ChatApp({
   }, [isCompactLayout])
 
   useEffect(() => {
+    if (activeView !== 'chat') {
+      return
+    }
+
+    const nextPath = appendChatQueryParams(
+      toAppPath({ view: 'chat', conversationId: activeId || undefined }),
+      { filter: conversationFilter, query },
+    )
+    const currentPath = `${window.location.pathname}${window.location.search}`
+
+    if (currentPath !== nextPath) {
+      window.history.replaceState(null, '', nextPath)
+    }
+  }, [activeId, activeView, conversationFilter, query])
+
+  useEffect(() => {
     if (activeView !== 'chat' || conversations.length === 0) {
       return
     }
@@ -1046,12 +1096,15 @@ export function ChatApp({
       setActiveId(nextConversationId)
     }
 
-    const nextPath = toAppPath({ view: 'chat', conversationId: nextConversationId })
+    const nextPath = appendChatQueryParams(
+      toAppPath({ view: 'chat', conversationId: nextConversationId }),
+      { filter: conversationFilter, query },
+    )
 
-    if (window.location.pathname !== nextPath) {
+    if (`${window.location.pathname}${window.location.search}` !== nextPath) {
       window.history.replaceState(null, '', nextPath)
     }
-  }, [activeId, activeView, conversations])
+  }, [activeId, activeView, conversationFilter, conversations, query])
 
   useEffect(() => {
     if (!activeId || messagePaginationByConversation[activeId]) {
@@ -2157,7 +2210,7 @@ export function ChatApp({
         ),
       }))
     } catch (error) {
-      pushToast(getErrorMessage(error, 'Không thể Reaction tin nhắn!'))
+      pushToast(getErrorMessage(error, 'Không thể reaction tin nhắn!'))
     } finally {
       setBusyMessageId('')
     }
@@ -2180,7 +2233,7 @@ export function ChatApp({
         ),
       }))
     } catch (error) {
-      pushToast(getErrorMessage(error, 'Không thể thu hồi Reaction!'))
+      pushToast(getErrorMessage(error, 'Không thể thu hồi reaction!'))
     } finally {
       setBusyMessageId('')
     }
@@ -3101,8 +3154,10 @@ export function ChatApp({
       <main className={`${shellClassName} profile-shell settings-shell`}>
         {renderNavRail()}
         <SettingsPage
+          currentUser={currentUser}
           onAccountDeleted={onAccountDeleted}
           onLogout={handleLogout}
+          onUserChange={onUserChange}
           pushToast={pushToast}
         />
         {renderCallOverlay()}

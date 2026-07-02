@@ -13,7 +13,7 @@ Mục tiêu cốt lõi của dự án là mang lại một không gian trò chuy
 * Hỗ trợ đa dạng loại nội dung: Văn bản, hình ảnh, video, âm thanh, và tệp đính kèm.
 * Tính năng trả lời tin nhắn, chuyển tiếp tin nhắn, ghim tin nhắn quan trọng và thu hồi tin nhắn.
 * Thể hiện trạng thái tin nhắn: Đang gửi, Đã gửi, Đã nhận, Đã xem.
-* Thả biểu tượng cảm xúc (Reaction) vào từng tin nhắn.
+* Thả biểu tượng cảm xúc (reaction) vào từng tin nhắn.
 * Hiển thị trạng thái đang nhập chữ của người bên kia.
 
 ### 2. Quản Lý Cuộc Gọi

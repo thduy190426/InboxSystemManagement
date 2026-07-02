@@ -10,6 +10,8 @@ function pushWebNotificationToUsers(userIds, payload) {
 }
 
 function toContactUser(row) {
+  const canShowActivity = row.show_activity_status === undefined || Boolean(row.show_activity_status)
+
   return {
     id: row.public_id,
     userId: row.id,
@@ -22,13 +24,13 @@ function toContactUser(row) {
     avatarUrl: row.avatar_url,
     bio: row.bio,
     statusMessage: row.status_message,
-    presence: row.presence,
+    presence: canShowActivity ? row.presence : 'offline',
     friendshipStatus: row.friendship_status || 'none',
     requestDirection: row.request_direction || null,
     nickname: row.nickname || null,
     contactId: row.contact_id ? String(row.contact_id) : null,
-    lastSeenAt: row.last_seen_at || null,
-    onlineSince: row.online_since || null,
+    lastSeenAt: canShowActivity ? row.last_seen_at || null : null,
+    onlineSince: canShowActivity ? row.online_since || null : null,
     createdAt: row.created_at || null,
     updatedAt: row.updated_at || null,
     contactCreatedAt: row.contact_created_at || null,
@@ -87,6 +89,7 @@ async function searchUsers(request, response, next) {
         users.avatar_url,
         users.bio,
         users.status_message,
+        users.show_activity_status,
         users.last_seen_at,
         users.online_since,
         users.created_at,
@@ -144,6 +147,7 @@ async function listIncomingRequests(request, response, next) {
         users.avatar_url,
         users.bio,
         users.status_message,
+        users.show_activity_status,
         users.last_seen_at,
         users.online_since,
         users.created_at,
@@ -188,6 +192,7 @@ async function listFriends(request, response, next) {
         users.avatar_url,
         users.bio,
         users.status_message,
+        users.show_activity_status,
         users.last_seen_at,
         users.online_since,
         users.created_at,
@@ -232,6 +237,7 @@ async function listSuggestions(request, response, next) {
         users.avatar_url,
         users.bio,
         users.status_message,
+        users.show_activity_status,
         users.last_seen_at,
         users.online_since,
         users.created_at,

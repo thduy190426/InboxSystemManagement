@@ -15,9 +15,9 @@ export type AuthUser = {
   role: string
   presence: string
   isEmailVerified: boolean
-  isPhoneVerified: boolean
   lastSeenAt: string | null
   onlineSince?: string | null
+  showActivityStatus: boolean
   createdAt: string
   updatedAt: string
 }
@@ -32,12 +32,11 @@ export type AuthResponse = {
   verification?: VerificationState
 }
 
-export type VerificationChannel = 'email' | 'phone'
+export type VerificationChannel = 'email'
 
 export type VerificationState = {
   requiredChannels: VerificationChannel[]
   emailCode?: string | null
-  phoneCode?: string | null
 }
 
 export type LoginPayload = {

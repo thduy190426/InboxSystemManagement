@@ -96,13 +96,30 @@ function formatProfileDate(value?: string | null) {
   }).format(date)
 }
 
+function readContactsQuery() {
+  return new URLSearchParams(window.location.search).get('q')?.trim() ?? ''
+}
+
+function updateContactsQuery(query: string) {
+  if (window.location.pathname !== '/contacts') {
+    return
+  }
+
+  const trimmedQuery = query.trim()
+  const nextUrl = trimmedQuery ? `/contacts?q=${encodeURIComponent(trimmedQuery)}` : '/contacts'
+
+  if (`${window.location.pathname}${window.location.search}` !== nextUrl) {
+    window.history.replaceState(null, '', nextUrl)
+  }
+}
+
 export function ContactsPanel({
   contactToOpen = null,
   onAccepted,
   onProfileOpened,
   pushToast,
 }: ContactsPanelProps) {
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(readContactsQuery)
   const [results, setResults] = useState<ContactUser[]>([])
   const [friends, setFriends] = useState<ContactUser[]>([])
   const [requests, setRequests] = useState<ContactUser[]>([])
@@ -146,10 +163,40 @@ export function ContactsPanel({
 
 
   useEffect(() => {
-    loadDirectory().catch((error) => {
+    loadDirectoryAndCurrentSearch().catch((error) => {
       pushToast(error instanceof Error ? error.message : 'Không thể tải danh bạ!', 'error')
     })
   }, [])
+
+  useEffect(() => {
+    function handleLocationChange() {
+      const nextQuery = readContactsQuery()
+
+      setQuery(nextQuery)
+      queryRef.current = nextQuery
+
+      if (nextQuery.length >= 2) {
+        setIsLoading(true)
+        setMessage('')
+        searchUsers(nextQuery)
+          .then(setResults)
+          .catch((error) => {
+            pushToast(error instanceof Error ? error.message : 'Không thể tìm kiếm người dùng!', 'error')
+          })
+          .finally(() => setIsLoading(false))
+        return
+      }
+
+      setResults([])
+      setMessage('')
+    }
+
+    window.addEventListener('popstate', handleLocationChange)
+
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange)
+    }
+  }, [pushToast])
 
   useEffect(() => {
     const socket = getRealtimeSocket()
@@ -204,12 +251,23 @@ export function ContactsPanel({
     try {
       setIsLoading(true)
       setMessage('')
+      updateContactsQuery(keyword)
       const users = await searchUsers(keyword)
       setResults(users)
     } catch (error) {
       pushToast(error instanceof Error ? error.message : 'Không thể tìm kiếm người dùng!', 'error')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  function handleQueryChange(value: string) {
+    setQuery(value)
+
+    if (!value.trim()) {
+      updateContactsQuery('')
+      setResults([])
+      setMessage('')
     }
   }
 
@@ -497,7 +555,7 @@ export function ContactsPanel({
         <div>
           <strong>{user.nickname || user.fullName}</strong>
           <span>{user.email}</span>
-          <small>{user.statusMessage || user.bio || 'Người dùng Inbox'}</small>
+          <small>{user.statusMessage || user.bio || 'Người dùng'}</small>
         </div>
         <span className="contact-row-actions">
           <button
@@ -531,7 +589,7 @@ export function ContactsPanel({
       <form className="contacts-search" onSubmit={handleSearch}>
         <Search size={18} />
         <input
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={(event) => handleQueryChange(event.target.value)}
           placeholder="Tìm theo tên, email hoặc số điện thoại"
           value={query}
         />

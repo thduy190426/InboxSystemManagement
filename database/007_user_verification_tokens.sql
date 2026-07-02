@@ -3,7 +3,7 @@ USE inbox_system_management;
 CREATE TABLE IF NOT EXISTS user_verification_tokens (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   user_id BIGINT UNSIGNED NOT NULL,
-  channel ENUM('email', 'phone') NOT NULL,
+  channel ENUM('email') NOT NULL,
   token_hash VARCHAR(255) NOT NULL,
   expires_at DATETIME NOT NULL,
   used_at DATETIME NULL,

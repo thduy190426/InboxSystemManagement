@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react'
 import {
   Bell,
   ChevronLeft,
@@ -8,9 +9,12 @@ import {
   Shield,
   UserRound,
   Users,
+  Moon,
+  Sun
 } from 'lucide-react'
 import type { AuthUser } from '../services/authApi'
 import type { AppView } from '../types'
+import { useTheme } from './ThemeProvider'
 
 const navItems = [
   { label: 'Tin nhắn', value: 'chat' as const, icon: MessageCircle },
@@ -41,6 +45,19 @@ export function NavRail({
   onToggleOpen,
   onLogout,
 }: NavRailProps) {
+  const { theme, toggleTheme } = useTheme()
+  const [isRinging, setIsRinging] = useState(false)
+  const prevCountRef = useRef(notificationCount)
+
+  useEffect(() => {
+    if (notificationCount > prevCountRef.current) {
+      setIsRinging(true)
+      const timer = setTimeout(() => setIsRinging(false), 2500)
+      return () => clearTimeout(timer)
+    }
+    prevCountRef.current = notificationCount
+  }, [notificationCount])
+
   return (
     <aside className={isOpen ? 'nav-rail is-open' : 'nav-rail'} aria-label="Điều hướng chính">
       <button
@@ -83,7 +100,11 @@ export function NavRail({
               title={item.label}
               type="button"
             >
-              <Icon size={22} strokeWidth={2.1} />
+              <Icon 
+                size={22} 
+                strokeWidth={2.1} 
+                className={item.value === 'notifications' && isRinging ? 'animate-ring' : undefined} 
+              />
               {badgeCount > 0 ? (
                 <strong className="nav-count-badge" aria-label={`${badgeCount} thông báo mới!`}>
                   {badgeCount > 99 ? '99+' : badgeCount}
@@ -94,15 +115,30 @@ export function NavRail({
           )
         })}
       </nav>
-      <button
-        className="nav-button nav-settings"
-        onClick={onLogout}
-        title="Đăng xuất"
-        type="button"
-      >
-        <LogOut size={22} strokeWidth={2.1} />
-        <span>Đăng xuất</span>
-      </button>
+      <div className="nav-bottom-actions">
+        <button
+          className="nav-button nav-settings"
+          onClick={toggleTheme}
+          title={theme === 'dark' ? 'Giao diện sáng' : 'Giao diện tối'}
+          type="button"
+        >
+          {theme === 'dark' ? (
+            <Sun size={22} strokeWidth={2.1} />
+          ) : (
+            <Moon size={22} strokeWidth={2.1} />
+          )}
+          <span>{theme === 'dark' ? 'Giao diện sáng' : 'Giao diện tối'}</span>
+        </button>
+        <button
+          className="nav-button nav-settings"
+          onClick={onLogout}
+          title="Đăng xuất"
+          type="button"
+        >
+          <LogOut size={22} strokeWidth={2.1} />
+          <span>Đăng xuất</span>
+        </button>
+      </div>
     </aside>
   )
 }

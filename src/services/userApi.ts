@@ -48,6 +48,10 @@ export type DeleteAccountPayload = {
   confirmationText: string
 }
 
+export type PrivacyPayload = {
+  showActivityStatus: boolean
+}
+
 async function requestProfile(path: string, options: RequestInit = {}) {
   return requestJson<ProfileResponse>(path, options, 'Không thể xử lý hồ sơ người dùng!')
 }
@@ -72,6 +76,13 @@ export function changePassword(payload: ChangePasswordPayload) {
     },
     'Không thể đổi mật khẩu!',
   )
+}
+
+export function updatePrivacy(payload: PrivacyPayload) {
+  return requestProfile('/users/me/privacy', {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
 }
 
 export function fetchSessions() {

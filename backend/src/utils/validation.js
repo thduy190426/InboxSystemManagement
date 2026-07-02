@@ -245,9 +245,14 @@ function validateResetPasswordPayload(payload, user = {}) {
 function validateVerificationPayload(payload) {
   const source = payload && typeof payload === 'object' ? payload : {}
   const email = normalizeEmail(source.email)
-  const channel = source.channel === 'phone' ? 'phone' : 'email'
+  const requestedChannel = typeof source.channel === 'string' ? source.channel.trim() : 'email'
+  const channel = 'email'
   const code = typeof source.code === 'string' ? source.code.trim() : ''
   const errors = {}
+
+  if (requestedChannel && requestedChannel !== 'email') {
+    errors.channel = 'Kênh xác thực không hợp lệ!'
+  }
 
   if (!email) {
     errors.email = 'Email là bắt buộc!'
@@ -275,8 +280,13 @@ function validateVerificationPayload(payload) {
 function validateResendVerificationPayload(payload) {
   const source = payload && typeof payload === 'object' ? payload : {}
   const email = normalizeEmail(source.email)
-  const channel = source.channel === 'phone' ? 'phone' : 'email'
+  const requestedChannel = typeof source.channel === 'string' ? source.channel.trim() : 'email'
+  const channel = 'email'
   const errors = {}
+
+  if (requestedChannel && requestedChannel !== 'email') {
+    errors.channel = 'Kênh xác thực không hợp lệ!'
+  }
 
   if (!email) {
     errors.email = 'Email là bắt buộc!'

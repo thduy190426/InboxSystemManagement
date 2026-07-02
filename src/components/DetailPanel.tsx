@@ -269,7 +269,7 @@ export function DetailPanel({
       return 'Moderator'
     }
 
-    return 'Thành viên'
+    return 'Người dùng'
   }
 
   return (

@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react'
 import {
   AlertTriangle,
   ChevronDown,
+  Eye,
+  EyeOff,
   KeyRound,
   Laptop,
   LogOut,
@@ -17,15 +19,19 @@ import {
   fetchSessions,
   revokeOtherSessions,
   revokeSession,
+  updatePrivacy,
   type ChangePasswordPayload,
   type DeleteAccountPayload,
   type UserSession,
 } from '../services/userApi'
+import type { AuthUser } from '../services/authApi'
 import { ConfirmDialog, type ConfirmDialogState } from './ConfirmDialog'
 
 type SettingsPageProps = {
+  currentUser: AuthUser | null
   onAccountDeleted: () => void
   onLogout?: () => void
+  onUserChange: (user: AuthUser) => void
   pushToast: (text: string, tone?: 'info' | 'error') => void
 }
 
@@ -128,8 +134,9 @@ function getSessionTitle(session: UserSession) {
   return 'Trình duyệt Web'
 }
 
-export function SettingsPage({ onAccountDeleted, onLogout, pushToast }: SettingsPageProps) {
+export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserChange, pushToast }: SettingsPageProps) {
   const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [isSavingPrivacy, setIsSavingPrivacy] = useState(false)
   const [isLoadingSessions, setIsLoadingSessions] = useState(false)
   const [revokingSessionId, setRevokingSessionId] = useState<string | null>(null)
   const [isRevokingOtherSessions, setIsRevokingOtherSessions] = useState(false)
@@ -140,6 +147,7 @@ export function SettingsPage({ onAccountDeleted, onLogout, pushToast }: Settings
   const [deleteForm, setDeleteForm] = useState<DeleteAccountPayload>(initialDeleteForm)
   const [passwordErrors, setPasswordErrors] = useState<Partial<Record<keyof ChangePasswordPayload, string>>>({})
   const [deleteErrors, setDeleteErrors] = useState<Partial<Record<keyof DeleteAccountPayload, string>>>({})
+  const [showActivityStatus, setShowActivityStatus] = useState(currentUser?.showActivityStatus ?? true)
   const [showAllSessions, setShowAllSessions] = useState(false)
   const [renderExpandedSessions, setRenderExpandedSessions] = useState(false)
   const [expandedSessionHeight, setExpandedSessionHeight] = useState(0)
@@ -182,6 +190,10 @@ export function SettingsPage({ onAccountDeleted, onLogout, pushToast }: Settings
   useEffect(() => {
     loadSessions()
   }, [])
+
+  useEffect(() => {
+    setShowActivityStatus(currentUser?.showActivityStatus ?? true)
+  }, [currentUser?.showActivityStatus])
 
   useEffect(() => {
     if (showAllSessions) {
@@ -319,6 +331,21 @@ export function SettingsPage({ onAccountDeleted, onLogout, pushToast }: Settings
     }
   }
 
+  async function handlePrivacySubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    try {
+      setIsSavingPrivacy(true)
+      const response = await updatePrivacy({ showActivityStatus })
+      onUserChange(response.user)
+      pushToast(response.message || 'Đã cập nhật quyền riêng tư!', 'info')
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : 'Không thể cập nhật quyền riêng tư!', 'error')
+    } finally {
+      setIsSavingPrivacy(false)
+    }
+  }
+
   async function handleDeleteAccountSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -442,6 +469,38 @@ export function SettingsPage({ onAccountDeleted, onLogout, pushToast }: Settings
         </aside>
 
         <div className="settings-main">
+          <form className="profile-form settings-card profile-privacy-form" onSubmit={handlePrivacySubmit}>
+            <div className="profile-form-heading">
+              {showActivityStatus ? <Eye size={18} /> : <EyeOff size={18} />}
+              <div>
+                <h2>Quyền riêng tư</h2>
+                <p>Cho phép người khác nhìn thấy trạng thái Online và thời điểm hoạt động gần nhất của bạn.</p>
+              </div>
+            </div>
+
+            <label className="privacy-toggle-row">
+              <span className="privacy-toggle-copy">
+                <strong>Hiển thị Last seen/Online</strong>
+                <small>{showActivityStatus ? 'Bạn bè có thể thấy bạn đang online.' : 'Người khác sẽ thấy bạn ngoại tuyến.'}</small>
+              </span>
+              <input
+                checked={showActivityStatus}
+                disabled={isSavingPrivacy}
+                onChange={(event) => setShowActivityStatus(event.target.checked)}
+                type="checkbox"
+              />
+            </label>
+
+            <button
+              className="profile-save-button"
+              disabled={isSavingPrivacy || showActivityStatus === (currentUser?.showActivityStatus ?? true)}
+              type="submit"
+            >
+              {showActivityStatus ? <Eye size={18} /> : <EyeOff size={18} />}
+              {isSavingPrivacy ? 'Đang lưu...' : 'Lưu quyền riêng tư'}
+            </button>
+          </form>
+
           <form className="profile-form settings-card profile-password-form" onSubmit={handlePasswordSubmit}>
             <div className="profile-form-heading">
               <KeyRound size={18} />

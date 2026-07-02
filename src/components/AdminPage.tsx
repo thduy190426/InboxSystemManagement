@@ -1,22 +1,26 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Activity,
   AlertCircle,
   CheckCircle2,
   Edit2,
   Flag,
+  KeyRound,
   Lock,
   Loader2,
   Mail,
+  Plus,
   Search,
   ShieldCheck,
   Trash2,
   Unlock,
+  UserPlus,
   Users,
   X,
   XCircle,
 } from 'lucide-react'
 import {
+  createAdminUser,
   deleteUser,
   fetchAdminStats,
   fetchAdminUsers,
@@ -49,9 +53,18 @@ type EditUserState = {
   role: AdminUserRole
 }
 
+type CreateUserState = {
+  fullName: string
+  displayName: string
+  email: string
+  password: string
+  role: AdminUserRole
+}
+
 const USER_PAGE_SIZE = 20
 const REPORT_PAGE_SIZE = 10
 const EDIT_EXIT_DURATION_MS = 140
+const REPORT_STATUSES: Array<MessageReportStatus | 'all'> = ['pending', 'reviewed', 'dismissed', 'all']
 
 const emptyStats: AdminStats = {
   totalUsers: 0,
@@ -59,6 +72,14 @@ const emptyStats: AdminStats = {
   suspendedUsers: 0,
   onlineUsers: 0,
   alertCount: 0,
+}
+
+const emptyCreateUser: CreateUserState = {
+  fullName: '',
+  displayName: '',
+  email: '',
+  password: '',
+  role: 'user',
 }
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -120,7 +141,7 @@ function getStatusLabel(status: AdminUserStatus) {
     return 'Đang online!'
   }
 
-  return 'Đang mở khóa...'
+  return 'Bình thường.'
 }
 
 function createEditState(user: AdminUser): EditUserState {
@@ -133,9 +154,54 @@ function createEditState(user: AdminUser): EditUserState {
   }
 }
 
+function readAdminQueryParams() {
+  const params = new URLSearchParams(window.location.search)
+  const pageParam = Number(params.get('page'))
+  const reportStatusParam = params.get('reportStatus') as MessageReportStatus | 'all' | null
+
+  return {
+    page: Number.isInteger(pageParam) && pageParam > 0 ? pageParam : 1,
+    search: params.get('search')?.trim() ?? '',
+    reportStatus: reportStatusParam && REPORT_STATUSES.includes(reportStatusParam)
+      ? reportStatusParam
+      : 'pending',
+  }
+}
+
+function updateAdminQueryParams(params: {
+  page: number
+  search: string
+  reportStatus: MessageReportStatus | 'all'
+}) {
+  if (window.location.pathname !== '/admin') {
+    return
+  }
+
+  const query = new URLSearchParams()
+
+  if (params.search) {
+    query.set('search', params.search)
+  }
+
+  if (params.page > 1) {
+    query.set('page', String(params.page))
+  }
+
+  if (params.reportStatus !== 'pending') {
+    query.set('reportStatus', params.reportStatus)
+  }
+
+  const nextUrl = query.toString() ? `/admin?${query.toString()}` : '/admin'
+
+  if (`${window.location.pathname}${window.location.search}` !== nextUrl) {
+    window.history.replaceState(null, '', nextUrl)
+  }
+}
+
 export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const initialQueryParams = readAdminQueryParams()
+  const [searchQuery, setSearchQuery] = useState(initialQueryParams.search)
+  const [debouncedSearch, setDebouncedSearch] = useState(initialQueryParams.search)
   const [stats, setStats] = useState<AdminStats>(emptyStats)
   const [users, setUsers] = useState<AdminUser[]>([])
   const [reports, setReports] = useState<MessageReport[]>([])
@@ -148,19 +214,43 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
   const [isStatsLoading, setIsStatsLoading] = useState(true)
   const [isUsersLoading, setIsUsersLoading] = useState(true)
   const [isReportsLoading, setIsReportsLoading] = useState(true)
-  const [reportStatus, setReportStatus] = useState<MessageReportStatus | 'all'>('pending')
+  const [reportStatus, setReportStatus] = useState<MessageReportStatus | 'all'>(
+    initialQueryParams.reportStatus,
+  )
   const [busyReportId, setBusyReportId] = useState<string | null>(null)
-  const [page, setPage] = useState(1)
+  const [page, setPage] = useState(initialQueryParams.page)
   const [pageError, setPageError] = useState<string | null>(null)
   const [editUser, setEditUser] = useState<EditUserState | null>(null)
   const [visibleEditUser, setVisibleEditUser] = useState<EditUserState | null>(null)
+  const [createUser, setCreateUser] = useState<CreateUserState | null>(null)
   const [isEditExiting, setIsEditExiting] = useState(false)
   const [isSavingUser, setIsSavingUser] = useState(false)
+  const [isCreatingUser, setIsCreatingUser] = useState(false)
   const [busyLockUserId, setBusyLockUserId] = useState<string | null>(null)
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null)
   const [isConfirmWorking, setIsConfirmWorking] = useState(false)
+  const hasMountedSearchEffectRef = useRef(false)
+  const suppressSearchEffectRef = useRef(false)
 
   const isLoading = isStatsLoading || isUsersLoading
+
+  useEffect(() => {
+    function handleLocationChange() {
+      const params = readAdminQueryParams()
+
+      suppressSearchEffectRef.current = true
+      setSearchQuery(params.search)
+      setDebouncedSearch(params.search)
+      setPage(params.page)
+      setReportStatus(params.reportStatus)
+    }
+
+    window.addEventListener('popstate', handleLocationChange)
+
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange)
+    }
+  }, [])
 
   useEffect(() => {
     if (editUser) {
@@ -183,6 +273,16 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
   }, [editUser, visibleEditUser])
 
   useEffect(() => {
+    if (!hasMountedSearchEffectRef.current) {
+      hasMountedSearchEffectRef.current = true
+      return
+    }
+
+    if (suppressSearchEffectRef.current) {
+      suppressSearchEffectRef.current = false
+      return
+    }
+
     const timer = window.setTimeout(() => {
       setDebouncedSearch(searchQuery.trim())
       setPage(1)
@@ -190,6 +290,14 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
 
     return () => window.clearTimeout(timer)
   }, [searchQuery])
+
+  useEffect(() => {
+    updateAdminQueryParams({
+      page,
+      reportStatus,
+      search: debouncedSearch,
+    })
+  }, [debouncedSearch, page, reportStatus])
 
   useEffect(() => {
     let isMounted = true
@@ -493,6 +601,58 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
     )
   }
 
+  async function handleCreateUser() {
+    if (!createUser) {
+      return
+    }
+
+    const fullName = createUser.fullName.trim()
+    const displayName = createUser.displayName.trim()
+    const email = createUser.email.trim()
+    const password = createUser.password
+
+    if (fullName.length < 2) {
+      pushToast?.('Họ tên phải có ít nhất 2 ký tự!', 'error')
+      return
+    }
+
+    if (!email) {
+      pushToast?.('Email không được để trống!', 'error')
+      return
+    }
+
+    if (password.length < 8) {
+      pushToast?.('Mật khẩu phải có ít nhất 8 ký tự!', 'error')
+      return
+    }
+
+    setIsCreatingUser(true)
+
+    try {
+      const response = await createAdminUser({
+        fullName,
+        displayName: displayName || null,
+        email,
+        password,
+        role: createUser.role,
+      })
+
+      setUsers((currentUsers) => [response.user, ...currentUsers].slice(0, USER_PAGE_SIZE))
+      setPagination((currentPagination) => ({
+        ...currentPagination,
+        total: currentPagination.total + 1,
+        totalPages: Math.max(1, Math.ceil((currentPagination.total + 1) / currentPagination.limit)),
+      }))
+      setCreateUser(null)
+      pushToast?.('Tạo người dùng mới thành công!')
+      void refreshStats()
+    } catch (error) {
+      pushToast?.(getErrorMessage(error, 'Không thể tạo người dùng!'), 'error')
+    } finally {
+      setIsCreatingUser(false)
+    }
+  }
+
   async function handleSaveUser() {
     if (!editUser || !visibleEditUser) {
       return
@@ -674,8 +834,9 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
       <div className="admin-content-section">
         <div className="section-header">
           <h2>Danh sách người dùng</h2>
-          <button className="btn-primary" onClick={() => pushToast?.('Tính năng thêm người dùng chưa được implement!')} type="button">
-            + Thêm người dùng
+          <button className="btn-primary" onClick={() => setCreateUser(emptyCreateUser)} type="button">
+            <Plus size={16} />
+            Thêm người dùng
           </button>
         </div>
 
@@ -720,6 +881,123 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
         </div>
       </div>
 
+      {createUser ? (
+        <div className="admin-edit-backdrop" role="presentation">
+          <section aria-labelledby="admin-create-title" aria-modal="true" className="admin-edit-modal" role="dialog">
+            <button
+              className="admin-edit-close"
+              disabled={isCreatingUser}
+              title="Đóng"
+              type="button"
+              onClick={() => setCreateUser(null)}
+            >
+              <X size={18} />
+            </button>
+            <div className="admin-edit-hero">
+              <div className="admin-edit-avatar"><UserPlus size={24} /></div>
+              <div>
+                <span className="admin-lock-pill is-open">
+                  <Unlock size={13} />
+                  Tài khoản mới
+                </span>
+                <h2 id="admin-create-title">Thêm người dùng mới</h2>
+                <p>Tài khoản sẽ được kích hoạt ngay sau khi tạo.</p>
+              </div>
+            </div>
+
+            <div className="admin-edit-grid">
+              <label>
+                Họ tên
+                <input
+                  value={createUser.fullName}
+                  onChange={(event) =>
+                    setCreateUser((current) =>
+                      current ? { ...current, fullName: event.target.value } : current,
+                    )
+                  }
+                />
+              </label>
+              <label>
+                Tên hiển thị
+                <input
+                  placeholder="Để trống để dùng họ tên"
+                  value={createUser.displayName}
+                  onChange={(event) =>
+                    setCreateUser((current) =>
+                      current ? { ...current, displayName: event.target.value } : current,
+                    )
+                  }
+                />
+              </label>
+              <label>
+                Email
+                <span className="admin-input-with-icon">
+                  <Mail size={16} />
+                  <input
+                    type="email"
+                    value={createUser.email}
+                    onChange={(event) =>
+                      setCreateUser((current) =>
+                        current ? { ...current, email: event.target.value } : current,
+                      )
+                    }
+                  />
+                </span>
+              </label>
+              <label>
+                Mật khẩu
+                <span className="admin-input-with-icon">
+                  <KeyRound size={16} />
+                  <input
+                    autoComplete="new-password"
+                    type="password"
+                    value={createUser.password}
+                    onChange={(event) =>
+                      setCreateUser((current) =>
+                        current ? { ...current, password: event.target.value } : current,
+                      )
+                    }
+                  />
+                </span>
+              </label>
+              <label>
+                Vai trò
+                <span className="admin-input-with-icon">
+                  <ShieldCheck size={16} />
+                  <select
+                    value={createUser.role}
+                    onChange={(event) =>
+                      setCreateUser((current) =>
+                        current ? { ...current, role: event.target.value as AdminUserRole } : current,
+                      )
+                    }
+                  >
+                    <option value="user">user</option>
+                    <option value="agent">agent</option>
+                    <option value="owner">owner</option>
+                  </select>
+                </span>
+              </label>
+            </div>
+
+            <div className="admin-edit-note">
+              Mật khẩu cần đáp ứng chính sách bảo mật giống màn hình đăng ký. Email được xác thực sẵn để người dùng có thể đăng nhập ngay.
+            </div>
+
+            <div className="admin-edit-actions">
+              <button disabled={isCreatingUser} type="button" onClick={() => setCreateUser(null)}>
+                <X size={16} />
+                Hủy
+              </button>
+              <button disabled={isCreatingUser} type="button" onClick={() => void handleCreateUser()}>
+                {isCreatingUser ? <Loader2 size={16} /> : <CheckCircle2 size={16} />}
+                {isCreatingUser ? 'Đang tạo...' : 'Tạo người dùng'}
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
       {visibleEditUser ? (
         <div className={isEditExiting ? 'admin-edit-backdrop is-exiting' : 'admin-edit-backdrop'} role="presentation">
           <section aria-labelledby="admin-edit-title" aria-modal="true" className="admin-edit-modal" role="dialog">
@@ -737,7 +1015,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
               <div>
                 <span className={`admin-lock-pill ${visibleEditUser.user.isActive ? 'is-open' : 'is-locked'}`}>
                   {visibleEditUser.user.isActive ? <Unlock size={13} /> : <Lock size={13} />}
-                  {visibleEditUser.user.isActive ? 'Đang mở khóa' : 'Đã khóa'}
+                  {visibleEditUser.user.isActive ? 'Bình thường' : 'Đã khóa'}
                 </span>
                 <h2 id="admin-edit-title">Chỉnh sửa người dùng</h2>
                 <p>{visibleEditUser.user.id}</p>

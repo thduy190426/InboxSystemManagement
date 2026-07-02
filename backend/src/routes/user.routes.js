@@ -9,6 +9,7 @@ const {
   revokeOtherSessions,
   revokeSession,
   updateAvatar,
+  updatePrivacy,
   updateProfile,
 } = require('../controllers/user.controller')
 
@@ -17,6 +18,7 @@ const router = express.Router()
 router.get('/me', getProfile)
 router.patch('/me', updateProfile)
 router.patch('/me/password', changePassword)
+router.patch('/me/privacy', updatePrivacy)
 router.patch('/me/avatar', uploadAvatarRateLimit, avatarUpload.single('avatar'), updateAvatar)
 router.get('/me/sessions', listSessions)
 router.delete('/me/sessions/others', revokeOtherSessions)

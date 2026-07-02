@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs')
 const { createHash } = require('crypto')
 const { pool } = require('../config/db')
+const { emitToUsers } = require('../realtime/socket')
 const { validateChangePasswordPayload } = require('../utils/validation')
 const { ensureUserProfileColumns } = require('../utils/userProfileColumns')
 
@@ -22,6 +23,7 @@ function toPublicUser(row) {
     isEmailVerified: Boolean(row.is_email_verified),
     lastSeenAt: row.last_seen_at,
     onlineSince: row.online_since,
+    showActivityStatus: row.show_activity_status === undefined ? true : Boolean(row.show_activity_status),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
@@ -79,6 +81,7 @@ async function getCurrentUser(userId) {
       is_email_verified,
       last_seen_at,
       online_since,
+      show_activity_status,
       created_at,
       updated_at
     FROM users
@@ -88,6 +91,27 @@ async function getCurrentUser(userId) {
   )
 
   return rows[0] || null
+}
+
+function validatePrivacyPayload(payload) {
+  const source = payload && typeof payload === 'object' ? payload : {}
+
+  if (typeof source.showActivityStatus !== 'boolean') {
+    return {
+      errors: {
+        showActivityStatus: 'Thiết lập trạng thái hoạt động không hợp lệ!',
+      },
+      isValid: false,
+    }
+  }
+
+  return {
+    data: {
+      showActivityStatus: source.showActivityStatus,
+    },
+    errors: {},
+    isValid: true,
+  }
 }
 
 async function getUserPasswordRecord(userId) {
@@ -334,6 +358,55 @@ async function updateAvatar(request, response, next) {
   }
 }
 
+async function updatePrivacy(request, response, next) {
+  try {
+    const validation = validatePrivacyPayload(request.body)
+
+    if (!validation.isValid) {
+      return response.status(422).json({
+        message: 'Thiết lập quyền riêng tư không hợp lệ!',
+        errors: validation.errors,
+      })
+    }
+
+    await ensureUserProfileColumns()
+
+    await pool.execute(
+      `UPDATE users
+      SET show_activity_status = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?`,
+      [validation.data.showActivityStatus ? 1 : 0, request.user.id],
+    )
+
+    const user = await getCurrentUser(request.user.id)
+    const [contactRows] = await pool.execute(
+      `SELECT contact_user_id AS user_id
+      FROM contacts
+      WHERE owner_user_id = ? AND status = 'accepted'`,
+      [request.user.id],
+    )
+
+    emitToUsers(
+      contactRows.map((row) => Number(row.user_id)),
+      'presence:changed',
+      {
+        userId: String(request.user.id),
+        presence: validation.data.showActivityStatus ? user.presence : 'offline',
+      },
+    )
+
+    response.json({
+      message: validation.data.showActivityStatus
+        ? 'Đã bật hiển thị trạng thái hoạt động!'
+        : 'Đã ẩn trạng thái hoạt động!',
+      user: toPublicUser(user),
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
 async function changePassword(request, response, next) {
   try {
     const user = await getUserPasswordRecord(request.user.id)
@@ -572,6 +645,7 @@ async function deleteAccount(request, response, next) {
         status_message = NULL,
         presence = 'offline',
         online_since = NULL,
+        show_activity_status = 0,
         is_active = 0,
         deleted_at = CURRENT_TIMESTAMP,
         updated_at = CURRENT_TIMESTAMP
@@ -605,5 +679,6 @@ module.exports = {
   revokeOtherSessions,
   revokeSession,
   updateAvatar,
+  updatePrivacy,
   updateProfile,
 }

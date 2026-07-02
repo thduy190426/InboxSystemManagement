@@ -286,7 +286,7 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
             {isUploading ? 'Đang tải ảnh...' : avatarCooldownLeft > 0 ? `Đổi ảnh đại diện (${avatarCooldownLeft}s)` : 'Đổi ảnh đại diện'}
             <input accept="image/*" disabled={isUploading || avatarCooldownLeft > 0} onChange={handleAvatarChange} type="file" />
           </label>
-          <strong>{form.displayName || fullName || 'Người dùng Inbox'}</strong>
+          <strong>{form.displayName || fullName || 'Người dùng'}</strong>
           {currentUser?.role && (
             <div className={`profile-role-badge role-${currentUser.role.toLowerCase()}`}>
               <Shield size={14} />

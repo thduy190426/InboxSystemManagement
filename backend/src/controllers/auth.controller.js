@@ -27,9 +27,9 @@ function toPublicUser(row) {
     role: row.role,
     presence: row.presence,
     isEmailVerified: Boolean(row.is_email_verified),
-    isPhoneVerified: Boolean(row.is_phone_verified),
     lastSeenAt: row.last_seen_at,
     onlineSince: row.online_since,
+    showActivityStatus: row.show_activity_status === undefined ? true : Boolean(row.show_activity_status),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
@@ -66,9 +66,9 @@ async function getUserById(userId) {
       role,
       presence,
       is_email_verified,
-      is_phone_verified,
       last_seen_at,
       online_since,
+      show_activity_status,
       created_at,
       updated_at
     FROM users
@@ -98,10 +98,10 @@ async function getUserByEmail(email) {
       role,
       presence,
       is_email_verified,
-      is_phone_verified,
       is_active,
       last_seen_at,
       online_since,
+      show_activity_status,
       created_at,
       updated_at
     FROM users
@@ -219,18 +219,20 @@ async function updateUserPresenceFromSessions(userId) {
 async function emitPresenceChanged(userId, presence) {
   try {
     const [rows] = await pool.execute(
-      `SELECT contact_user_id AS user_id
+      `SELECT contact_user_id AS user_id, users.show_activity_status
       FROM contacts
+      INNER JOIN users ON users.id = contacts.owner_user_id
       WHERE owner_user_id = ? AND status = 'accepted'`,
       [userId],
     )
+    const visiblePresence = rows[0]?.show_activity_status === 0 ? 'offline' : presence
 
     emitToUsers(
       rows.map((row) => Number(row.user_id)),
       'presence:changed',
       {
         userId: String(userId),
-        presence,
+        presence: visiblePresence,
       },
     )
   } catch (error) {
@@ -315,9 +317,8 @@ async function register(request, response, next) {
         presence,
         role,
         is_email_verified,
-        is_phone_verified,
         is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, 'offline', 'user', 0, 0, 1)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, 'offline', 'user', 0, 1)`,
       [publicId, fullName, fullName, email, phone, passwordHash],
     )
 
@@ -400,7 +401,7 @@ async function login(request, response, next) {
 
     if (isVerificationRequired(user)) {
       return response.status(403).json({
-        message: 'Tài khoản chưa được xác thực. Vui lòng xác thực Email/Số điện thoại trước khi đăng nhập!',
+        message: 'Tài khoản chưa được xác thực. Vui lòng xác thực Email trước khi đăng nhập!',
         errors: {
           verification: getUnverifiedChannels(user),
         },
@@ -457,23 +458,9 @@ async function verifyAccount(request, response, next) {
       })
     }
 
-    if (channel === 'phone' && !user.phone) {
-      return response.status(400).json({
-        message: 'ài khoản chưa có số điện thoại để xác thực!',
-      })
-    }
-
-    if (channel === 'email' && user.is_email_verified) {
+    if (user.is_email_verified) {
       return response.json({
         message: 'Email này đã được xác thực trước đó!',
-        user: toPublicUser(user),
-        verification: { requiredChannels: getUnverifiedChannels(user) },
-      })
-    }
-
-    if (channel === 'phone' && user.is_phone_verified) {
-      return response.json({
-        message: 'Số điện thoại này đã được xác thực trước đó!',
         user: toPublicUser(user),
         verification: { requiredChannels: getUnverifiedChannels(user) },
       })
@@ -497,7 +484,7 @@ async function verifyAccount(request, response, next) {
 
     await pool.execute(
       `UPDATE users
-      SET ${channel === 'email' ? 'is_email_verified' : 'is_phone_verified'} = 1,
+      SET is_email_verified = 1,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?`,
       [user.id],
@@ -513,7 +500,7 @@ async function verifyAccount(request, response, next) {
     const updatedUser = await getUserByEmail(email)
 
     return response.json({
-      message: channel === 'email' ? 'Xác thực Email thành công!' : 'Xác thực số điện thoại thành công!',
+      message: 'Xác thực Email thành công!',
       user: toPublicUser(updatedUser),
       verification: {
         requiredChannels: getUnverifiedChannels(updatedUser),
@@ -544,15 +531,9 @@ async function resendVerification(request, response, next) {
       })
     }
 
-    if (channel === 'email' && user.is_email_verified) {
+    if (user.is_email_verified) {
       return response.json({
         message: 'Email này đã được xác thực trước đó!',
-      })
-    }
-
-    if (channel === 'phone' && (!user.phone || user.is_phone_verified)) {
-      return response.json({
-        message: user.phone ? 'Số điện thoại này đã được xác thực trước đó!' : 'Tài khoản chưa có số điện thoại để xác thực!',
       })
     }
 
@@ -564,24 +545,18 @@ async function resendVerification(request, response, next) {
       userId: user.id,
     })
 
-    const mailResult =
-      channel === 'email'
-        ? await deliverEmailVerificationCode({
-            code,
-            email,
-            fullName: user.full_name,
-          })
-        : { skipped: true }
+    const mailResult = await deliverEmailVerificationCode({
+      code,
+      email,
+      fullName: user.full_name,
+    })
 
     return response.json({
-      message:
-        channel === 'email'
-          ? mailResult.failed
-            ? 'Chưa gửi được mã xác thực Email. Vui lòng thử lại sau ít phút!'
-            : mailResult.skipped
-              ? 'Đã tạo lại mã xác thực Email! Mã đang hiển thị ở môi trường phát triển!'
-              : 'Đã gửi lại mã xác thực Email! Vui lòng kiểm tra Gmail!'
-          : 'Đã tạo lại mã xác thực số điện thoại!',
+      message: mailResult.failed
+        ? 'Chưa gửi được mã xác thực Email. Vui lòng thử lại sau ít phút!'
+        : mailResult.skipped
+          ? 'Đã tạo lại mã xác thực Email! Mã đang hiển thị ở môi trường phát triển!'
+          : 'Đã gửi lại mã xác thực Email! Vui lòng kiểm tra Gmail!',
       verificationCode: mailResult.skipped ? code : null,
     })
   } catch (error) {

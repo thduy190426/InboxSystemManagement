@@ -1,14 +1,11 @@
 import type { FormEvent } from 'react'
 import { useState } from 'react'
-import { Mail, Phone, RotateCw, ShieldCheck } from 'lucide-react'
-import type { VerificationChannel } from '../services/authApi'
+import { Mail, RotateCw, ShieldCheck } from 'lucide-react'
 import type { AuthPageProps } from '../types'
 
 type VerifyAccountPageProps = AuthPageProps & {
   defaultEmail?: string
   devEmailCode?: string
-  devPhoneCode?: string
-  requiredChannels?: VerificationChannel[]
   successMessage?: string
   onResend: (payload: Record<string, string>) => Promise<void> | void
 }
@@ -18,16 +15,13 @@ const emailPattern = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i
 export function VerifyAccountPage({
   defaultEmail = '',
   devEmailCode = '',
-  devPhoneCode = '',
   errorMessage,
   isSubmitting = false,
   onResend,
   onSubmit,
   onSwitchMode,
-  requiredChannels = ['email'],
   successMessage = '',
 }: VerifyAccountPageProps) {
-  const [channel, setChannel] = useState<VerificationChannel>(requiredChannels[0] || 'email')
   const [localError, setLocalError] = useState('')
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -49,7 +43,7 @@ export function VerifyAccountPage({
 
     setLocalError('')
     onSubmit({
-      channel,
+      channel: 'email',
       code,
       email,
     })
@@ -66,13 +60,12 @@ export function VerifyAccountPage({
 
     setLocalError('')
     onResend({
-      channel,
+      channel: 'email',
       email,
     })
   }
 
   const visibleError = localError || errorMessage
-  const devCode = channel === 'email' ? devEmailCode : devPhoneCode
 
   return (
     <main className="auth-shell">
@@ -83,30 +76,7 @@ export function VerifyAccountPage({
             Xác thực
           </span>
           <h1 id="verify-title">Xác thực tài khoản</h1>
-          <p>Nhập mã 6 chữ số đã được gửi đến Email hoặc số điện thoại của bạn.</p>
-        </div>
-
-        <div className="auth-segmented" role="tablist" aria-label="Kênh xác thực">
-          <button
-            aria-selected={channel === 'email'}
-            className={channel === 'email' ? 'is-active' : ''}
-            disabled={isSubmitting}
-            onClick={() => setChannel('email')}
-            type="button"
-          >
-            <Mail size={16} />
-            Email
-          </button>
-          <button
-            aria-selected={channel === 'phone'}
-            className={channel === 'phone' ? 'is-active' : ''}
-            disabled={isSubmitting || !requiredChannels.includes('phone')}
-            onClick={() => setChannel('phone')}
-            type="button"
-          >
-            <Phone size={16} />
-            Phone
-          </button>
+          <p>Nhập mã 6 chữ số đã được gửi đến Email của bạn.</p>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
@@ -144,9 +114,9 @@ export function VerifyAccountPage({
           </label>
 
           {successMessage ? <p className="auth-success">{successMessage}</p> : null}
-          {devCode ? (
+          {devEmailCode ? (
             <p className="auth-reset-code">
-              Mã dev <strong>{devCode}</strong>
+              Mã dev <strong>{devEmailCode}</strong>
             </p>
           ) : null}
           {visibleError ? <p className="auth-error">{visibleError}</p> : null}

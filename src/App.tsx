@@ -18,7 +18,6 @@ import {
   resetPassword,
   verifyAccount,
   type AuthUser,
-  type VerificationChannel,
 } from './services/authApi'
 import { onSessionExpired } from './services/apiClient'
 import {
@@ -209,9 +208,7 @@ export function App() {
   const [authSuccessMessage, setAuthSuccessMessage] = useState('')
   const [passwordResetCode, setPasswordResetCode] = useState('')
   const [verificationEmail, setVerificationEmail] = useState('')
-  const [verificationChannels, setVerificationChannels] = useState<VerificationChannel[]>(['email'])
   const [devEmailVerificationCode, setDevEmailVerificationCode] = useState('')
-  const [devPhoneVerificationCode, setDevPhoneVerificationCode] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [toasts, setToasts] = useState<AppToast[]>([])
   const toastTimersRef = useRef<Record<string, number>>({})
@@ -294,7 +291,6 @@ export function App() {
     setAuthSuccessMessage('')
     setPasswordResetCode('')
     setDevEmailVerificationCode('')
-    setDevPhoneVerificationCode('')
   }
 
   function handleAuthSuccess(
@@ -377,9 +373,7 @@ export function App() {
       })
 
       setVerificationEmail(payload.email)
-      setVerificationChannels(response.verification?.requiredChannels || ['email'])
       setDevEmailVerificationCode(response.verification?.emailCode || '')
-      setDevPhoneVerificationCode(response.verification?.phoneCode || '')
       setAuthSuccessMessage(response.message)
       window.history.replaceState(null, '', toAuthPath('verify-account'))
       setIsRouteKnown(true)
@@ -399,21 +393,15 @@ export function App() {
 
     try {
       const response = await verifyAccount({
-        channel: payload.channel as VerificationChannel,
+        channel: 'email',
         code: payload.code,
         email: payload.email,
       })
       const requiredChannels = response.verification.requiredChannels
 
       setVerificationEmail(payload.email)
-      setVerificationChannels(requiredChannels)
       setAuthSuccessMessage(response.message)
-
-      if (payload.channel === 'email') {
-        setDevEmailVerificationCode('')
-      } else {
-        setDevPhoneVerificationCode('')
-      }
+      setDevEmailVerificationCode('')
 
       if (requiredChannels.length === 0) {
         window.history.replaceState(null, '', toAuthPath('login'))
@@ -437,18 +425,13 @@ export function App() {
 
     try {
       const response = await resendVerification({
-        channel: payload.channel as VerificationChannel,
+        channel: 'email',
         email: payload.email,
       })
 
       setVerificationEmail(payload.email)
       setAuthSuccessMessage(response.message)
-
-      if (payload.channel === 'email') {
-        setDevEmailVerificationCode(response.verificationCode || '')
-      } else {
-        setDevPhoneVerificationCode(response.verificationCode || '')
-      }
+      setDevEmailVerificationCode(response.verificationCode || '')
 
       pushToast(response.message, 'info')
     } catch (error) {
@@ -571,13 +554,11 @@ export function App() {
         <VerifyAccountPage
           defaultEmail={verificationEmail}
           devEmailCode={devEmailVerificationCode}
-          devPhoneCode={devPhoneVerificationCode}
           errorMessage={authError}
           isSubmitting={isSubmitting}
           onResend={handleResendVerification}
           onSubmit={handleVerifyAccount}
           onSwitchMode={() => navigateAuth('login')}
-          requiredChannels={verificationChannels}
           successMessage={authSuccessMessage}
         />
       )

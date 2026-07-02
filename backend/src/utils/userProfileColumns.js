@@ -4,6 +4,7 @@ const profileColumns = [
   { name: 'gender', definition: 'VARCHAR(20) NULL' },
   { name: 'address', definition: 'VARCHAR(255) NULL' },
   { name: 'birth_date', definition: 'DATE NULL' },
+  { name: 'show_activity_status', definition: 'TINYINT(1) NOT NULL DEFAULT 1' },
 ]
 
 let userProfileColumnsReady = null
