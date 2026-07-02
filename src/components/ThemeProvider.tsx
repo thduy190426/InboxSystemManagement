@@ -34,7 +34,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [theme])
 
   const toggleTheme = () => {
+    const root = window.document.documentElement
+    root.classList.add('theme-transition')
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'))
+    
+    // Xóa class transition sau khi hiệu ứng kết thúc để tránh lag
+    setTimeout(() => {
+      root.classList.remove('theme-transition')
+    }, 400)
   }
 
   return (
