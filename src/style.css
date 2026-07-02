@@ -8412,3 +8412,12 @@ html.dark .message-bubble .mention-highlight {
   background: rgba(59, 130, 246, 0.2);
   color: #93c5fd;
 }
+html.dark .profile-preview-bio p {
+  background: var(--surface-soft);
+  color: var(--text);
+  border-color: var(--line);
+}
+html.dark .profile-preview-meta span {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+}
