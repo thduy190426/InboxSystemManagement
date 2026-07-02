@@ -8723,3 +8723,14 @@ html.dark .send-button:disabled {
 html.dark {
   color-scheme: dark;
 }
+@media (max-width: 768px) {
+  .nav-bottom-actions {
+    flex-direction: row;
+    width: auto;
+    gap: 4px;
+  }
+  .nav-button {
+    flex: 0 0 auto;
+    min-width: 68px;
+  }
+}
