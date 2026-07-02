@@ -8397,3 +8397,18 @@ html.dark .composer-input {
 html.dark .composer-input input {
   color: var(--text);
 }
+html.dark .outgoing .message-bubble {
+  border-color: rgba(15, 159, 142, 0.4);
+  background: rgba(15, 159, 142, 0.15);
+}
+html.dark .message-sender-name {
+  color: var(--primary);
+}
+html.dark .message-bubble mark {
+  background: rgba(253, 230, 138, 0.3);
+  color: #fde68a;
+}
+html.dark .message-bubble .mention-highlight {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+}
