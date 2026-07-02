@@ -667,8 +667,15 @@ img {
 }
 
 @keyframes float-icon {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-12px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-12px);
+  }
 }
 
 .not-found-code {
@@ -3004,7 +3011,7 @@ h3 {
   grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
 }
 
-.profile-field > span {
+.profile-field>span {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -3012,7 +3019,7 @@ h3 {
   line-height: 1.3;
 }
 
-.profile-field > span svg {
+.profile-field>span svg {
   display: block;
   flex: 0 0 auto;
 }
@@ -3397,8 +3404,13 @@ h3 {
 }
 
 @keyframes icon-spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .spin {
@@ -3496,7 +3508,7 @@ h3 {
     box-shadow 160ms ease;
 }
 
-.profile-session-item + .profile-session-item {
+.profile-session-item+.profile-session-item {
   margin-top: 10px;
 }
 
@@ -5753,7 +5765,7 @@ h3 {
   background: #05070a;
 }
 
-.remote-video-tile > span {
+.remote-video-tile>span {
   position: absolute;
   left: 10px;
   bottom: 10px;
@@ -7465,14 +7477,16 @@ h3 {
   flex-direction: column;
   padding: 32px 40px;
   overflow-y: auto;
-  margin-left: 72px; /* For NavRail */
+  margin-left: 72px;
+  /* For NavRail */
 }
 
 @media (max-width: 768px) {
   .admin-page-container {
     padding: 24px 20px;
     margin-left: 0;
-    margin-bottom: 60px; /* For mobile NavRail */
+    margin-bottom: 60px;
+    /* For mobile NavRail */
   }
 }
 
@@ -7543,13 +7557,13 @@ h3 {
   align-items: flex-start;
   gap: 16px;
   border: 1px solid var(--line);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .stat-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0,0,0,0.04);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.04);
 }
 
 .stat-icon {
@@ -7598,14 +7612,19 @@ h3 {
   color: var(--muted);
 }
 
-.stat-trend.positive { color: var(--primary); }
-.stat-trend.negative { color: var(--rose); }
+.stat-trend.positive {
+  color: var(--primary);
+}
+
+.stat-trend.negative {
+  color: var(--rose);
+}
 
 .admin-content-section {
   background: var(--surface);
   border-radius: 12px;
   border: 1px solid var(--line);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
   display: flex;
   flex-direction: column;
 }
@@ -7806,7 +7825,7 @@ h3 {
 }
 
 .admin-table tr:hover td {
-  background: rgba(0,0,0,0.01);
+  background: rgba(0, 0, 0, 0.01);
 }
 
 .user-cell {
@@ -7877,9 +7896,17 @@ h3 {
   font-weight: 500;
 }
 
-.status-active { color: var(--primary); }
-.status-inactive { color: var(--muted); }
-.status-suspended { color: var(--rose); }
+.status-active {
+  color: var(--primary);
+}
+
+.status-inactive {
+  color: var(--muted);
+}
+
+.status-suspended {
+  color: var(--rose);
+}
 
 .action-buttons {
   display: flex;
@@ -7905,312 +7932,333 @@ h3 {
   color: var(--text);
 }
 
-  .action-buttons button.text-danger:hover {
-    background: rgba(219, 39, 119, 0.1);
-    color: var(--rose);
-  }
+.action-buttons button.text-danger:hover {
+  background: rgba(219, 39, 119, 0.1);
+  color: var(--rose);
+}
 
-  .action-buttons button.text-warning:hover {
-    background: rgba(249, 115, 22, 0.12);
-    color: var(--orange);
-  }
+.action-buttons button.text-warning:hover {
+  background: rgba(249, 115, 22, 0.12);
+  color: var(--orange);
+}
 
-  .action-buttons button.text-success:hover {
-    background: rgba(15, 159, 142, 0.12);
-    color: var(--primary);
-  }
+.action-buttons button.text-success:hover {
+  background: rgba(15, 159, 142, 0.12);
+  color: var(--primary);
+}
 
-  .action-buttons button:disabled {
-    cursor: not-allowed;
-    opacity: 0.62;
-  }
+.action-buttons button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
 
-  .action-buttons button:disabled .lucide-loader-2 {
-    animation: confirm-dialog-spin 760ms linear infinite;
-  }
+.action-buttons button:disabled .lucide-loader-2 {
+  animation: confirm-dialog-spin 760ms linear infinite;
+}
 
-  .admin-loading-row,
-  .admin-empty-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    min-height: 96px;
-    color: var(--muted);
-    font-size: 14px;
-  }
+.admin-loading-row,
+.admin-empty-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 96px;
+  color: var(--muted);
+  font-size: 14px;
+}
 
-  .admin-loading-row svg,
-  .admin-edit-actions .lucide-loader-2 {
-    animation: confirm-dialog-spin 760ms linear infinite;
-  }
+.admin-loading-row svg,
+.admin-edit-actions .lucide-loader-2 {
+  animation: confirm-dialog-spin 760ms linear infinite;
+}
 
-  .admin-error-message {
-    margin: 0 0 20px 0;
-    padding: 12px 14px;
-    border: 1px solid rgba(219, 39, 119, 0.22);
-    border-radius: 8px;
-    background: rgba(219, 39, 119, 0.08);
-    color: var(--rose);
-    font-size: 14px;
-  }
+.admin-error-message {
+  margin: 0 0 20px 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(219, 39, 119, 0.22);
+  border-radius: 8px;
+  background: rgba(219, 39, 119, 0.08);
+  color: var(--rose);
+  font-size: 14px;
+}
 
-  .admin-pagination {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 16px 24px;
-    border-top: 1px solid var(--line);
-    color: var(--muted);
-    font-size: 14px;
-    flex-wrap: wrap;
-  }
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 14px;
+  flex-wrap: wrap;
+}
 
-  .admin-pagination div {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
+.admin-pagination div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
-  .admin-pagination button,
-  .admin-edit-actions button {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    background: var(--surface);
-    color: var(--text);
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    padding: 8px 12px;
-  }
+.admin-pagination button,
+.admin-edit-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 12px;
+}
 
-  .admin-pagination button:disabled,
-  .admin-edit-actions button:disabled,
-  .admin-edit-close:disabled {
-    cursor: not-allowed;
-    opacity: 0.62;
-  }
+.admin-pagination button:disabled,
+.admin-edit-actions button:disabled,
+.admin-edit-close:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
 
-  .admin-edit-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 80;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(15, 23, 42, 0.42);
-    padding: 20px;
-    animation: modal-backdrop-in var(--modal-motion-duration) var(--modal-motion-ease) both;
-  }
+.admin-edit-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.42);
+  padding: 20px;
+  animation: modal-backdrop-in var(--modal-motion-duration) var(--modal-motion-ease) both;
+}
 
-  .admin-edit-backdrop.is-exiting {
-    animation: modal-backdrop-out 140ms ease-in both;
-    pointer-events: none;
-  }
+.admin-edit-backdrop.is-exiting {
+  animation: modal-backdrop-out 140ms ease-in both;
+  pointer-events: none;
+}
 
-  .admin-edit-backdrop.is-exiting .admin-edit-modal {
-    animation: modal-panel-out 140ms ease-in both;
-  }
+.admin-edit-backdrop.is-exiting .admin-edit-modal {
+  animation: modal-panel-out 140ms ease-in both;
+}
 
-  .admin-edit-modal {
-    position: relative;
-    width: min(620px, 100%);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: var(--surface);
-    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.18);
-    overflow: hidden;
-    animation: modal-panel-in var(--modal-motion-duration) var(--modal-motion-ease) both;
+.admin-edit-modal {
+  position: relative;
+  width: min(620px, 100%);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.18);
+  overflow: hidden;
+  animation: modal-panel-in var(--modal-motion-duration) var(--modal-motion-ease) both;
+}
+
+.admin-edit-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 24px 20px;
+  background:
+    linear-gradient(135deg, rgba(15, 159, 142, 0.12), rgba(37, 99, 235, 0.08)),
+    var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.admin-edit-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.admin-edit-modal h2 {
+  margin: 0 0 4px 0;
+  font-size: 20px;
+}
+
+.admin-edit-modal p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.admin-lock-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-lock-pill.is-open {
+  background: rgba(15, 159, 142, 0.12);
+  color: var(--primary-strong);
+}
+
+.admin-lock-pill.is-locked {
+  background: rgba(219, 39, 119, 0.1);
+  color: var(--rose);
+}
+
+.admin-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  padding: 22px 24px 0;
+}
+
+.admin-edit-modal label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.admin-edit-modal input,
+.admin-edit-modal select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  padding: 10px 12px;
+  min-height: 42px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.admin-edit-modal input:focus,
+.admin-edit-modal select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(15, 159, 142, 0.1);
+}
+
+.admin-input-with-icon {
+  position: relative;
+  display: block;
+}
+
+.admin-input-with-icon svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--subtle);
+  pointer-events: none;
+}
+
+.admin-input-with-icon input,
+.admin-input-with-icon select {
+  padding-left: 38px;
+}
+
+.admin-edit-note {
+  margin: 18px 24px 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(37, 99, 235, 0.16);
+  border-radius: 8px;
+  background: rgba(37, 99, 235, 0.06);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.admin-edit-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--subtle);
+  cursor: pointer;
+}
+
+.admin-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+  padding: 0 24px 24px;
+}
+
+.admin-edit-actions button:last-child {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+
+@media (max-width: 640px) {
+  .admin-edit-grid {
+    grid-template-columns: 1fr;
   }
 
   .admin-edit-hero {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 24px 24px 20px;
-    background:
-      linear-gradient(135deg, rgba(15, 159, 142, 0.12), rgba(37, 99, 235, 0.08)),
-      var(--surface);
-    border-bottom: 1px solid var(--line);
-  }
-
-  .admin-edit-avatar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 56px;
-    height: 56px;
-    border-radius: 8px;
-    background: var(--primary);
-    color: #fff;
-    font-size: 22px;
-    font-weight: 700;
-    flex-shrink: 0;
-  }
-
-  .admin-edit-modal h2 {
-    margin: 0 0 4px 0;
-    font-size: 20px;
-  }
-
-  .admin-edit-modal p {
-    margin: 0;
-    color: var(--muted);
-    font-size: 13px;
-  }
-
-  .admin-lock-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 8px;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 700;
-  }
-
-  .admin-lock-pill.is-open {
-    background: rgba(15, 159, 142, 0.12);
-    color: var(--primary-strong);
-  }
-
-  .admin-lock-pill.is-locked {
-    background: rgba(219, 39, 119, 0.1);
-    color: var(--rose);
-  }
-
-  .admin-edit-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
-    padding: 22px 24px 0;
-  }
-
-  .admin-edit-modal label {
-    display: grid;
-    gap: 8px;
-    color: var(--muted);
-    font-size: 13px;
-    font-weight: 600;
-  }
-
-  .admin-edit-modal input,
-  .admin-edit-modal select {
-    width: 100%;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    background: var(--surface);
-    color: var(--text);
-    font-size: 14px;
-    padding: 10px 12px;
-    min-height: 42px;
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
-
-  .admin-edit-modal input:focus,
-  .admin-edit-modal select:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(15, 159, 142, 0.1);
-  }
-
-  .admin-input-with-icon {
-    position: relative;
-    display: block;
-  }
-
-  .admin-input-with-icon svg {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--subtle);
-    pointer-events: none;
-  }
-
-  .admin-input-with-icon input,
-  .admin-input-with-icon select {
-    padding-left: 38px;
-  }
-
-  .admin-edit-note {
-    margin: 18px 24px 0;
-    padding: 12px 14px;
-    border: 1px solid rgba(37, 99, 235, 0.16);
-    border-radius: 8px;
-    background: rgba(37, 99, 235, 0.06);
-    color: var(--muted);
-    font-size: 13px;
-    line-height: 1.5;
-  }
-
-  .admin-edit-close {
-    position: absolute;
-    top: 14px;
-    right: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    border: none;
-    border-radius: 6px;
-    background: transparent;
-    color: var(--subtle);
-    cursor: pointer;
+    align-items: flex-start;
   }
 
   .admin-edit-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 22px;
-    padding: 0 24px 24px;
+    flex-direction: column-reverse;
   }
 
-  .admin-edit-actions button:last-child {
-    border-color: var(--primary);
-    background: var(--primary);
-    color: #fff;
+  .admin-edit-actions button {
+    justify-content: center;
+  }
+}
+
+@keyframes ring {
+  0% {
+    transform: rotate(0);
   }
 
-  @media (max-width: 640px) {
-    .admin-edit-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .admin-edit-hero {
-      align-items: flex-start;
-    }
-
-    .admin-edit-actions {
-      flex-direction: column-reverse;
-    }
-
-    .admin-edit-actions button {
-      justify-content: center;
-    }
+  10% {
+    transform: rotate(15deg);
   }
 
-  @keyframes ring {
-    0% { transform: rotate(0); }
-    10% { transform: rotate(15deg); }
-    20% { transform: rotate(-10deg); }
-    30% { transform: rotate(5deg); }
-    40% { transform: rotate(-5deg); }
-    50% { transform: rotate(0); }
-    100% { transform: rotate(0); }
+  20% {
+    transform: rotate(-10deg);
   }
 
-  .animate-ring {
-    animation: ring 2s ease-in-out infinite;
-    transform-origin: top center;
+  30% {
+    transform: rotate(5deg);
   }
+
+  40% {
+    transform: rotate(-5deg);
+  }
+
+  50% {
+    transform: rotate(0);
+  }
+
+  100% {
+    transform: rotate(0);
+  }
+}
+
+.animate-ring {
+  animation: ring 2s ease-in-out infinite;
+  transform-origin: top center;
+}
+
 .nav-bottom-actions {
   display: flex;
   flex-direction: column;
@@ -8283,22 +8331,27 @@ html.dark .admin-page {
 html.dark .profile-page {
   background: var(--surface);
 }
+
 /* Chat and Detail Panel Dark Mode Overrides */
 html.dark .detail-panel {
   background: var(--surface);
   border-left-color: var(--line);
 }
+
 html.dark .detail-header {
   border-bottom-color: var(--line);
 }
+
 html.dark .detail-action {
   background: var(--surface-soft);
   color: var(--text);
   border-color: var(--line);
 }
+
 html.dark .detail-action:hover {
   background: var(--line);
 }
+
 html.dark .detail-section input,
 html.dark .nickname-form input,
 html.dark .group-management input,
@@ -8307,9 +8360,11 @@ html.dark .detail-section select {
   color: var(--text);
   border-color: var(--line);
 }
+
 html.dark .detail-section-title {
   color: var(--text);
 }
+
 html.dark .detail-empty-state,
 html.dark .empty-pin-message,
 html.dark .empty-state-message {
@@ -8317,10 +8372,12 @@ html.dark .empty-state-message {
   color: var(--muted);
   border-color: var(--line);
 }
+
 html.dark .chat-header {
   background: var(--surface);
   border-bottom-color: var(--line);
 }
+
 html.dark .message-image-attachment,
 html.dark .message-audio-attachment,
 html.dark .message-video-attachment,
@@ -8329,98 +8386,122 @@ html.dark .message-file-link {
   background: var(--surface-soft);
   border-color: var(--line);
 }
+
 html.dark .attachment-toolbar {
   background: var(--surface);
   border-top-color: var(--line);
 }
+
 html.dark .day-divider.message-time-divider span {
   background: var(--surface-soft);
   color: var(--text);
   border-color: var(--line);
 }
+
 html.dark .day-divider.message-time-divider::before {
   background: var(--line);
 }
+
 html.dark .gif-result-grid img,
 html.dark .composer-gif-picker {
   background: var(--surface);
   border-color: var(--line);
 }
+
 html.dark .message-reply-preview {
   background: var(--surface-soft);
   border-color: var(--line);
 }
+
 html.dark .header-actions button,
 html.dark .detail-close {
   color: var(--text);
 }
+
 html.dark .group-detail-member,
 html.dark .group-join-request {
   border-color: var(--line);
 }
+
 html.dark .detail-actions button {
   background: var(--surface-soft);
   color: var(--text);
   border-color: var(--line);
 }
+
 html.dark .detail-actions button:hover {
   background: var(--line);
 }
+
 html.dark .profile-block h2 {
   color: var(--text);
 }
+
 html.dark .profile-block p {
   color: var(--muted);
 }
+
 html.dark .detail-actions button.is-danger,
 html.dark .detail-actions button.is-danger:hover {
   background: rgba(219, 39, 119, 0.15);
   color: var(--rose);
 }
+
 html.dark .detail-actions button.is-active,
 html.dark .detail-actions button.is-active:hover {
   background: var(--primary);
   color: #fff;
 }
+
 html.dark .composer {
   background: rgba(26, 29, 36, 0.9);
   border-top-color: var(--line);
 }
+
 html.dark .composer-reply-preview {
   background: rgba(15, 159, 142, 0.15);
   border-color: rgba(15, 159, 142, 0.3);
 }
+
 html.dark .composer-input {
   background: var(--surface-soft);
   border-color: var(--line);
 }
+
 html.dark .composer-input input {
   color: var(--text);
 }
+
 html.dark .outgoing .message-bubble {
   border-color: rgba(15, 159, 142, 0.4);
   background: rgba(15, 159, 142, 0.15);
 }
+
 html.dark .message-sender-name {
   color: var(--primary);
 }
+
 html.dark .message-bubble mark {
   background: rgba(253, 230, 138, 0.3);
   color: #fde68a;
 }
+
 html.dark .message-bubble .mention-highlight {
   background: rgba(59, 130, 246, 0.2);
   color: #93c5fd;
 }
+
 html.dark .profile-preview-bio p {
   background: var(--surface-soft);
   color: var(--text);
   border-color: var(--line);
 }
+
 html.dark .profile-preview-meta span {
   background: rgba(255, 255, 255, 0.08);
   color: #e2e8f0;
 }
+
 html.dark .profile-field input,
 html.dark .profile-field select,
 html.dark .profile-field textarea {
@@ -8428,11 +8509,217 @@ html.dark .profile-field textarea {
   color: var(--text);
   border-color: var(--line);
 }
+
 html.dark .profile-field select.has-value,
 html.dark .profile-field textarea.has-value {
   color: var(--text);
 }
+
+html.dark .settings-page {
+  background: var(--surface);
+}
+
+html.dark .admin-page {
+  background: var(--surface);
+}
+
+html.dark .profile-page {
+  background: var(--surface);
+}
+
+/* Chat and Detail Panel Dark Mode Overrides */
+html.dark .detail-panel {
+  background: var(--surface);
+  border-left-color: var(--line);
+}
+
+html.dark .detail-header {
+  border-bottom-color: var(--line);
+}
+
+html.dark .detail-action {
+  background: var(--surface-soft);
+  color: var(--text);
+  border-color: var(--line);
+}
+
+html.dark .detail-action:hover {
+  background: var(--line);
+}
+
+html.dark .detail-section input,
+html.dark .nickname-form input,
+html.dark .group-management input,
+html.dark .detail-section select {
+  background: var(--bg);
+  color: var(--text);
+  border-color: var(--line);
+}
+
+html.dark .detail-section-title {
+  color: var(--text);
+}
+
+html.dark .detail-empty-state,
+html.dark .empty-pin-message,
+html.dark .empty-state-message {
+  background: var(--bg);
+  color: var(--muted);
+  border-color: var(--line);
+}
+
+html.dark .chat-header {
+  background: var(--surface);
+  border-bottom-color: var(--line);
+}
+
+html.dark .message-image-attachment,
+html.dark .message-audio-attachment,
+html.dark .message-video-attachment,
+html.dark .message-pdf-attachment,
+html.dark .message-file-link {
+  background: var(--surface-soft);
+  border-color: var(--line);
+}
+
+html.dark .attachment-toolbar {
+  background: var(--surface);
+  border-top-color: var(--line);
+}
+
+html.dark .day-divider.message-time-divider span {
+  background: var(--surface-soft);
+  color: var(--text);
+  border-color: var(--line);
+}
+
+html.dark .day-divider.message-time-divider::before {
+  background: var(--line);
+}
+
+html.dark .gif-result-grid img,
+html.dark .composer-gif-picker {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+html.dark .message-reply-preview {
+  background: var(--surface-soft);
+  border-color: var(--line);
+}
+
+html.dark .header-actions button,
+html.dark .detail-close {
+  color: var(--text);
+}
+
+html.dark .group-detail-member,
+html.dark .group-join-request {
+  border-color: var(--line);
+}
+
+html.dark .detail-actions button {
+  background: var(--surface-soft);
+  color: var(--text);
+  border-color: var(--line);
+}
+
+html.dark .detail-actions button:hover {
+  background: var(--line);
+}
+
+html.dark .profile-block h2 {
+  color: var(--text);
+}
+
+html.dark .profile-block p {
+  color: var(--muted);
+}
+
+html.dark .detail-actions button.is-danger,
+html.dark .detail-actions button.is-danger:hover {
+  background: rgba(219, 39, 119, 0.15);
+  color: var(--rose);
+}
+
+html.dark .detail-actions button.is-active,
+html.dark .detail-actions button.is-active:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
+html.dark .composer {
+  background: rgba(26, 29, 36, 0.9);
+  border-top-color: var(--line);
+}
+
+html.dark .composer-reply-preview {
+  background: rgba(15, 159, 142, 0.15);
+  border-color: rgba(15, 159, 142, 0.3);
+}
+
+html.dark .composer-input {
+  background: var(--surface-soft);
+  border-color: var(--line);
+}
+
+html.dark .composer-input input {
+  color: var(--text);
+}
+
+html.dark .outgoing .message-bubble {
+  border-color: rgba(15, 159, 142, 0.4);
+  background: rgba(15, 159, 142, 0.15);
+}
+
+html.dark .message-sender-name {
+  color: var(--primary);
+}
+
+html.dark .message-bubble mark {
+  background: rgba(253, 230, 138, 0.3);
+  color: #fde68a;
+}
+
+html.dark .message-bubble .mention-highlight {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+}
+
+html.dark .profile-preview-bio p {
+  background: var(--surface-soft);
+  color: var(--text);
+  border-color: var(--line);
+}
+
+html.dark .profile-preview-meta span {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+}
+
+html.dark .profile-field input,
+html.dark .profile-field select,
+html.dark .profile-field textarea {
+  background: var(--bg);
+  color: var(--text);
+  border-color: var(--line);
+}
+
+html.dark .profile-field select.has-value,
+html.dark .profile-field textarea.has-value {
+  color: var(--text);
+}
+
 html.dark .profile-field input[readonly] {
   background: var(--surface-soft);
   color: var(--muted);
+}
+
+html.dark .send-button:disabled {
+  background: var(--surface-soft);
+  color: rgba(255, 255, 255, 0.2);
+}
+
+html.dark {
+  color-scheme: dark;
 }
