@@ -8382,3 +8382,18 @@ html.dark .detail-actions button.is-active:hover {
   background: var(--primary);
   color: #fff;
 }
+html.dark .composer {
+  background: rgba(26, 29, 36, 0.9);
+  border-top-color: var(--line);
+}
+html.dark .composer-reply-preview {
+  background: rgba(15, 159, 142, 0.15);
+  border-color: rgba(15, 159, 142, 0.3);
+}
+html.dark .composer-input {
+  background: var(--surface-soft);
+  border-color: var(--line);
+}
+html.dark .composer-input input {
+  color: var(--text);
+}
