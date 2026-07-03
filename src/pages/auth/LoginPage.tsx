@@ -1,0 +1,136 @@
+import type { FormEvent } from 'react'
+import { useState } from 'react'
+import { ArrowRight, Eye, EyeOff, Lock, LogIn, Mail } from 'lucide-react'
+import type { AuthPageProps } from '../../types'
+import { CaptchaChallenge } from '../../components/ui/CaptchaChallenge'
+
+type LoginPageProps = AuthPageProps & {
+  onForgotPassword: () => void
+}
+
+export function LoginPage({
+  isSubmitting = false,
+  onForgotPassword,
+  onSubmit,
+  onSwitchMode,
+}: LoginPageProps) {
+  const [showPassword, setShowPassword] = useState(false)
+  const [isFormFilled, setIsFormFilled] = useState(false)
+  const [isCaptchaSolved, setIsCaptchaSolved] = useState(false)
+
+  function handleFormChange(event: FormEvent<HTMLFormElement>) {
+    const formData = new FormData(event.currentTarget)
+    const email = String(formData.get('email') ?? '').trim()
+    const password = String(formData.get('password') ?? '').trim()
+
+    setIsFormFilled(email.length > 0 && password.length > 0)
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    const formData = new FormData(event.currentTarget)
+
+    if (!isCaptchaSolved) {
+      return
+    }
+
+    onSubmit({
+      email: String(formData.get('email') ?? ''),
+      password: String(formData.get('password') ?? ''),
+      rememberLogin: String(formData.get('rememberLogin') === 'on'),
+    })
+  }
+
+  return (
+    <main className="auth-shell">
+      <section className="auth-card" aria-labelledby="login-title">
+        <div className="auth-card-header">
+          <span className="section-kicker" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <LogIn size={14} />
+            Đăng nhập
+          </span>
+          <h1 id="login-title">Chào mừng trở lại!</h1>
+          <p>Tiếp tục quản lý hội thoại khách hàng và đội nhóm của bạn.</p>
+        </div>
+
+        <form className="auth-form" onChange={handleFormChange} onSubmit={handleSubmit}>
+          <label className="auth-field">
+            <span>Email</span>
+            <div className="auth-input-row">
+              <Mail size={18} />
+              <input
+                autoComplete="username"
+                name="email"
+                placeholder="Nhập Email của bạn tại đây"
+                required
+                type="email"
+              />
+            </div>
+          </label>
+
+          <label className="auth-field">
+            <span>Mật khẩu</span>
+            <div className="auth-input-row">
+              <Lock size={18} />
+              <input
+                autoComplete="current-password"
+                minLength={6}
+                name="password"
+                placeholder="Nhập mật khẩu"
+                required
+                type={showPassword ? 'text' : 'password'}
+              />
+              <button
+                aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                className="password-toggle"
+                onClick={() => setShowPassword((current) => !current)}
+                title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                type="button"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </label>
+
+          <div className="auth-form-row">
+            <label className="auth-check">
+              <input defaultChecked name="rememberLogin" type="checkbox" />
+              <span>Ghi nhớ đăng nhập</span>
+            </label>
+            <button
+              className="auth-text-button"
+              disabled={isSubmitting}
+              onClick={onForgotPassword}
+              type="button"
+            >
+              Quên mật khẩu?
+            </button>
+          </div>
+
+          <CaptchaChallenge
+            disabled={isSubmitting}
+            id="loginCaptcha"
+            onSolvedChange={setIsCaptchaSolved}
+          />
+
+          <button
+            className="auth-primary"
+            disabled={isSubmitting || !isFormFilled || !isCaptchaSolved}
+            type="submit"
+          >
+            {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
+            <ArrowRight size={18} />
+          </button>
+        </form>
+
+        <p className="auth-switch">
+          Chưa có tài khoản?
+          <button disabled={isSubmitting} onClick={onSwitchMode} type="button">
+            Tạo tài khoản mới
+          </button>
+        </p>
+      </section>
+    </main>
+  )
+}

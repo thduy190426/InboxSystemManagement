@@ -34,11 +34,11 @@ async function sendPasswordResetCode({ email, fullName, code }) {
   }
 
   await client.send({
-  from: getSender(),
-  to: [{ email }],
-  subject: 'Mã đặt lại mật khẩu của bạn',
-  text: `Mã đặt lại mật khẩu của bạn là: ${code}`,
-  html: `
+    from: getSender(),
+    to: [{ email }],
+    subject: 'Mã đặt lại mật khẩu của bạn',
+    text: `Mã đặt lại mật khẩu của bạn là: ${code}`,
+    html: `
     <!DOCTYPE html>
     <html lang="vi">
     <head>
@@ -216,8 +216,8 @@ async function sendPasswordResetCode({ email, fullName, code }) {
     </body>
     </html>
   `,
-  category: 'Password Reset'
-});
+    category: 'Password Reset'
+  });
 
   return {
     skipped: false,

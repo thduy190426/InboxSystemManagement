@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ChatApp } from './components/ChatApp'
-import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
-import { LoginPage } from './pages/LoginPage'
-import { NotFoundPage } from './pages/NotFoundPage'
-import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage'
-import { RegisterPage } from './pages/RegisterPage'
-import { ResetPasswordPage } from './pages/ResetPasswordPage'
-import { VerifyAccountPage } from './pages/VerifyAccountPage'
-import { TermsPage } from './pages/TermsPage'
+import { ChatApp } from './components/views/ChatApp'
+import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage'
+import { LoginPage } from './pages/auth/LoginPage'
+import { NotFoundPage } from './pages/errors/NotFoundPage'
+import { PrivacyPolicyPage } from './pages/legal/PrivacyPolicyPage'
+import { RegisterPage } from './pages/auth/RegisterPage'
+import { ResetPasswordPage } from './pages/auth/ResetPasswordPage'
+import { VerifyAccountPage } from './pages/auth/VerifyAccountPage'
+import { TermsPage } from './pages/legal/TermsPage'
 import {
   ApiError,
   forgotPassword,
@@ -18,8 +18,8 @@ import {
   resetPassword,
   verifyAccount,
   type AuthUser,
-} from './services/authApi'
-import { onSessionExpired } from './services/apiClient'
+} from './services/api/authApi'
+import { onSessionExpired } from './services/api/apiClient'
 import {
   isAppRoute,
   isAuthRoute,
@@ -28,13 +28,13 @@ import {
   readAppRouteFromLocation,
   toAppPath,
   toAuthPath,
-} from './services/appRoutes'
+} from './services/core/appRoutes'
 import {
   clearStoredAuthSession,
   getStoredAuthSession,
   storeAuthSession,
   updateStoredAuthUser,
-} from './services/authStorage'
+} from './services/storage/authStorage'
 import type { AuthScreen } from './types'
 
 const ROUTE_TRANSITION_EVENT = 'app:route-transition'
