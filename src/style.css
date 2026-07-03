@@ -3929,6 +3929,12 @@ html.dark .profile-field select {
   font-weight: 800;
 }
 
+.contact-profile-identity .contact-profile-handle {
+  color: var(--primary-strong);
+  font-size: 13px;
+  font-weight: 900;
+}
+
 .contact-profile-identity small {
   margin-top: 5px;
   color: var(--primary-strong);

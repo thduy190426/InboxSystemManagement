@@ -487,6 +487,7 @@ export function ContactsPanel({
               <div>
                 <strong>{user.nickname || user.fullName}</strong>
                 <span>{user.fullName}</span>
+                {user.handle ? <span className="contact-profile-handle">@{user.handle}</span> : null}
                 <small>{presenceLabel}</small>
               </div>
             </div>
