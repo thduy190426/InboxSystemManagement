@@ -3991,6 +3991,7 @@ html.dark .profile-field select {
 }
 
 .chat-panel {
+  position: relative;
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   height: 100svh;
@@ -4193,6 +4194,51 @@ html.dark .profile-field select {
   padding: 22px;
   overflow: auto;
   scroll-padding-block: 18px;
+}
+
+.scroll-to-latest-button {
+  position: absolute;
+  right: 24px;
+  bottom: 92px;
+  z-index: 16;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(20, 184, 166, 0.24);
+  border-radius: 50%;
+  background: #ffffff;
+  color: var(--primary-strong);
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.16);
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.scroll-to-latest-button:hover,
+.scroll-to-latest-button:focus-visible {
+  border-color: rgba(20, 184, 166, 0.44);
+  background: #e8f7f5;
+  color: var(--primary);
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.18);
+  transform: translateY(-2px);
+}
+
+html.dark .scroll-to-latest-button {
+  border-color: rgba(20, 184, 166, 0.28);
+  background: var(--surface);
+  color: var(--primary);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.32);
+}
+
+html.dark .scroll-to-latest-button:hover,
+html.dark .scroll-to-latest-button:focus-visible {
+  background: rgba(20, 184, 166, 0.14);
 }
 
 .load-older-messages-button {
@@ -8802,4 +8848,32 @@ html.dark .auth-security {
 html.dark .not-found-panel {
   background: var(--surface);
   border-color: var(--line);
+}
+html.dark .confirm-dialog {
+  background: rgba(26, 29, 36, 0.98);
+  border-color: var(--line);
+}
+
+html.dark .confirm-dialog-close:hover {
+  background: var(--surface-soft);
+  color: var(--text);
+}
+
+html.dark .confirm-dialog-icon {
+  background: rgba(15, 159, 142, 0.15);
+  color: var(--primary);
+}
+
+html.dark .confirm-dialog.is-danger .confirm-dialog-icon {
+  background: rgba(225, 29, 72, 0.15);
+  color: #fb7185;
+}
+
+html.dark .confirm-dialog-secondary {
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+html.dark .confirm-dialog-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
 }

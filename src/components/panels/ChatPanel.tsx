@@ -1,5 +1,5 @@
 import type { ChangeEvent, FormEvent } from 'react'
-import { Fragment, lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { EmojiClickData, EmojiStyle, Theme } from 'emoji-picker-react'
 import {
   Check,
@@ -214,7 +214,9 @@ export function ChatPanel({
   const [recordedMediaFile, setRecordedMediaFile] = useState<File | null>(null)
   const [recordedMediaKind, setRecordedMediaKind] = useState<'audio' | 'video' | null>(null)
   const [galleryImage, setGalleryImage] = useState<MessageAttachment | null>(null)
+  const [isAtLatestMessage, setIsAtLatestMessage] = useState(true)
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const threadRef = useRef<HTMLDivElement | null>(null)
   const threadEndRef = useRef<HTMLDivElement | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordingChunksRef = useRef<BlobPart[]>([])
@@ -255,6 +257,27 @@ export function ChatPanel({
           : true,
       )
   }, [activeConversation.id, conversations, forwardQuery])
+
+  const updateLatestMessageVisibility = useCallback(() => {
+    const thread = threadRef.current
+
+    if (!thread) {
+      setIsAtLatestMessage(true)
+      return
+    }
+
+    const distanceFromBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight
+
+    setIsAtLatestMessage(distanceFromBottom <= 80)
+  }, [])
+
+  const scrollToLatestMessage = useCallback((behavior: ScrollBehavior = 'smooth') => {
+    threadEndRef.current?.scrollIntoView({
+      behavior,
+      block: 'end',
+    })
+    window.setTimeout(updateLatestMessageVisibility, behavior === 'smooth' ? 240 : 0)
+  }, [updateLatestMessageVisibility])
 
   function isSameMessageGroup(message: Message, sibling?: Message) {
     if (!sibling || message.author === 'system' || sibling.author === 'system') {
@@ -319,12 +342,13 @@ export function ChatPanel({
       return
     }
 
-    threadEndRef.current?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'end',
-    })
+    scrollToLatestMessage('smooth')
     onAutoScrollComplete()
-  }, [onAutoScrollComplete, shouldAutoScrollToLatest])
+  }, [onAutoScrollComplete, scrollToLatestMessage, shouldAutoScrollToLatest])
+
+  useEffect(() => {
+    window.requestAnimationFrame(updateLatestMessageVisibility)
+  }, [activeConversation.id, messages.length, updateLatestMessageVisibility])
 
   useEffect(() => {
     if (!isGifPickerOpen) {
@@ -1284,7 +1308,7 @@ export function ChatPanel({
         </div>
       ) : null}
 
-      <div className="thread">
+      <div className="thread" onScroll={updateLatestMessageVisibility} ref={threadRef}>
         {hasOlderMessages ? (
           <button
             className="load-older-messages-button"
@@ -1577,6 +1601,16 @@ export function ChatPanel({
         <div ref={threadEndRef} />
       </div>
 
+      {!isAtLatestMessage ? (
+        <button
+          className="scroll-to-latest-button"
+          onClick={() => scrollToLatestMessage('smooth')}
+          title="Cuộn xuống tin nhắn mới nhất"
+          type="button"
+        >
+          <ChevronDown size={20} />
+        </button>
+      ) : null}
 
       <form className="composer" onSubmit={onSubmit}>
         {replyingTo ? (
