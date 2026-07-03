@@ -34,6 +34,7 @@ export type MessageReply = {
 export type MessageMention = {
   id: string
   fullName: string
+  handle?: string | null
   avatarUrl?: string | null
 }
 
@@ -171,6 +172,7 @@ export type ConversationMember = {
   id: string
   userId: number
   fullName: string
+  handle?: string | null
   nickname?: string | null
   email: string
   avatarUrl: string | null
@@ -198,6 +200,7 @@ export type ContactUser = {
   id: string
   userId: number
   fullName: string
+  handle?: string | null
   email: string
   phone: string | null
   gender?: string | null

@@ -10,6 +10,7 @@ function toPublicUser(row) {
     id: row.public_id,
     fullName: row.full_name,
     displayName: row.display_name,
+    handle: row.handle,
     email: row.email,
     phone: row.phone,
     gender: row.gender,
@@ -68,6 +69,7 @@ async function getCurrentUser(userId) {
       public_id,
       full_name,
       display_name,
+      handle,
       email,
       phone,
       gender,
@@ -163,6 +165,7 @@ function normalizeBirthDate(value) {
 function validateProfilePayload(payload) {
   const source = payload && typeof payload === 'object' ? payload : {}
   const displayName = normalizeRequiredString(source.displayName)
+  const handle = normalizeRequiredString(source.handle).toLocaleLowerCase('en-US')
   const phone = normalizeRequiredString(source.phone)
   const gender = normalizeRequiredString(source.gender)
   const address = normalizeRequiredString(source.address)
@@ -204,6 +207,10 @@ function validateProfilePayload(payload) {
     errors.phone = 'Số điện thoại không hợp lệ!'
   }
 
+  if (handle && !/^[a-z0-9][a-z0-9._]{2,31}$/.test(handle)) {
+    errors.handle = 'Tên định danh phải có 3-32 ký tự, chỉ gồm chữ thường, số, dấu chấm hoặc gạch dưới!'
+  }
+
   if (gender && !allowedGenders.has(gender)) {
     errors.gender = 'Giới tính không hợp lệ!'
   }
@@ -227,6 +234,7 @@ function validateProfilePayload(payload) {
   return {
     data: {
       displayName,
+      handle: handle || null,
       phone,
       gender,
       address,
@@ -251,7 +259,7 @@ function validateDeleteAccountPayload(payload) {
   }
 
   if (confirmationText !== 'XOA TAI KHOAN') {
-    errors.confirmationText = 'Vui lòng nhập chính xác XOA TAI KHOAN để xác nhận!'
+    errors.confirmationText = 'Vui lòng nhập chính xác cụm từ "XOA TAI KHOAN" để xác nhận!'
   }
 
   return {
@@ -289,13 +297,14 @@ async function updateProfile(request, response, next) {
 
     await ensureUserProfileColumns()
 
-    const { displayName, phone, gender, address, birthDate, bio, statusMessage } = validation.data
+    const { displayName, handle, phone, gender, address, birthDate, bio, statusMessage } = validation.data
 
     try {
       await pool.execute(
         `UPDATE users
         SET
           display_name = ?,
+          handle = ?,
           phone = ?,
           gender = ?,
           address = ?,
@@ -304,10 +313,19 @@ async function updateProfile(request, response, next) {
           status_message = ?,
           updated_at = CURRENT_TIMESTAMP
         WHERE id = ?`,
-        [displayName, phone, gender, address, birthDate, bio, statusMessage, request.user.id],
+        [displayName, handle, phone, gender, address, birthDate, bio, statusMessage, request.user.id],
       )
     } catch (error) {
       if (error.code === 'ER_DUP_ENTRY') {
+        const isHandleDuplicate = String(error.message || '').includes('uq_users_handle')
+        if (isHandleDuplicate) {
+          return response.status(409).json({
+            message: 'Tên định danh đã được sử dụng!',
+            errors: {
+              handle: 'Tên định danh đã được sử dụng!',
+            },
+          })
+        }
         return response.status(409).json({
           message: 'Số điện thoại đã được sử dụng!',
           errors: {
@@ -635,6 +653,7 @@ async function deleteAccount(request, response, next) {
       SET
         full_name = 'Tài khoản đã xoá',
         display_name = NULL,
+        handle = NULL,
         email = ?,
         phone = NULL,
         gender = NULL,

@@ -16,6 +16,7 @@ function toContactUser(row) {
     id: row.public_id,
     userId: row.id,
     fullName: row.full_name,
+    handle: row.handle,
     email: row.email,
     phone: row.phone,
     gender: row.gender || null,
@@ -81,6 +82,7 @@ async function searchUsers(request, response, next) {
         users.id,
         users.public_id,
         users.full_name,
+        users.handle,
         users.email,
         users.phone,
         users.gender,
@@ -114,12 +116,13 @@ async function searchUsers(request, response, next) {
         AND users.is_active = 1
         AND (
           users.full_name LIKE ?
+          OR users.handle LIKE ?
           OR users.email LIKE ?
           OR users.phone LIKE ?
         )
       ORDER BY users.full_name ASC
       LIMIT 20`,
-      [currentUserId, currentUserId, currentUserId, likeKeyword, likeKeyword, likeKeyword],
+      [currentUserId, currentUserId, currentUserId, likeKeyword, likeKeyword, likeKeyword, likeKeyword],
     )
 
     response.json({
@@ -139,6 +142,7 @@ async function listIncomingRequests(request, response, next) {
         users.id,
         users.public_id,
         users.full_name,
+        users.handle,
         users.email,
         users.phone,
         users.gender,
@@ -184,6 +188,7 @@ async function listFriends(request, response, next) {
         users.id,
         users.public_id,
         users.full_name,
+        users.handle,
         users.email,
         users.phone,
         users.gender,
@@ -229,6 +234,7 @@ async function listSuggestions(request, response, next) {
         users.id,
         users.public_id,
         users.full_name,
+        users.handle,
         users.email,
         users.phone,
         users.gender,

@@ -173,6 +173,7 @@ async function globalSearch(request, response, next) {
       `SELECT
         users.public_id,
         users.full_name,
+        users.handle,
         users.email,
         users.avatar_url,
         users.bio,
@@ -187,6 +188,7 @@ async function globalSearch(request, response, next) {
         AND users.is_active = 1
         AND (
           users.full_name LIKE ?
+          OR users.handle LIKE ?
           OR users.email LIKE ?
           OR users.phone LIKE ?
         )
@@ -194,7 +196,7 @@ async function globalSearch(request, response, next) {
         CASE WHEN contacts.status = 'accepted' THEN 0 ELSE 1 END,
         users.full_name ASC
       LIMIT 8`,
-      [currentUserId, currentUserId, likeKeyword, likeKeyword, likeKeyword],
+      [currentUserId, currentUserId, likeKeyword, likeKeyword, likeKeyword, likeKeyword],
     )
 
     response.json({
@@ -224,6 +226,7 @@ async function globalSearch(request, response, next) {
       users: userRows.map((row) => ({
         id: row.public_id,
         fullName: row.full_name,
+        handle: row.handle,
         email: row.email,
         avatarUrl: row.avatar_url,
         bio: row.bio,

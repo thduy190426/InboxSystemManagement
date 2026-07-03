@@ -468,7 +468,7 @@ export function InboxPanel({
                   <AvatarFallback name={user.fullName} src={user.avatarUrl} />
                   <span>
                     <strong>{user.fullName}</strong>
-                    <small>{user.email}</small>
+                    <small>{user.handle ? `@${user.handle}` : user.email}</small>
                   </span>
                   <UserRound size={16} />
                 </button>

@@ -29,6 +29,7 @@ type SessionsResponse = {
 
 export type ProfilePayload = {
   displayName: string
+  handle: string
   phone: string
   gender: string
   address: string

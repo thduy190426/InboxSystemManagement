@@ -569,7 +569,7 @@ export function ContactsPanel({
         <AvatarFallback name={user.fullName} src={user.avatarUrl} />
         <div>
           <strong>{user.nickname || user.fullName}</strong>
-          <span>{user.email}</span>
+          <span>{user.handle ? `@${user.handle}` : user.email}</span>
           <small>{user.statusMessage || user.bio || 'Người dùng'}</small>
         </div>
         <span className="contact-row-actions">
@@ -754,7 +754,7 @@ export function ContactsPanel({
                   <AvatarFallback name={request.fullName} src={request.avatarUrl} />
                   <div>
                     <strong>{request.fullName}</strong>
-                    <span>{request.email}</span>
+                    <span>{request.handle ? `@${request.handle}` : request.email}</span>
                     <small>Muốn kết bạn với bạn</small>
                   </div>
                   <span className="contact-request-actions">

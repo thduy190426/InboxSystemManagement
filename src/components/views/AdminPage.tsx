@@ -106,8 +106,8 @@ function formatChartLabel(label: string) {
     dismissed: 'Bỏ qua',
     group: 'Nhóm',
     owner: 'Owner',
-    pending: 'Chờ xử lý',
-    reviewed: 'Đã xử lý',
+    pending: 'Chờ xử lý...',
+    reviewed: 'Đã xử lý!',
     support: 'Hỗ trợ',
     user: 'Người dùng',
   }
@@ -147,7 +147,7 @@ function TrendLineChart({
   }
 
   if (data.length === 0) {
-    return <div className="admin-chart-placeholder">Chưa có dữ liệu</div>
+    return <div className="admin-chart-placeholder">Chưa có dữ liệu!</div>
   }
 
   return (
@@ -184,7 +184,7 @@ function DistributionBars({
   }
 
   if (total === 0) {
-    return <div className="admin-chart-placeholder">Chưa có dữ liệu</div>
+    return <div className="admin-chart-placeholder">Chưa có dữ liệu!</div>
   }
 
   return (
@@ -251,16 +251,16 @@ function getReportStatusLabel(status: MessageReportStatus) {
     return 'Bỏ qua!'
   }
 
-  return 'Chờ xử lý!'
+  return 'Chờ xử lý...'
 }
 
 function getStatusLabel(status: AdminUserStatus) {
   if (status === 'suspended') {
-    return 'Đã khóa'
+    return 'Đã khóa.'
   }
 
   if (status === 'active') {
-    return 'Đang online'
+    return 'Đang online.'
   }
 
   return 'Bình thường.'
@@ -988,7 +988,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
                 <Users size={18} />
                 Kiểu hội thoại
               </h2>
-              <p>Direct, nhóm và hỗ trợ</p>
+              <p>Trực tiếp, nhóm và hỗ trợ</p>
             </div>
           </div>
           <DistributionBars data={stats.conversationDistribution} isLoading={isStatsLoading} tone="blue" />
@@ -1006,8 +1006,8 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
               value={reportStatus}
               onChange={(event) => setReportStatus(event.target.value as MessageReportStatus | 'all')}
             >
-              <option value="pending">Chờ xử lý</option>
-              <option value="reviewed">Đã xử lý</option>
+              <option value="pending">Chờ xử lý...</option>
+              <option value="reviewed">Đã xử lý!</option>
               <option value="dismissed">Bỏ qua</option>
               <option value="all">Tất cả</option>
             </select>

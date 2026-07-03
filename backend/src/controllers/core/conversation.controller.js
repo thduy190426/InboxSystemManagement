@@ -822,6 +822,7 @@ async function loadConversationMembers(connection, conversationId, currentUserId
       users.id,
       users.public_id,
       users.full_name,
+      users.handle,
       users.email,
       users.avatar_url,
       users.show_activity_status,
@@ -855,6 +856,7 @@ async function loadConversationMembers(connection, conversationId, currentUserId
     id: row.public_id,
     userId: Number(row.id),
     fullName: row.full_name,
+    handle: row.handle,
     nickname: row.custom_title || null,
     email: row.email,
     avatarUrl: row.avatar_url,
@@ -920,6 +922,7 @@ function resolveMentionedMembers(text, members, currentUserId) {
         }
 
         const aliases = [
+          member.handle,
           member.fullName,
           member.nickname,
           member.email?.split('@')[0],
@@ -1267,6 +1270,7 @@ async function loadConversationMessages(
         notifications.message_id,
         users.public_id,
         users.full_name,
+        users.handle,
         users.avatar_url
       FROM notifications
       INNER JOIN users ON users.id = notifications.user_id
@@ -1298,6 +1302,7 @@ async function loadConversationMessages(
     result[row.message_id].push({
       id: row.public_id,
       fullName: row.full_name,
+      handle: row.handle,
       avatarUrl: row.avatar_url,
     })
     return result

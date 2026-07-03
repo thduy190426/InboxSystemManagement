@@ -111,6 +111,7 @@ type ChatPanelProps = {
     id: string
     userId: number
     fullName: string
+    handle?: string | null
     nickname?: string | null
     avatarUrl: string | null
   }[]
@@ -234,9 +235,9 @@ export function ChatPanel({
 
     return members
       .filter((member) => {
-        const label = member.nickname || member.fullName
+        const searchable = [member.handle, member.nickname, member.fullName].filter(Boolean).join(' ')
 
-        return !mentionQuery || label.toLocaleLowerCase('vi-VN').includes(mentionQuery)
+        return !mentionQuery || searchable.toLocaleLowerCase('vi-VN').includes(mentionQuery)
       })
       .slice(0, 5)
   }, [activeConversation.type, members, mentionQuery])
@@ -814,7 +815,10 @@ export function ChatPanel({
 
   function renderHighlightedText(message: Message) {
     if (!normalizedSearch) {
-      const mentionNames = message.mentions?.map((mention) => mention.fullName) ?? []
+      const mentionNames = message.mentions?.flatMap((mention) => [
+        mention.fullName,
+        mention.handle ? mention.handle : '',
+      ]).filter(Boolean) ?? []
       const pattern = mentionNames.length
         ? new RegExp(
           `(@(?:${mentionNames
@@ -1736,11 +1740,11 @@ export function ChatPanel({
             {mentionSuggestions.map((member) => (
               <button
                 key={member.id}
-                onClick={() => insertMention(member.nickname || member.fullName)}
+                onClick={() => insertMention(member.handle || member.nickname || member.fullName)}
                 type="button"
               >
                 {member.avatarUrl ? <img alt="" src={member.avatarUrl} /> : <span />}
-                <strong>{member.nickname || member.fullName}</strong>
+                <strong>{member.handle ? `@${member.handle}` : member.nickname || member.fullName}</strong>
               </button>
             ))}
           </div>

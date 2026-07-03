@@ -22,6 +22,7 @@ export type GlobalSearchMessage = {
 export type GlobalSearchUser = {
   id: string
   fullName: string
+  handle: string | null
   email: string
   avatarUrl: string | null
   bio: string | null

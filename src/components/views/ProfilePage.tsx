@@ -1,6 +1,6 @@
 import type { ChangeEvent, FormEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
-import { AlignLeft, CalendarDays, Camera, IdCard, MapPin, MessageSquare, Phone, Save, Shield, User, Users } from 'lucide-react'
+import { AlignLeft, AtSign, CalendarDays, Camera, IdCard, MapPin, MessageSquare, Phone, Save, Shield, User, Users } from 'lucide-react'
 import type { AuthUser } from '../../services/api/authApi'
 import {
   fetchProfile,
@@ -20,6 +20,7 @@ type ProfileErrors = Partial<Record<keyof ProfilePayload, string>>
 function createInitialForm(user: AuthUser | null): ProfilePayload {
   return {
     displayName: user?.displayName ?? '',
+    handle: user?.handle ?? '',
     phone: user?.phone ?? '',
     gender: user?.gender ?? '',
     address: user?.address ?? '',
@@ -84,6 +85,10 @@ function validateProfileForm(form: ProfilePayload) {
     errors.displayName = 'Vui lòng nhập tên hiển thị!'
   } else if (form.displayName.trim().length > 80) {
     errors.displayName = 'Tên hiển thị không được vượt quá 80 ký tự!'
+  }
+
+  if (form.handle.trim() && !/^[a-z0-9][a-z0-9._]{2,31}$/.test(form.handle.trim())) {
+    errors.handle = 'Tên định danh phải có 3-32 ký tự, chỉ gồm chữ thường, số, dấu chấm hoặc gạch dưới!'
   }
 
   if (!form.phone.trim()) {
@@ -174,7 +179,7 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
 
     setForm((current) => ({
       ...current,
-      [name]: value,
+      [name]: name === 'handle' ? value.toLocaleLowerCase('en-US') : value,
     }))
     setProfileErrors((current) => ({
       ...current,
@@ -287,6 +292,7 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
             <input accept="image/*" disabled={isUploading || avatarCooldownLeft > 0} onChange={handleAvatarChange} type="file" />
           </label>
           <strong>{form.displayName || fullName || 'Người dùng'}</strong>
+          {form.handle ? <span className="profile-preview-handle">@{form.handle}</span> : null}
           {currentUser?.role && (
             <div className={`profile-role-badge role-${currentUser.role.toLowerCase()}`}>
               <Shield size={14} />
@@ -320,6 +326,12 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
             <span><IdCard size={16} /> Tên hiển thị</span>
             <input maxLength={80} name="displayName" onChange={handleChange} placeholder="Tên hiển thị trong chat" required value={form.displayName} />
             {profileErrors.displayName ? <span className="profile-field-error">{profileErrors.displayName}</span> : null}
+          </label>
+
+          <label className="profile-field">
+            <span><AtSign size={16} /> Tên định danh</span>
+            <input maxLength={32} name="handle" onChange={handleChange} placeholder="Tên định danh" value={form.handle} />
+            {profileErrors.handle ? <span className="profile-field-error">{profileErrors.handle}</span> : null}
           </label>
 
           <label className="profile-field">

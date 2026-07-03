@@ -2845,6 +2845,14 @@ h3 {
   font-size: 18px;
 }
 
+.profile-preview-handle {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .profile-role-badge {
   display: inline-flex;
   align-items: center;

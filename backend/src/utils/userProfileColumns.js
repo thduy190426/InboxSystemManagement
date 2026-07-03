@@ -1,6 +1,12 @@
 const { pool } = require('../config/db')
 
 const profileColumns = [
+  {
+    name: 'handle',
+    definition: 'VARCHAR(32) NULL AFTER display_name',
+    indexName: 'uq_users_handle',
+    indexDefinition: 'UNIQUE KEY uq_users_handle (handle)',
+  },
   { name: 'gender', definition: 'VARCHAR(20) NULL' },
   { name: 'address', definition: 'VARCHAR(255) NULL' },
   { name: 'birth_date', definition: 'DATE NULL' },
@@ -21,6 +27,9 @@ async function addColumnIfMissing(column) {
   )
 
   if (rows[0]) {
+    if (column.indexName) {
+      await addIndexIfMissing(column)
+    }
     return
   }
 
@@ -28,6 +37,36 @@ async function addColumnIfMissing(column) {
     await pool.execute(`ALTER TABLE users ADD COLUMN ${column.name} ${column.definition}`)
   } catch (error) {
     if (error?.code === 'ER_DUP_FIELDNAME') {
+      return
+    }
+
+    throw error
+  }
+
+  if (column.indexName) {
+    await addIndexIfMissing(column)
+  }
+}
+
+async function addIndexIfMissing(column) {
+  const [rows] = await pool.execute(
+    `SELECT INDEX_NAME
+    FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'users'
+      AND INDEX_NAME = ?
+    LIMIT 1`,
+    [column.indexName],
+  )
+
+  if (rows[0]) {
+    return
+  }
+
+  try {
+    await pool.execute(`ALTER TABLE users ADD ${column.indexDefinition}`)
+  } catch (error) {
+    if (error?.code === 'ER_DUP_KEYNAME') {
       return
     }
 
