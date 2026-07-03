@@ -619,6 +619,21 @@ export function ChatApp({
     })
   }
 
+  function markConversationNotificationsReadLocally(conversationId: string) {
+    const readAt = new Date().toISOString()
+
+    setNotifications((current) =>
+      current.map((notification) =>
+        notification.conversationId === conversationId && !notification.readAt
+          ? {
+            ...notification,
+            readAt,
+          }
+          : notification,
+      ),
+    )
+  }
+
   const syncDeliveredReceipts = useCallback(async (conversationId: string) => {
     if (!conversationId) {
       return
@@ -1443,6 +1458,7 @@ export function ChatApp({
               : conversation,
           ),
         )
+        markConversationNotificationsReadLocally(activeId)
         setReadSyncKey(nextReadSyncKey)
       } catch {
 
@@ -1625,9 +1641,10 @@ export function ChatApp({
             unread: 0,
             unreadSenders: [],
           }
-          : conversation,
+        : conversation,
       ),
     )
+    markConversationNotificationsReadLocally(conversationId)
     if ((selectedConversation?.unread ?? 0) > 0) {
       markConversationRead(conversationId)
         .then((response) => {

@@ -4670,6 +4670,15 @@ async function markConversationRead(request, response, next) {
       [lastMessageId, conversationId, currentUserId],
     )
 
+    await connection.execute(
+      `UPDATE notifications
+      SET read_at = COALESCE(read_at, CURRENT_TIMESTAMP)
+      WHERE user_id = ?
+        AND conversation_id = ?
+        AND read_at IS NULL`,
+      [currentUserId, conversationId],
+    )
+
     const { messages } = await loadConversationMessages(connection, conversationId, currentUserId)
 
     await connection.commit()

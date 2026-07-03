@@ -6933,7 +6933,7 @@ html.dark .scroll-to-latest-button:focus-visible {
 
     grid-template-columns: 1fr;
     grid-template-rows: auto minmax(0, 1fr);
-    padding-bottom: 72px;
+    padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
   }
 
   .app-shell.is-sidebar-open {
@@ -6975,12 +6975,19 @@ html.dark .scroll-to-latest-button:focus-visible {
     inset: auto 0 0 0;
     z-index: 50;
     flex-direction: row;
-    gap: 6px;
+    align-items: stretch;
+    gap: 8px;
     width: auto;
-    height: 72px;
-    padding: 8px 12px;
+    height: calc(76px + env(safe-area-inset-bottom, 0px));
+    min-width: 0;
+    padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+    background:
+      linear-gradient(180deg, rgba(13, 42, 49, 0.82), rgba(13, 42, 49, 0.96)),
+      rgba(16, 32, 39, 0.96);
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     border-right: 0;
+    box-shadow: 0 -14px 34px rgba(15, 23, 42, 0.18);
+    overflow: hidden;
   }
 
   .sidebar-toggle {
@@ -6994,20 +7001,34 @@ html.dark .scroll-to-latest-button:focus-visible {
 
   .nav-items {
     flex-direction: row;
-    gap: 4px;
+    flex: 1 1 auto;
+    gap: 3px;
+    width: auto;
+    min-width: 0;
+    padding-top: 0;
   }
 
   .nav-button {
-    min-height: 54px;
+    min-width: 0;
+    min-height: 58px;
     flex: 1 1 0;
     flex-direction: column;
     gap: 4px;
-    font-size: 11px;
+    padding: 7px 3px 6px;
+    font-size: 10.5px;
+    line-height: 1.1;
+    border-radius: 8px;
+  }
+
+  .nav-button svg {
+    width: 21px;
+    height: 21px;
   }
 
   .nav-settings {
-    width: auto;
-    flex: 0 0 62px;
+    width: 42px;
+    min-width: 42px;
+    flex: 0 0 42px;
     color: #fecdd3;
   }
 
@@ -7018,8 +7039,8 @@ html.dark .scroll-to-latest-button:focus-visible {
 
   .nav-count-badge,
   .nav-rail.is-open .nav-count-badge {
-    right: calc(50% - 22px);
-    top: 3px;
+    right: calc(50% - 24px);
+    top: 5px;
     transform: none;
   }
 
@@ -7035,6 +7056,12 @@ html.dark .scroll-to-latest-button:focus-visible {
     opacity: 1;
     transform: none;
     white-space: nowrap;
+    max-width: 100%;
+    color: currentColor;
+    font-weight: 800;
+    text-align: center;
+    text-overflow: ellipsis;
+    line-height: 1.1;
   }
 
   .nav-button::before {
@@ -7048,6 +7075,24 @@ html.dark .scroll-to-latest-button:focus-visible {
 
   .nav-button.is-active::before {
     transform: translateX(-50%) scaleX(1);
+  }
+
+  .nav-bottom-actions {
+    flex: 0 0 auto;
+    flex-direction: row;
+    gap: 3px;
+    width: auto;
+  }
+
+  .nav-bottom-actions .nav-button span {
+    position: absolute;
+    width: 1px;
+    max-width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    opacity: 0;
   }
 
   .inbox-panel {
@@ -7222,24 +7267,31 @@ html.dark .scroll-to-latest-button:focus-visible {
   }
 
   .nav-rail {
-    gap: 3px;
-    padding-inline: 8px;
-    overflow-x: auto;
+    gap: 5px;
+    padding-inline: 6px;
   }
 
   .nav-items {
-    min-width: max-content;
+    gap: 2px;
+    min-width: 0;
   }
 
   .nav-button {
-    min-width: 52px;
-    min-height: 54px;
-    gap: 3px;
-    font-size: 10px;
+    min-width: 0;
+    min-height: 58px;
+    gap: 4px;
+    font-size: 9.5px;
   }
 
   .nav-settings {
-    flex-basis: 54px;
+    width: 38px;
+    min-width: 38px;
+    flex-basis: 38px;
+  }
+
+  .nav-button svg {
+    width: 20px;
+    height: 20px;
   }
 
   .auth-card {
@@ -9003,9 +9055,22 @@ html.dark {
     width: auto;
     gap: 4px;
   }
-  .nav-button {
-    flex: 0 0 auto;
-    min-width: 68px;
+
+  .nav-items .nav-button {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .nav-bottom-actions .nav-button {
+    flex: 0 0 42px;
+    min-width: 42px;
+  }
+}
+
+@media (max-width: 480px) {
+  .nav-bottom-actions .nav-button {
+    flex-basis: 38px;
+    min-width: 38px;
   }
 }
 .theme-transition,
@@ -9090,4 +9155,7 @@ html.dark .confirm-dialog-secondary {
 html.dark .confirm-dialog-secondary:hover {
   background: rgba(255, 255, 255, 0.1);
   color: var(--text);
+}
+html.dark .system-message {
+  background: var(--surface-soft);
 }
