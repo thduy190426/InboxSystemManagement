@@ -74,6 +74,51 @@ function toAdminUser(row) {
   }
 }
 
+function createLastSevenDaysMap() {
+  const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'UTC' })
+  const days = []
+  const today = new Date()
+
+  for (let index = 6; index >= 0; index -= 1) {
+    const date = new Date(Date.UTC(
+      today.getUTCFullYear(),
+      today.getUTCMonth(),
+      today.getUTCDate() - index,
+    ))
+    const key = formatter.format(date)
+
+    days.push({
+      key,
+      label: new Intl.DateTimeFormat('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        timeZone: 'UTC',
+      }).format(date),
+      value: 0,
+    })
+  }
+
+  return days
+}
+
+function normalizeChartDateKey(value) {
+  if (value instanceof Date) {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'UTC' }).format(value)
+  }
+
+  return String(value).slice(0, 10)
+}
+
+function fillLastSevenDays(rows, countKey) {
+  const days = createLastSevenDaysMap()
+  const rowMap = new Map(rows.map((row) => [normalizeChartDateKey(row.day_key), Number(row[countKey] || 0)]))
+
+  return days.map((day) => ({
+    label: day.label,
+    value: rowMap.get(day.key) || 0,
+  }))
+}
+
 function toMessageReport(row) {
   return {
     id: row.public_id,
@@ -110,7 +155,15 @@ async function getAdminStats(_request, response, next) {
   try {
     await ensureMessageReportsTable()
 
-    const [[userStats], [alertStats]] = await Promise.all([
+    const [
+      [userStats],
+      [alertStats],
+      [userGrowthRows],
+      [messageVolumeRows],
+      [roleRows],
+      [reportRows],
+      [conversationRows],
+    ] = await Promise.all([
       pool.execute(
         `SELECT
           COUNT(*) AS total_users,
@@ -134,6 +187,47 @@ async function getAdminStats(_request, response, next) {
             WHERE status = 'pending'
           ) AS unread_system_alerts`,
       ),
+      pool.execute(
+        `SELECT
+          DATE(created_at) AS day_key,
+          COUNT(*) AS created_users
+        FROM users
+        WHERE deleted_at IS NULL
+          AND role <> 'admin'
+          AND created_at >= UTC_DATE() - INTERVAL 6 DAY
+        GROUP BY DATE(created_at)
+        ORDER BY DATE(created_at) ASC`,
+      ),
+      pool.execute(
+        `SELECT
+          DATE(created_at) AS day_key,
+          COUNT(*) AS sent_messages
+        FROM messages
+        WHERE deleted_at IS NULL
+          AND created_at >= UTC_DATE() - INTERVAL 6 DAY
+        GROUP BY DATE(created_at)
+        ORDER BY DATE(created_at) ASC`,
+      ),
+      pool.execute(
+        `SELECT role, COUNT(*) AS total
+        FROM users
+        WHERE deleted_at IS NULL
+          AND role <> 'admin'
+        GROUP BY role
+        ORDER BY total DESC`,
+      ),
+      pool.execute(
+        `SELECT status, COUNT(*) AS total
+        FROM message_reports
+        GROUP BY status`,
+      ),
+      pool.execute(
+        `SELECT type, COUNT(*) AS total
+        FROM conversations
+        WHERE deleted_at IS NULL
+        GROUP BY type
+        ORDER BY total DESC`,
+      ),
     ])
 
     const stats = userStats[0] || {}
@@ -146,6 +240,24 @@ async function getAdminStats(_request, response, next) {
         suspendedUsers: Number(stats.suspended_users || 0),
         onlineUsers: Number(stats.online_users || 0),
         alertCount: Number(alerts.unread_system_alerts || 0),
+        userGrowth: fillLastSevenDays(userGrowthRows, 'created_users'),
+        messageVolume: fillLastSevenDays(messageVolumeRows, 'sent_messages'),
+        roleDistribution: roleRows.map((row) => ({
+          label: row.role,
+          value: Number(row.total || 0),
+        })),
+        reportStatusDistribution: ['pending', 'reviewed', 'dismissed'].map((status) => {
+          const row = reportRows.find((item) => item.status === status)
+
+          return {
+            label: status,
+            value: Number(row?.total || 0),
+          }
+        }),
+        conversationDistribution: conversationRows.map((row) => ({
+          label: row.type,
+          value: Number(row.total || 0),
+        })),
       },
     })
   } catch (error) {

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Activity,
   AlertCircle,
+  BarChart3,
   CheckCircle2,
   Edit2,
   Flag,
@@ -9,6 +10,8 @@ import {
   Lock,
   Loader2,
   Mail,
+  MessageSquare,
+  PieChart,
   Plus,
   Search,
   ShieldCheck,
@@ -30,6 +33,7 @@ import {
   updateAdminUser,
   updateMessageReportStatus,
   type AdminStats,
+  type AdminChartPoint,
   type AdminUser,
   type AdminUserRole,
   type AdminUserStatus,
@@ -72,6 +76,11 @@ const emptyStats: AdminStats = {
   suspendedUsers: 0,
   onlineUsers: 0,
   alertCount: 0,
+  userGrowth: [],
+  messageVolume: [],
+  roleDistribution: [],
+  reportStatusDistribution: [],
+  conversationDistribution: [],
 }
 
 const emptyCreateUser: CreateUserState = {
@@ -90,6 +99,116 @@ function formatNumber(value: number) {
   return new Intl.NumberFormat('vi-VN').format(value)
 }
 
+function formatChartLabel(label: string) {
+  const labels: Record<string, string> = {
+    agent: 'Agent',
+    direct: 'Trực tiếp',
+    dismissed: 'Bỏ qua',
+    group: 'Nhóm',
+    owner: 'Owner',
+    pending: 'Chờ xử lý',
+    reviewed: 'Đã xử lý',
+    support: 'Hỗ trợ',
+    user: 'Người dùng',
+  }
+
+  return labels[label] || label
+}
+
+function TrendLineChart({
+  data,
+  isLoading,
+  tone,
+}: {
+  data: AdminChartPoint[]
+  isLoading: boolean
+  tone: 'primary' | 'blue'
+}) {
+  const width = 420
+  const height = 170
+  const paddingX = 22
+  const paddingY = 22
+  const maxValue = Math.max(1, ...data.map((point) => point.value))
+  const points = data.map((point, index) => {
+    const x = data.length <= 1
+      ? width / 2
+      : paddingX + (index * (width - paddingX * 2)) / (data.length - 1)
+    const y = height - paddingY - (point.value / maxValue) * (height - paddingY * 2)
+
+    return { ...point, x, y }
+  })
+  const linePath = points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ')
+  const areaPath = points.length
+    ? `${linePath} L ${points[points.length - 1].x} ${height - paddingY} L ${points[0].x} ${height - paddingY} Z`
+    : ''
+
+  if (isLoading) {
+    return <div className="admin-chart-placeholder">Đang tải biểu đồ...</div>
+  }
+
+  if (data.length === 0) {
+    return <div className="admin-chart-placeholder">Chưa có dữ liệu</div>
+  }
+
+  return (
+    <div className="admin-trend-chart">
+      <svg aria-hidden="true" className={`admin-line-chart chart-${tone}`} viewBox={`0 0 ${width} ${height}`}>
+        <path className="line-area" d={areaPath} />
+        <path className="line-stroke" d={linePath} />
+        {points.map((point) => (
+          <circle cx={point.x} cy={point.y} key={point.label} r="4" />
+        ))}
+      </svg>
+      <div className="admin-chart-axis">
+        {data.map((point) => (
+          <span key={point.label}>{point.label}</span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function DistributionBars({
+  data,
+  isLoading,
+  tone,
+}: {
+  data: AdminChartPoint[]
+  isLoading: boolean
+  tone: 'primary' | 'orange' | 'blue'
+}) {
+  const total = data.reduce((sum, point) => sum + point.value, 0)
+
+  if (isLoading) {
+    return <div className="admin-chart-placeholder">Đang tải dữ liệu...</div>
+  }
+
+  if (total === 0) {
+    return <div className="admin-chart-placeholder">Chưa có dữ liệu</div>
+  }
+
+  return (
+    <div className={`admin-distribution chart-${tone}`}>
+      {data.map((point) => {
+        const percent = Math.round((point.value / total) * 100)
+
+        return (
+          <div className="admin-distribution-row" key={point.label}>
+            <div className="admin-distribution-meta">
+              <span>{formatChartLabel(point.label)}</span>
+              <strong>{formatNumber(point.value)}</strong>
+            </div>
+            <div className="admin-distribution-track">
+              <span style={{ width: `${Math.max(percent, 3)}%` }} />
+            </div>
+            <small>{percent}%</small>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 function formatLastLogin(value: string | null) {
   if (!value) {
     return 'Chưa đăng nhập!'
@@ -102,8 +221,11 @@ function formatLastLogin(value: string | null) {
   }
 
   return new Intl.DateTimeFormat('vi-VN', {
-    dateStyle: 'short',
-    timeStyle: 'short',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   }).format(date)
 }
 
@@ -134,11 +256,11 @@ function getReportStatusLabel(status: MessageReportStatus) {
 
 function getStatusLabel(status: AdminUserStatus) {
   if (status === 'suspended') {
-    return 'Đã khóa!'
+    return 'Đã khóa'
   }
 
   if (status === 'active') {
-    return 'Đang online!'
+    return 'Đang online'
   }
 
   return 'Bình thường.'
@@ -802,6 +924,75 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
             <span className="stat-trend negative">cần xử lý</span>
           </div>
         </div>
+      </div>
+
+      <div className="admin-chart-grid">
+        <section className="admin-chart-panel admin-chart-panel-wide">
+          <div className="admin-chart-header">
+            <div>
+              <h2>
+                <BarChart3 size={18} />
+                Người dùng mới
+              </h2>
+              <p>7 ngày gần nhất</p>
+            </div>
+            <strong>{formatNumber(stats.userGrowth.reduce((sum, point) => sum + point.value, 0))}</strong>
+          </div>
+          <TrendLineChart data={stats.userGrowth} isLoading={isStatsLoading} tone="primary" />
+        </section>
+
+        <section className="admin-chart-panel admin-chart-panel-wide">
+          <div className="admin-chart-header">
+            <div>
+              <h2>
+                <MessageSquare size={18} />
+                Lưu lượng tin nhắn
+              </h2>
+              <p>7 ngày gần nhất</p>
+            </div>
+            <strong>{formatNumber(stats.messageVolume.reduce((sum, point) => sum + point.value, 0))}</strong>
+          </div>
+          <TrendLineChart data={stats.messageVolume} isLoading={isStatsLoading} tone="blue" />
+        </section>
+
+        <section className="admin-chart-panel">
+          <div className="admin-chart-header">
+            <div>
+              <h2>
+                <PieChart size={18} />
+                Vai trò tài khoản
+              </h2>
+              <p>Phân bổ người dùng</p>
+            </div>
+          </div>
+          <DistributionBars data={stats.roleDistribution} isLoading={isStatsLoading} tone="primary" />
+        </section>
+
+        <section className="admin-chart-panel">
+          <div className="admin-chart-header">
+            <div>
+              <h2>
+                <AlertCircle size={18} />
+                Trạng thái báo cáo
+              </h2>
+              <p>Toàn bộ báo cáo tin nhắn</p>
+            </div>
+          </div>
+          <DistributionBars data={stats.reportStatusDistribution} isLoading={isStatsLoading} tone="orange" />
+        </section>
+
+        <section className="admin-chart-panel">
+          <div className="admin-chart-header">
+            <div>
+              <h2>
+                <Users size={18} />
+                Kiểu hội thoại
+              </h2>
+              <p>Direct, nhóm và hỗ trợ</p>
+            </div>
+          </div>
+          <DistributionBars data={stats.conversationDistribution} isLoading={isStatsLoading} tone="blue" />
+        </section>
       </div>
 
       <div className="admin-content-section message-report-section">

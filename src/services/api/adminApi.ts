@@ -9,6 +9,16 @@ export type AdminStats = {
   suspendedUsers: number
   onlineUsers: number
   alertCount: number
+  userGrowth: AdminChartPoint[]
+  messageVolume: AdminChartPoint[]
+  roleDistribution: AdminChartPoint[]
+  reportStatusDistribution: AdminChartPoint[]
+  conversationDistribution: AdminChartPoint[]
+}
+
+export type AdminChartPoint = {
+  label: string
+  value: number
 }
 
 export type AdminUser = {
