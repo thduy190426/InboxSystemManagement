@@ -8778,3 +8778,14 @@ html.dark .contact-profile-header button:hover {
   color: var(--text);
 }
 
+html.dark .notifications-header-actions button {
+  background: rgba(15, 159, 142, 0.15);
+  border-color: rgba(15, 159, 142, 0.3);
+  color: var(--primary);
+  box-shadow: none;
+}
+
+html.dark .notifications-count {
+  background: rgba(15, 159, 142, 0.15);
+  color: var(--primary);
+}
