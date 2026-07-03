@@ -9176,3 +9176,19 @@ html.dark .group-avatar-picker {
   background: rgba(15, 159, 142, 0.15);
   color: var(--primary);
 }
+html.dark .quick-filters button:hover,
+html.dark .quick-filters .is-active {
+  background: rgba(15, 159, 142, 0.15);
+  color: var(--primary);
+}
+
+html.dark .icon-button:hover,
+html.dark .icon-button.is-active {
+  background: rgba(15, 159, 142, 0.15);
+  color: var(--primary);
+}
+
+html.dark .profile-upload-button {
+  background: rgba(15, 159, 142, 0.15);
+  color: var(--primary);
+}
