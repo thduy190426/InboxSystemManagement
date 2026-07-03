@@ -13,6 +13,7 @@ import {
 import {
   archiveConversation,
   addGroupMember,
+  createDirectConversation,
   createGroupConversation,
   deleteMessage,
   disbandGroupConversation,
@@ -116,7 +117,7 @@ const SIDEBAR_STATE_KEY = 'sidebar_is_open'
 const OFFLINE_MESSAGE_QUEUE_KEY = 'offline_message_queue'
 const COMPACT_LAYOUT_MEDIA_QUERY = '(max-width: 1024px)'
 const MESSAGE_PAGE_LIMIT = 40
-const CONVERSATION_FILTERS: ConversationFilter[] = ['all', 'unread', 'group', 'archived']
+const CONVERSATION_FILTERS: ConversationFilter[] = ['all', 'unread', 'requests', 'group', 'archived']
 
 type QueuedMessage = {
   conversationId: string
@@ -1465,14 +1466,18 @@ export function ChatApp({
       }
 
       if (conversationFilter === 'unread') {
-        return conversation.unread > 0
+        return conversation.unread > 0 && conversation.messageRequestStatus !== 'pending'
+      }
+
+      if (conversationFilter === 'requests') {
+        return conversation.messageRequestStatus === 'pending'
       }
 
       if (conversationFilter === 'group') {
-        return conversation.type === 'group'
+        return conversation.type === 'group' && conversation.messageRequestStatus !== 'pending'
       }
 
-      return true
+      return conversation.messageRequestStatus !== 'pending'
     })
 
     if (!keyword) {
@@ -2598,6 +2603,24 @@ export function ChatApp({
     }
   }
 
+  async function handleStartDirectMessage(user: Pick<ContactUser, 'id' | 'fullName' | 'friendshipStatus' | 'contactId'>) {
+    const conversation = await createDirectConversation(user.id)
+
+    setConversations((current) => [
+      conversation,
+      ...current.filter((item) => item.id !== conversation.id),
+    ])
+    setConversationFilter('all')
+    setActiveView('chat')
+    handleSelectConversation(conversation.id)
+    pushToast(
+      conversation.friendshipStatus === 'accepted'
+        ? 'Đã mở cuộc trò chuyện!'
+        : 'Đã mở cuộc trò chuyện. Tin nhắn đầu tiên sẽ vào mục Tin nhắn chờ của người nhận!',
+      'info',
+    )
+  }
+
   async function refreshActiveGroup(conversationId: string) {
     const [nextConversations, nextMembers, nextMessagePage] = await Promise.all([
       fetchConversations(),
@@ -3056,6 +3079,7 @@ export function ChatApp({
           onDeleteConversation={handleDeleteConversation}
           onRestoreConversation={handleRestoreConversation}
           onSelectConversation={handleSelectConversation}
+          onStartDirectMessage={handleStartDirectMessage}
           query={query}
         />
       </>
@@ -3123,6 +3147,7 @@ export function ChatApp({
         <ContactsPanel
           contactToOpen={profileContactToOpen}
           onAccepted={handleAcceptedFriend}
+          onMessage={handleStartDirectMessage}
           onProfileOpened={() => setProfileContactToOpen(null)}
           pushToast={pushToast}
         />

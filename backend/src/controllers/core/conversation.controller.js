@@ -189,6 +189,19 @@ const conversationParticipantHiddenAtReady = pool
     console.error('Không thể đảm bảo cột hidden_at cho người tham gia cuộc trò chuyện:', error)
     throw error
   })
+const conversationParticipantMessageRequestStatusReady = pool
+  .execute(
+    `ALTER TABLE conversation_participants
+      ADD COLUMN message_request_status ENUM('none', 'pending') NOT NULL DEFAULT 'none'`,
+  )
+  .catch((error) => {
+    if (error && error.code === 'ER_DUP_FIELDNAME') {
+      return
+    }
+
+    console.error('Không thể đảm bảo cột message_request_status cho người tham gia cuộc trò chuyện:', error)
+    throw error
+  })
 const groupInviteTokensTableReady = pool
   .execute(
     `CREATE TABLE IF NOT EXISTS group_invite_tokens (
@@ -272,6 +285,10 @@ async function ensureMessagePollsTables() {
 
 async function ensureConversationParticipantHiddenAtColumn() {
   await conversationParticipantHiddenAtReady
+}
+
+async function ensureConversationParticipantMessageRequestStatusColumn() {
+  await conversationParticipantMessageRequestStatusReady
 }
 
 async function ensureGroupInviteTables() {
@@ -673,6 +690,101 @@ async function hasBlockedDirectContact(connection, conversationId, currentUserId
   )
 
   return Boolean(rows[0])
+}
+
+async function findDirectConversation(connection, userAId, userBId) {
+  const [rows] = await connection.execute(
+    `SELECT conversations.id
+    FROM conversations
+    INNER JOIN conversation_participants AS participant_a
+      ON participant_a.conversation_id = conversations.id
+      AND participant_a.user_id = ?
+      AND participant_a.left_at IS NULL
+    INNER JOIN conversation_participants AS participant_b
+      ON participant_b.conversation_id = conversations.id
+      AND participant_b.user_id = ?
+      AND participant_b.left_at IS NULL
+    WHERE conversations.type = 'direct'
+      AND conversations.deleted_at IS NULL
+    LIMIT 1`,
+    [userAId, userBId],
+  )
+
+  return rows[0]?.id || null
+}
+
+async function getDirectContactStatus(connection, userAId, userBId) {
+  const [rows] = await connection.execute(
+    `SELECT status
+    FROM contacts
+    WHERE (
+        owner_user_id = ?
+        AND contact_user_id = ?
+      )
+      OR (
+        owner_user_id = ?
+        AND contact_user_id = ?
+      )
+    ORDER BY FIELD(status, 'blocked', 'accepted', 'pending') ASC
+    LIMIT 1`,
+    [userAId, userBId, userBId, userAId],
+  )
+
+  return rows[0]?.status || 'none'
+}
+
+async function ensureDirectConversationForMessageRequest(connection, senderId, recipientId) {
+  await ensureConversationParticipantMessageRequestStatusColumn()
+
+  const contactStatus = await getDirectContactStatus(connection, senderId, recipientId)
+
+  if (contactStatus === 'blocked') {
+    const error = new Error('Không thể nhắn tin vì một trong hai bên đã chặn liên hệ này!')
+    error.statusCode = 403
+    throw error
+  }
+
+  const existingConversationId = await findDirectConversation(connection, senderId, recipientId)
+
+  if (existingConversationId) {
+    await connection.execute(
+      `UPDATE conversation_participants
+      SET hidden_at = NULL,
+        message_request_status = CASE
+          WHEN user_id = ? OR ? = 'accepted' THEN 'none'
+          ELSE message_request_status
+        END
+      WHERE conversation_id = ?
+        AND user_id IN (?, ?)`,
+      [senderId, contactStatus, existingConversationId, senderId, recipientId],
+    )
+
+    return existingConversationId
+  }
+
+  const recipientRequestStatus = contactStatus === 'accepted' ? 'none' : 'pending'
+  const [conversationResult] = await connection.execute(
+    `INSERT INTO conversations (
+      public_id,
+      type,
+      created_by
+    ) VALUES (?, 'direct', ?)`,
+    [randomUUID(), senderId],
+  )
+  const conversationId = conversationResult.insertId
+
+  await connection.execute(
+    `INSERT INTO conversation_participants (
+      conversation_id,
+      user_id,
+      role,
+      last_read_at,
+      message_request_status
+    ) VALUES (?, ?, 'owner', CURRENT_TIMESTAMP, 'none'), (?, ?, 'member', CURRENT_TIMESTAMP, ?)`,
+    [conversationId, senderId, conversationId, recipientId, recipientRequestStatus],
+  )
+
+  return conversationId
 }
 
 async function createSystemMessage(connection, conversationId, actorUserId, text) {
@@ -1219,6 +1331,7 @@ async function touchDeliveredReceipts(connection, conversationId, currentUserId)
 async function loadConversationSummary(connection, conversationId, currentUserId) {
   await ensureMessageHiddenEntriesTable()
   await ensureConversationParticipantHiddenAtColumn()
+  await ensureConversationParticipantMessageRequestStatusColumn()
 
   const [conversationRows] = await connection.execute(
     `SELECT
@@ -1231,6 +1344,7 @@ async function loadConversationSummary(connection, conversationId, currentUserId
       conversations.is_archived,
       participant_settings.is_pinned,
       participant_settings.is_muted,
+      participant_settings.message_request_status,
       participant_settings.last_read_message_id,
       last_messages.body AS last_message_body,
       last_messages.type AS last_message_type,
@@ -1346,6 +1460,7 @@ async function loadConversationSummary(connection, conversationId, currentUserId
     pinned: Boolean(row.is_pinned),
     muted: Boolean(row.is_muted),
     archived: Boolean(row.is_archived),
+    messageRequestStatus: row.message_request_status || 'none',
     contactId: row.direct_contact_id ? String(row.direct_contact_id) : null,
     nickname: isDirect ? row.direct_nickname || null : null,
     onlineSince: isDirect && directActivityVisible ? row.direct_online_since || null : null,
@@ -1365,6 +1480,7 @@ async function listConversations(request, response, next) {
 
     await ensureMessageHiddenEntriesTable()
     await ensureConversationParticipantHiddenAtColumn()
+    await ensureConversationParticipantMessageRequestStatusColumn()
 
     const [conversationRows] = await pool.execute(
       `SELECT
@@ -1377,6 +1493,7 @@ async function listConversations(request, response, next) {
         conversations.is_archived,
         participant_settings.is_pinned,
         participant_settings.is_muted,
+        participant_settings.message_request_status,
         participant_settings.last_read_message_id,
         last_messages.body AS last_message_body,
         last_messages.type AS last_message_type,
@@ -1606,6 +1723,7 @@ async function listConversations(request, response, next) {
         pinned: Boolean(row.is_pinned),
         muted: Boolean(row.is_muted),
         archived: Boolean(row.is_archived),
+        messageRequestStatus: row.message_request_status || 'none',
         contactId: row.direct_contact_id ? String(row.direct_contact_id) : null,
         nickname: isDirect ? row.direct_nickname || null : null,
         onlineSince: isDirect && directActivityVisible ? row.direct_online_since || null : null,
@@ -1624,6 +1742,76 @@ async function listConversations(request, response, next) {
     })
   } catch (error) {
     next(error)
+  }
+}
+
+async function createDirectConversation(request, response, next) {
+  const connection = await pool.getConnection()
+
+  try {
+    const currentUserId = request.user.id
+    const targetPublicId = typeof request.body.userId === 'string' ? request.body.userId : ''
+
+    if (!targetPublicId) {
+      return response.status(422).json({
+        message: 'Vui lòng chọn người nhận tin nhắn!',
+      })
+    }
+
+    const [userRows] = await connection.execute(
+      `SELECT id
+      FROM users
+      WHERE public_id = ?
+        AND deleted_at IS NULL
+      LIMIT 1`,
+      [targetPublicId],
+    )
+    const targetUser = userRows[0]
+
+    if (!targetUser) {
+      return response.status(404).json({
+        message: 'Không tìm thấy người dùng!',
+      })
+    }
+
+    if (targetUser.id === currentUserId) {
+      return response.status(422).json({
+        message: 'Bạn không thể tự nhắn tin cho chính mình!',
+      })
+    }
+
+    await connection.beginTransaction()
+    const conversationId = await ensureDirectConversationForMessageRequest(
+      connection,
+      currentUserId,
+      targetUser.id,
+    )
+    await connection.commit()
+
+    const conversation = await loadConversationSummary(connection, conversationId, currentUserId)
+
+    emitToUsers([currentUserId, targetUser.id], 'conversation:changed', {
+      conversationId: String(conversationId),
+      actorUserId: String(currentUserId),
+      eventType: 'conversation:direct',
+      userIds: [currentUserId, targetUser.id],
+    })
+
+    response.status(201).json({
+      conversation,
+    })
+  } catch (error) {
+    await connection.rollback().catch(() => undefined)
+
+    if (error.statusCode) {
+      return response.status(error.statusCode).json({
+        message: error.message,
+      })
+    }
+
+    next(error)
+  } finally {
+    connection.release()
   }
 }
 
@@ -3269,6 +3457,7 @@ async function createMessage(request, response, next) {
 
     try {
       await connection.beginTransaction()
+      await ensureConversationParticipantMessageRequestStatusColumn()
 
       if (await hasBlockedDirectContact(connection, conversationId, currentUserId)) {
         await connection.rollback()
@@ -3341,7 +3530,9 @@ async function createMessage(request, response, next) {
 
       await connection.execute(
         `UPDATE conversation_participants
-        SET last_read_message_id = ?, last_read_at = CURRENT_TIMESTAMP
+        SET last_read_message_id = ?,
+          last_read_at = CURRENT_TIMESTAMP,
+          message_request_status = 'none'
         WHERE conversation_id = ? AND user_id = ?`,
         [result.insertId, conversationId, currentUserId],
       )
@@ -4747,6 +4938,7 @@ module.exports = {
   addGroupMember,
   archiveConversation,
   createAttachmentMessage,
+  createDirectConversation,
   createGifMessage,
   createGroupConversation,
   createMessage,

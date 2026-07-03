@@ -417,9 +417,27 @@ async function findDirectConversation(connection, userAId, userBId) {
 }
 
 async function ensureDirectConversation(connection, userAId, userBId) {
+  await connection.execute(
+    `ALTER TABLE conversation_participants
+      ADD COLUMN message_request_status ENUM('none', 'pending') NOT NULL DEFAULT 'none'`,
+  ).catch((error) => {
+    if (error && error.code === 'ER_DUP_FIELDNAME') {
+      return
+    }
+
+    throw error
+  })
+
   const existingConversationId = await findDirectConversation(connection, userAId, userBId)
 
   if (existingConversationId) {
+    await connection.execute(
+      `UPDATE conversation_participants
+      SET message_request_status = 'none'
+      WHERE conversation_id = ?`,
+      [existingConversationId],
+    )
+
     return existingConversationId
   }
 

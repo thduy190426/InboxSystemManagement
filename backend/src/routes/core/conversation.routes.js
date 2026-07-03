@@ -3,6 +3,7 @@ const {
   addGroupMember,
   archiveConversation,
   createAttachmentMessage,
+  createDirectConversation,
   createGifMessage,
   createGroupConversation,
   createMessage,
@@ -45,6 +46,7 @@ const { sendMessageRateLimit } = require('../../middleware/rateLimit.middleware'
 const router = express.Router()
 
 router.get('/', listConversations)
+router.post('/direct', createDirectConversation)
 router.post('/groups', avatarUpload.single('avatar'), createGroupConversation)
 router.get('/:conversationId/calls', listConversationCalls)
 router.get('/:conversationId/invite', getGroupInvite)

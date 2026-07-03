@@ -10,6 +10,7 @@ import {
   Inbox,
   Mail,
   MapPin,
+  MessageCircle,
   Phone,
   Search,
   SearchX,
@@ -38,6 +39,7 @@ import { ConfirmDialog, type ConfirmDialogState } from '../ui/ConfirmDialog'
 type ContactsPanelProps = {
   contactToOpen?: ContactUser | null
   onAccepted: (conversationId: string) => void
+  onMessage: (user: ContactUser) => Promise<void> | void
   onProfileOpened?: () => void
   pushToast: (text: string, tone?: 'info' | 'error') => void
 }
@@ -116,6 +118,7 @@ function updateContactsQuery(query: string) {
 export function ContactsPanel({
   contactToOpen = null,
   onAccepted,
+  onMessage,
   onProfileOpened,
   pushToast,
 }: ContactsPanelProps) {
@@ -406,6 +409,18 @@ export function ContactsPanel({
     }
   }
 
+  async function handleMessageUser(user: ContactUser) {
+    try {
+      setBusyId(`message:${user.id}`)
+      await onMessage(user)
+      closeContactProfile()
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : 'Không thể mở cuộc trò chuyện!', 'error')
+    } finally {
+      setBusyId('')
+    }
+  }
+
   async function handleConfirmDialog() {
     if (!confirmDialog || isConfirming) {
       return
@@ -565,6 +580,15 @@ export function ContactsPanel({
           >
             <IdCard size={16} />
             Xem hồ sơ
+          </button>
+          <button
+            className="contact-secondary-button"
+            disabled={busyId === `message:${user.id}` || user.friendshipStatus === 'blocked'}
+            onClick={() => handleMessageUser(user)}
+            type="button"
+          >
+            <MessageCircle size={16} />
+            {busyId === `message:${user.id}` ? 'Đang mở' : 'Nhắn tin'}
           </button>
           {action}
         </span>

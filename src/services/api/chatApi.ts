@@ -408,6 +408,15 @@ export async function updateTypingStatus(conversationId: string, isTyping: boole
   return response.isTyping
 }
 
+export async function createDirectConversation(userId: string) {
+  const response = await request<ConversationResponse>('/conversations/direct', {
+    method: 'POST',
+    body: JSON.stringify({ userId }),
+  })
+
+  return response.conversation
+}
+
 export async function createGroupConversation(payload: {
   title: string
   memberIds: string[]

@@ -146,6 +146,7 @@ export type Conversation = {
   pinned: boolean
   muted: boolean
   archived: boolean
+  messageRequestStatus?: 'none' | 'pending'
   contactId: string | null
   nickname?: string | null
   onlineSince?: string | null

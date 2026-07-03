@@ -6,7 +6,8 @@ import type { ContactUser, Conversation } from '../../types'
 import { AvatarFallback } from '../ui/AvatarFallback'
 import { OnlineDurationBadge } from '../ui/OnlineDurationBadge'
 
-export type ConversationFilter = 'all' | 'unread' | 'group' | 'archived'
+export type ConversationFilter = 'all' | 'unread' | 'requests' | 'group' | 'archived'
+type DirectMessageUser = Pick<ContactUser, 'id' | 'fullName' | 'friendshipStatus' | 'contactId'>
 
 type InboxPanelProps = {
   activeConversation?: Conversation | null
@@ -21,6 +22,7 @@ type InboxPanelProps = {
     memberIds: string[]
     avatar?: File | null
   }) => Promise<void> | void
+  onStartDirectMessage: (user: DirectMessageUser) => Promise<void> | void
   onFilterChange: (filter: ConversationFilter) => void
   onClosePanel?: () => void
   onDeleteConversation: (conversationId: string) => void
@@ -85,6 +87,7 @@ export function InboxPanel({
   isCreatingGroup = false,
   query,
   onCreateGroup,
+  onStartDirectMessage,
   onClosePanel,
   onDeleteConversation,
   onFilterChange,
@@ -444,16 +447,21 @@ export function InboxPanel({
               <span>Người dùng</span>
               {globalResults.users.map((user) => (
                 <button
-                  disabled={user.friendshipStatus !== 'accepted'}
+                  disabled={user.friendshipStatus === 'blocked'}
                   key={user.id}
                   onClick={() => {
                     const directConversation = conversations.find(
-                      (conversation) => conversation.contactId === user.contactId,
+                      (conversation) =>
+                        conversation.contactId === user.contactId ||
+                        conversation.name === user.fullName,
                     )
 
                     if (directConversation) {
                       openConversationFromSearch(directConversation.id)
+                      return
                     }
+
+                    void onStartDirectMessage(user)
                   }}
                   type="button"
                 >
@@ -506,6 +514,14 @@ export function InboxPanel({
         >
           <MessageCircle size={16} />
           <span>Chưa đọc</span>
+        </button>
+        <button
+          className={activeFilter === 'requests' ? 'is-active' : ''}
+          onClick={() => onFilterChange('requests')}
+          type="button"
+        >
+          <MessageSquare size={16} />
+          <span>Tin nhắn chờ</span>
         </button>
         <button
           className={activeFilter === 'group' ? 'is-active' : ''}
