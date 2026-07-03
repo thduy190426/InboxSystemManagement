@@ -8753,3 +8753,16 @@ html.dark .attachment-download-button:hover {
   background: rgba(15, 159, 142, 0.3);
   border-color: rgba(15, 159, 142, 0.45);
 }
+html.dark .contact-profile-dialog {
+  background: rgba(26, 29, 36, 0.95);
+  border-color: var(--line);
+}
+
+html.dark .contact-profile-header button {
+  color: var(--muted);
+}
+
+html.dark .contact-profile-header button:hover {
+  background: var(--surface-soft);
+  color: var(--text);
+}
