@@ -8799,3 +8799,7 @@ html.dark .auth-security {
   background: rgba(37, 99, 235, 0.15);
   color: #60a5fa;
 }
+html.dark .not-found-panel {
+  background: var(--surface);
+  border-color: var(--line);
+}
