@@ -9159,3 +9159,20 @@ html.dark .confirm-dialog-secondary:hover {
 html.dark .system-message {
   background: var(--surface-soft);
 }
+html.dark .group-modal,
+html.dark .forward-dialog,
+html.dark .contact-profile-dialog,
+html.dark .call-window {
+  background: rgba(26, 29, 36, 0.95);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24);
+}
+
+html.dark .forward-dialog header button:hover {
+  background: var(--surface-soft);
+  color: var(--text);
+}
+
+html.dark .group-avatar-picker {
+  background: rgba(15, 159, 142, 0.15);
+  color: var(--primary);
+}
