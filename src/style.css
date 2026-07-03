@@ -2984,6 +2984,9 @@ h3 {
 .profile-privacy-form {
   grid-column: 1;
   grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .profile-password-form {

@@ -152,7 +152,26 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
   const [renderExpandedSessions, setRenderExpandedSessions] = useState(false)
   const [expandedSessionHeight, setExpandedSessionHeight] = useState(0)
   const expandedSessionsRef = useRef<HTMLDivElement | null>(null)
+  const overviewRef = useRef<HTMLElement | null>(null)
+  const privacyRef = useRef<HTMLFormElement | null>(null)
   const [refreshCooldown, setRefreshCooldown] = useState(0)
+
+  useEffect(() => {
+    if (!overviewRef.current || !privacyRef.current) return
+
+    const observer = new ResizeObserver(() => {
+      if (overviewRef.current && privacyRef.current) {
+        privacyRef.current.style.height = `${overviewRef.current.offsetHeight}px`
+      }
+    })
+
+    observer.observe(overviewRef.current)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [])
+
   const cooldownIntervalRef = useRef<number | null>(null)
 
   const sortedSessions = [...sessions].sort((left, right) => {
@@ -456,7 +475,7 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
       </header>
 
       <div className="settings-layout">
-        <aside className="settings-overview">
+        <aside ref={overviewRef} className="settings-overview">
           <div className="settings-overview-icon">
             <ShieldCheck size={28} />
           </div>
@@ -469,7 +488,7 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
         </aside>
 
         <div className="settings-main">
-          <form className="profile-form settings-card profile-privacy-form" onSubmit={handlePrivacySubmit}>
+          <form ref={privacyRef} className="profile-form settings-card profile-privacy-form" onSubmit={handlePrivacySubmit}>
             <div className="profile-form-heading">
               {showActivityStatus ? <Eye size={18} /> : <EyeOff size={18} />}
               <div>
