@@ -9192,3 +9192,8 @@ html.dark .profile-upload-button {
   background: rgba(15, 159, 142, 0.15);
   color: var(--primary);
 }
+html.dark .message-search-button:hover,
+html.dark .message-search-button.is-active {
+  background: rgba(15, 159, 142, 0.15);
+  color: var(--primary);
+}
