@@ -14,7 +14,7 @@ function getMailtrapClient() {
 
 function getSender() {
   return {
-    email: process.env.MAILTRAP_SENDER_EMAIL || 'InboxSystem@demomailtrap.co',
+    email: process.env.MAILTRAP_SENDER_EMAIL || 'mailtrap@demomailtrap.com',
     name: process.env.MAILTRAP_SENDER_NAME || 'Inbox System',
   }
 }
