@@ -72,6 +72,7 @@ export function NavRail({
 
       <button
         className="profile-avatar-button"
+        style={{ margin: '0 auto' }}
         onClick={() => onChangeView('profile')}
         title="Chỉnh sửa hồ sơ"
         type="button"

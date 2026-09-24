@@ -38,6 +38,7 @@ export function AvatarCropper({ imageSrc, onCancel, onCropped }: AvatarCropperPr
 
   return (
     <div
+      onClick={onCancel}
       style={{
         position: 'fixed',
         top: 0,
@@ -54,6 +55,7 @@ export function AvatarCropper({ imageSrc, onCancel, onCropped }: AvatarCropperPr
       }}
     >
       <div
+        onClick={(e) => e.stopPropagation()}
         style={{
           position: 'relative',
           width: '90%',
@@ -80,6 +82,7 @@ export function AvatarCropper({ imageSrc, onCancel, onCropped }: AvatarCropperPr
       </div>
 
       <div
+        onClick={(e) => e.stopPropagation()}
         style={{
           marginTop: '24px',
           display: 'flex',
@@ -97,6 +100,7 @@ export function AvatarCropper({ imageSrc, onCancel, onCropped }: AvatarCropperPr
           style={{
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'center',
             gap: '8px',
             padding: '10px 20px',
             borderRadius: '20px',
@@ -109,7 +113,8 @@ export function AvatarCropper({ imageSrc, onCancel, onCropped }: AvatarCropperPr
             transition: 'background-color 0.2s',
           }}
         >
-          <X size={18} /> Hủy bỏ
+          <X size={18} />
+          <span>Hủy bỏ</span>
         </button>
         <button
           onClick={handleCrop}
@@ -117,6 +122,7 @@ export function AvatarCropper({ imageSrc, onCancel, onCropped }: AvatarCropperPr
           style={{
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'center',
             gap: '8px',
             padding: '10px 20px',
             borderRadius: '20px',
@@ -130,7 +136,8 @@ export function AvatarCropper({ imageSrc, onCancel, onCropped }: AvatarCropperPr
             opacity: isProcessing ? 0.7 : 1,
           }}
         >
-          <Check size={18} /> {isProcessing ? 'Đang xử lý...' : 'Áp dụng ảnh'}
+          <Check size={18} />
+          <span>{isProcessing ? 'Đang xử lý...' : 'Áp dụng ảnh'}</span>
         </button>
       </div>
     </div>

@@ -1049,9 +1049,16 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
             onPointerMove={dragOverlay}
             onPointerUp={stopDraggingOverlay}
           >
-          <div>
-            <strong>{remoteName}</strong>
-            <span>{fullStatusLabel}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, overflow: 'hidden' }}>
+            {isEnded && (
+              <div style={{ width: '42px', height: '42px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
+                <AvatarFallback name={remoteName} src={call.conversationAvatar || call.caller.avatarUrl || null} />
+              </div>
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              <strong style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '15px' }}>{remoteName}</strong>
+              <span style={{ fontSize: '13px', opacity: 0.8 }}>{fullStatusLabel}</span>
+            </div>
           </div>
           <button onClick={hangUp} title="Đóng" type="button">
             <X size={18} />

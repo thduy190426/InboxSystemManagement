@@ -1266,14 +1266,7 @@ export function ChatPanel({
           >
             <Phone size={20} />
           </button>
-          <button
-            className="icon-button"
-            disabled={true}
-            title="Tính năng gọi video tạm thời bị vô hiệu hoá"
-            type="button"
-          >
-            <Video size={20} />
-          </button>
+
           <button
             className={isDetailOpen ? 'icon-button is-active' : 'icon-button'}
             onClick={onToggleDetails}
@@ -1346,6 +1339,37 @@ export function ChatPanel({
           const shouldShowAvatar = message.author === 'them' && !isGroupedWithNext
           const shouldShowSenderName = message.author === 'them' && !isGroupedWithPrevious
 
+          const isSystem = message.author === 'system'
+          let systemGroupCount = 1
+          let isHiddenSystemMessage = false
+
+          if (isSystem) {
+            const isSameAsPrev =
+              previousMessage?.author === 'system' &&
+              previousMessage.text === message.text &&
+              isSameLocalDay(parseMessageDate(message), parseMessageDate(previousMessage))
+
+            if (isSameAsPrev) {
+              isHiddenSystemMessage = true
+            } else {
+              for (let i = index + 1; i < messages.length; i++) {
+                if (
+                  messages[i].author === 'system' &&
+                  messages[i].text === message.text &&
+                  isSameLocalDay(parseMessageDate(messages[i]), parseMessageDate(message))
+                ) {
+                  systemGroupCount++
+                } else {
+                  break
+                }
+              }
+            }
+          }
+
+          if (isHiddenSystemMessage) {
+            return <div key={message.id} ref={(node) => { messageRefs.current[message.id] = node }} style={{ display: 'none' }} />
+          }
+
           return (
             <Fragment key={message.id}>
               {dateDividerLabel ? (
@@ -1380,6 +1404,19 @@ export function ChatPanel({
                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       {message.text?.startsWith('Cuộc gọi') ? <Phone size={14} /> : null}
                       {renderHighlightedText(message)}
+                      {systemGroupCount > 1 && (
+                        <span style={{ 
+                          fontSize: '11px', 
+                          backgroundColor: 'var(--border-color)', 
+                          color: 'var(--text-color)',
+                          padding: '2px 6px', 
+                          borderRadius: '10px', 
+                          marginLeft: '4px',
+                          fontWeight: 'bold'
+                        }}>
+                          x{systemGroupCount}
+                        </span>
+                      )}
                     </span>
                   </div>
                 ) : (
