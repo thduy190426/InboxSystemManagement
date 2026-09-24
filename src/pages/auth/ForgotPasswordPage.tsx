@@ -69,8 +69,8 @@ export function ForgotPasswordPage({
           {errorMessage ? <p className="auth-error">{errorMessage}</p> : null}
 
           <button className="auth-primary" disabled={isSubmitting} type="submit">
-            {isSubmitting ? 'Đang gửi mã...' : 'Gửi mã đặt lại'}
             <Send size={18} />
+            {isSubmitting ? 'Đang gửi mã...' : 'Gửi mã đặt lại'}
           </button>
         </form>
 

@@ -1,3 +1,7 @@
+-- =========================================
+-- File: 001_schema.sql
+-- =========================================
+
 CREATE DATABASE IF NOT EXISTS inbox_system_management
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
@@ -386,3 +390,302 @@ CREATE TABLE audit_logs (
     FOREIGN KEY (actor_id) REFERENCES users (id)
     ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- =========================================
+-- File: 002_audit_timestamps.sql
+-- =========================================
+
+USE inbox_system_management;
+
+SET NAMES utf8mb4;
+SET time_zone = '+00:00';
+
+DROP PROCEDURE IF EXISTS rename_seen_at_to_read_at;
+DROP PROCEDURE IF EXISTS add_index_if_missing;
+DROP PROCEDURE IF EXISTS add_column_if_missing;
+
+DELIMITER $$
+
+CREATE PROCEDURE add_column_if_missing(
+  IN table_name_value VARCHAR(64),
+  IN column_name_value VARCHAR(64),
+  IN column_definition_value TEXT
+)
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = table_name_value
+      AND COLUMN_NAME = column_name_value
+  ) THEN
+    SET @ddl = CONCAT('ALTER TABLE `', table_name_value, '` ADD COLUMN ', column_definition_value);
+    PREPARE statement FROM @ddl;
+    EXECUTE statement;
+    DEALLOCATE PREPARE statement;
+  END IF;
+END$$
+
+CREATE PROCEDURE add_index_if_missing(
+  IN table_name_value VARCHAR(64),
+  IN index_name_value VARCHAR(64),
+  IN index_definition_value TEXT
+)
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = table_name_value
+      AND INDEX_NAME = index_name_value
+  ) THEN
+    SET @ddl = CONCAT('ALTER TABLE `', table_name_value, '` ADD ', index_definition_value);
+    PREPARE statement FROM @ddl;
+    EXECUTE statement;
+    DEALLOCATE PREPARE statement;
+  END IF;
+END$$
+
+CREATE PROCEDURE rename_seen_at_to_read_at()
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'message_receipts'
+      AND COLUMN_NAME = 'seen_at'
+  ) AND NOT EXISTS (
+    SELECT 1
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'message_receipts'
+      AND COLUMN_NAME = 'read_at'
+  ) THEN
+    ALTER TABLE message_receipts CHANGE COLUMN seen_at read_at DATETIME NULL;
+  END IF;
+END$$
+
+DELIMITER ;
+
+CALL add_column_if_missing('user_sessions', 'updated_at', 'updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at');
+CALL add_column_if_missing('password_reset_tokens', 'updated_at', 'updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at');
+CALL add_column_if_missing('conversation_participants', 'created_at', 'created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER last_read_at');
+CALL add_column_if_missing('conversation_participants', 'updated_at', 'updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at');
+CALL add_column_if_missing('message_attachments', 'updated_at', 'updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at');
+
+CALL rename_seen_at_to_read_at();
+CALL add_column_if_missing('message_receipts', 'read_at', 'read_at DATETIME NULL AFTER delivered_at');
+CALL add_column_if_missing('message_receipts', 'updated_at', 'updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at');
+CALL add_index_if_missing('message_receipts', 'idx_message_receipts_read_at', 'KEY idx_message_receipts_read_at (read_at)');
+
+CALL add_column_if_missing('message_reactions', 'updated_at', 'updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at');
+CALL add_column_if_missing('notifications', 'updated_at', 'updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at');
+CALL add_column_if_missing('call_logs', 'created_at', 'created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER duration_seconds');
+CALL add_column_if_missing('call_logs', 'updated_at', 'updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at');
+CALL add_column_if_missing('call_participants', 'created_at', 'created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER left_at');
+CALL add_column_if_missing('call_participants', 'updated_at', 'updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at');
+
+DROP PROCEDURE rename_seen_at_to_read_at;
+DROP PROCEDURE add_index_if_missing;
+DROP PROCEDURE add_column_if_missing;
+
+
+-- =========================================
+-- File: 003_online_since.sql
+-- =========================================
+
+USE inbox_system_management;
+
+SET NAMES utf8mb4;
+SET time_zone = '+00:00';
+
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS online_since DATETIME NULL AFTER last_seen_at;
+
+
+-- =========================================
+-- File: 004_call_flow_status.sql
+-- =========================================
+
+USE inbox_system_management;
+
+ALTER TABLE call_logs
+MODIFY COLUMN status ENUM('ringing', 'ongoing', 'missed', 'declined', 'completed', 'cancelled') NOT NULL;
+
+
+-- =========================================
+-- File: 005_message_pins.sql
+-- =========================================
+
+USE inbox_system_management;
+
+CREATE TABLE IF NOT EXISTS message_pins (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  message_id BIGINT UNSIGNED NOT NULL,
+  user_id BIGINT UNSIGNED NOT NULL,
+  conversation_id BIGINT UNSIGNED NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY unique_message_pin (message_id, user_id),
+  KEY idx_message_pins_user (user_id, created_at),
+  KEY idx_message_pins_conversation (conversation_id, created_at),
+  CONSTRAINT fk_message_pins_message
+    FOREIGN KEY (message_id) REFERENCES messages (id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_message_pins_user
+    FOREIGN KEY (user_id) REFERENCES users (id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_message_pins_conversation
+    FOREIGN KEY (conversation_id) REFERENCES conversations (id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- =========================================
+-- File: 006_message_polls.sql
+-- =========================================
+
+USE inbox_system_management;
+
+ALTER TABLE messages
+  MODIFY type ENUM('text', 'image', 'file', 'audio', 'video', 'system', 'poll') NOT NULL DEFAULT 'text';
+
+CREATE TABLE IF NOT EXISTS message_polls (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  message_id BIGINT UNSIGNED NOT NULL,
+  question VARCHAR(255) NOT NULL,
+  allow_multiple TINYINT(1) NOT NULL DEFAULT 0,
+  is_closed TINYINT(1) NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_message_polls_message (message_id),
+  CONSTRAINT fk_message_polls_message
+    FOREIGN KEY (message_id) REFERENCES messages (id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS message_poll_options (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  poll_id BIGINT UNSIGNED NOT NULL,
+  option_text VARCHAR(120) NOT NULL,
+  position INT UNSIGNED NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_message_poll_options_poll (poll_id, position),
+  CONSTRAINT fk_message_poll_options_poll
+    FOREIGN KEY (poll_id) REFERENCES message_polls (id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS message_poll_votes (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  option_id BIGINT UNSIGNED NOT NULL,
+  user_id BIGINT UNSIGNED NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_message_poll_votes_option_user (option_id, user_id),
+  KEY idx_message_poll_votes_user (user_id, created_at),
+  CONSTRAINT fk_message_poll_votes_option
+    FOREIGN KEY (option_id) REFERENCES message_poll_options (id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_message_poll_votes_user
+    FOREIGN KEY (user_id) REFERENCES users (id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- =========================================
+-- File: 007_user_verification_tokens.sql
+-- =========================================
+
+USE inbox_system_management;
+
+CREATE TABLE IF NOT EXISTS user_verification_tokens (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id BIGINT UNSIGNED NOT NULL,
+  channel ENUM('email') NOT NULL,
+  token_hash VARCHAR(255) NOT NULL,
+  expires_at DATETIME NOT NULL,
+  used_at DATETIME NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_user_verification_tokens_token_hash (token_hash),
+  KEY idx_user_verification_tokens_user_channel (user_id, channel),
+  KEY idx_user_verification_tokens_expires_at (expires_at),
+  CONSTRAINT fk_user_verification_tokens_user
+    FOREIGN KEY (user_id) REFERENCES users (id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- =========================================
+-- File: 008_message_reports.sql
+-- =========================================
+
+CREATE TABLE IF NOT EXISTS message_reports (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  public_id CHAR(36) NOT NULL,
+  message_id BIGINT UNSIGNED NOT NULL,
+  conversation_id BIGINT UNSIGNED NOT NULL,
+  reporter_id BIGINT UNSIGNED NOT NULL,
+  reported_user_id BIGINT UNSIGNED NOT NULL,
+  reason VARCHAR(255) NULL,
+  status ENUM('pending', 'reviewed', 'dismissed') NOT NULL DEFAULT 'pending',
+  reviewed_by BIGINT UNSIGNED NULL,
+  reviewed_at DATETIME NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_message_reports_public_id (public_id),
+  UNIQUE KEY uq_message_reports_message_reporter (message_id, reporter_id),
+  KEY idx_message_reports_status_created (status, created_at),
+  KEY idx_message_reports_reporter (reporter_id, created_at),
+  KEY idx_message_reports_reported_user (reported_user_id, created_at),
+  CONSTRAINT fk_message_reports_message
+    FOREIGN KEY (message_id) REFERENCES messages (id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_message_reports_conversation
+    FOREIGN KEY (conversation_id) REFERENCES conversations (id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_message_reports_reporter
+    FOREIGN KEY (reporter_id) REFERENCES users (id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_message_reports_reported_user
+    FOREIGN KEY (reported_user_id) REFERENCES users (id)
+    ON DELETE RESTRICT,
+  CONSTRAINT fk_message_reports_reviewed_by
+    FOREIGN KEY (reviewed_by) REFERENCES users (id)
+    ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- =========================================
+-- File: 009_activity_privacy.sql
+-- =========================================
+
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS show_activity_status TINYINT(1) NOT NULL DEFAULT 1 AFTER online_since;
+
+
+-- =========================================
+-- File: 010_message_requests.sql
+-- =========================================
+
+ALTER TABLE conversation_participants
+  ADD COLUMN message_request_status ENUM('none', 'pending') NOT NULL DEFAULT 'none';
+
+
+-- =========================================
+-- File: 011_user_handles.sql
+-- =========================================
+
+ALTER TABLE users
+  ADD COLUMN handle VARCHAR(32) NULL AFTER display_name,
+  ADD UNIQUE KEY uq_users_handle (handle);
+
+

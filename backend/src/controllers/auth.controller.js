@@ -163,6 +163,19 @@ async function deliverEmailVerificationCode(payload) {
   }
 }
 
+async function deliverPasswordResetCode(payload) {
+  try {
+    return await sendPasswordResetCode(payload)
+  } catch (error) {
+    console.error('Không thể gửi mã đặt lại mật khẩu:', error)
+
+    return {
+      failed: true,
+      skipped: false,
+    }
+  }
+}
+
 async function createVerificationToken({ userId, email, channel, code, connection = pool }) {
   const tokenHash = hashVerificationCode(email, channel, code)
   const expiresAt = new Date(Date.now() + 1000 * 60 * 30)
@@ -581,6 +594,7 @@ async function forgotPassword(request, response, next) {
     const { email } = validation.data
     const user = await getUserByEmail(email)
     let devResetCode = null
+    let mailResult = { skipped: true, failed: false }
 
     if (user && user.is_active) {
       const code = createPasswordResetCode()
@@ -603,11 +617,23 @@ async function forgotPassword(request, response, next) {
         [user.id, tokenHash, expiresAt],
       )
 
-      devResetCode = code
+      mailResult = await deliverPasswordResetCode({
+        email: user.email,
+        fullName: user.full_name,
+        code,
+      })
+
+      if (mailResult.skipped) {
+        devResetCode = code
+      }
     }
 
     return response.json({
-      message: 'Nếu Email tồn tại, hệ thống đã gửi mã đặt lại mật khẩu!',
+      message: mailResult.failed
+        ? 'Chưa gửi được mã đặt lại mật khẩu. Vui lòng thử lại sau ít phút!'
+        : mailResult.skipped && devResetCode
+          ? 'Đã tạo mã đặt lại mật khẩu! Mã đang hiển thị ở môi trường phát triển!'
+          : 'Nếu Email tồn tại, hệ thống đã gửi mã đặt lại mật khẩu!',
       resetCode: devResetCode,
     })
   } catch (error) {
