@@ -1,4 +1,4 @@
-import type { FormEvent } from 'react'
+import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, KeyRound, Mail, Send } from 'lucide-react'
 import type { AuthPageProps } from '../../types'
 
@@ -17,6 +17,28 @@ export function ForgotPasswordPage({
   resetCode,
   successMessage,
 }: ForgotPasswordPageProps) {
+  const [cooldown, setCooldown] = useState(0)
+  const prevSuccessMessage = useRef(successMessage)
+
+  useEffect(() => {
+    if (successMessage && successMessage !== prevSuccessMessage.current) {
+      setCooldown(60)
+      const timer = setTimeout(() => {
+        onResetPassword()
+      }, 1500)
+      prevSuccessMessage.current = successMessage
+      return () => clearTimeout(timer)
+    }
+    prevSuccessMessage.current = successMessage
+  }, [successMessage, onResetPassword])
+
+  useEffect(() => {
+    if (cooldown > 0) {
+      const timer = setTimeout(() => setCooldown(cooldown - 1), 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [cooldown])
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -68,9 +90,9 @@ export function ForgotPasswordPage({
           ) : null}
           {errorMessage ? <p className="auth-error">{errorMessage}</p> : null}
 
-          <button className="auth-primary" disabled={isSubmitting} type="submit">
+          <button className="auth-primary" disabled={isSubmitting || cooldown > 0} type="submit">
             <Send size={18} />
-            {isSubmitting ? 'Đang gửi mã...' : 'Gửi mã đặt lại'}
+            {isSubmitting ? 'Đang gửi mã...' : cooldown > 0 ? `Gửi lại sau ${cooldown}s` : 'Gửi mã đặt lại'}
           </button>
         </form>
 

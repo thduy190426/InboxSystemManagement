@@ -478,25 +478,27 @@ export function InboxPanel({
         </section>
       ) : null}
 
-      <div className="friend-status-strip" aria-label="Trạng thái bạn bè">
-        {stripConversations.map((conversation) => (
-          <button
-            className={
-              conversation.id === activeConversation?.id
-                ? `friend-status-card is-active${conversation.unread ? ' is-unread' : ''}`
-                : `friend-status-card${conversation.unread ? ' is-unread' : ''}`
-            }
-            key={conversation.id}
-            onClick={() => onSelectConversation(conversation.id)}
-            type="button"
-          >
-            <span className="friend-avatar-frame">
-              {renderStripAvatar(conversation)}
-            </span>
-            <span>{getStripLabel(conversation)}</span>
-          </button>
-        ))}
-      </div>
+      {stripConversations.length > 0 ? (
+        <div className="friend-status-strip" aria-label="Trạng thái bạn bè">
+          {stripConversations.map((conversation) => (
+            <button
+              className={
+                conversation.id === activeConversation?.id
+                  ? `friend-status-card is-active${conversation.unread ? ' is-unread' : ''}`
+                  : `friend-status-card${conversation.unread ? ' is-unread' : ''}`
+              }
+              key={conversation.id}
+              onClick={() => onSelectConversation(conversation.id)}
+              type="button"
+            >
+              <span className="friend-avatar-frame">
+                {renderStripAvatar(conversation)}
+              </span>
+              <span>{getStripLabel(conversation)}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       <div className="quick-filters" aria-label="Bộ lọc hội thoại">
         <button
@@ -591,7 +593,10 @@ export function InboxPanel({
             </span>
             <span className="conversation-copy">
               <span className="conversation-topline">
-                <strong>{conversation.name}</strong>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0, flex: '1 1 auto', fontSize: 'inherit', color: 'inherit' }}>
+                  <strong>{conversation.name}</strong>
+                  {conversation.muted ? <BellOff size={14} aria-label="Đã tắt tiếng" style={{ flexShrink: 0, color: 'var(--subtle)' }} /> : null}
+                </span>
                 {activeFilter !== 'archived' ? (
                   <span>{formatConversationLastTime(conversation)}</span>
                 ) : null}
@@ -606,7 +611,6 @@ export function InboxPanel({
                 </span>
               ) : null}
               {conversation.pinned ? <Pin size={14} aria-label="Đã ghim" /> : null}
-              {conversation.muted ? <BellOff size={14} aria-label="Đã tắt tiếng" /> : null}
             </span>
           </button>
         ))}

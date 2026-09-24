@@ -207,6 +207,7 @@ export function App() {
   const [authError, setAuthError] = useState('')
   const [authSuccessMessage, setAuthSuccessMessage] = useState('')
   const [passwordResetCode, setPasswordResetCode] = useState('')
+  const [resetEmail, setResetEmail] = useState('')
   const [verificationEmail, setVerificationEmail] = useState('')
   const [devEmailVerificationCode, setDevEmailVerificationCode] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -454,6 +455,7 @@ export function App() {
 
       setAuthSuccessMessage(response.message)
       setPasswordResetCode(response.resetCode || '')
+      setResetEmail(payload.email)
       pushToast(response.message, 'info')
     } catch (error) {
       setAuthError(
@@ -581,6 +583,7 @@ export function App() {
     if (authScreen === 'reset-password') {
       return (
         <ResetPasswordPage
+          defaultEmail={resetEmail}
           errorMessage={authError}
           isSubmitting={isSubmitting}
           onSubmit={handleResetPassword}

@@ -55,12 +55,13 @@ export function LoginPage({
         </div>
 
         <form className="auth-form" onChange={handleFormChange} onSubmit={handleSubmit}>
-          <label className="auth-field">
+          <label className="auth-field" htmlFor="login-email">
             <span>Email</span>
             <div className="auth-input-row">
               <Mail size={18} />
               <input
-                autoComplete="username"
+                id="login-email"
+                autoComplete="email"
                 name="email"
                 placeholder="Nhập Email của bạn tại đây"
                 required
@@ -69,11 +70,12 @@ export function LoginPage({
             </div>
           </label>
 
-          <label className="auth-field">
+          <label className="auth-field" htmlFor="login-password">
             <span>Mật khẩu</span>
             <div className="auth-input-row">
               <Lock size={18} />
               <input
+                id="login-password"
                 autoComplete="current-password"
                 minLength={6}
                 name="password"

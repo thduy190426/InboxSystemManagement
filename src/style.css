@@ -7588,10 +7588,6 @@ html.dark .scroll-to-latest-button:focus-visible {
   transform: translateY(-1px);
 }
 
-/* ==================================================
-   ADMIN PAGE STYLES
-   ================================================== */
-
 .admin-shell {
   display: flex;
   background-color: var(--surface-soft);
@@ -7604,7 +7600,6 @@ html.dark .scroll-to-latest-button:focus-visible {
   padding: 32px 40px;
   overflow-y: auto;
   margin-left: 72px;
-  /* For NavRail */
 }
 
 @media (max-width: 768px) {
@@ -7612,7 +7607,6 @@ html.dark .scroll-to-latest-button:focus-visible {
     padding: 24px 20px;
     margin-left: 0;
     margin-bottom: 60px;
-    /* For mobile NavRail */
   }
 
   .admin-chart-grid {
@@ -8658,7 +8652,6 @@ html.dark .profile-page {
   background: var(--surface);
 }
 
-/* Chat and Detail Panel Dark Mode Overrides */
 html.dark .detail-panel {
   background: var(--surface);
   border-left-color: var(--line);
@@ -8853,7 +8846,6 @@ html.dark .profile-page {
   background: var(--surface);
 }
 
-/* Chat and Detail Panel Dark Mode Overrides */
 html.dark .detail-panel {
   background: var(--surface);
   border-left-color: var(--line);

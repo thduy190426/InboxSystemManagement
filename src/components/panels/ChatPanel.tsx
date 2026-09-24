@@ -2,6 +2,7 @@ import type { ChangeEvent, FormEvent } from 'react'
 import { Fragment, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { EmojiClickData, EmojiStyle, Theme } from 'emoji-picker-react'
 import {
+  Calendar,
   Check,
   CheckCheck,
   ChevronDown,
@@ -940,6 +941,8 @@ export function ChatPanel({
 
   function renderAttachmentPreview(attachment: MessageAttachment) {
     if (attachment.type === 'image') {
+      const isGif = attachment.mimeType === 'image/gif' || attachment.name.toLowerCase().endsWith('.gif') || attachment.url.toLowerCase().includes('.gif')
+
       return (
         <div className="message-image-attachment" key={attachment.url}>
           <button
@@ -950,10 +953,12 @@ export function ChatPanel({
           >
             <img alt={attachment.name} src={attachment.url} />
           </button>
-          <div className="attachment-toolbar">
-            <span>{attachment.name}</span>
-            {renderDownloadLink(attachment)}
-          </div>
+          {!isGif && (
+            <div className="attachment-toolbar">
+              <span>{attachment.name}</span>
+              {renderDownloadLink(attachment)}
+            </div>
+          )}
         </div>
       )
     }
@@ -1263,9 +1268,8 @@ export function ChatPanel({
           </button>
           <button
             className="icon-button"
-            disabled={isBlocked}
-            onClick={() => onStartCall('video')}
-            title="Gọi video"
+            disabled={true}
+            title="Tính năng gọi video tạm thời bị vô hiệu hoá"
             type="button"
           >
             <Video size={20} />
@@ -1346,7 +1350,10 @@ export function ChatPanel({
             <Fragment key={message.id}>
               {dateDividerLabel ? (
                 <div className="day-divider message-time-divider">
-                  <span>{dateDividerLabel}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Calendar size={14} />
+                    {dateDividerLabel}
+                  </span>
                 </div>
               ) : null}
               <div
@@ -1370,7 +1377,10 @@ export function ChatPanel({
               >
                 {message.author === 'system' ? (
                   <div className="system-message">
-                    <span>{renderHighlightedText(message)}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {message.text?.startsWith('Cuộc gọi') ? <Phone size={14} /> : null}
+                      {renderHighlightedText(message)}
+                    </span>
                   </div>
                 ) : (
                   <>

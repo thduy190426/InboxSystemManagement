@@ -564,7 +564,7 @@ export function ChatApp({
   function showDedupedBrowserNotification(
     key: string,
     title: string,
-    payload: { body?: string; url?: string } = {},
+    payload: { body?: string; url?: string; requireInteraction?: boolean } = {},
   ) {
     if (recentBrowserNotificationKeysRef.current.has(key)) {
       return
@@ -595,6 +595,7 @@ export function ChatApp({
     showDedupedBrowserNotification(`conversation:${conversationId}`, conversation.name, {
       body: conversation.lastMessage,
       url: toAppPath({ view: 'chat', conversationId }),
+      requireInteraction: true,
     })
   }
 

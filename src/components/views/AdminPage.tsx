@@ -220,13 +220,14 @@ function formatLastLogin(value: string | null) {
     return 'Không rõ!'
   }
 
-  return new Intl.DateTimeFormat('vi-VN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date)
+  const hh = date.getHours().toString().padStart(2, '0')
+  const mm = date.getMinutes().toString().padStart(2, '0')
+  const ss = date.getSeconds().toString().padStart(2, '0')
+  const dd = date.getDate().toString().padStart(2, '0')
+  const MM = (date.getMonth() + 1).toString().padStart(2, '0')
+  const yyyy = date.getFullYear()
+
+  return `${hh}:${mm}:${ss} | ${dd}/${MM}/${yyyy}`
 }
 
 function formatReportTime(value: string) {

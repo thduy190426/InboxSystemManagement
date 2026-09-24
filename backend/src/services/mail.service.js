@@ -90,13 +90,12 @@ async function sendPasswordResetCode({ email, fullName, code }) {
           <td align="center">
             <table border="0" cellpadding="0" cellspacing="0" width="100%" class="container" style="max-width: 480px;">
 
-              <!-- Logo / Brand -->
               <tr>
                 <td align="center" style="padding-bottom: 24px;">
                   <table border="0" cellpadding="0" cellspacing="0" width="48" height="48" style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
                     <tr>
                       <td align="center" valign="middle" style="width: 48px; height: 48px;">
-                        <!-- Shield/lock vector mark -->
+
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <path d="M12 2L4 5V11C4 16.0 7.4 20.7 12 22C16.6 20.7 20 16.0 20 11V5L12 2Z" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round" fill="none"/>
                           <path d="M9 12.2L11 14.2L15.2 10" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
@@ -106,12 +105,9 @@ async function sendPasswordResetCode({ email, fullName, code }) {
                   </table>
                 </td>
               </tr>
-
-              <!-- Main Card -->
               <tr>
                 <td class="email-card" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 10px 30px -10px rgba(0,0,0,0.08); border: 1px solid #eceef1;">
 
-                  <!-- Top accent bar -->
                   <tr><td style="height: 4px; background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%); line-height: 4px; font-size: 0;">&nbsp;</td></tr>
 
                   <tr>
@@ -120,7 +116,7 @@ async function sendPasswordResetCode({ email, fullName, code }) {
                       <table border="0" cellpadding="0" cellspacing="0" style="margin: 0 0 16px 0;">
                         <tr>
                           <td valign="middle" style="padding-right: 10px;">
-                            <!-- Lock vector icon next to heading -->
+
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                               <rect x="5" y="10.5" width="14" height="10" rx="2.2" stroke="#6366f1" stroke-width="1.7"/>
                               <path d="M8 10.5V7.5C8 5.01 9.79 3 12 3C14.21 3 16 5.01 16 7.5V10.5" stroke="#6366f1" stroke-width="1.7" stroke-linecap="round"/>
@@ -144,7 +140,6 @@ async function sendPasswordResetCode({ email, fullName, code }) {
                         Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn. Sử dụng mã xác thực bên dưới để hoàn tất:
                       </p>
 
-                      <!-- Code box -->
                       <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 24px;">
                         <tr>
                           <td align="center" class="code-box" style="background: linear-gradient(135deg, #f5f3ff 0%, #fdf4ff 100%); border: 1px dashed #c4b5fd; border-radius: 12px; padding: 20px;">
@@ -153,14 +148,13 @@ async function sendPasswordResetCode({ email, fullName, code }) {
                         </tr>
                       </table>
 
-                      <!-- Expiry notice -->
                       <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 20px;">
                         <tr>
                           <td class="notice-box" style="background-color: #fffbeb; border-radius: 8px; padding: 12px 14px;">
                             <table border="0" cellpadding="0" cellspacing="0">
                               <tr>
                                 <td valign="middle" style="padding-right: 8px;">
-                                  <!-- Clock vector icon -->
+
                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <circle cx="12" cy="12" r="9" stroke="#b45309" stroke-width="1.8"/>
                                     <path d="M12 7.5V12L15.2 14.2" stroke="#b45309" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -184,7 +178,6 @@ async function sendPasswordResetCode({ email, fullName, code }) {
                     </td>
                   </tr>
 
-                  <!-- Footer inside card -->
                   <tr>
                     <td style="padding: 0 32px 28px 32px;">
                       <table border="0" cellpadding="0" cellspacing="0" width="100%" class="divider" style="border-top: 1px solid #f0f1f3; padding-top: 18px;">
@@ -200,7 +193,6 @@ async function sendPasswordResetCode({ email, fullName, code }) {
                 </td>
               </tr>
 
-              <!-- Outer footer -->
               <tr>
                 <td align="center" style="padding-top: 24px;">
                   <p style="margin: 0; color: #9ca3af; font-size: 12px; line-height: 18px;">
@@ -292,13 +284,12 @@ async function sendEmailVerificationCode({ email, fullName, code }) {
       <td align="center">
         <table border="0" cellpadding="0" cellspacing="0" width="100%" class="container" style="max-width: 480px;">
 
-          <!-- Logo / Brand -->
           <tr>
             <td align="center" style="padding-bottom: 24px;">
               <table border="0" cellpadding="0" cellspacing="0" width="48" height="48" style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, #0f9f8e 0%, #0d7d70 100%);">
                 <tr>
                   <td align="center" valign="middle" style="width: 48px; height: 48px;">
-                    <!-- Envelope-check vector mark -->
+
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <rect x="3" y="5.5" width="18" height="13" rx="2.2" stroke="#ffffff" stroke-width="1.6"/>
                       <path d="M4 7L12 13L20 7" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
@@ -309,11 +300,9 @@ async function sendEmailVerificationCode({ email, fullName, code }) {
             </td>
           </tr>
 
-          <!-- Main Card -->
           <tr>
             <td class="email-card" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 10px 30px -10px rgba(0,0,0,0.08); border: 1px solid #eceef1;">
 
-              <!-- Top accent bar -->
               <tr><td style="height: 4px; background: linear-gradient(90deg, #0f9f8e 0%, #14b8a6 50%, #5eead4 100%); line-height: 4px; font-size: 0;">&nbsp;</td></tr>
 
               <tr>
@@ -322,7 +311,7 @@ async function sendEmailVerificationCode({ email, fullName, code }) {
                   <table border="0" cellpadding="0" cellspacing="0" style="margin: 0 0 16px 0;">
                     <tr>
                       <td valign="middle" style="padding-right: 10px;">
-                        <!-- Shield-check vector icon next to heading -->
+
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <path d="M12 2L4 5V11C4 16.0 7.4 20.7 12 22C16.6 20.7 20 16.0 20 11V5L12 2Z" stroke="#0f9f8e" stroke-width="1.7" stroke-linejoin="round" fill="none"/>
                           <path d="M9 12.2L11 14.2L15.2 10" stroke="#0f9f8e" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
@@ -340,7 +329,6 @@ async function sendEmailVerificationCode({ email, fullName, code }) {
                     Xin chào <strong style="color: #1f2937;">${fullName || 'bạn'}</strong>, hãy nhập mã bên dưới để kích hoạt tài khoản <strong style="color: #1f2937;">Inbox System</strong>.
                   </p>
 
-                  <!-- Code box -->
                   <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 24px;">
                     <tr>
                       <td align="center" class="code-box" style="background: linear-gradient(135deg, #ecfdf5 0%, #f0fdfa 100%); border: 1px dashed #5eead4; border-radius: 12px; padding: 20px;">
@@ -349,7 +337,6 @@ async function sendEmailVerificationCode({ email, fullName, code }) {
                     </tr>
                   </table>
 
-                  <!-- Expiry notice -->
                   <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 4px;">
                     <tr>
                       <td>
@@ -379,7 +366,6 @@ async function sendEmailVerificationCode({ email, fullName, code }) {
                 </td>
               </tr>
 
-              <!-- Footer inside card -->
               <tr>
                 <td style="padding: 0 32px 28px 32px;">
                   <table border="0" cellpadding="0" cellspacing="0" width="100%" class="divider" style="border-top: 1px solid #f0f1f3; padding-top: 18px;">
@@ -395,7 +381,6 @@ async function sendEmailVerificationCode({ email, fullName, code }) {
             </td>
           </tr>
 
-          <!-- Outer footer -->
           <tr>
             <td align="center" style="padding-top: 24px;">
               <p style="margin: 0; color: #9ca3af; font-size: 12px; line-height: 18px;">

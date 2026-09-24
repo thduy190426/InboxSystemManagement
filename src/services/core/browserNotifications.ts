@@ -4,6 +4,7 @@ type BrowserNotificationPayload = {
   body?: string
   tag?: string
   url?: string
+  requireInteraction?: boolean
 }
 
 type PushConfigResponse = {
@@ -43,6 +44,7 @@ export function showBrowserNotification(title: string, payload: BrowserNotificat
     icon: '/favicon.svg',
     badge: '/favicon.svg',
     tag: payload.tag,
+    requireInteraction: payload.requireInteraction,
   })
 
   notification.onclick = () => {

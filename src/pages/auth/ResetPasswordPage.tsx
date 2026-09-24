@@ -1,5 +1,5 @@
 import type { FormEvent } from 'react'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef, useEffect } from 'react'
 import { ArrowLeft, Eye, EyeOff, KeyRound, Lock, Mail, RefreshCw } from 'lucide-react'
 import type { AuthPageProps } from '../../types'
 
@@ -67,17 +67,37 @@ function validateResetPasswordForm(formData: FormData) {
   }
 }
 
+type ResetPasswordPageProps = AuthPageProps & {
+  defaultEmail?: string
+}
+
 export function ResetPasswordPage({
+  defaultEmail,
   errorMessage,
   isSubmitting = false,
   onSubmit,
   onSwitchMode,
-}: AuthPageProps) {
+}: ResetPasswordPageProps) {
   const resetParams = useMemo(() => getResetParamsFromLocation(), [])
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [localError, setLocalError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<ResetPasswordErrors>({})
+  const [isFormValid, setIsFormValid] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
+
+  function handleFormChange() {
+    if (!formRef.current) return
+    const formData = new FormData(formRef.current)
+    const validation = validateResetPasswordForm(formData)
+    setIsFormValid(Object.keys(validation.errors).length === 0)
+  }
+
+  useEffect(() => {
+    if (formRef.current) {
+      handleFormChange()
+    }
+  }, [])
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -109,14 +129,14 @@ export function ResetPasswordPage({
           <p>Nhập Email, mã 6 số đã gửi qua Email và mật khẩu mới của bạn.</p>
         </div>
 
-        <form className="auth-form" onSubmit={handleSubmit}>
+        <form className="auth-form" onSubmit={handleSubmit} onChange={handleFormChange} ref={formRef}>
           <label className="auth-field">
             <span>Email</span>
             <div className="auth-input-row">
               <Mail size={18} />
               <input
                 autoComplete="email"
-                defaultValue={resetParams.email}
+                defaultValue={resetParams.email || defaultEmail}
                 maxLength={190}
                 name="email"
                 placeholder="Nhập Email của bạn tại đây"
@@ -205,7 +225,8 @@ export function ResetPasswordPage({
 
           {visibleError ? <p className="auth-error">{visibleError}</p> : null}
 
-          <button className="auth-primary" disabled={isSubmitting} type="submit">
+          <button className="auth-primary" disabled={isSubmitting || !isFormValid} type="submit">
+            <RefreshCw size={18} />
             {isSubmitting ? 'Đang đặt lại...' : 'Đặt lại mật khẩu'}
           </button>
         </form>
