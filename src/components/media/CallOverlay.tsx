@@ -1,4 +1,4 @@
-import { Mic, MicOff, Phone, PhoneOff, Volume2, VolumeX, Video, VideoOff, X } from 'lucide-react'
+import { Mic, MicOff, Phone, PhoneOff, Volume2, VolumeX, Video, VideoOff, X, MonitorUp, Signal } from 'lucide-react'
 import { memo, useEffect, useRef, useState } from 'react'
 import {
   acceptRealtimeCall,
@@ -30,6 +30,7 @@ type RemotePeerState = {
   stream: MediaStream
   hasVideo: boolean
   connectionState: RTCPeerConnectionState
+  isAudioMuted?: boolean
 }
 
 type PeerEntry = {
@@ -59,6 +60,7 @@ const FINISHED_CALL_STATUSES: CallSession['status'][] = ['declined', 'missed', '
 const OUTGOING_CALL_ANSWER_TIMEOUT_MS = 60_000
 const LOCAL_FINISH_TONE_NOTES = [660, 440]
 const REMOTE_FINISH_TONE_NOTES = [520, 390, 260]
+const CONNECTED_TONE_NOTES = [520, 660, 880]
 
 function attachStream(node: HTMLMediaElement | null, stream: MediaStream) {
   if (!node || node.srcObject === stream) {
@@ -129,9 +131,13 @@ const RemoteVideoTile = memo(function RemoteVideoTile({ remotePeer }: RemoteVide
         <div className="call-video-avatar">
           <AvatarFallback name={remotePeer.participant.fullName} src={remotePeer.participant.avatarUrl || null} />
           <strong>{remotePeer.participant.fullName}</strong>
+          {remotePeer.isAudioMuted && <div style={{ marginTop: '8px', padding: '4px 8px', borderRadius: '12px', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#fff' }}><MicOff size={14} /> Đã tắt Mic</div>}
         </div>
       ) : (
-        <span>{remotePeer.participant.fullName}</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {remotePeer.participant.fullName}
+          {remotePeer.isAudioMuted && <MicOff size={14} />}
+        </span>
       )}
     </div>
   )
@@ -142,6 +148,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
   const [isMicOn, setIsMicOn] = useState(true)
   const [isSpeakerOn, setIsSpeakerOn] = useState(true)
   const [isCameraOn, setIsCameraOn] = useState(call.type === 'video')
+  const [isScreenSharing, setIsScreenSharing] = useState(false)
   const [audioInputs, setAudioInputs] = useState<DeviceOption[]>([])
   const [audioOutputs, setAudioOutputs] = useState<DeviceOption[]>([])
   const [videoInputs, setVideoInputs] = useState<DeviceOption[]>([])
@@ -176,6 +183,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
   const ringbackToneRef = useRef<RingbackTone | null>(null)
   const finishedLocallyRef = useRef(false)
   const hasPlayedFinishToneRef = useRef(false)
+  const hasPlayedConnectedToneRef = useRef(false)
   const localVideoRef = useRef<HTMLVideoElement | null>(null)
   const localStreamRef = useRef<MediaStream | null>(null)
   const peersRef = useRef(new Map<number, PeerEntry>())
@@ -268,6 +276,11 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
   }, [callStatus])
 
   useEffect(() => {
+    if (callStatus === 'ongoing' && !hasPlayedConnectedToneRef.current) {
+      hasPlayedConnectedToneRef.current = true
+      playToneSequence(CONNECTED_TONE_NOTES, 0.08)
+    }
+
     if (callStatus === 'ringing' && isCaller) {
       startRingbackTone()
     } else {
@@ -318,6 +331,48 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
       localVideoRef.current.srcObject = localStreamRef.current
     }
   }, [callStatus, isCameraOn])
+
+  useEffect(() => {
+    async function replaceDeviceTrack() {
+      if (!localStreamRef.current || callStatus !== 'ongoing') return
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: selectedAudioInputId ? { deviceId: { exact: selectedAudioInputId } } : true,
+          video: call.type === 'video' ? (selectedVideoInputId ? { deviceId: { exact: selectedVideoInputId } } : true) : false,
+        })
+        localStreamRef.current.getTracks().forEach(track => {
+           if (!isScreenSharing || track.kind !== 'video') track.stop()
+        })
+        stream.getAudioTracks().forEach((track) => track.enabled = isMicOn)
+        if (!isScreenSharing) {
+          stream.getVideoTracks().forEach((track) => track.enabled = isCameraOn)
+        }
+        
+        const newTracks = [...stream.getAudioTracks(), ...(isScreenSharing ? localStreamRef.current.getVideoTracks() : stream.getVideoTracks())]
+        const newStream = new MediaStream(newTracks)
+        localStreamRef.current = newStream
+        if (localVideoRef.current) localVideoRef.current.srcObject = newStream
+        
+        peersRef.current.forEach(({ peer }) => {
+          const senders = peer.getSenders()
+          const audioTrack = newStream.getAudioTracks()[0]
+          if (audioTrack) {
+            const audioSender = senders.find(s => s.track?.kind === 'audio')
+            if (audioSender) audioSender.replaceTrack(audioTrack)
+          }
+          const videoTrack = newStream.getVideoTracks()[0]
+          if (videoTrack) {
+            const videoSender = senders.find(s => s.track?.kind === 'video')
+            if (videoSender) videoSender.replaceTrack(videoTrack)
+          }
+        })
+      } catch (e) {
+        console.error('Failed to replace track', e)
+      }
+    }
+    if (!isScreenSharing) replaceDeviceTrack()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedAudioInputId, selectedVideoInputId])
 
 
   async function ensureLocalStream() {
@@ -615,7 +670,23 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
     try {
       const entry = createPeer(participant)
 
-      if ('type' in payload.data && payload.data.type) {
+      if (payload.data && 'type' in payload.data && payload.data.type) {
+        const payloadData = payload.data as any
+        if (payloadData.type === 'mute-state') {
+          setRemotePeers((current) => {
+            const peerState = current[participant.userId]
+            if (!peerState) return current
+            return {
+              ...current,
+              [participant.userId]: {
+                ...peerState,
+                isAudioMuted: Boolean(payloadData.isMuted),
+              },
+            }
+          })
+          return
+        }
+
         await addLocalTracks(entry.peer)
 
         const isOffer = payload.data.type === 'offer'
@@ -631,10 +702,10 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
         if (isOffer && entry.peer.signalingState !== 'stable') {
           await Promise.all([
             entry.peer.setLocalDescription({ type: 'rollback' }),
-            entry.peer.setRemoteDescription(payload.data),
+            entry.peer.setRemoteDescription(payload.data as RTCSessionDescriptionInit),
           ])
         } else {
-          await entry.peer.setRemoteDescription(payload.data)
+          await entry.peer.setRemoteDescription(payload.data as RTCSessionDescriptionInit)
         }
 
         await flushPendingCandidates(entry)
@@ -969,6 +1040,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
       track.enabled = nextEnabled
     })
     setIsMicOn(nextEnabled)
+    sendCallSignal(call.callId, { type: 'mute-state', isMuted: !nextEnabled } as any)
   }
 
   function toggleSpeaker() {
@@ -981,6 +1053,50 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
       track.enabled = nextEnabled
     })
     setIsCameraOn(nextEnabled)
+  }
+
+  async function toggleScreenShare() {
+    if (isScreenSharing) {
+      setIsScreenSharing(false)
+      try {
+        const stream = await ensureLocalStream()
+        const videoTrack = stream.getVideoTracks()[0]
+        if (videoTrack) {
+          peersRef.current.forEach(({ peer }) => {
+            const sender = peer.getSenders().find(s => s.track?.kind === 'video')
+            if (sender) sender.replaceTrack(videoTrack)
+          })
+          if (localVideoRef.current) localVideoRef.current.srcObject = stream
+        }
+      } catch (e) {}
+      return
+    }
+
+    try {
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true })
+      const screenTrack = screenStream.getVideoTracks()[0]
+      
+      screenTrack.onended = () => toggleScreenShare()
+
+      if (localStreamRef.current) {
+        const oldVideo = localStreamRef.current.getVideoTracks()[0]
+        if (oldVideo) oldVideo.stop()
+        localStreamRef.current.removeTrack(oldVideo)
+        localStreamRef.current.addTrack(screenTrack)
+      }
+
+      peersRef.current.forEach(({ peer }) => {
+        const sender = peer.getSenders().find(s => s.track?.kind === 'video')
+        if (sender) sender.replaceTrack(screenTrack)
+      })
+
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = new MediaStream([screenTrack])
+      }
+      setIsScreenSharing(true)
+    } catch (error) {
+      onError('Không thể chia sẻ màn hình')
+    }
   }
 
   function formatElapsed() {
@@ -1016,7 +1132,15 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
   const displayStatusLabel = callStatus === 'missed' ? 'Không bắt máy' : statusLabel
   const fullStatusLabel =
     networkQualityLabel && ['connecting', 'ongoing'].includes(callStatus)
-      ? `${statusLabel} · ${networkQualityLabel}`
+      ? (
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            {statusLabel} &middot;
+            {networkQuality === 'poor' && <Signal size={12} color="var(--danger-color)" />}
+            {networkQuality === 'fair' && <Signal size={12} color="var(--warning-color)" />}
+            {networkQuality === 'good' && <Signal size={12} color="var(--success-color)" />}
+            {networkQualityLabel}
+          </span>
+        )
       : displayStatusLabel
 
   const isEnded = ['declined', 'missed', 'completed', 'cancelled', 'timeout', 'left'].includes(callStatus)
@@ -1110,6 +1234,11 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
               <AvatarFallback name={remoteName} src={call.conversationAvatar || call.caller.avatarUrl || null} />
               <strong>{remoteName}</strong>
               {remotePeerList.length > 1 ? <small>{remotePeerList.length} người đang tham gia</small> : null}
+              {primaryRemote?.isAudioMuted && (
+                <div style={{ marginTop: '12px', padding: '6px 12px', borderRadius: '20px', backgroundColor: 'var(--border-color)', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
+                  <MicOff size={16} color="var(--danger-color)" /> Đã tắt Mic
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1198,9 +1327,14 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
                 {isSpeakerOn ? <Volume2 size={20} /> : <VolumeX size={20} />}
               </button>
               {canShowVideo ? (
-                <button className="call-control" onClick={toggleCamera} title={isCameraOn ? 'Tắt camera' : 'Bật camera'} type="button">
-                  {isCameraOn ? <Video size={20} /> : <VideoOff size={20} />}
-                </button>
+                <>
+                  <button className="call-control" onClick={toggleCamera} title={isCameraOn ? 'Tắt camera' : 'Bật camera'} type="button">
+                    {isCameraOn ? <Video size={20} /> : <VideoOff size={20} />}
+                  </button>
+                  <button className={isScreenSharing ? "call-control is-active" : "call-control"} onClick={toggleScreenShare} title={isScreenSharing ? 'Dừng chia sẻ' : 'Chia sẻ màn hình'} type="button" style={isScreenSharing ? { backgroundColor: 'var(--primary-color)', color: '#fff' } : {}}>
+                    <MonitorUp size={20} />
+                  </button>
+                </>
               ) : null}
               <button className="call-control is-danger" onClick={hangUp} title="Kết thúc" type="button">
                 <PhoneOff size={20} />

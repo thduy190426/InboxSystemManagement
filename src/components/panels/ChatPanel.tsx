@@ -1260,6 +1260,15 @@ export function ChatPanel({
           <button
             className="icon-button"
             disabled={isBlocked}
+            onClick={() => onStartCall('video')}
+            title="Gọi video"
+            type="button"
+          >
+            <Video size={20} />
+          </button>
+          <button
+            className="icon-button"
+            disabled={isBlocked}
             onClick={() => onStartCall('audio')}
             title="Gọi audio"
             type="button"

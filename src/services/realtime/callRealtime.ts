@@ -16,7 +16,7 @@ export type CallSignalPayload = {
     userId: number
     fullName: string
   }
-  data: RTCSessionDescriptionInit | RTCIceCandidateInit
+  data: RTCSessionDescriptionInit | RTCIceCandidateInit | { type: 'mute-state'; isMuted: boolean }
 }
 
 function getSocketOrThrow() {
