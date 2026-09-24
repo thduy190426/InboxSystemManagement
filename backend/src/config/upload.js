@@ -147,7 +147,20 @@ const messageUpload = {
   },
 }
 
+const backgroundUpload = {
+  single(fieldName) {
+    return [
+      avatarMulter.single(fieldName), // Reusing avatar limits and filter (image only)
+      cloudinaryUploadMiddleware({
+        folder: 'backgrounds',
+        resourceType: 'image',
+      }),
+    ]
+  },
+}
+
 module.exports = {
   avatarUpload,
   messageUpload,
+  backgroundUpload,
 }

@@ -1331,9 +1331,18 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
                   <button className="call-control" onClick={toggleCamera} title={isCameraOn ? 'Tắt camera' : 'Bật camera'} type="button">
                     {isCameraOn ? <Video size={20} /> : <VideoOff size={20} />}
                   </button>
-                  <button className={isScreenSharing ? "call-control is-active" : "call-control"} onClick={toggleScreenShare} title={isScreenSharing ? 'Dừng chia sẻ' : 'Chia sẻ màn hình'} type="button" style={isScreenSharing ? { backgroundColor: 'var(--primary-color)', color: '#fff' } : {}}>
-                    <MonitorUp size={20} />
-                  </button>
+                  {callStatus === 'ongoing' ? (
+                    isScreenSharing ? (
+                      <button className="call-control is-danger" onClick={toggleScreenShare} title="Dừng chia sẻ" type="button" style={{ borderRadius: '24px', padding: '0 16px', gap: '8px', width: 'auto' }}>
+                        <MonitorUp size={20} />
+                        <span style={{ fontSize: '14px', fontWeight: 500 }}>Dừng chia sẻ</span>
+                      </button>
+                    ) : (
+                      <button className="call-control" onClick={toggleScreenShare} title="Chia sẻ màn hình" type="button">
+                        <MonitorUp size={20} />
+                      </button>
+                    )
+                  ) : null}
                 </>
               ) : null}
               <button className="call-control is-danger" onClick={hangUp} title="Kết thúc" type="button">

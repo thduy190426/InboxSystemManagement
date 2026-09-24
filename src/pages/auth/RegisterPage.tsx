@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import type { AuthPageProps } from '../../types'
 import { CaptchaChallenge } from '../../components/ui/CaptchaChallenge'
+import registerBg from '../../bg-images/RegisterBG.jpg'
 
 type RegisterPageProps = AuthPageProps & {
   pushToast: (text: string, tone?: 'info' | 'error') => void
@@ -168,8 +169,24 @@ export function RegisterPage({
   }
 
   return (
-    <main className="auth-shell">
-      <section className="auth-card" aria-labelledby="register-title">
+    <main 
+      className="auth-shell"
+      style={{
+        backgroundImage: `url(${registerBg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      <section 
+        className="auth-card" 
+        aria-labelledby="register-title"
+        style={{
+          backgroundColor: 'var(--panel-bg)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+          border: '1px solid var(--border-color)',
+        }}
+      >
         <div className="auth-card-header">
           <span className="section-kicker" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <UserPlus size={14} />

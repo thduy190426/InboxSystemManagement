@@ -46,6 +46,7 @@ import {
   uploadMessageAttachment,
   updateConversationSettings,
   updateGroupConversation,
+  updateConversationBackground,
   updateGroupMemberNickname,
   updateGroupMemberRole,
   updateTypingStatus,
@@ -2665,6 +2666,36 @@ export function ChatApp({
     }))
   }
 
+  async function handleUpdateBackground(payload: { backgroundImage?: File | null; removeBackground?: boolean }) {
+    if (!activeConversation || busyConversationAction) {
+      return
+    }
+
+    try {
+      setBusyConversationAction('background')
+      const updatedConversation = await updateConversationBackground(activeConversation.id, payload)
+
+      setConversations((current) =>
+        current.map((conversation) =>
+          conversation.id === activeConversation.id
+            ? {
+              ...conversation,
+              ...updatedConversation,
+            }
+            : conversation,
+        ),
+      )
+    } catch (error) {
+      if (error instanceof Error) {
+        pushToast(error.message, 'error')
+      } else {
+        pushToast('Cập nhật ảnh nền thất bại!', 'error')
+      }
+    } finally {
+      setBusyConversationAction('')
+    }
+  }
+
   async function handleUpdateGroup(payload: { title?: string; avatar?: File | null }) {
     if (!activeConversation || activeConversation.type !== 'group' || busyConversationAction) {
       return
@@ -3341,6 +3372,7 @@ export function ChatApp({
         onTransferOwner={handleTransferOwner}
         onUpdateContactNickname={handleUpdateContactNickname}
         onUpdateGroup={handleUpdateGroup}
+        onUpdateBackground={handleUpdateBackground}
         onUpdateMemberNickname={handleUpdateMemberNickname}
         onUpdateMemberRole={handleUpdateMemberRole}
       />

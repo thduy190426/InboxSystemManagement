@@ -1345,6 +1345,7 @@ async function loadConversationSummary(connection, conversationId, currentUserId
       conversations.type,
       conversations.title,
       conversations.avatar_url,
+      conversations.backgroundImage,
       last_messages.created_at AS visible_last_message_at,
       conversations.is_archived,
       participant_settings.is_pinned,
@@ -4939,6 +4940,64 @@ async function unarchiveConversation(request, response, next) {
 
     response.json({
       conversation,
+    })
+  } catch (error) {
+    await connection.rollback()
+    next(error)
+  } finally {
+    connection.release()
+  }
+}
+
+
+async function updateConversationBackground(request, response, next) {
+  const connection = await pool.getConnection()
+
+  try {
+    const currentUserId = request.user.id
+    const conversationId = Number(request.params.conversationId)
+    const backgroundImage = request.file ? request.file.cloudinary.url : null
+    const isRemoving = request.body.removeBackground === 'true'
+
+    if (!Number.isInteger(conversationId)) {
+      return response.status(400).json({
+        message: 'Đường dẫn hội thoại không hợp lệ!',
+      })
+    }
+
+    if (!backgroundImage && !isRemoving) {
+      return response.status(422).json({
+        message: 'Vui lòng chọn ảnh nền để tải lên!',
+      })
+    }
+
+    await connection.beginTransaction()
+
+    const participant = await findActiveParticipant(connection, conversationId, currentUserId)
+
+    if (!participant) {
+      await connection.rollback()
+      return response.status(404).json({
+        message: 'Không tìm thấy hội thoại!',
+      })
+    }
+
+    const newBg = isRemoving ? null : backgroundImage
+    await connection.execute('UPDATE conversations SET backgroundImage = ? WHERE id = ?', [newBg, conversationId])
+
+    const conversation = await loadConversationSummary(connection, conversationId, currentUserId)
+
+    await connection.commit()
+
+    emitToConversation(conversationId, 'conversation:changed', {
+      conversationId: String(conversationId),
+      actorUserId: String(currentUserId),
+      eventType: 'background:changed'
+    })
+
+    response.json({
+      message: isRemoving ? 'Đã xoá ảnh nền hội thoại' : 'Cập nhật ảnh nền thành công!',
+      conversation
     })
   } catch (error) {
     await connection.rollback()

@@ -39,8 +39,9 @@ const {
   updateGroupMemberRole,
   updateTypingStatus,
   transferGroupOwner,
+  updateConversationBackground,
 } = require('../../controllers/core/conversation.controller')
-const { avatarUpload, messageUpload } = require('../../config/upload')
+const { avatarUpload, messageUpload, backgroundUpload } = require('../../config/upload')
 const { sendMessageRateLimit } = require('../../middleware/rateLimit.middleware')
 
 const router = express.Router()
@@ -79,6 +80,7 @@ router.post('/:conversationId/unarchive', unarchiveConversation)
 router.post('/:conversationId/leave', leaveGroupConversation)
 router.patch('/:conversationId/group', avatarUpload.single('avatar'), updateGroupConversation)
 router.patch('/:conversationId/settings', updateConversationSettings)
+router.patch('/:conversationId/background', backgroundUpload.single('backgroundImage'), updateConversationBackground)
 router.patch('/:conversationId/messages/:messageId', updateMessage)
 router.patch('/:conversationId/members/:userId/nickname', updateGroupMemberNickname)
 router.patch('/:conversationId/members/:userId/role', updateGroupMemberRole)

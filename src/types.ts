@@ -137,6 +137,7 @@ export type Conversation = {
   role: string
   status: string
   avatar: string | null
+  backgroundImage?: string | null
   accent: string
   lastMessage: string
   lastMessageByMe?: boolean

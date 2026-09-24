@@ -507,6 +507,34 @@ export async function fetchConversationCalls(conversationId: string) {
   return response.calls
 }
 
+export async function updateConversationBackground(
+  conversationId: string,
+  payload: { backgroundImage?: File | null; removeBackground?: boolean },
+) {
+  const formData = new FormData()
+
+  if (payload.backgroundImage) {
+    formData.append('backgroundImage', payload.backgroundImage)
+  }
+
+  if (payload.removeBackground) {
+    formData.append('removeBackground', 'true')
+  }
+
+  const response = await apiFetch(`/conversations/${conversationId}/background`, {
+    method: 'PATCH',
+    body: formData,
+  })
+
+  const body = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    throw new Error(body.message ?? 'Cập nhật ảnh nền thất bại!')
+  }
+
+  return (body as ConversationResponse).conversation
+}
+
 export async function updateGroupConversation(
   conversationId: string,
   payload: { title?: string; avatar?: File | null },

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { ArrowRight, Eye, EyeOff, Lock, LogIn, Mail } from 'lucide-react'
 import type { AuthPageProps } from '../../types'
 import { CaptchaChallenge } from '../../components/ui/CaptchaChallenge'
+import loginBg from '../../bg-images/LoginBG.jpg'
 
 type LoginPageProps = AuthPageProps & {
   onForgotPassword: () => void
@@ -43,8 +44,24 @@ export function LoginPage({
   }
 
   return (
-    <main className="auth-shell">
-      <section className="auth-card" aria-labelledby="login-title">
+    <main 
+      className="auth-shell"
+      style={{
+        backgroundImage: `url(${loginBg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      <section 
+        className="auth-card" 
+        aria-labelledby="login-title"
+        style={{
+          backgroundColor: 'var(--panel-bg)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+          border: '1px solid var(--border-color)',
+        }}
+      >
         <div className="auth-card-header">
           <span className="section-kicker" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <LogIn size={14} />

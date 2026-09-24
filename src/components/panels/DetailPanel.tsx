@@ -57,6 +57,7 @@ type DetailPanelProps = {
   onTransferOwner: (userId: string) => Promise<void> | void
   onUpdateContactNickname: (nickname: string) => Promise<void> | void
   onUpdateGroup: (payload: { title?: string; avatar?: File | null }) => Promise<void> | void
+  onUpdateBackground?: (payload: { backgroundImage?: File | null; removeBackground?: boolean }) => Promise<void> | void
   onUpdateMemberNickname: (userId: string, nickname: string) => Promise<void> | void
   onUpdateMemberRole: (userId: string, role: 'admin' | 'member') => Promise<void> | void
 }
@@ -86,6 +87,7 @@ export function DetailPanel({
   onTransferOwner,
   onUpdateContactNickname,
   onUpdateGroup,
+  onUpdateBackground,
   onUpdateMemberNickname,
   onUpdateMemberRole,
 }: DetailPanelProps) {
@@ -516,6 +518,48 @@ export function DetailPanel({
           ) : null}
         </section>
       ) : null}
+
+      <section className="detail-section background-section">
+        <div className="detail-section-title">
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <ImagePlus size={16} /> Tùy chỉnh đoạn chat
+          </h3>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '0 16px', marginBottom: '16px' }}>
+          <label
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', background: 'var(--surface-soft)', border: '1px solid var(--line)', borderRadius: '8px', cursor: Boolean(busyAction) ? 'not-allowed' : 'pointer', fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}
+          >
+            <ImagePlus size={16} color="var(--primary-strong)" /> Thay đổi ảnh nền
+            <input
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              disabled={Boolean(busyAction)}
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file && onUpdateBackground) {
+                  onUpdateBackground({ backgroundImage: file })
+                  e.target.value = ''
+                }
+              }}
+            />
+          </label>
+          {activeConversation.backgroundImage && (
+            <button
+              disabled={Boolean(busyAction)}
+              onClick={() => {
+                if (onUpdateBackground) {
+                  onUpdateBackground({ removeBackground: true })
+                }
+              }}
+              type="button"
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', background: 'var(--surface-soft)', border: '1px solid var(--line)', borderRadius: '8px', cursor: Boolean(busyAction) ? 'not-allowed' : 'pointer', fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}
+            >
+              <Trash2 size={16} color="var(--danger)" /> Gỡ ảnh nền
+            </button>
+          )}
+        </div>
+      </section>
 
       <section className="detail-section pinned-messages-section">
         <div className="detail-section-title">

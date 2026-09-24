@@ -1105,7 +1105,7 @@ export function ChatPanel({
   }
 
   return (
-    <section className="chat-panel" aria-label={`Hội thoại với ${activeConversation.name}`}>
+    <section className="chat-panel" aria-label={`Hội thoại với ${activeConversation.name}`} style={activeConversation.backgroundImage ? { backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(${activeConversation.backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' } : {}}>
       <header className="chat-header">
         <div className="chat-identity">
           <button
