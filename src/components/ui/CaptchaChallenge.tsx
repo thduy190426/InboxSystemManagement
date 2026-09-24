@@ -24,14 +24,20 @@ export function CaptchaChallenge({ disabled = false, onSolvedChange }: CaptchaCh
       aria-live="polite"
       style={{
         pointerEvents: disabled ? 'none' : 'auto',
-        opacity: disabled ? 0.5 : 1,
+        opacity: disabled ? 0.6 : 1,
         display: 'flex',
         justifyContent: 'center',
-        padding: '16px 0',
-        minHeight: '110px'
+        margin: '8px 0 16px',
+        borderRadius: '8px',
+        overflow: 'hidden',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+        backgroundColor: '#222',
+        width: 'fit-content',
+        marginInline: 'auto'
       }}
     >
       <ReCAPTCHA
+        theme="dark"
         sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'}
         onChange={handleChange}
       />
