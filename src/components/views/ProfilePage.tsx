@@ -8,6 +8,7 @@ import {
   uploadAvatar,
   type ProfilePayload,
 } from '../../services/api/userApi'
+import { AvatarCropper } from '../ui/AvatarCropper'
 
 type ProfilePageProps = {
   currentUser: AuthUser | null
@@ -135,6 +136,7 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
   const [avatarUrl, setAvatarUrl] = useState(currentUser?.avatarUrl ?? '')
   const [isSaving, setIsSaving] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null)
   const [profileErrors, setProfileErrors] = useState<ProfileErrors>({})
   const [isBioExpanded, setIsBioExpanded] = useState(false)
   const [avatarCooldownLeft, setAvatarCooldownLeft] = useState(0)
@@ -204,6 +206,18 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
       return
     }
 
+    const reader = new FileReader()
+    reader.addEventListener('load', () => {
+      setCropImageSrc(reader.result?.toString() || null)
+    })
+    reader.readAsDataURL(file)
+    event.target.value = ''
+  }
+
+  async function handleCroppedImage(croppedBlob: Blob) {
+    setCropImageSrc(null)
+    const file = new File([croppedBlob], 'avatar.jpg', { type: 'image/jpeg' })
+
     try {
       setIsUploading(true)
       const response = await uploadAvatar(file)
@@ -231,7 +245,6 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
       pushToast(error instanceof Error ? error.message : 'Không thể cập nhật ảnh đại diện!', 'error')
     } finally {
       setIsUploading(false)
-      event.target.value = ''
     }
   }
 
@@ -382,6 +395,14 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
           </button>
         </form>
       </div>
+
+      {cropImageSrc && (
+        <AvatarCropper
+          imageSrc={cropImageSrc}
+          onCropped={handleCroppedImage}
+          onCancel={() => setCropImageSrc(null)}
+        />
+      )}
     </section>
   )
 }

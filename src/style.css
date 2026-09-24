@@ -5691,6 +5691,15 @@ html.dark .scroll-to-latest-button:focus-visible {
   min-height: 100%;
 }
 
+.call-window-shell.is-ended {
+  width: min(320px, 100%);
+  height: auto !important;
+}
+
+.call-window-shell.is-ended .call-window {
+  min-height: auto;
+  grid-template-rows: auto;
+}
 .call-header,
 .call-controls {
   display: flex;

@@ -2,7 +2,7 @@ const { createHash } = require('crypto')
 const { pool } = require('../config/db')
 
 const sessionCache = new Map()
-const CACHE_TTL = 30000 // 30 seconds
+const CACHE_TTL = 30000 
 const MAX_CACHE_SIZE = 1000
 
 function hashToken(token) {

@@ -1019,12 +1019,15 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
       ? `${statusLabel} · ${networkQualityLabel}`
       : displayStatusLabel
 
+  const isEnded = ['declined', 'missed', 'completed', 'cancelled', 'timeout', 'left'].includes(callStatus)
+
   return (
     <div className={isOverlayClosing ? 'call-overlay is-exiting' : 'call-overlay'} role="dialog" aria-modal="true">
       <div
         className={[
           'call-window-shell',
-          canShowVideo ? 'is-video' : '',
+          (canShowVideo && !isEnded) ? 'is-video' : '',
+          isEnded ? 'is-ended' : '',
           dragPosition ? 'is-positioned' : '',
           overlaySize ? 'is-sized' : '',
           isDragging ? 'is-dragging' : '',
@@ -1035,10 +1038,10 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
         ref={callShellRef}
         style={{
           ...(dragPosition ? { left: `${dragPosition.x}px`, top: `${dragPosition.y}px` } : {}),
-          ...(overlaySize ? { width: `${overlaySize.width}px`, height: `${overlaySize.height}px` } : {}),
+          ...(overlaySize && !isEnded ? { width: `${overlaySize.width}px`, height: `${overlaySize.height}px` } : {}),
         }}
       >
-        <section className={canShowVideo ? 'call-window is-video' : 'call-window'}>
+        <section className={(canShowVideo && !isEnded) ? 'call-window is-video' : 'call-window'}>
           <header
             className="call-header"
             onPointerCancel={stopDraggingOverlay}
@@ -1055,7 +1058,8 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
           </button>
         </header>
 
-        <div className={canShowVideo ? 'call-stage is-grid' : 'call-stage'}>
+        {!isEnded && (<>
+          <div className={canShowVideo ? 'call-stage is-grid' : 'call-stage'}>
           {remotePeerList.map((remotePeer) => (
             <RemoteAudio
               key={`audio-${remotePeer.participant.userId}`}
@@ -1103,7 +1107,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
           )}
         </div>
 
-        <div className="call-device-panel">
+          <div className="call-device-panel">
           <label>
             <Mic size={15} />
             <select
@@ -1157,7 +1161,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
           ) : null}
         </div>
 
-        <footer className="call-controls">
+          <footer className="call-controls">
           {callStatus === 'ringing' && !isCaller ? (
             <>
               <button className="call-control" onClick={toggleMic} title={isMicOn ? 'Tắt mic' : 'Bật mic'} type="button">
@@ -1197,6 +1201,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
             </>
           )}
           </footer>
+        </>)}
           <button
             aria-label="Resize call overlay"
             className="call-resize-handle"

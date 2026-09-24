@@ -806,14 +806,11 @@ function initRealtime(server, corsOrigin) {
     })
 
     socket.on('call:signal', (payload = {}) => {
-      // Avoid logging every ICE candidate to prevent console spam
       const callId = String(payload.callId || '')
       const conversationId = String(payload.conversationId || '')
 
       if (!callId || !conversationId) return
 
-      // Verify the user is actually part of this conversation's socket room
-      // This completely avoids hitting the Database on every WebRTC packet
       if (!socket.rooms.has(getConversationRoom(conversationId))) {
         return
       }

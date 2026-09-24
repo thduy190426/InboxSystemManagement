@@ -27,11 +27,12 @@ export function CaptchaChallenge({ disabled = false, onSolvedChange }: CaptchaCh
         opacity: disabled ? 0.5 : 1,
         display: 'flex',
         justifyContent: 'center',
-        padding: '16px 0'
+        padding: '16px 0',
+        minHeight: '110px'
       }}
     >
       <ReCAPTCHA
-        sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
+        sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'}
         onChange={handleChange}
       />
     </div>
