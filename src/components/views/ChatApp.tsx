@@ -853,6 +853,13 @@ export function ChatApp({
         syncDeliveredReceipts(conversationId).catch(() => undefined)
       }
 
+      if (
+        conversationId === activeIdRef.current &&
+        (payload.eventType === 'message:created' || payload.eventType === 'message:forwarded')
+      ) {
+        setShouldAutoScrollToLatest(true)
+      }
+
       if (conversationId && payload.eventType === 'group:disbanded') {
         if (locallyDisbandedConversationIdsRef.current.has(conversationId)) {
           locallyDisbandedConversationIdsRef.current.delete(conversationId)
