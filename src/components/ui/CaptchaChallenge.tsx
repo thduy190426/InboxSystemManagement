@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import ReCAPTCHA from 'react-google-recaptcha'
+import { useTheme } from '../providers/ThemeProvider'
 
 type CaptchaChallengeProps = {
   id: string
@@ -9,6 +10,7 @@ type CaptchaChallengeProps = {
 
 export function CaptchaChallenge({ disabled = false, onSolvedChange }: CaptchaChallengeProps) {
   const [token, setToken] = useState<string | null>(null)
+  const { theme } = useTheme()
 
   useEffect(() => {
     onSolvedChange(Boolean(token))
@@ -28,16 +30,16 @@ export function CaptchaChallenge({ disabled = false, onSolvedChange }: CaptchaCh
         display: 'flex',
         justifyContent: 'center',
         margin: '8px 0 16px',
-        borderRadius: '8px',
+        borderRadius: '4px',
         overflow: 'hidden',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
-        backgroundColor: '#222',
+        boxShadow: theme === 'dark' ? '0 4px 12px rgba(0, 0, 0, 0.4)' : '0 2px 10px rgba(0, 0, 0, 0.1)',
+        backgroundColor: theme === 'dark' ? '#222' : '#f9f9f9',
         width: 'fit-content',
         marginInline: 'auto'
       }}
     >
       <ReCAPTCHA
-        theme="dark"
+        theme={theme}
         sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'}
         onChange={handleChange}
       />
