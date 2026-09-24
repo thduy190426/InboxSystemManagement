@@ -805,64 +805,38 @@ function initRealtime(server, corsOrigin) {
       finishCall(String(payload.callId || ''), 'completed', 'left', ack)
     })
 
-    socket.on('call:signal', async (payload = {}) => {
-      logSocketEvent(socket, 'call:signal', payload)
+    socket.on('call:signal', (payload = {}) => {
+      // Avoid logging every ICE candidate to prevent console spam
       const callId = String(payload.callId || '')
-      const connection = await pool.getConnection()
+      const conversationId = String(payload.conversationId || '')
 
-      try {
-        const call = await loadCall(connection, callId)
+      if (!callId || !conversationId) return
 
-        if (!call) {
-          return
-        }
-
-        const participant = await findConversationParticipant(
-          connection,
-          call.conversation_id,
-          socket.user.id,
-        )
-
-        if (!participant) {
-          return
-        }
-
-        const signalPayload = {
-          callId,
-          conversationId: String(call.conversation_id),
-          toUserId: Number(payload.toUserId) || undefined,
-          from: {
-            id: String(socket.user.public_id),
-            userId: Number(socket.user.id),
-            fullName: socket.user.full_name,
-            avatarUrl: socket.user.avatar_url || null,
-          },
-          data: payload.data,
-        }
-
-        if (signalPayload.toUserId) {
-          io.to(getUserRoom(signalPayload.toUserId)).emit('call:signal', signalPayload)
-          console.info('[BE][SOCKET][SUCCESS]', {
-            socketId: socket.id,
-            event: 'call:signal',
-            user: getSocketUserContext(socket),
-            targetUserId: signalPayload.toUserId,
-          })
-          return
-        }
-
-        socket.to(getConversationRoom(call.conversation_id)).emit('call:signal', signalPayload)
-        console.info('[BE][SOCKET][SUCCESS]', {
-          socketId: socket.id,
-          event: 'call:signal',
-          user: getSocketUserContext(socket),
-          conversationId: String(call.conversation_id),
-        })
-      } catch (error) {
-        console.error('Không thể chuyển tiếp tín hiệu cuộc gọi:', error)
-      } finally {
-        connection.release()
+      // Verify the user is actually part of this conversation's socket room
+      // This completely avoids hitting the Database on every WebRTC packet
+      if (!socket.rooms.has(getConversationRoom(conversationId))) {
+        return
       }
+
+      const signalPayload = {
+        callId,
+        conversationId,
+        toUserId: Number(payload.toUserId) || undefined,
+        from: {
+          id: String(socket.user.public_id),
+          userId: Number(socket.user.id),
+          fullName: socket.user.full_name,
+          avatarUrl: socket.user.avatar_url || null,
+        },
+        data: payload.data,
+      }
+
+      if (signalPayload.toUserId) {
+        io.to(getUserRoom(signalPayload.toUserId)).emit('call:signal', signalPayload)
+        return
+      }
+
+      socket.to(getConversationRoom(conversationId)).emit('call:signal', signalPayload)
     })
   })
 
