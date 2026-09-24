@@ -5047,4 +5047,5 @@ module.exports = {
   updateGroupMemberRole,
   updateTypingStatus,
   updateMessage,
+  updateConversationBackground,
 }
