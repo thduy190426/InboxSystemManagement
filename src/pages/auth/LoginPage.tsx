@@ -56,11 +56,6 @@ export function LoginPage({
       <section 
         className="auth-card" 
         aria-labelledby="login-title"
-        style={{
-          backgroundColor: 'var(--panel-bg)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
-          border: '1px solid var(--border-color)',
-        }}
       >
         <div className="auth-card-header">
           <span className="section-kicker" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

@@ -1935,6 +1935,7 @@ async function getConversationMembers(request, response, next) {
   const connection = await pool.getConnection()
 
   try {
+    console.log("updateConversationBackground hit", request.params, !!request.file, request.body);
     const currentUserId = request.user.id
     const conversationId = Number(request.params.conversationId)
 
@@ -4954,6 +4955,7 @@ async function updateConversationBackground(request, response, next) {
   const connection = await pool.getConnection()
 
   try {
+    console.log("updateConversationBackground hit", request.params, !!request.file, request.body);
     const currentUserId = request.user.id
     const conversationId = Number(request.params.conversationId)
     const backgroundImage = request.file ? request.file.cloudinary.url : null

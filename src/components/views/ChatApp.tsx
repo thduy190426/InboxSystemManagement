@@ -2667,13 +2667,18 @@ export function ChatApp({
   }
 
   async function handleUpdateBackground(payload: { backgroundImage?: File | null; removeBackground?: boolean }) {
+    console.log('handleUpdateBackground called with payload:', payload);
     if (!activeConversation || busyConversationAction) {
+      console.log('Early return: activeConversation:', !!activeConversation, 'busyConversationAction:', busyConversationAction);
       return
     }
 
     try {
+      console.log('Setting busy action to background...');
       setBusyConversationAction('background')
+      console.log('Calling updateConversationBackground API...');
       const updatedConversation = await updateConversationBackground(activeConversation.id, payload)
+      console.log('API response:', updatedConversation);
 
       setConversations((current) =>
         current.map((conversation) =>
