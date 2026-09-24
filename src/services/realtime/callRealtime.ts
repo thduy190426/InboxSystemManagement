@@ -84,8 +84,9 @@ export function endRealtimeCall(callId: string) {
 
 export function sendCallSignal(
   callId: string,
+  conversationId: string,
   data: RTCSessionDescriptionInit | RTCIceCandidateInit,
   toUserId?: number,
 ) {
-  getRealtimeSocket()?.emit('call:signal', { callId, data, toUserId })
+  getRealtimeSocket()?.emit('call:signal', { callId, conversationId, data, toUserId })
 }

@@ -572,7 +572,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
 
     peer.onicecandidate = (event) => {
       if (event.candidate) {
-        sendCallSignal(call.callId, event.candidate.toJSON(), participant.userId)
+        sendCallSignal(call.callId, call.conversationId, event.candidate.toJSON(), participant.userId)
       }
     }
 
@@ -631,7 +631,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
     try {
       const offer = await entry.peer.createOffer()
       await entry.peer.setLocalDescription(offer)
-      sendCallSignal(call.callId, offer, participant.userId)
+      sendCallSignal(call.callId, call.conversationId, offer, participant.userId)
     } finally {
       entry.isMakingOffer = false
     }
@@ -713,7 +713,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
         if (isOffer) {
           const answer = await entry.peer.createAnswer()
           await entry.peer.setLocalDescription(answer)
-          sendCallSignal(call.callId, answer, participant.userId)
+          sendCallSignal(call.callId, call.conversationId, answer, participant.userId)
         }
 
         return
@@ -1040,7 +1040,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
       track.enabled = nextEnabled
     })
     setIsMicOn(nextEnabled)
-    sendCallSignal(call.callId, { type: 'mute-state', isMuted: !nextEnabled } as any)
+    sendCallSignal(call.callId, call.conversationId, { type: 'mute-state', isMuted: !nextEnabled } as any)
   }
 
   function toggleSpeaker() {
