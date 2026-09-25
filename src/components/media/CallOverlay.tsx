@@ -197,15 +197,22 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
   const directRemoteParticipant =
     call.participants.length === 2 ? call.participants.find((p) => p.id !== currentUserId) : undefined
 
-  const remoteName =
-    remotePeerList.length > 1
-      ? call.conversationName
-      : primaryRemote?.participant.fullName || directRemoteParticipant?.fullName || (isCaller ? call.conversationName : call.caller.fullName)
-  
-  const remoteAvatarUrl =
-    remotePeerList.length > 1
-      ? call.conversationAvatar
-      : primaryRemote?.participant.avatarUrl || directRemoteParticipant?.avatarUrl || call.conversationAvatar || call.caller.avatarUrl || null
+  let remoteName = ''
+  let remoteAvatarUrl: string | null = null
+
+  if (remotePeerList.length > 1) {
+    remoteName = call.conversationName
+    remoteAvatarUrl = call.conversationAvatar || null
+  } else if (primaryRemote) {
+    remoteName = primaryRemote.participant.fullName
+    remoteAvatarUrl = primaryRemote.participant.avatarUrl || null
+  } else if (directRemoteParticipant) {
+    remoteName = directRemoteParticipant.fullName
+    remoteAvatarUrl = directRemoteParticipant.avatarUrl || null
+  } else {
+    remoteName = isCaller ? call.conversationName : call.caller.fullName
+    remoteAvatarUrl = isCaller ? (call.conversationAvatar || null) : (call.caller.avatarUrl || null)
+  }
   const localAvatarName = currentUser?.fullName || 'Bạn'
   const localAvatarUrl = currentUser?.avatarUrl || null
   const canSelectAudioOutput =

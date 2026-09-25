@@ -4434,6 +4434,16 @@ html.dark .scroll-to-latest-button:focus-visible {
   flex: 0 0 auto;
 }
 
+.message-avatar-wrap {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+}
+
+.message-avatar-wrap.is-hidden {
+  visibility: hidden;
+}
+
 .message-bubble {
   width: fit-content;
   max-width: min(620px, 72vw);
@@ -5166,8 +5176,6 @@ html.dark .scroll-to-latest-button:focus-visible {
 
 .composer {
   grid-row: 4;
-  position: sticky;
-  bottom: 0;
   z-index: 12;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto auto auto auto minmax(0, auto) auto;

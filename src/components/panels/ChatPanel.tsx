@@ -1431,11 +1431,23 @@ export function ChatPanel({
                 ) : (
                   <>
                     {message.author === 'them' ? (
-                      <AvatarFallback
-                        className={shouldShowAvatar ? 'message-avatar' : 'message-avatar is-hidden'}
-                        name={message.senderName || activeConversation.name}
-                        src={message.senderAvatar || activeConversation.avatar}
-                      />
+                      <span className={shouldShowAvatar ? 'avatar-wrap message-avatar-wrap' : 'avatar-wrap message-avatar-wrap is-hidden'}>
+                        <AvatarFallback
+                          className="message-avatar"
+                          name={message.senderName || activeConversation.name}
+                          src={message.senderAvatar || activeConversation.avatar}
+                        />
+                        {(activeConversation.type === 'direct'
+                          ? activeConversation.presence
+                          : activeConversation.members?.find(
+                              (m) => m.fullName === (message.senderName || activeConversation.name)
+                            )?.presence) === 'online' && (
+                          <span 
+                            className="presence-dot online" 
+                            style={{ bottom: '-1px', right: '-1px', width: '10px', height: '10px', borderWidth: '1.5px' }} 
+                          />
+                        )}
+                      </span>
                     ) : null}
                     <div className="message-bubble">
                       {shouldShowSenderName ? (
