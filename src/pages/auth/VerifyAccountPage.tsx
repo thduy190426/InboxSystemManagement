@@ -1,5 +1,5 @@
 import type { FormEvent } from 'react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Mail, RotateCw, ShieldCheck } from 'lucide-react'
 import type { AuthPageProps } from '../../types'
 import bgImage from '../../bg-images/VerifyAccountBG.jpg'
@@ -24,6 +24,14 @@ export function VerifyAccountPage({
   successMessage = '',
 }: VerifyAccountPageProps) {
   const [localError, setLocalError] = useState('')
+  const [code, setCode] = useState('')
+  const [cooldown, setCooldown] = useState(0)
+
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const timer = setInterval(() => setCooldown((c) => c - 1), 1000)
+    return () => clearInterval(timer)
+  }, [cooldown])
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -50,7 +58,9 @@ export function VerifyAccountPage({
     })
   }
 
-  function handleResend() {
+  async function handleResend() {
+    if (cooldown > 0) return
+
     const emailInput = document.querySelector<HTMLInputElement>('input[name="email"]')
     const email = (emailInput?.value || defaultEmail).trim().toLowerCase()
 
@@ -60,10 +70,15 @@ export function VerifyAccountPage({
     }
 
     setLocalError('')
-    onResend({
-      channel: 'email',
-      email,
-    })
+    setCooldown(60)
+    try {
+      await onResend({
+        channel: 'email',
+        email,
+      })
+    } catch (error) {
+      setCooldown(0)
+    }
   }
 
   const visibleError = localError || errorMessage
@@ -101,6 +116,8 @@ export function VerifyAccountPage({
                 placeholder="Nhập Email tài khoản"
                 required
                 type="email"
+                readOnly
+                style={{ cursor: 'not-allowed', opacity: 0.7 }}
               />
             </div>
           </label>
@@ -118,6 +135,8 @@ export function VerifyAccountPage({
                 placeholder="Nhập mã 6 chữ số"
                 required
                 type="text"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
               />
             </div>
           </label>
@@ -130,15 +149,15 @@ export function VerifyAccountPage({
           ) : null}
           {visibleError ? <p className="auth-error">{visibleError}</p> : null}
 
-          <button className="auth-primary" disabled={isSubmitting} type="submit">
+          <button className="auth-primary" disabled={isSubmitting || !/^[0-9]{6}$/.test(code)} type="submit">
             <ShieldCheck size={18} />
             {isSubmitting ? 'Đang xác thực...' : 'Xác thực'}
           </button>
         </form>
 
-        <button className="auth-action-button" disabled={isSubmitting} onClick={handleResend} type="button">
+        <button className="auth-action-button" disabled={isSubmitting || cooldown > 0} onClick={handleResend} type="button">
           <RotateCw size={16} />
-          Gửi lại mã
+          {cooldown > 0 ? `Gửi lại mã (${cooldown}s)` : 'Gửi lại mã'}
         </button>
 
         <p className="auth-switch">

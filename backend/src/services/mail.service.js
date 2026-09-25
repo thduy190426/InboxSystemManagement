@@ -5,8 +5,11 @@ function getMailClient() {
   const pass = process.env.GMAIL_PASS
 
   if (!user || !pass) {
+    console.warn('Cảnh báo: Thiếu GMAIL_USER hoặc GMAIL_PASS trong biến môi trường!');
     return null
   }
+
+  console.log(`Khởi tạo kết nối SMTP với Gmail: ${user}`);
 
   return nodemailer.createTransport({
     service: 'gmail',
@@ -211,7 +214,15 @@ async function sendPasswordResetCode({ email, fullName, code }) {
     </html>
   `,
     category: 'Password Reset'
-  }).catch((error) => console.error('Lỗi khi gửi email đặt lại mật khẩu:', error));
+  })
+  .then((info) => console.log('Đã gửi email đặt lại mật khẩu thành công:', info.messageId))
+  .catch((error) => {
+    console.error('Lỗi CHI TIẾT khi gửi email đặt lại mật khẩu:');
+    console.error('- Message:', error.message);
+    console.error('- Code:', error.code);
+    console.error('- Command:', error.command);
+    console.error('- Stack:', error.stack);
+  });
 
   return {
     skipped: false,
@@ -399,7 +410,15 @@ async function sendEmailVerificationCode({ email, fullName, code }) {
 </html>
     `,
     category: 'Email Verification',
-  }).catch((error) => console.error('Lỗi khi gửi email xác thực:', error));
+  })
+  .then((info) => console.log('Đã gửi email xác thực thành công:', info.messageId))
+  .catch((error) => {
+    console.error('Lỗi CHI TIẾT khi gửi email xác thực:');
+    console.error('- Message:', error.message);
+    console.error('- Code:', error.code);
+    console.error('- Command:', error.command);
+    console.error('- Stack:', error.stack);
+  });
 
   return {
     skipped: false,

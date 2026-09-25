@@ -56,21 +56,6 @@ function getPasswordErrors(password, fullName, email) {
     errors.push('có ký tự đặc biệt!')
   }
 
-  const normalizedPassword = password.toLowerCase()
-  const emailName = email.split('@')[0]
-  const nameParts = fullName
-    .toLowerCase()
-    .split(' ')
-    .filter((part) => part.length >= 3)
-
-  if (emailName && normalizedPassword.includes(emailName)) {
-    errors.push('không chứa phần tên trong Email!')
-  }
-
-  if (nameParts.some((part) => normalizedPassword.includes(part))) {
-    errors.push('không chứa tên tài khoản!')
-  }
-
   return errors
 }
 
