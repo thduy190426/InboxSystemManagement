@@ -5959,8 +5959,12 @@ html.dark .scroll-to-latest-button:focus-visible {
 }
 
 .audio-call-avatar .avatar-fallback {
+  display: grid;
+  place-items: center;
   width: 104px;
   height: 104px;
+  border-radius: 50%;
+  object-fit: cover;
   font-size: 36px;
 }
 

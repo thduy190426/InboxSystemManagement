@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, KeyRound, Mail, Send } from 'lucide-react'
 import type { AuthPageProps } from '../../types'
+import bgImage from '../../bg-images/ForgotPasswordBG.jpg'
 
 type ForgotPasswordPageProps = AuthPageProps & {
   onResetPassword: () => void
@@ -18,6 +19,7 @@ export function ForgotPasswordPage({
   successMessage,
 }: ForgotPasswordPageProps) {
   const [cooldown, setCooldown] = useState(0)
+  const [email, setEmail] = useState('')
   const prevSuccessMessage = useRef(successMessage)
 
   useEffect(() => {
@@ -42,16 +44,25 @@ export function ForgotPasswordPage({
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    const formData = new FormData(event.currentTarget)
-
     onSubmit({
-      email: String(formData.get('email') ?? '').trim().toLowerCase(),
+      email: email.trim().toLowerCase(),
     })
   }
 
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  const canSubmit = isValidEmail && !isSubmitting && cooldown === 0
+
   return (
-    <main className="auth-shell">
-      <section className="auth-card" aria-labelledby="forgot-password-title">
+    <main
+      className="auth-shell"
+      style={{
+        backgroundImage: `url(${bgImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      <section className="auth-card" aria-labelledby="forgot-password-title" style={{ background: 'var(--surface)' }}>
         <div className="auth-card-header">
           <span className="section-kicker" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <KeyRound size={14} />
@@ -73,6 +84,8 @@ export function ForgotPasswordPage({
                 placeholder="Nhập email của bạn tại đây"
                 required
                 type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
           </label>
@@ -90,7 +103,7 @@ export function ForgotPasswordPage({
           ) : null}
           {errorMessage ? <p className="auth-error">{errorMessage}</p> : null}
 
-          <button className="auth-primary" disabled={isSubmitting || cooldown > 0} type="submit">
+          <button className="auth-primary" disabled={!canSubmit} type="submit">
             <Send size={18} />
             {isSubmitting ? 'Đang gửi mã...' : cooldown > 0 ? `Gửi lại sau ${cooldown}s` : 'Gửi mã đặt lại'}
           </button>

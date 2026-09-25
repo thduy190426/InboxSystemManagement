@@ -234,14 +234,29 @@ async function updateUserPresenceFromSessions(userId) {
 
 async function emitPresenceChanged(userId, presence) {
   try {
-    const [rows] = await pool.execute(
-      `SELECT contact_user_id AS user_id, users.show_activity_status
-      FROM contacts
-      INNER JOIN users ON users.id = contacts.owner_user_id
-      WHERE owner_user_id = ? AND status = 'accepted'`,
+    const [userRows] = await pool.execute(
+      `SELECT show_activity_status FROM users WHERE id = ?`,
       [userId],
     )
-    const visiblePresence = rows[0]?.show_activity_status === 0 ? 'offline' : presence
+    const visiblePresence = userRows[0]?.show_activity_status === 0 ? 'offline' : presence
+
+    const [rows] = await pool.execute(
+      `SELECT DISTINCT participant.user_id
+      FROM (
+        SELECT contact_user_id AS user_id
+        FROM contacts
+        WHERE owner_user_id = ? AND status = 'accepted'
+        UNION
+        SELECT user_id
+        FROM conversation_participants
+        WHERE conversation_id IN (
+          SELECT conversation_id
+          FROM conversation_participants
+          WHERE user_id = ? AND left_at IS NULL
+        ) AND user_id != ? AND left_at IS NULL
+      ) AS participant`,
+      [userId, userId, userId],
+    )
 
     emitToUsers(
       rows.map((row) => Number(row.user_id)),

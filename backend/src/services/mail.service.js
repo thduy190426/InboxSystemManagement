@@ -1,26 +1,28 @@
-const { MailtrapClient } = require('mailtrap')
+const nodemailer = require('nodemailer')
 
-function getMailtrapClient() {
-  const token = process.env.MAILTRAP_TOKEN
+function getMailClient() {
+  const user = process.env.GMAIL_USER
+  const pass = process.env.GMAIL_PASS
 
-  if (!token) {
+  if (!user || !pass) {
     return null
   }
 
-  return new MailtrapClient({
-    token,
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user,
+      pass,
+    },
   })
 }
 
 function getSender() {
-  return {
-    email: process.env.MAILTRAP_SENDER_EMAIL || 'mailtrap@demomailtrap.com',
-    name: process.env.MAILTRAP_SENDER_NAME || 'Inbox System',
-  }
+  return `"${process.env.MAIL_SENDER_NAME || 'Inbox System'}" <${process.env.GMAIL_USER}>`
 }
 
 async function sendPasswordResetCode({ email, fullName, code }) {
-  const client = getMailtrapClient()
+  const client = getMailClient()
 
   if (!client) {
     if (process.env.NODE_ENV === 'production') {
@@ -33,9 +35,9 @@ async function sendPasswordResetCode({ email, fullName, code }) {
     }
   }
 
-  await client.send({
+  await client.sendMail({
     from: getSender(),
-    to: [{ email }],
+    to: email,
     subject: 'Mã đặt lại mật khẩu của bạn',
     text: `Mã đặt lại mật khẩu của bạn là: ${code}`,
     html: `
@@ -217,7 +219,7 @@ async function sendPasswordResetCode({ email, fullName, code }) {
 }
 
 async function sendEmailVerificationCode({ email, fullName, code }) {
-  const client = getMailtrapClient()
+  const client = getMailClient()
 
   if (!client) {
     if (process.env.NODE_ENV === 'production') {
@@ -230,9 +232,9 @@ async function sendEmailVerificationCode({ email, fullName, code }) {
     }
   }
 
-  await client.send({
+  await client.sendMail({
     from: getSender(),
-    to: [{ email }],
+    to: email,
     subject: 'Mã xác thực Email của bạn',
     text: `Mã xác thực Email của bạn là: ${code}`,
     html: `

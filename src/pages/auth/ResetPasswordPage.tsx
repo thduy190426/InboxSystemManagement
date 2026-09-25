@@ -2,6 +2,7 @@ import type { FormEvent } from 'react'
 import { useMemo, useState, useRef, useEffect } from 'react'
 import { ArrowLeft, Eye, EyeOff, KeyRound, Lock, Mail, RefreshCw } from 'lucide-react'
 import type { AuthPageProps } from '../../types'
+import bgImage from '../../bg-images/ResetPasswordBG.jpg'
 
 type ResetPasswordErrors = Partial<Record<'email' | 'token' | 'password' | 'confirmPassword', string>>
 
@@ -118,8 +119,16 @@ export function ResetPasswordPage({
   const visibleError = localError || errorMessage
 
   return (
-    <main className="auth-shell">
-      <section className="auth-card" aria-labelledby="reset-password-title">
+    <main
+      className="auth-shell"
+      style={{
+        backgroundImage: `url(${bgImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      <section className="auth-card" aria-labelledby="reset-password-title" style={{ background: 'var(--surface)' }}>
         <div className="auth-card-header">
           <span className="section-kicker" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <RefreshCw size={14} />

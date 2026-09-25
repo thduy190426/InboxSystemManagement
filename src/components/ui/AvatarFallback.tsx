@@ -18,7 +18,7 @@ export function getLastNameInitial(name: string) {
 
 export function AvatarFallback({ className = '', name, src }: AvatarFallbackProps) {
   if (src) {
-    return <img alt="" className={className || undefined} src={src} />
+    return <img alt="" className={['avatar-fallback', className].filter(Boolean).join(' ')} src={src} />
   }
 
   return (

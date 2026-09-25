@@ -2,6 +2,7 @@ import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { Mail, RotateCw, ShieldCheck } from 'lucide-react'
 import type { AuthPageProps } from '../../types'
+import bgImage from '../../bg-images/VerifyAccountBG.jpg'
 
 type VerifyAccountPageProps = AuthPageProps & {
   defaultEmail?: string
@@ -68,8 +69,16 @@ export function VerifyAccountPage({
   const visibleError = localError || errorMessage
 
   return (
-    <main className="auth-shell">
-      <section className="auth-card" aria-labelledby="verify-title">
+    <main
+      className="auth-shell"
+      style={{
+        backgroundImage: `url(${bgImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      <section className="auth-card" aria-labelledby="verify-title" style={{ background: 'var(--surface)' }}>
         <div className="auth-card-header">
           <span className="section-kicker" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <ShieldCheck size={14} />

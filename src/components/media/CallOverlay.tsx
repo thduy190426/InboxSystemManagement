@@ -194,10 +194,18 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
   const joinedRemoteParticipants = activeParticipants.filter((participant) => participant.id !== currentUserId)
   const remotePeerList = Object.values(remotePeers)
   const primaryRemote = remotePeerList[0]
+  const directRemoteParticipant =
+    call.participants.length === 2 ? call.participants.find((p) => p.id !== currentUserId) : undefined
+
   const remoteName =
     remotePeerList.length > 1
       ? call.conversationName
-      : primaryRemote?.participant.fullName || (isCaller ? call.conversationName : call.caller.fullName)
+      : primaryRemote?.participant.fullName || directRemoteParticipant?.fullName || (isCaller ? call.conversationName : call.caller.fullName)
+  
+  const remoteAvatarUrl =
+    remotePeerList.length > 1
+      ? call.conversationAvatar
+      : primaryRemote?.participant.avatarUrl || directRemoteParticipant?.avatarUrl || call.conversationAvatar || call.caller.avatarUrl || null
   const localAvatarName = currentUser?.fullName || 'Bạn'
   const localAvatarUrl = currentUser?.avatarUrl || null
   const canSelectAudioOutput =
@@ -1176,7 +1184,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, overflow: 'hidden' }}>
             {isEnded && (
               <div style={{ width: '42px', height: '42px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
-                <AvatarFallback name={remoteName} src={call.conversationAvatar || call.caller.avatarUrl || null} />
+                <AvatarFallback name={remoteName} src={remoteAvatarUrl} />
               </div>
             )}
             <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -1209,7 +1217,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
                   ))
                 ) : (
                   <div className="call-video-avatar">
-                    <AvatarFallback name={remoteName} src={call.conversationAvatar || call.caller.avatarUrl || null} />
+                    <AvatarFallback name={remoteName} src={remoteAvatarUrl} />
                     <strong>{remoteName}</strong>
                   </div>
                 )}
@@ -1231,7 +1239,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
             </>
           ) : (
             <div className="audio-call-avatar">
-              <AvatarFallback name={remoteName} src={call.conversationAvatar || call.caller.avatarUrl || null} />
+              <AvatarFallback name={remoteName} src={remoteAvatarUrl} />
               <strong>{remoteName}</strong>
               {remotePeerList.length > 1 ? <small>{remotePeerList.length} người đang tham gia</small> : null}
               {primaryRemote?.isAudioMuted && (
