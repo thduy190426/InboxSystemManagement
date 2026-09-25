@@ -35,7 +35,7 @@ async function sendPasswordResetCode({ email, fullName, code }) {
     }
   }
 
-  await client.sendMail({
+  client.sendMail({
     from: getSender(),
     to: email,
     subject: 'Mã đặt lại mật khẩu của bạn',
@@ -211,7 +211,7 @@ async function sendPasswordResetCode({ email, fullName, code }) {
     </html>
   `,
     category: 'Password Reset'
-  });
+  }).catch((error) => console.error('Lỗi khi gửi email đặt lại mật khẩu:', error));
 
   return {
     skipped: false,
@@ -232,7 +232,7 @@ async function sendEmailVerificationCode({ email, fullName, code }) {
     }
   }
 
-  await client.sendMail({
+  client.sendMail({
     from: getSender(),
     to: email,
     subject: 'Mã xác thực Email của bạn',
@@ -399,7 +399,7 @@ async function sendEmailVerificationCode({ email, fullName, code }) {
 </html>
     `,
     category: 'Email Verification',
-  })
+  }).catch((error) => console.error('Lỗi khi gửi email xác thực:', error));
 
   return {
     skipped: false,
