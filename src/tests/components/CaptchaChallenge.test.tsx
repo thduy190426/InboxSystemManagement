@@ -3,6 +3,10 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 import { CaptchaChallenge } from '../../components/ui/CaptchaChallenge';
 
+vi.mock('../../components/providers/ThemeProvider', () => ({
+  useTheme: () => ({ theme: 'light', setTheme: vi.fn() })
+}));
+
 describe('CaptchaChallenge', () => {
   it('renders correctly and generates a code', () => {
     const handleSolvedChange = vi.fn();
@@ -10,12 +14,10 @@ describe('CaptchaChallenge', () => {
 
     expect(screen.getByText('Xác thực CAPTCHA')).toBeInTheDocument();
     
-    // Check that there is an input field
     const input = screen.getByPlaceholderText('Nhập mã bên trái');
     expect(input).toBeInTheDocument();
     expect(input).toHaveAttribute('id', 'captcha');
 
-    // Initial state is unsolved
     expect(handleSolvedChange).toHaveBeenCalledWith(false);
   });
 
@@ -26,7 +28,6 @@ describe('CaptchaChallenge', () => {
     const input = screen.getByPlaceholderText('Nhập mã bên trái');
     await user.type(input, 'WRONG');
 
-    // Should show error message
     expect(screen.getByText('Mã CAPTCHA chưa đúng, vui lòng kiểm tra lại!')).toBeInTheDocument();
   });
 
@@ -35,7 +36,6 @@ describe('CaptchaChallenge', () => {
     const handleSolvedChange = vi.fn();
     const { container } = render(<CaptchaChallenge id="captcha" onSolvedChange={handleSolvedChange} />);
 
-    // Get the generated code text
     const codeElement = container.querySelector('.captcha-code');
     const code = codeElement?.textContent || '';
     expect(code.length).toBe(6);
@@ -43,10 +43,8 @@ describe('CaptchaChallenge', () => {
     const input = screen.getByPlaceholderText('Nhập mã bên trái');
     await user.type(input, code);
 
-    // Should not show error message
     expect(screen.queryByText('Mã CAPTCHA chưa đúng, vui lòng kiểm tra lại!')).not.toBeInTheDocument();
     
-    // Should call onSolvedChange(true)
     expect(handleSolvedChange).toHaveBeenCalledWith(true);
   });
 

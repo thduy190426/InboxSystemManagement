@@ -349,43 +349,19 @@ async function register(request, response, next) {
         role,
         is_email_verified,
         is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, 'offline', 'user', 0, 1)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, 'offline', 'user', 1, 1)`,
       [publicId, fullName, fullName, email, phone, passwordHash],
     )
-
-    const emailCode = createVerificationCode()
-
-    await createVerificationToken({
-      channel: 'email',
-      code: emailCode,
-      connection,
-      email,
-      userId: result.insertId,
-    })
-
 
     await connection.commit()
     connection.release()
     connection = null
 
-    const mailResult = await deliverEmailVerificationCode({
-      code: emailCode,
-      email,
-      fullName,
-    })
     const createdUser = await getUserById(result.insertId)
 
     return response.status(201).json({
-      message: mailResult.failed
-        ? 'Đăng ký tài khoản thành công nhưng chưa gửi được mã xác thực Email. Vui lòng bấm gửi lại mã sau ít phút!'
-        : mailResult.skipped
-          ? 'Đăng ký tài khoản thành công! Mã xác thực đang hiển thị ở môi trường phát triển!'
-          : 'Đăng ký tài khoản thành công! Vui lòng kiểm tra Gmail để lấy mã xác thực!',
+      message: 'Đăng ký tài khoản thành công! Bạn có thể đăng nhập ngay.',
       user: toPublicUser(createdUser),
-      verification: {
-        requiredChannels: ['email'],
-        emailCode: mailResult.skipped ? emailCode : null,
-      },
     })
   } catch (error) {
     if (connection) {
@@ -430,14 +406,6 @@ async function login(request, response, next) {
       })
     }
 
-    if (isVerificationRequired(user)) {
-      return response.status(403).json({
-        message: 'Tài khoản chưa được xác thực. Vui lòng xác thực Email trước khi đăng nhập!',
-        errors: {
-          verification: getUnverifiedChannels(user),
-        },
-      })
-    }
 
     const session = await createUserSession(user.id, request)
 

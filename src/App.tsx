@@ -1,22 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChatApp } from './components/views/ChatApp'
-import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage'
 import { LoginPage } from './pages/auth/LoginPage'
 import { NotFoundPage } from './pages/errors/NotFoundPage'
 import { PrivacyPolicyPage } from './pages/legal/PrivacyPolicyPage'
 import { RegisterPage } from './pages/auth/RegisterPage'
-import { ResetPasswordPage } from './pages/auth/ResetPasswordPage'
-import { VerifyAccountPage } from './pages/auth/VerifyAccountPage'
 import { TermsPage } from './pages/legal/TermsPage'
 import {
   ApiError,
-  forgotPassword,
   login,
   logout,
   register,
-  resendVerification,
-  resetPassword,
-  verifyAccount,
   type AuthUser,
 } from './services/api/authApi'
 import { onSessionExpired } from './services/api/apiClient'
@@ -204,12 +197,7 @@ export function App() {
   const [authScreen, setAuthScreen] = useState<AuthScreen>(getInitialAuthScreen)
   const [isRouteKnown, setIsRouteKnown] = useState(getInitialRouteKnown)
   const [isAuthenticated, setIsAuthenticated] = useState(Boolean(storedAuthSession))
-  const [authError, setAuthError] = useState('')
-  const [authSuccessMessage, setAuthSuccessMessage] = useState('')
-  const [passwordResetCode, setPasswordResetCode] = useState('')
-  const [resetEmail, setResetEmail] = useState('')
-  const [verificationEmail, setVerificationEmail] = useState('')
-  const [devEmailVerificationCode, setDevEmailVerificationCode] = useState('')
+
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [toasts, setToasts] = useState<AppToast[]>([])
   const toastTimersRef = useRef<Record<string, number>>({})
@@ -256,7 +244,7 @@ export function App() {
       setIsAuthenticated(false)
       setCurrentUser(null)
       setAuthScreen('login')
-      setAuthError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!')
+      pushToast('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!', 'error')
       setIsSubmitting(false)
     })
   }, [])
@@ -288,10 +276,6 @@ export function App() {
     window.history.pushState(null, '', toAuthPath(nextScreen))
     setIsRouteKnown(true)
     setAuthScreen(nextScreen)
-    setAuthError('')
-    setAuthSuccessMessage('')
-    setPasswordResetCode('')
-    setDevEmailVerificationCode('')
   }
 
   function handleAuthSuccess(
@@ -310,7 +294,6 @@ export function App() {
 
     setIsRouteKnown(true)
     setIsAuthenticated(true)
-    setAuthError('')
     pushToast(successMessage, 'info')
   }
 
@@ -332,7 +315,7 @@ export function App() {
     setIsAuthenticated(false)
     setCurrentUser(null)
     setAuthScreen('login')
-    setAuthError('Tài khoản của bạn đã được xoá!')
+    pushToast('Tài khoản của bạn đã được xoá!', 'error')
   }
 
   function handleUserChange(user: AuthUser) {
@@ -342,8 +325,6 @@ export function App() {
 
   async function handleLogin(payload: Record<string, string>) {
     setIsSubmitting(true)
-    setAuthError('')
-    setAuthSuccessMessage('')
 
     try {
       const response = await login({
@@ -361,8 +342,6 @@ export function App() {
 
   async function handleRegister(payload: Record<string, string>) {
     setIsSubmitting(true)
-    setAuthError('')
-    setAuthSuccessMessage('')
 
     try {
       const response = await register({
@@ -373,12 +352,9 @@ export function App() {
         confirmPassword: payload.confirmPassword,
       })
 
-      setVerificationEmail(payload.email)
-      setDevEmailVerificationCode(response.verification?.emailCode || '')
-      setAuthSuccessMessage(response.message)
-      window.history.replaceState(null, '', toAuthPath('verify-account'))
+      window.history.replaceState(null, '', toAuthPath('login'))
       setIsRouteKnown(true)
-      setAuthScreen('verify-account')
+      setAuthScreen('login')
       pushToast(response.message, 'info')
 
     } catch (error) {
@@ -388,110 +364,6 @@ export function App() {
     }
   }
 
-  async function handleVerifyAccount(payload: Record<string, string>) {
-    setIsSubmitting(true)
-    setAuthError('')
-
-    try {
-      const response = await verifyAccount({
-        channel: 'email',
-        code: payload.code,
-        email: payload.email,
-      })
-      const requiredChannels = response.verification.requiredChannels
-
-      setVerificationEmail(payload.email)
-      setAuthSuccessMessage(response.message)
-      setDevEmailVerificationCode('')
-
-      if (requiredChannels.length === 0) {
-        window.history.replaceState(null, '', toAuthPath('login'))
-        setIsRouteKnown(true)
-        setAuthScreen('login')
-        setAuthSuccessMessage('')
-        pushToast('Tài khoản đã được xác thực. Vui lòng đăng nhập!', 'info')
-      } else {
-        pushToast(response.message, 'info')
-      }
-    } catch (error) {
-      setAuthError(error instanceof ApiError ? error.message : 'Không thể xác thực tài khoản!')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  async function handleResendVerification(payload: Record<string, string>) {
-    setIsSubmitting(true)
-    setAuthError('')
-
-    try {
-      const response = await resendVerification({
-        channel: 'email',
-        email: payload.email,
-      })
-
-      setVerificationEmail(payload.email)
-      setAuthSuccessMessage(response.message)
-      setDevEmailVerificationCode(response.verificationCode || '')
-
-      pushToast(response.message, 'info')
-    } catch (error) {
-      setAuthError(error instanceof ApiError ? error.message : 'Không thể gửi lại mã xác thực!')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  async function handleForgotPassword(payload: Record<string, string>) {
-    setIsSubmitting(true)
-    setAuthError('')
-    setAuthSuccessMessage('')
-    setPasswordResetCode('')
-
-    try {
-      const response = await forgotPassword({
-        email: payload.email,
-      })
-
-      setAuthSuccessMessage(response.message)
-      setPasswordResetCode(response.resetCode || '')
-      setResetEmail(payload.email)
-      pushToast(response.message, 'info')
-    } catch (error) {
-      setAuthError(
-        error instanceof ApiError ? error.message : 'Không thể tạo yêu cầu đặt lại mật khẩu!',
-      )
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  async function handleResetPassword(payload: Record<string, string>) {
-    setIsSubmitting(true)
-    setAuthError('')
-    setAuthSuccessMessage('')
-
-    try {
-      const response = await resetPassword({
-        email: payload.email,
-        token: payload.token,
-        password: payload.password,
-        confirmPassword: payload.confirmPassword,
-      })
-
-      window.history.replaceState(null, '', toAuthPath('login'))
-      setIsRouteKnown(true)
-      setAuthScreen('login')
-      setAuthSuccessMessage('')
-      setPasswordResetCode('')
-      setAuthError('')
-      pushToast(response.message, 'info')
-    } catch (error) {
-      setAuthError(error instanceof ApiError ? error.message : 'Không thể đặt lại mật khẩu!')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
 
   function handleGoHomeFromNotFound() {
     const nextPath = isAuthenticated ? toAppPath({ view: 'chat' }) : toAuthPath('login')
@@ -551,52 +423,11 @@ export function App() {
       )
     }
 
-    if (authScreen === 'verify-account') {
-      return (
-        <VerifyAccountPage
-          defaultEmail={verificationEmail}
-          devEmailCode={devEmailVerificationCode}
-          errorMessage={authError}
-          isSubmitting={isSubmitting}
-          onResend={handleResendVerification}
-          onSubmit={handleVerifyAccount}
-          onSwitchMode={() => navigateAuth('login')}
-          successMessage={authSuccessMessage}
-        />
-      )
-    }
-
-    if (authScreen === 'forgot-password') {
-      return (
-        <ForgotPasswordPage
-          errorMessage={authError}
-          isSubmitting={isSubmitting}
-          onResetPassword={() => navigateAuth('reset-password')}
-          onSubmit={handleForgotPassword}
-          onSwitchMode={() => navigateAuth('login')}
-          resetCode={passwordResetCode}
-          successMessage={authSuccessMessage}
-        />
-      )
-    }
-
-    if (authScreen === 'reset-password') {
-      return (
-        <ResetPasswordPage
-          defaultEmail={resetEmail}
-          errorMessage={authError}
-          isSubmitting={isSubmitting}
-          onSubmit={handleResetPassword}
-          onSwitchMode={() => navigateAuth('login')}
-        />
-      )
-    }
 
     return (
       <LoginPage
         isSubmitting={isSubmitting}
         onSubmit={handleLogin}
-        onForgotPassword={() => navigateAuth('forgot-password')}
         onSwitchMode={() => navigateAuth('register')}
       />
     )

@@ -5,13 +5,10 @@ import type { AuthPageProps } from '../../types'
 import { CaptchaChallenge } from '../../components/ui/CaptchaChallenge'
 import loginBg from '../../bg-images/LoginBG.jpg'
 
-type LoginPageProps = AuthPageProps & {
-  onForgotPassword: () => void
-}
+type LoginPageProps = AuthPageProps
 
 export function LoginPage({
   isSubmitting = false,
-  onForgotPassword,
   onSubmit,
   onSwitchMode,
 }: LoginPageProps) {
@@ -112,14 +109,6 @@ export function LoginPage({
               <input defaultChecked name="rememberLogin" type="checkbox" />
               <span>Ghi nhớ đăng nhập</span>
             </label>
-            <button
-              className="auth-text-button"
-              disabled={isSubmitting}
-              onClick={onForgotPassword}
-              type="button"
-            >
-              Quên mật khẩu?
-            </button>
           </div>
 
           <CaptchaChallenge

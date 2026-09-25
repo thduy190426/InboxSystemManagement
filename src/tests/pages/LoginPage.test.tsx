@@ -21,7 +21,6 @@ describe('LoginPage', () => {
   const defaultProps = {
     onSubmit: vi.fn(),
     onSwitchMode: vi.fn(),
-    onForgotPassword: vi.fn(),
   };
 
   it('renders login form elements', () => {
@@ -59,17 +58,13 @@ describe('LoginPage', () => {
     const passwordInput = screen.getByPlaceholderText('Nhập mật khẩu');
     const submitBtn = screen.getByRole('button', { name: 'Đăng nhập' });
 
-    // Fill the form
     await user.type(emailInput, 'test@example.com');
     await user.type(passwordInput, 'password123');
     
-    // Form is filled, but captcha is not solved
     expect(submitBtn).toBeDisabled();
 
-    // Solve captcha
     await user.click(screen.getByRole('button', { name: 'Solve Captcha' }));
 
-    // Now it should be enabled
     expect(submitBtn).not.toBeDisabled();
   });
 
@@ -87,27 +82,22 @@ describe('LoginPage', () => {
     expect(handleSubmit).toHaveBeenCalledWith({
       email: 'test@example.com',
       password: 'password123',
-      rememberLogin: 'true', // Default is checked
+      rememberLogin: 'true',
     });
   });
 
-  it('calls onSwitchMode and onForgotPassword', async () => {
+  it('calls onSwitchMode', async () => {
     const user = userEvent.setup();
     const handleSwitchMode = vi.fn();
-    const handleForgotPassword = vi.fn();
 
     render(
       <LoginPage 
         {...defaultProps} 
         onSwitchMode={handleSwitchMode} 
-        onForgotPassword={handleForgotPassword} 
       />
     );
 
     await user.click(screen.getByRole('button', { name: /Tạo tài khoản mới/i }));
     expect(handleSwitchMode).toHaveBeenCalledTimes(1);
-
-    await user.click(screen.getByRole('button', { name: /Quên mật khẩu\?/i }));
-    expect(handleForgotPassword).toHaveBeenCalledTimes(1);
   });
 });
