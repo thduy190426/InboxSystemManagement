@@ -12,11 +12,15 @@ function getMailClient() {
   console.log(`Khởi tạo kết nối SMTP với Gmail: ${user}`);
 
   return nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: {
       user,
       pass,
     },
+    connectionTimeout: 10000,
+    socketTimeout: 10000,
   })
 }
 
