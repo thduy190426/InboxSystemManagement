@@ -80,6 +80,7 @@ export function ResetPasswordPage({
   onSwitchMode,
 }: ResetPasswordPageProps) {
   const resetParams = useMemo(() => getResetParamsFromLocation(), [])
+  const currentEmail = resetParams.email || defaultEmail
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [localError, setLocalError] = useState('')
@@ -135,26 +136,34 @@ export function ResetPasswordPage({
             Đặt lại mật khẩu
           </span>
           <h1 id="reset-password-title">Tạo mật khẩu mới</h1>
-          <p>Nhập Email, mã 6 số đã gửi qua Email và mật khẩu mới của bạn.</p>
+          <p>
+            {currentEmail 
+              ? <>Nhập mã 6 số đã gửi đến <strong>{currentEmail}</strong> và mật khẩu mới của bạn.</>
+              : 'Nhập Email, mã 6 số đã gửi qua Email và mật khẩu mới của bạn.'}
+          </p>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit} onChange={handleFormChange} ref={formRef}>
-          <label className="auth-field">
-            <span>Email</span>
-            <div className="auth-input-row">
-              <Mail size={18} />
-              <input
-                autoComplete="email"
-                defaultValue={resetParams.email || defaultEmail}
-                maxLength={190}
-                name="email"
-                placeholder="Nhập Email của bạn tại đây"
-                required
-                type="email"
-              />
-            </div>
-            {fieldErrors.email ? <span className="auth-field-error">{fieldErrors.email}</span> : null}
-          </label>
+          {currentEmail ? (
+            <input type="hidden" name="email" value={currentEmail} />
+          ) : (
+            <label className="auth-field">
+              <span>Email</span>
+              <div className="auth-input-row">
+                <Mail size={18} />
+                <input
+                  autoComplete="email"
+                  defaultValue=""
+                  maxLength={190}
+                  name="email"
+                  placeholder="Nhập Email của bạn tại đây"
+                  required
+                  type="email"
+                />
+              </div>
+              {fieldErrors.email ? <span className="auth-field-error">{fieldErrors.email}</span> : null}
+            </label>
+          )}
 
           <label className="auth-field">
             <span>Mã đặt lại mật khẩu</span>

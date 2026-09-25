@@ -80,21 +80,6 @@ function validateRegisterForm(formData: FormData) {
     /[^A-Za-z0-9]/.test(password) || 'có ký tự đặc biệt!',
   ].filter((requirement): requirement is string => typeof requirement === 'string')
 
-  const normalizedPassword = password.toLowerCase()
-  const emailName = email.split('@')[0]
-  const nameParts = fullName
-    .toLowerCase()
-    .split(' ')
-    .filter((part) => part.length >= 3)
-
-  if (emailName && normalizedPassword.includes(emailName)) {
-    passwordRequirements.push('không chứa phần tên trong Email!')
-  }
-
-  if (nameParts.some((part) => normalizedPassword.includes(part))) {
-    passwordRequirements.push('không chứa tên tài khoản!')
-  }
-
   if (!password) {
     errors.password = 'Vui lòng nhập mật khẩu!'
   } else if (passwordRequirements.length) {
