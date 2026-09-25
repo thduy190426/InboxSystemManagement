@@ -199,6 +199,7 @@ export function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(Boolean(storedAuthSession))
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [authError, setAuthError] = useState<string>('')
   const [toasts, setToasts] = useState<AppToast[]>([])
   const toastTimersRef = useRef<Record<string, number>>({})
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(
@@ -325,6 +326,7 @@ export function App() {
 
   async function handleLogin(payload: Record<string, string>) {
     setIsSubmitting(true)
+    setAuthError('')
 
     try {
       const response = await login({
@@ -334,7 +336,9 @@ export function App() {
 
       handleAuthSuccess(response, payload.rememberLogin === 'true')
     } catch (error) {
-      pushToast(error instanceof ApiError ? error.message : 'Không thể đăng nhập!', 'error')
+      const message = error instanceof ApiError ? error.message : 'Không thể đăng nhập!'
+      setAuthError(message)
+      pushToast(message, 'error')
     } finally {
       setIsSubmitting(false)
     }
@@ -355,6 +359,7 @@ export function App() {
       window.history.replaceState(null, '', toAuthPath('login'))
       setIsRouteKnown(true)
       setAuthScreen('login')
+      setAuthError('')
       pushToast(response.message, 'info')
 
     } catch (error) {
@@ -426,9 +431,13 @@ export function App() {
 
     return (
       <LoginPage
+        errorMessage={authError}
         isSubmitting={isSubmitting}
         onSubmit={handleLogin}
-        onSwitchMode={() => navigateAuth('register')}
+        onSwitchMode={() => {
+          setAuthError('')
+          navigateAuth('register')
+        }}
       />
     )
   })()

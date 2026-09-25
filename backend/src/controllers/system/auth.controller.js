@@ -392,7 +392,7 @@ async function login(request, response, next) {
     const { email, password } = validation.data
     const user = await getUserByEmail(email)
 
-    if (!user || !user.is_active) {
+    if (!user) {
       return response.status(401).json({
         message: 'Email hoặc mật khẩu không đúng!',
       })
@@ -403,6 +403,12 @@ async function login(request, response, next) {
     if (!isPasswordValid) {
       return response.status(401).json({
         message: 'Email hoặc mật khẩu không đúng!',
+      })
+    }
+
+    if (!user.is_active) {
+      return response.status(403).json({
+        message: 'Tài khoản của bạn đã bị khoá bởi Quản trị viên. Vui lòng liên hệ với Quản trị viên để biết thêm chi tiết!',
       })
     }
 

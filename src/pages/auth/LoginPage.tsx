@@ -8,6 +8,7 @@ import loginBg from '../../bg-images/LoginBG.jpg'
 type LoginPageProps = AuthPageProps
 
 export function LoginPage({
+  errorMessage,
   isSubmitting = false,
   onSubmit,
   onSwitchMode,
@@ -62,6 +63,12 @@ export function LoginPage({
           <h1 id="login-title">Chào mừng trở lại!</h1>
           <p>Tiếp tục quản lý hội thoại khách hàng và đội nhóm của bạn.</p>
         </div>
+
+        {errorMessage ? (
+          <div className="auth-error-notice" role="alert">
+            {errorMessage}
+          </div>
+        ) : null}
 
         <form className="auth-form" onChange={handleFormChange} onSubmit={handleSubmit}>
           <label className="auth-field" htmlFor="login-email">
