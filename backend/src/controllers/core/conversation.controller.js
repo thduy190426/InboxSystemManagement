@@ -1720,6 +1720,7 @@ async function listConversations(request, response, next) {
             ? 'Đang xử lý hỗ trợ'
             : `${memberCount} thành viên`,
         avatar: avatar || null,
+        backgroundImage: row.backgroundImage || null,
         accent: accentColors[index % accentColors.length],
         lastMessage: lastMessagePreview.text,
         lastMessageByMe: row.last_message_sender_id === currentUserId,
