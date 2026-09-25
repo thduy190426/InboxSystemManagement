@@ -1190,7 +1190,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
           >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, overflow: 'hidden' }}>
             {isEnded && (
-              <div style={{ width: '42px', height: '42px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
+              <div className="avatar-wrap" style={{ width: '42px', height: '42px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
                 <AvatarFallback name={remoteName} src={remoteAvatarUrl} />
               </div>
             )}

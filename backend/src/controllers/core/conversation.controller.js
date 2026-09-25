@@ -1456,6 +1456,7 @@ async function loadConversationSummary(connection, conversationId, currentUserId
         ? 'Đang xử lý hỗ trợ'
         : `${memberCount} thành viên`,
     avatar: avatar || null,
+    backgroundImage: row.backgroundImage || null,
     accent: accentColors[0],
     lastMessage: lastMessagePreview.text,
     lastMessageByMe: row.last_message_sender_id === currentUserId,

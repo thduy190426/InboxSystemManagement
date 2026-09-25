@@ -5177,6 +5177,8 @@ html.dark .scroll-to-latest-button:focus-visible {
 .composer {
   grid-row: 4;
   z-index: 12;
+  overscroll-behavior: none;
+  overflow-y: auto;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto auto auto auto minmax(0, auto) auto;
   align-items: center;
