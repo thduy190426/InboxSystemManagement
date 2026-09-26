@@ -108,8 +108,6 @@ function getSessionTitle(session: UserSession) {
   return 'Trình duyệt Web'
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
 type ToggleRowProps = {
   label: string
   description?: string

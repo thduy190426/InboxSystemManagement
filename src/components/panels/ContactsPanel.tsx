@@ -191,8 +191,6 @@ function ContactProfile({ user, isClosing, onClose }: ContactProfileProps) {
   )
 }
 
-// ─── Contact card ─────────────────────────────────────────────────────────────
-
 type ContactCardProps = {
   user: ContactUser
   busyId: string

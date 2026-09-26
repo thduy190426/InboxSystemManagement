@@ -10762,7 +10762,6 @@ html.dark .message-search-button.is-active {
   padding: 16px;
 }
 
-/* ── Avatar card ── */
 .pp-avatar-card {
   display: flex;
   align-items: center;
@@ -10773,6 +10772,9 @@ html.dark .message-search-button.is-active {
 .pp-avatar-wrap {
   position: relative;
   flex-shrink: 0;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
 }
 
 .pp-avatar-info {
@@ -10804,7 +10806,6 @@ html.dark .message-search-button.is-active {
   margin-top: 2px;
 }
 
-/* ── Role badge ── */
 .pp-role-badge {
   position: absolute;
   bottom: -4px;
@@ -10825,7 +10826,6 @@ html.dark .message-search-button.is-active {
 .pp-role-badge--moderator { background: #ede9fe; color: #5b21b6; }
 .pp-role-badge--user   { background: #e0f2fe; color: #075985; }
 
-/* ── Upload button ── */
 .pp-upload-btn {
   display: inline-flex;
   align-items: center;
@@ -10900,21 +10900,18 @@ html.dark .message-search-button.is-active {
   color: var(--color-text-secondary, #48484a);
 }
 
-/* ── Form card ── */
 .pp-form-card {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-/* ── Fields grid ── */
 .pp-fields {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
 }
 
-/* ── Individual field ── */
 .pp-field {
   display: flex;
   flex-direction: column;
@@ -10997,14 +10994,12 @@ html.dark .message-search-button.is-active {
   color: var(--color-text-primary, #1c1c1e);
 }
 
-/* Textarea */
 .pp-textarea {
   resize: vertical;
   min-height: 80px;
   line-height: 1.55;
 }
 
-/* Handle input with @ prefix */
 .pp-input-prefix {
   display: flex;
   align-items: center;
@@ -11043,14 +11038,12 @@ html.dark .message-search-button.is-active {
   box-shadow: none;
 }
 
-/* ── Form footer ── */
 .pp-form-footer {
   display: flex;
   justify-content: flex-end;
   padding: 4px 0 2px;
 }
 
-/* ── Save button ── */
 .pp-save-btn {
   display: inline-flex;
   align-items: center;
@@ -11080,7 +11073,6 @@ html.dark .message-search-button.is-active {
   cursor: default;
 }
 
-/* ── Responsive ── */
 @media (max-width: 600px) {
   .pp-page-header {
     padding: 16px 16px 12px;
@@ -11119,35 +11111,32 @@ html.dark .message-search-button.is-active {
   }
 }
 
-/* ── Dark mode ── */
-@media (prefers-color-scheme: dark) {
-  .pp-page {
-    --color-bg: #1c1c1e;
-    --color-surface: #2c2c2e;
-    --color-surface-subtle: #242426;
-    --color-border: #38383a;
-    --color-input-bg: #242426;
-    --color-text-primary: #f2f2f7;
-    --color-text-secondary: #aeaeb2;
-    --color-text-tertiary: #636366;
-    --color-accent: #818cf8;
-    --color-accent-subtle: #1e1e2e;
-    --color-accent-border: #3730a3;
-  }
+html.dark .pp-page {
+  --color-bg: #1c1c1e;
+  --color-surface: #2c2c2e;
+  --color-surface-subtle: #242426;
+  --color-border: #38383a;
+  --color-input-bg: #242426;
+  --color-text-primary: #f2f2f7;
+  --color-text-secondary: #aeaeb2;
+  --color-text-tertiary: #636366;
+  --color-accent: #818cf8;
+  --color-accent-subtle: #1e1e2e;
+  --color-accent-border: #3730a3;
+}
 
-  .pp-role-badge--owner     { background: #451a03; color: #fbbf24; }
-  .pp-role-badge--admin     { background: #450a0a; color: #fca5a5; }
-  .pp-role-badge--moderator { background: #2e1065; color: #c4b5fd; }
-  .pp-role-badge--user      { background: #0c2a3f; color: #7dd3fc; }
+html.dark .pp-role-badge--owner     { background: #451a03; color: #fbbf24; }
+html.dark .pp-role-badge--admin     { background: #450a0a; color: #fca5a5; }
+html.dark .pp-role-badge--moderator { background: #2e1065; color: #c4b5fd; }
+html.dark .pp-role-badge--user      { background: #0c2a3f; color: #7dd3fc; }
 
-  .pp-chip {
-    background: #38383a;
-    border-color: #48484a;
-  }
+html.dark .pp-chip {
+  background: #38383a;
+  border-color: #48484a;
+}
 
-  .pp-unsaved-badge {
-    background: #3d2c00;
-    color: #fbbf24;
-    border-color: #78520a;
-  }
+html.dark .pp-unsaved-badge {
+  background: #3d2c00;
+  color: #fbbf24;
+  border-color: #78520a;
 }

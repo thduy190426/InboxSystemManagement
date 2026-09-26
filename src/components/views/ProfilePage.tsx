@@ -267,7 +267,6 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
       </header>
 
       <div className="pp-grid">
-        {/* ── Avatar card ── */}
         <ProfileSection icon={<Camera size={15} />} title="Ảnh đại diện">
           <div className="pp-avatar-card">
             <div className="pp-avatar-wrap">
@@ -297,7 +296,6 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
           </div>
         </ProfileSection>
 
-        {/* ── Bio card ── */}
         <ProfileSection icon={<AlignLeft size={15} />} title="Giới thiệu bản thân">
           <div className="pp-bio-preview">
             <p className={isBioExpanded ? 'is-expanded' : ''}>
@@ -319,7 +317,6 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
           </div>
         </ProfileSection>
 
-        {/* ── Form card ── */}
         <form className="pp-form-card" onSubmit={handleSubmit}>
           <ProfileSection icon={<IdCard size={15} />} title="Thông tin cơ bản">
             <div className="pp-fields">
