@@ -10130,7 +10130,7 @@ html.dark .message-search-button.is-active {
 .cp-presence--online { background: #4ade80; }
 .cp-presence--away   { background: #fbbf24; }
 .cp-presence--busy   { background: #f87171; }
-.cp-presence--offline { background: var(--sp-text-dim, #4a5068); }
+.cp-presence-dot.cp-presence--offline { display: none; }
 
 .cp-btn {
   display: inline-flex;
