@@ -9371,7 +9371,7 @@ html.dark .message-search-button.is-active {
 
 .sp-page {
   max-width: 960px;
-  margin: 0 auto;
+  margin: 0;
   padding: 48px 24px 80px;
 }
 
