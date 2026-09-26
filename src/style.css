@@ -9378,8 +9378,8 @@ html.dark .message-search-button.is-active {
 }
 
 .sp-page {
-  max-width: 1400px;
-  margin: 0;
+  width: 100%;
+  min-height: 100%;
   padding: 56px 40px 96px;
 }
 
@@ -9904,8 +9904,8 @@ html.dark .message-search-button.is-active {
 }
 
 .cp-page {
-  max-width: 1400px;
-  margin: 0;
+  width: 100%;
+  min-height: 100%;
   padding: 56px 40px 96px;
 }
 
@@ -10393,8 +10393,8 @@ html.dark .message-search-button.is-active {
 }
 
 .np-page {
-  max-width: 1400px;
-  margin: 0;
+  width: 100%;
+  min-height: 100%;
   padding: 56px 40px 96px;
 }
 
