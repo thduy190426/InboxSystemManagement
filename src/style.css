@@ -8199,7 +8199,7 @@ html.dark .scroll-to-latest-button:focus-visible {
   margin-bottom: 2px;
 }
 
-.user-cell span {
+.user-cell > div > span {
   font-size: 13px;
   color: var(--muted);
 }
