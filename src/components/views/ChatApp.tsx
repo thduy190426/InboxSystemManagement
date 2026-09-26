@@ -284,6 +284,7 @@ export function ChatApp({
   const [focusedMessageId, setFocusedMessageId] = useState('')
   const [isSidebarOpen, setIsSidebarOpen] = useState(getInitialSidebarState)
   const [inboxWidth, setInboxWidth] = useState(getInitialInboxWidth)
+  const [isResizing, setIsResizing] = useState(false)
   const [isCompactLayout, setIsCompactLayout] = useState(getInitialCompactLayoutState)
   const [isInboxOpen, setIsInboxOpen] = useState(
     () =>
@@ -1043,6 +1044,7 @@ export function ChatApp({
     e.preventDefault()
     const startX = e.clientX
     const startWidth = inboxWidth
+    setIsResizing(true)
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       const deltaX = moveEvent.clientX - startX
@@ -1060,6 +1062,7 @@ export function ChatApp({
     }
 
     const handleMouseUp = () => {
+      setIsResizing(false)
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
     }
@@ -3236,6 +3239,7 @@ export function ChatApp({
     isDetailOpen && activeView === 'chat' ? 'is-detail-open' : '',
     isCompactLayout && activeView === 'chat' ? 'has-inbox-drawer' : '',
     isCompactLayout && activeView === 'chat' && isInboxOpen ? 'is-inbox-open' : '',
+    isResizing ? 'is-resizing' : '',
   ]
     .filter(Boolean)
     .join(' ')

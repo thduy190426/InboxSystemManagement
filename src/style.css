@@ -1094,7 +1094,7 @@ img {
 
 .app-shell {
   --sidebar-width: 76px;
-  --content-columns: minmax(420px, 490px) minmax(0, 1fr) 0fr;
+  --content-columns: var(--inbox-width, minmax(420px, 490px)) minmax(0, 1fr) 0fr;
   --detail-width: minmax(280px, 320px);
   --sidebar-motion: 360ms cubic-bezier(0.22, 1, 0.36, 1);
 
@@ -1110,7 +1110,7 @@ img {
 }
 
 .app-shell.is-detail-open {
-  --content-columns: minmax(420px, 490px) minmax(0, 1fr) var(--detail-width);
+  --content-columns: var(--inbox-width, minmax(420px, 490px)) minmax(0, 1fr) var(--detail-width);
 }
 
 .nav-rail,
@@ -6743,11 +6743,11 @@ html.dark .scroll-to-latest-button:focus-visible {
 
 @media (max-width: 1180px) {
   .app-shell {
-    --content-columns: minmax(400px, 450px) minmax(0, 1fr);
+    --content-columns: var(--inbox-width, minmax(400px, 450px)) minmax(0, 1fr);
   }
 
   .app-shell.is-detail-open {
-    --content-columns: minmax(400px, 450px) minmax(0, 1fr);
+    --content-columns: var(--inbox-width, minmax(400px, 450px)) minmax(0, 1fr);
   }
 
   .detail-panel {
@@ -6855,7 +6855,7 @@ html.dark .scroll-to-latest-button:focus-visible {
 
   .app-shell {
     --sidebar-width: 68px;
-    --content-columns: minmax(350px, 390px) minmax(0, 1fr);
+    --content-columns: var(--inbox-width, minmax(350px, 390px)) minmax(0, 1fr);
   }
 
   .app-shell.is-sidebar-open {
@@ -9302,4 +9302,10 @@ html.dark .message-search-button.is-active {
 .inbox-resizer:hover,
 .inbox-resizer:active {
   background-color: var(--primary);
+}
+.app-shell.is-resizing {
+  transition: none !important;
+}
+.app-shell.is-resizing * {
+  pointer-events: none !important;
 }
