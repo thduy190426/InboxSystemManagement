@@ -217,8 +217,10 @@ export function ChatPanel({
   const [recordedMediaKind, setRecordedMediaKind] = useState<'audio' | 'video' | null>(null)
   const [galleryImage, setGalleryImage] = useState<MessageAttachment | null>(null)
   const [isAtLatestMessage, setIsAtLatestMessage] = useState(true)
+  const isAtLatestMessageRef = useRef(isAtLatestMessage)
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const threadRef = useRef<HTMLDivElement | null>(null)
+  const threadContentRef = useRef<HTMLDivElement | null>(null)
   const threadEndRef = useRef<HTMLDivElement | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordingChunksRef = useRef<BlobPart[]>([])
@@ -344,9 +346,29 @@ export function ChatPanel({
       return
     }
 
-    scrollToLatestMessage('smooth')
+    scrollToLatestMessage('auto')
     onAutoScrollComplete()
   }, [onAutoScrollComplete, scrollToLatestMessage, shouldAutoScrollToLatest])
+
+  useEffect(() => {
+    isAtLatestMessageRef.current = isAtLatestMessage
+  }, [isAtLatestMessage])
+
+  useEffect(() => {
+    const threadContent = threadContentRef.current
+    if (!threadContent) {
+      return
+    }
+
+    const observer = new ResizeObserver(() => {
+      if (isAtLatestMessageRef.current) {
+        scrollToLatestMessage('auto')
+      }
+    })
+
+    observer.observe(threadContent)
+    return () => observer.disconnect()
+  }, [scrollToLatestMessage])
 
   useEffect(() => {
     window.requestAnimationFrame(updateLatestMessageVisibility)
@@ -1319,6 +1341,7 @@ export function ChatPanel({
       ) : null}
 
       <div className="thread" onScroll={updateLatestMessageVisibility} ref={threadRef}>
+        <div className="thread-content" ref={threadContentRef}>
         {hasOlderMessages ? (
           <button
             className="load-older-messages-button"
@@ -1670,7 +1693,8 @@ export function ChatPanel({
           <strong>{activeConversation.name} đang nhập...</strong>
         </div>
       ) : null}
-        <div ref={threadEndRef} />
+          <div ref={threadEndRef} />
+        </div>
       </div>
 
       {!isAtLatestMessage ? (
