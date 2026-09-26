@@ -623,6 +623,18 @@ export function ChatApp({
 
       const isCustomSoundSender = notification.title === 'Trần Hoàng Duy' || notification.title === 'Bảo Nghi'
 
+      if (isCustomSoundSender) {
+        const customMessageTones: Record<string, string> = {
+          'Trần Hoàng Duy': '/audio/TDuy_Message.mp3',
+          'Bảo Nghi': '/audio/BNghi_Message.mp3',
+        }
+        const tonePath = customMessageTones[notification.title]
+        if (tonePath) {
+          const audio = new Audio(tonePath)
+          audio.play().catch(() => undefined)
+        }
+      }
+
       showDedupedBrowserNotification(`notification:${notification.id}`, notification.title, {
         body: notification.body,
         url: notification.conversationId
@@ -863,27 +875,6 @@ export function ChatApp({
         (payload.eventType === 'message:created' || payload.eventType === 'message:forwarded')
       ) {
         syncDeliveredReceipts(conversationId).catch(() => undefined)
-
-        let actorName = ''
-        const conversation = conversationsRef.current.find((c) => c.id === conversationId)
-        if (conversation && payload.actorUserId) {
-          const actor = conversation.members?.find((m) => m.id === payload.actorUserId)
-          if (actor) {
-            actorName = actor.fullName
-          }
-        }
-        
-        if (actorName) {
-          const customMessageTones: Record<string, string> = {
-            'Trần Hoàng Duy': '/audio/TDuy_Message.mp3',
-            'Bảo Nghi': '/audio/BNghi_Message.mp3',
-          }
-          const tonePath = customMessageTones[actorName]
-          if (tonePath) {
-            const audio = new Audio(tonePath)
-            audio.play().catch(() => undefined)
-          }
-        }
       }
 
       if (
