@@ -611,7 +611,7 @@ export function ContactsPanel({
           placeholder="Tìm theo tên hoặc số điện thoại"
           value={query}
         />
-        <button disabled={isLoading} type="submit">
+        <button disabled={isLoading || query.trim().length < 2} type="submit">
           Tìm
         </button>
       </form>

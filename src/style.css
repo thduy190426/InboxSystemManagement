@@ -9215,7 +9215,6 @@ html.dark .message-search-button.is-active {
   color: var(--primary);
 }
 
-/* Collapsed Inbox Panel */
 .app-shell.is-inbox-collapsed {
   --content-columns: 100px minmax(0, 1fr) 0fr;
 }
