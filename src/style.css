@@ -6223,7 +6223,8 @@ html.dark .scroll-to-latest-button:focus-visible {
   min-height: 100svh;
   padding: 24px 20px;
   overscroll-behavior: contain;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: #fbfcfd;
   border-left: 1px solid var(--line);
   opacity: 0;
@@ -6248,7 +6249,7 @@ html.dark .scroll-to-latest-button:focus-visible {
 }
 
 .detail-panel>* {
-  min-width: 280px;
+  min-width: 0;
 }
 
 .profile-block {
