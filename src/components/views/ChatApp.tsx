@@ -623,17 +623,6 @@ export function ChatApp({
 
       const isCustomSoundSender = notification.title.includes('Trần Hoàng Duy') || notification.title.includes('Bảo Nghi')
 
-      if (isCustomSoundSender) {
-        const tonePath = notification.title.includes('Trần Hoàng Duy') 
-          ? '/audio/TDuy_Message.mp3' 
-          : '/audio/BNghi_Message.mp3'
-          
-        if (tonePath) {
-          const audio = new Audio(tonePath)
-          audio.play().catch((err) => console.error('Audio play blocked:', err))
-        }
-      }
-
       showDedupedBrowserNotification(`notification:${notification.id}`, notification.title, {
         body: notification.body,
         url: notification.conversationId
@@ -874,6 +863,27 @@ export function ChatApp({
         (payload.eventType === 'message:created' || payload.eventType === 'message:forwarded')
       ) {
         syncDeliveredReceipts(conversationId).catch(() => undefined)
+
+        let actorName = ''
+        const conversation = conversationsRef.current.find((c) => c.id === conversationId)
+        if (conversation && payload.actorUserId) {
+          const actor = conversation.members?.find((m) => m.userId.toString() === payload.actorUserId?.toString())
+          if (actor) {
+            actorName = actor.fullName
+          }
+        }
+
+        const isCustomSoundSender = actorName.includes('Trần Hoàng Duy') || actorName.includes('Bảo Nghi')
+        if (isCustomSoundSender) {
+          const tonePath = actorName.includes('Trần Hoàng Duy') 
+            ? '/audio/TDuy_Message.mp3' 
+            : '/audio/BNghi_Message.mp3'
+            
+          if (tonePath) {
+            const audio = new Audio(tonePath)
+            audio.play().catch((err) => console.error('Audio play blocked in conversation changed:', err))
+          }
+        }
       }
 
       if (
