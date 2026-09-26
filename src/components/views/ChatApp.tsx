@@ -151,7 +151,8 @@ function getInitialSidebarState() {
 
 function getInitialInboxWidth() {
   const saved = localStorage.getItem(INBOX_WIDTH_KEY)
-  return saved ? parseInt(saved, 10) : 420
+  const width = saved ? parseInt(saved, 10) : 420
+  return Math.max(350, Math.min(width, 600))
 }
 
 function getInitialCompactLayoutState() {
@@ -1050,12 +1051,10 @@ export function ChatApp({
       const deltaX = moveEvent.clientX - startX
       let newWidth = startWidth + deltaX
       
-      if (startWidth === 100 && deltaX > 10) {
-        newWidth = 250 + (deltaX - 10)
-      } else if (newWidth < 250) {
-        newWidth = 100
-      } else if (newWidth > 350) {
+      if (newWidth < 350) {
         newWidth = 350
+      } else if (newWidth > 600) {
+        newWidth = 600
       }
       
       setInboxWidth(newWidth)
