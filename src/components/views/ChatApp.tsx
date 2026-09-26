@@ -621,17 +621,16 @@ export function ChatApp({
         return
       }
 
-      const isCustomSoundSender = notification.title === 'Trần Hoàng Duy' || notification.title === 'Bảo Nghi'
+      const isCustomSoundSender = notification.title.includes('Trần Hoàng Duy') || notification.title.includes('Bảo Nghi')
 
       if (isCustomSoundSender) {
-        const customMessageTones: Record<string, string> = {
-          'Trần Hoàng Duy': '/audio/TDuy_Message.mp3',
-          'Bảo Nghi': '/audio/BNghi_Message.mp3',
-        }
-        const tonePath = customMessageTones[notification.title]
+        const tonePath = notification.title.includes('Trần Hoàng Duy') 
+          ? '/audio/TDuy_Message.mp3' 
+          : '/audio/BNghi_Message.mp3'
+          
         if (tonePath) {
           const audio = new Audio(tonePath)
-          audio.play().catch(() => undefined)
+          audio.play().catch((err) => console.error('Audio play blocked:', err))
         }
       }
 

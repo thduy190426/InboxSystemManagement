@@ -1,8 +1,16 @@
+self.addEventListener('install', (event) => {
+  self.skipWaiting()
+})
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim())
+})
+
 self.addEventListener('push', (event) => {
   const payload = event.data?.json?.() || {}
   const title = payload.title || 'Inbox'
 
-  const isCustomSoundSender = title === 'Trần Hoàng Duy' || title === 'Bảo Nghi'
+  const isCustomSoundSender = title.includes('Trần Hoàng Duy') || title.includes('Bảo Nghi')
 
   event.waitUntil(
     self.registration.showNotification(title, {
