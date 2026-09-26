@@ -92,6 +92,23 @@ function formatDateHeader(date: Date | null, now = new Date()) {
   }).format(date)
 }
 
+function formatMessageTime(message: Message) {
+  if (message.time === 'Bây giờ' || message.time === 'Đang gửi...') {
+    return message.time
+  }
+
+  const date = parseMessageDate(message)
+  
+  if (date) {
+    return date.toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  }
+
+  return message.time
+}
+
 type ChatPanelProps = {
   activeConversation: Conversation
   busyMessageId?: string
@@ -1527,7 +1544,7 @@ export function ChatPanel({
                         </>
                       )}
                       <span className="message-time">
-                        {message.time}
+                        {formatMessageTime(message)}
                         {message.isEdited ? <span>Đã chỉnh sửa!</span> : null}
                         {message.author === 'me' ? (
                           <>
