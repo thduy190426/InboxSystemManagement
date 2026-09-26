@@ -181,6 +181,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
     top: number
   } | null>(null)
   const ringbackToneRef = useRef<RingbackTone | null>(null)
+  const customRingtoneRef = useRef<HTMLAudioElement | null>(null)
   const finishedLocallyRef = useRef(false)
   const hasPlayedFinishToneRef = useRef(false)
   const hasPlayedConnectedToneRef = useRef(false)
@@ -781,6 +782,15 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
   }
 
   function startRingbackTone() {
+    if (call.direction === 'incoming' && call.caller.fullName === 'Trần Hoàng Duy') {
+      if (customRingtoneRef.current) return
+      const audio = new Audio('/audio/TDuy.mp3')
+      audio.loop = true
+      audio.play().catch(() => undefined)
+      customRingtoneRef.current = audio
+      return
+    }
+
     if (ringbackToneRef.current || typeof AudioContext === 'undefined') {
       return
     }
@@ -823,6 +833,12 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
   }
 
   function stopRingbackTone() {
+    if (customRingtoneRef.current) {
+      customRingtoneRef.current.pause()
+      customRingtoneRef.current.currentTime = 0
+      customRingtoneRef.current = null
+    }
+
     const ringbackTone = ringbackToneRef.current
     if (!ringbackTone) {
       return
