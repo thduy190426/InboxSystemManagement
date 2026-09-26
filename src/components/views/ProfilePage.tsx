@@ -1,5 +1,5 @@
 import type { ChangeEvent, FormEvent } from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AlignLeft, AtSign, CalendarDays, Camera, IdCard, MapPin, MessageSquare, Phone, Save, Shield, User, Users } from 'lucide-react'
 import type { AuthUser } from '../../services/api/authApi'
 import {
