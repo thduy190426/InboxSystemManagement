@@ -65,12 +65,9 @@ function validatePasswordForm(form: ChangePasswordPayload) {
     /[A-Z]/.test(form.newPassword) || 'có chữ hoa',
     /[0-9]/.test(form.newPassword) || 'có chữ số',
     /[^A-Za-z0-9]/.test(form.newPassword) || 'có ký tự đặc biệt',
-  ].filter((requirement): requirement is string => typeof requirement === 'string')
+  ].filter((r): r is string => typeof r === 'string')
 
-  if (!form.currentPassword) {
-    errors.currentPassword = 'Vui lòng nhập mật khẩu hiện tại!'
-  }
-
+  if (!form.currentPassword) errors.currentPassword = 'Vui lòng nhập mật khẩu hiện tại!'
   if (!form.newPassword) {
     errors.newPassword = 'Vui lòng nhập mật khẩu mới!'
   } else if (requirements.length) {
@@ -78,67 +75,147 @@ function validatePasswordForm(form: ChangePasswordPayload) {
   } else if (form.currentPassword && form.currentPassword === form.newPassword) {
     errors.newPassword = 'Mật khẩu mới phải khác mật khẩu hiện tại!'
   }
-
   if (!form.confirmNewPassword) {
     errors.confirmNewPassword = 'Vui lòng nhập lại mật khẩu mới!'
   } else if (form.newPassword && form.confirmNewPassword !== form.newPassword) {
     errors.confirmNewPassword = 'Mật khẩu mới xác nhận không khớp!'
   }
-
   return errors
 }
 
 function validateDeleteForm(form: DeleteAccountPayload) {
   const errors: Partial<Record<keyof DeleteAccountPayload, string>> = {}
-
-  if (!form.password) {
-    errors.password = 'Vui lòng nhập mật khẩu hiện tại!'
-  }
-
-  if (form.confirmationText.trim() !== 'XOA TAI KHOAN') {
+  if (!form.password) errors.password = 'Vui lòng nhập mật khẩu hiện tại!'
+  if (form.confirmationText.trim() !== 'XOA TAI KHOAN')
     errors.confirmationText = 'Vui lòng nhập chính xác XOA TAI KHOAN!'
-  }
-
   return errors
 }
 
 function formatDateTime(value: string | null) {
-  if (!value) {
-    return 'Chưa có'
-  }
-
+  if (!value) return 'Chưa có'
   const date = new Date(value)
-
-  if (Number.isNaN(date.getTime())) {
-    return value
-  }
-
+  if (Number.isNaN(date.getTime())) return value
   return new Intl.DateTimeFormat('vi-VN', {
-    hour: '2-digit',
-    minute: '2-digit',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+    day: '2-digit', month: '2-digit', year: 'numeric',
   }).format(date)
 }
 
 function getSessionTitle(session: UserSession) {
-  if (session.deviceName) {
-    return session.deviceName
-  }
-
-  if (!session.userAgent) {
-    return 'Thiết bị không xác định'
-  }
-
-  if (/Mobile|Android|iPhone|iPad/i.test(session.userAgent)) {
-    return 'Thiết bị di động'
-  }
-
+  if (session.deviceName) return session.deviceName
+  if (!session.userAgent) return 'Thiết bị không xác định'
+  if (/Mobile|Android|iPhone|iPad/i.test(session.userAgent)) return 'Thiết bị di động'
   return 'Trình duyệt Web'
 }
 
-export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserChange, pushToast }: SettingsPageProps) {
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+type ToggleRowProps = {
+  label: string
+  description?: string
+  checked: boolean
+  disabled?: boolean
+  onChange: (value: boolean) => void
+}
+
+function ToggleRow({ label, description, checked, disabled, onChange }: ToggleRowProps) {
+  return (
+    <label className="sp-toggle-row">
+      <div className="sp-toggle-text">
+        <strong>{label}</strong>
+        {description && <small>{description}</small>}
+      </div>
+      <div className="sp-toggle-switch">
+        <input
+          type="checkbox"
+          checked={checked}
+          disabled={disabled}
+          onChange={(e) => onChange(e.target.checked)}
+        />
+        <div className="sp-toggle-track">
+          <div className="sp-toggle-thumb" />
+        </div>
+      </div>
+    </label>
+  )
+}
+
+type CardProps = {
+  icon: React.ReactNode
+  iconVariant?: 'default' | 'neutral' | 'danger'
+  title: string
+  description: string
+  children: React.ReactNode
+  footer?: React.ReactNode
+  dangerBorder?: boolean
+}
+
+function Card({ icon, iconVariant = 'default', title, description, children, footer, dangerBorder }: CardProps) {
+  return (
+    <div className={`sp-card${dangerBorder ? ' sp-card--danger' : ''}`}>
+      <div className="sp-card-header">
+        <div className={`sp-card-icon sp-card-icon--${iconVariant}`}>{icon}</div>
+        <div className="sp-card-header-text">
+          <h2>{title}</h2>
+          <p>{description}</p>
+        </div>
+      </div>
+      <div className="sp-card-body">{children}</div>
+      {footer && <div className="sp-card-footer">{footer}</div>}
+    </div>
+  )
+}
+
+type SessionItemProps = {
+  session: SessionViewModel
+  isRevoking: boolean
+  showAllSessions: boolean
+  onRevoke: (session: UserSession) => void
+}
+
+function SessionItem({ session, isRevoking, showAllSessions, onRevoke }: SessionItemProps) {
+  const classNames = [
+    'sp-session-item',
+    session.revokedAt ? 'sp-session-item--revoked' : '',
+    session.isCurrent ? 'sp-session-item--current' : '',
+  ].filter(Boolean).join(' ')
+
+  return (
+    <article className={classNames}>
+      <div className="sp-session-icon">
+        <Laptop size={16} />
+      </div>
+      <div className="sp-session-main">
+        <div className="sp-session-title-row">
+          <strong>{getSessionTitle(session)}</strong>
+          {session.isCurrent && <span className="sp-badge sp-badge--current">Hiện tại</span>}
+          {session.revokedAt && <span className="sp-badge sp-badge--revoked">Đã thu hồi</span>}
+        </div>
+        <div className="sp-session-meta">
+          <span>IP: {session.ipAddress || 'Không rõ'}</span>
+          <span>Tạo lúc: {formatDateTime(session.createdAt)}</span>
+          <span>Hết hạn: {formatDateTime(session.expiresAt)}</span>
+        </div>
+      </div>
+      <button
+        className="sp-btn sp-btn--danger sp-btn--sm"
+        disabled={Boolean(session.revokedAt) || isRevoking}
+        onClick={() => onRevoke(session)}
+        tabIndex={session.isCollapsible && !showAllSessions ? -1 : undefined}
+        type="button"
+      >
+        <LogOut size={13} />
+        {isRevoking ? 'Đang thu hồi...' : 'Thu hồi'}
+      </button>
+    </article>
+  )
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
+export function SettingsPage({
+  currentUser, onAccountDeleted, onLogout, onUserChange, pushToast,
+}: SettingsPageProps) {
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [isSavingPrivacy, setIsSavingPrivacy] = useState(false)
   const [isLoadingSessions, setIsLoadingSessions] = useState(false)
@@ -151,6 +228,8 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
   const [deleteForm, setDeleteForm] = useState<DeleteAccountPayload>(initialDeleteForm)
   const [passwordErrors, setPasswordErrors] = useState<Partial<Record<keyof ChangePasswordPayload, string>>>({})
   const [deleteErrors, setDeleteErrors] = useState<Partial<Record<keyof DeleteAccountPayload, string>>>({})
+
+  // Privacy toggles
   const [showActivityStatus, setShowActivityStatus] = useState(currentUser?.showActivityStatus ?? true)
   const [showReadReceipts, setShowReadReceipts] = useState(currentUser?.showReadReceipts ?? true)
   const [showPhone, setShowPhone] = useState(currentUser?.showPhone ?? true)
@@ -159,49 +238,27 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
   const [showBirthDate, setShowBirthDate] = useState(currentUser?.showBirthDate ?? true)
   const [showBio, setShowBio] = useState(currentUser?.showBio ?? true)
   const [showStatusMessage, setShowStatusMessage] = useState(currentUser?.showStatusMessage ?? true)
+
+  // Session expansion
   const [showAllSessions, setShowAllSessions] = useState(false)
   const [renderExpandedSessions, setRenderExpandedSessions] = useState(false)
   const [expandedSessionHeight, setExpandedSessionHeight] = useState(0)
   const expandedSessionsRef = useRef<HTMLDivElement | null>(null)
-  const overviewRef = useRef<HTMLElement | null>(null)
-  const privacyRef = useRef<HTMLDivElement | null>(null)
+  const cooldownIntervalRef = useRef<number | null>(null)
   const [refreshCooldown, setRefreshCooldown] = useState(0)
 
-  useEffect(() => {
-    if (!overviewRef.current || !privacyRef.current) return
-
-    const observer = new ResizeObserver(() => {
-      if (overviewRef.current && privacyRef.current) {
-        privacyRef.current.style.height = `${overviewRef.current.offsetHeight}px`
-      }
-    })
-
-    observer.observe(overviewRef.current)
-
-    return () => {
-      observer.disconnect()
-    }
-  }, [])
-
-  const cooldownIntervalRef = useRef<number | null>(null)
-
-  const sortedSessions = [...sessions].sort((left, right) => {
-    if (left.isCurrent !== right.isCurrent) {
-      return left.isCurrent ? -1 : 1
-    }
-
-    if (Boolean(left.revokedAt) !== Boolean(right.revokedAt)) {
-      return left.revokedAt ? 1 : -1
-    }
-
-    return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
+  // Derived session data
+  const sortedSessions = [...sessions].sort((a, b) => {
+    if (a.isCurrent !== b.isCurrent) return a.isCurrent ? -1 : 1
+    if (Boolean(a.revokedAt) !== Boolean(b.revokedAt)) return a.revokedAt ? 1 : -1
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   })
-  const currentSession = sortedSessions.find((session) => session.isCurrent)
-  const activeSessions = sortedSessions.filter((session) => !session.isCurrent && !session.revokedAt)
-  const historySessions = sortedSessions.filter((session) => !session.isCurrent && session.revokedAt)
+  const currentSession = sortedSessions.find((s) => s.isCurrent)
+  const activeSessions = sortedSessions.filter((s) => !s.isCurrent && !s.revokedAt)
+  const historySessions = sortedSessions.filter((s) => !s.isCurrent && s.revokedAt)
   const otherRecentSessions = sortedSessions
-    .filter((session) => !session.isCurrent)
-    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
+    .filter((s) => !s.isCurrent)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, currentSession ? RECENT_SESSION_DISPLAY_LIMIT - 1 : RECENT_SESSION_DISPLAY_LIMIT)
   const hiddenSessionCount = otherRecentSessions.length
   const sessionSummaryParts = [
@@ -211,15 +268,14 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
   const sessionItems: SessionViewModel[] = [
     ...(currentSession ? [{ ...currentSession, viewGroup: 'current' as const }] : []),
   ]
-  const expandedSessionItems: SessionViewModel[] = otherRecentSessions.map((session) => ({
-    ...session,
-    viewGroup: session.revokedAt ? ('history' as const) : ('active' as const),
+  const expandedSessionItems: SessionViewModel[] = otherRecentSessions.map((s) => ({
+    ...s,
+    viewGroup: s.revokedAt ? ('history' as const) : ('active' as const),
     isCollapsible: true,
   }))
 
-  useEffect(() => {
-    loadSessions()
-  }, [])
+  // Effects
+  useEffect(() => { loadSessions() }, [])
 
   useEffect(() => {
     setShowActivityStatus(currentUser?.showActivityStatus ?? true)
@@ -231,65 +287,36 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
     setShowBio(currentUser?.showBio ?? true)
     setShowStatusMessage(currentUser?.showStatusMessage ?? true)
   }, [
-    currentUser?.showActivityStatus,
-    currentUser?.showReadReceipts,
-    currentUser?.showPhone,
-    currentUser?.showAddress,
-    currentUser?.showGender,
-    currentUser?.showBirthDate,
-    currentUser?.showBio,
-    currentUser?.showStatusMessage,
+    currentUser?.showActivityStatus, currentUser?.showReadReceipts,
+    currentUser?.showPhone, currentUser?.showAddress, currentUser?.showGender,
+    currentUser?.showBirthDate, currentUser?.showBio, currentUser?.showStatusMessage,
   ])
 
   useEffect(() => {
-    if (showAllSessions) {
-      setRenderExpandedSessions(true)
-      return undefined
-    }
-
-    const removeHiddenSessionsTimer = window.setTimeout(() => {
-      setRenderExpandedSessions(false)
-    }, 340)
-
-    return () => window.clearTimeout(removeHiddenSessionsTimer)
+    if (showAllSessions) { setRenderExpandedSessions(true); return undefined }
+    const t = window.setTimeout(() => setRenderExpandedSessions(false), 340)
+    return () => window.clearTimeout(t)
   }, [showAllSessions])
 
   useEffect(() => {
-    if (!renderExpandedSessions) {
-      setExpandedSessionHeight(0)
-      return
-    }
-
-    const expandedSessionsElement = expandedSessionsRef.current
-
-    if (expandedSessionsElement === null) {
-      return
-    }
-
-    const expansionElement = expandedSessionsElement
-
-    function updateExpandedSessionHeight() {
-      setExpandedSessionHeight(expansionElement.scrollHeight)
-    }
-
-    updateExpandedSessionHeight()
-
-    const resizeObserver =
-      typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(updateExpandedSessionHeight)
-    resizeObserver?.observe(expansionElement)
-
-    return () => {
-      resizeObserver?.disconnect()
-    }
+    if (!renderExpandedSessions) { setExpandedSessionHeight(0); return }
+    const el = expandedSessionsRef.current
+    if (!el) return
+    const update = () => setExpandedSessionHeight(el.scrollHeight)
+    update()
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(update) : null
+    ro?.observe(el)
+    return () => ro?.disconnect()
   }, [renderExpandedSessions, sessions])
 
+  // Handlers
   async function loadSessions() {
     try {
       setIsLoadingSessions(true)
-      const response = await fetchSessions()
-      setSessions(response.sessions)
-    } catch (error) {
-      pushToast(error instanceof Error ? error.message : 'Không thể tải phiên đăng nhập!', 'error')
+      const res = await fetchSessions()
+      setSessions(res.sessions)
+    } catch (err) {
+      pushToast(err instanceof Error ? err.message : 'Không thể tải phiên đăng nhập!', 'error')
     } finally {
       setIsLoadingSessions(false)
       startRefreshCooldown()
@@ -297,95 +324,71 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
   }
 
   function startRefreshCooldown() {
-    if (cooldownIntervalRef.current) {
-      window.clearInterval(cooldownIntervalRef.current)
-    }
-
+    if (cooldownIntervalRef.current) window.clearInterval(cooldownIntervalRef.current)
     setRefreshCooldown(REFRESH_COOLDOWN_SECONDS)
-
     cooldownIntervalRef.current = window.setInterval(() => {
       setRefreshCooldown((prev) => {
-        if (prev <= 1) {
-          window.clearInterval(cooldownIntervalRef.current!)
-          cooldownIntervalRef.current = null
-          return 0
-        }
+        if (prev <= 1) { window.clearInterval(cooldownIntervalRef.current!); cooldownIntervalRef.current = null; return 0 }
         return prev - 1
       })
     }, 1000)
   }
 
   function handleToggleSessionHistory() {
-    if (showAllSessions) {
-      setShowAllSessions(false)
-      return
-    }
-
+    if (showAllSessions) { setShowAllSessions(false); return }
     setRenderExpandedSessions(true)
-    window.requestAnimationFrame(() => {
-      setShowAllSessions(true)
-    })
+    window.requestAnimationFrame(() => setShowAllSessions(true))
   }
 
-  function handlePasswordFieldChange(event: ChangeEvent<HTMLInputElement>) {
-    const { name, value } = event.target
-
-    setPasswordForm((current) => ({
-      ...current,
-      [name]: value,
-    }))
-    setPasswordErrors((current) => ({
-      ...current,
-      [name]: '',
-    }))
+  function handlePasswordFieldChange(e: ChangeEvent<HTMLInputElement>) {
+    const { name, value } = e.target
+    setPasswordForm((c) => ({ ...c, [name]: value }))
+    setPasswordErrors((c) => ({ ...c, [name]: '' }))
   }
 
-  function handleDeleteFieldChange(event: ChangeEvent<HTMLInputElement>) {
-    const { name, value } = event.target
-
-    setDeleteForm((current) => ({
-      ...current,
-      [name]: value,
-    }))
-    setDeleteErrors((current) => ({
-      ...current,
-      [name]: '',
-    }))
+  function handleDeleteFieldChange(e: ChangeEvent<HTMLInputElement>) {
+    const { name, value } = e.target
+    setDeleteForm((c) => ({ ...c, [name]: value }))
+    setDeleteErrors((c) => ({ ...c, [name]: '' }))
   }
 
-  async function handlePasswordSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-
+  async function handlePasswordSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
     const errors = validatePasswordForm(passwordForm)
-
     if (Object.keys(errors).length > 0) {
       setPasswordErrors(errors)
       pushToast('Vui lòng kiểm tra lại thông tin đổi mật khẩu!', 'error')
       return
     }
-
     try {
       setIsChangingPassword(true)
       setPasswordErrors({})
-      const response = await changePassword(passwordForm)
+      const res = await changePassword(passwordForm)
       setPasswordForm(initialPasswordForm)
-      pushToast(response.message || 'Đã đổi mật khẩu!', 'info')
-    } catch (error) {
-      pushToast(error instanceof Error ? error.message : 'Không thể đổi mật khẩu!', 'error')
+      pushToast(res.message || 'Đã đổi mật khẩu!', 'info')
+    } catch (err) {
+      pushToast(err instanceof Error ? err.message : 'Không thể đổi mật khẩu!', 'error')
     } finally {
       setIsChangingPassword(false)
     }
   }
 
-  async function handlePrivacyChange(key: 'showActivityStatus' | 'showReadReceipts' | 'showPhone' | 'showAddress' | 'showGender' | 'showBirthDate' | 'showBio' | 'showStatusMessage', value: boolean) {
-    if (key === 'showActivityStatus') setShowActivityStatus(value)
-    if (key === 'showReadReceipts') setShowReadReceipts(value)
-    if (key === 'showPhone') setShowPhone(value)
-    if (key === 'showAddress') setShowAddress(value)
-    if (key === 'showGender') setShowGender(value)
-    if (key === 'showBirthDate') setShowBirthDate(value)
-    if (key === 'showBio') setShowBio(value)
-    if (key === 'showStatusMessage') setShowStatusMessage(value)
+  async function handlePrivacyChange(
+    key: 'showActivityStatus' | 'showReadReceipts' | 'showPhone' | 'showAddress' |
+         'showGender' | 'showBirthDate' | 'showBio' | 'showStatusMessage',
+    value: boolean,
+  ) {
+    const setters: Record<typeof key, (v: boolean) => void> = {
+      showActivityStatus: setShowActivityStatus,
+      showReadReceipts: setShowReadReceipts,
+      showPhone: setShowPhone,
+      showAddress: setShowAddress,
+      showGender: setShowGender,
+      showBirthDate: setShowBirthDate,
+      showBio: setShowBio,
+      showStatusMessage: setShowStatusMessage,
+    }
+    setters[key](value)
 
     const payload = {
       showActivityStatus: key === 'showActivityStatus' ? value : showActivityStatus,
@@ -400,35 +403,25 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
 
     try {
       setIsSavingPrivacy(true)
-      const response = await updatePrivacy(payload)
-      onUserChange(response.user)
-      pushToast(response.message || 'Đã cập nhật quyền riêng tư!', 'info')
-    } catch (error) {
-      pushToast(error instanceof Error ? error.message : 'Không thể cập nhật quyền riêng tư!', 'error')
-      if (key === 'showActivityStatus') setShowActivityStatus(!value)
-      if (key === 'showReadReceipts') setShowReadReceipts(!value)
-      if (key === 'showPhone') setShowPhone(!value)
-      if (key === 'showAddress') setShowAddress(!value)
-      if (key === 'showGender') setShowGender(!value)
-      if (key === 'showBirthDate') setShowBirthDate(!value)
-      if (key === 'showBio') setShowBio(!value)
-      if (key === 'showStatusMessage') setShowStatusMessage(!value)
+      const res = await updatePrivacy(payload)
+      onUserChange(res.user)
+      pushToast(res.message || 'Đã cập nhật quyền riêng tư!', 'info')
+    } catch (err) {
+      pushToast(err instanceof Error ? err.message : 'Không thể cập nhật quyền riêng tư!', 'error')
+      setters[key](!value)
     } finally {
       setIsSavingPrivacy(false)
     }
   }
 
-  async function handleDeleteAccountSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-
+  async function handleDeleteAccountSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
     const errors = validateDeleteForm(deleteForm)
-
     if (Object.keys(errors).length > 0) {
       setDeleteErrors(errors)
       pushToast('Vui lòng hoàn tất bước xác nhận trước khi xoá tài khoản!', 'error')
       return
     }
-
     setConfirmDialog({
       title: 'Xoá tài khoản?',
       description: 'Tài khoản sẽ bị vô hiệu hóa, thông tin hồ sơ sẽ bị xóa và bạn sẽ đăng xuất khỏi mọi phiên.',
@@ -444,8 +437,8 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
       setDeleteErrors({})
       await deleteAccount(deleteForm)
       onAccountDeleted()
-    } catch (error) {
-      pushToast(error instanceof Error ? error.message : 'Không thể xóa tài khoản!', 'error')
+    } catch (err) {
+      pushToast(err instanceof Error ? err.message : 'Không thể xóa tài khoản!', 'error')
     } finally {
       setIsDeletingAccount(false)
     }
@@ -476,18 +469,12 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
   async function revokeOneSession(sessionId: string) {
     try {
       setRevokingSessionId(sessionId)
-      const response = await revokeSession(sessionId)
-
-      if (response.revokedCurrentSession) {
-        pushToast('Đã thu hồi phiên hiện tại!', 'info')
-        onLogout?.()
-        return
-      }
-
-      pushToast(response.message || 'Đã thu hồi phiên đăng nhập!', 'info')
+      const res = await revokeSession(sessionId)
+      if (res.revokedCurrentSession) { pushToast('Đã thu hồi phiên hiện tại!', 'info'); onLogout?.(); return }
+      pushToast(res.message || 'Đã thu hồi phiên đăng nhập!', 'info')
       await loadSessions()
-    } catch (error) {
-      pushToast(error instanceof Error ? error.message : 'Không thể thu hồi phiên đăng nhập!', 'error')
+    } catch (err) {
+      pushToast(err instanceof Error ? err.message : 'Không thể thu hồi phiên đăng nhập!', 'error')
     } finally {
       setRevokingSessionId(null)
     }
@@ -496,458 +483,293 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
   async function revokeAllOtherSessions() {
     try {
       setIsRevokingOtherSessions(true)
-      const response = await revokeOtherSessions()
-      pushToast(response.message || 'Đã đăng xuất khỏi thiết bị khác!', 'info')
+      const res = await revokeOtherSessions()
+      pushToast(res.message || 'Đã đăng xuất khỏi thiết bị khác!', 'info')
       await loadSessions()
-    } catch (error) {
-      pushToast(error instanceof Error ? error.message : 'Không thể đăng xuất khỏi thiết bị khác!', 'error')
+    } catch (err) {
+      pushToast(err instanceof Error ? err.message : 'Không thể đăng xuất khỏi thiết bị khác!', 'error')
     } finally {
       setIsRevokingOtherSessions(false)
     }
   }
 
   async function handleConfirmDialog() {
-    if (!confirmDialog || isDeletingAccount) {
-      return
-    }
-
+    if (!confirmDialog || isDeletingAccount) return
     await confirmDialog.onConfirm()
     setConfirmDialog(null)
   }
 
   return (
-    <section className="profile-page settings-page" aria-labelledby="settings-title">
-      <header className="profile-page-header settings-page-header">
-        <div>
-          <span className="section-kicker">
-            <Settings size={14} />
-            Cài đặt tài khoản
-          </span>
-          <h1 id="settings-title">Bảo mật và phiên đăng nhập</h1>
+    <section className="sp-page" aria-labelledby="settings-title">
+      <header className="sp-page-header">
+        <div className="sp-page-kicker">
+          <Settings size={12} />
+          Cài đặt tài khoản
         </div>
+        <h1 id="settings-title">Bảo mật &amp; Phiên đăng nhập</h1>
       </header>
 
-      <div className="settings-layout">
-        <aside ref={overviewRef} className="settings-overview">
-          <div className="settings-overview-icon">
-            <ShieldCheck size={28} />
-          </div>
-          <strong>Trung tâm bảo mật</strong>
-          <p>Quản lý mật khẩu, thiết bị đang đăng nhập và các hành động nhạy cảm của tài khoản.</p>
-          <div className="settings-overview-list">
-            <span>{sessionSummaryParts.length ? sessionSummaryParts.join(' · ') : 'Chưa có dữ liệu phiên'}</span>
-            <span>{passwordForm.newPassword ? 'Đang soạn mật khẩu mới' : 'Mật khẩu chưa thay đổi'}</span>
-          </div>
-        </aside>
+      <div className="sp-layout">
+        {/* Sidebar nav */}
+        <nav className="sp-nav" aria-label="Điều hướng cài đặt">
+          <button className="sp-nav-item sp-nav-item--active" type="button">
+            <Eye size={15} /> Quyền riêng tư
+          </button>
+          <button className="sp-nav-item" type="button">
+            <IdCard size={15} /> Hồ sơ
+          </button>
+          <button className="sp-nav-item" type="button">
+            <KeyRound size={15} /> Mật khẩu
+          </button>
+          <button className="sp-nav-item" type="button">
+            <ShieldCheck size={15} /> Phiên đăng nhập
+          </button>
+          <div className="sp-nav-divider" />
+          <button className="sp-nav-item sp-nav-item--danger" type="button">
+            <Trash2 size={15} /> Xóa tài khoản
+          </button>
+        </nav>
 
-        <div className="settings-main">
-          <div 
-            ref={privacyRef} 
-            className="settings-card profile-privacy-form" 
-            style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px' }}
+        <div className="sp-main">
+          {/* Privacy: activity */}
+          <Card
+            icon={showActivityStatus ? <Eye size={16} /> : <EyeOff size={16} />}
+            title="Quyền riêng tư"
+            description="Trạng thái hoạt động và thông báo đã đọc tin nhắn."
           >
-            <div className="profile-form-heading">
-              {showActivityStatus ? <Eye size={18} /> : <EyeOff size={18} />}
-              <div>
-                <h2>Quyền riêng tư</h2>
-                <p>Quản lý trạng thái hoạt động và thông báo đã xem tin nhắn của bạn.</p>
-              </div>
+            <div className="sp-toggle-group">
+              <ToggleRow
+                label="Hiển thị Last seen / Online"
+                description={showActivityStatus ? 'Bạn bè có thể thấy bạn đang online.' : 'Người khác sẽ thấy bạn ngoại tuyến.'}
+                checked={showActivityStatus}
+                disabled={isSavingPrivacy}
+                onChange={(v) => handlePrivacyChange('showActivityStatus', v)}
+              />
+              <ToggleRow
+                label="Hiển thị đã đọc"
+                description={showReadReceipts ? 'Đối phương biết khi bạn đã xem tin nhắn.' : 'Người khác không biết bạn đã xem.'}
+                checked={showReadReceipts}
+                disabled={isSavingPrivacy}
+                onChange={(v) => handlePrivacyChange('showReadReceipts', v)}
+              />
             </div>
+          </Card>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <label className="privacy-toggle-row">
-                <span className="privacy-toggle-copy">
-                  <strong>Hiển thị Last seen/Online</strong>
-                  <small>{showActivityStatus ? 'Bạn bè có thể thấy bạn đang online.' : 'Người khác sẽ thấy bạn ngoại tuyến.'}</small>
-                </span>
-                <input
-                  checked={showActivityStatus}
-                  disabled={isSavingPrivacy}
-                  onChange={(event) => handlePrivacyChange('showActivityStatus', event.target.checked)}
-                  type="checkbox"
-                />
-              </label>
-
-              <label className="privacy-toggle-row">
-                <span className="privacy-toggle-copy">
-                  <strong>Hiển thị thông báo đã đọc</strong>
-                  <small>{showReadReceipts ? 'Đối phương sẽ biết khi bạn đã xem tin nhắn của họ.' : 'Người khác sẽ không biết bạn đã xem tin nhắn.'}</small>
-                </span>
-                <input
-                  checked={showReadReceipts}
-                  disabled={isSavingPrivacy}
-                  onChange={(event) => handlePrivacyChange('showReadReceipts', event.target.checked)}
-                  type="checkbox"
-                />
-              </label>
-            </div>
-          </div>
-
-          <div 
-            className="settings-card profile-visibility-form" 
-            style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px', marginTop: '16px' }}
+          {/* Privacy: profile visibility */}
+          <Card
+            icon={<IdCard size={16} />}
+            iconVariant="neutral"
+            title="Hiển thị trên hồ sơ"
+            description="Thông tin cá nhân hiển thị với người trong danh bạ."
           >
-            <div className="profile-form-heading">
-              <IdCard size={18} />
-              <div>
-                <h2>Hiển thị trên hồ sơ</h2>
-                <p>Tùy chỉnh thông tin cá nhân sẽ hiển thị với người khác trong danh bạ.</p>
-              </div>
+            <div className="sp-toggle-group">
+              <ToggleRow label="Số điện thoại" description={showPhone ? 'Mọi người có thể xem số của bạn.' : 'Số điện thoại của bạn sẽ được ẩn.'} checked={showPhone} disabled={isSavingPrivacy} onChange={(v) => handlePrivacyChange('showPhone', v)} />
+              <ToggleRow label="Trạng thái cá nhân" description={showStatusMessage ? 'Hiển thị status message trên hồ sơ.' : 'Ẩn status message của bạn.'} checked={showStatusMessage} disabled={isSavingPrivacy} onChange={(v) => handlePrivacyChange('showStatusMessage', v)} />
+              <ToggleRow label="Địa chỉ" description={showAddress ? 'Mọi người có thể xem địa chỉ của bạn.' : 'Địa chỉ của bạn sẽ được ẩn.'} checked={showAddress} disabled={isSavingPrivacy} onChange={(v) => handlePrivacyChange('showAddress', v)} />
+              <ToggleRow label="Giới tính" checked={showGender} disabled={isSavingPrivacy} onChange={(v) => handlePrivacyChange('showGender', v)} />
+              <ToggleRow label="Ngày sinh" checked={showBirthDate} disabled={isSavingPrivacy} onChange={(v) => handlePrivacyChange('showBirthDate', v)} />
+              <ToggleRow label="Bio" description={showBio ? 'Hiển thị phần giới thiệu bản thân.' : 'Ẩn phần giới thiệu bản thân.'} checked={showBio} disabled={isSavingPrivacy} onChange={(v) => handlePrivacyChange('showBio', v)} />
             </div>
+          </Card>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <label className="privacy-toggle-row">
-                <span className="privacy-toggle-copy">
-                  <strong>Số điện thoại</strong>
-                  <small>{showPhone ? 'Mọi người có thể xem số điện thoại của bạn.' : 'Số điện thoại của bạn sẽ được ẩn.'}</small>
-                </span>
-                <input
-                  checked={showPhone}
-                  disabled={isSavingPrivacy}
-                  onChange={(event) => handlePrivacyChange('showPhone', event.target.checked)}
-                  type="checkbox"
-                />
-              </label>
-
-              <label className="privacy-toggle-row">
-                <span className="privacy-toggle-copy">
-                  <strong>Trạng thái cá nhân</strong>
-                  <small>{showStatusMessage ? 'Hiển thị trạng thái cá nhân trên hồ sơ.' : 'Ẩn trạng thái cá nhân của bạn.'}</small>
-                </span>
-                <input
-                  checked={showStatusMessage}
-                  disabled={isSavingPrivacy}
-                  onChange={(event) => handlePrivacyChange('showStatusMessage', event.target.checked)}
-                  type="checkbox"
-                />
-              </label>
-
-              <label className="privacy-toggle-row">
-                <span className="privacy-toggle-copy">
-                  <strong>Địa chỉ</strong>
-                  <small>{showAddress ? 'Mọi người có thể xem địa chỉ của bạn.' : 'Địa chỉ của bạn sẽ được ẩn.'}</small>
-                </span>
-                <input
-                  checked={showAddress}
-                  disabled={isSavingPrivacy}
-                  onChange={(event) => handlePrivacyChange('showAddress', event.target.checked)}
-                  type="checkbox"
-                />
-              </label>
-
-              <label className="privacy-toggle-row">
-                <span className="privacy-toggle-copy">
-                  <strong>Giới tính</strong>
-                  <small>{showGender ? 'Hiển thị giới tính của bạn.' : 'Ẩn giới tính của bạn.'}</small>
-                </span>
-                <input
-                  checked={showGender}
-                  disabled={isSavingPrivacy}
-                  onChange={(event) => handlePrivacyChange('showGender', event.target.checked)}
-                  type="checkbox"
-                />
-              </label>
-
-              <label className="privacy-toggle-row">
-                <span className="privacy-toggle-copy">
-                  <strong>Ngày sinh</strong>
-                  <small>{showBirthDate ? 'Hiển thị ngày sinh của bạn.' : 'Ẩn ngày sinh của bạn.'}</small>
-                </span>
-                <input
-                  checked={showBirthDate}
-                  disabled={isSavingPrivacy}
-                  onChange={(event) => handlePrivacyChange('showBirthDate', event.target.checked)}
-                  type="checkbox"
-                />
-              </label>
-
-              <label className="privacy-toggle-row">
-                <span className="privacy-toggle-copy">
-                  <strong>Phần giới thiệu (Bio)</strong>
-                  <small>{showBio ? 'Hiển thị phần giới thiệu bản thân.' : 'Ẩn phần giới thiệu bản thân.'}</small>
-                </span>
-                <input
-                  checked={showBio}
-                  disabled={isSavingPrivacy}
-                  onChange={(event) => handlePrivacyChange('showBio', event.target.checked)}
-                  type="checkbox"
-                />
-              </label>
-            </div>
-          </div>
-
-          <form className="profile-form settings-card profile-password-form" onSubmit={handlePasswordSubmit}>
-            <div className="profile-form-heading">
-              <KeyRound size={18} />
-              <div>
-                <h2>Đổi mật khẩu</h2>
-                <p>Nhập mật khẩu hiện tại để xác nhận thay đổi.</p>
-              </div>
-            </div>
-
-            <label className="profile-field">
-              <span><KeyRound size={16} /> Mật khẩu hiện tại</span>
-              <input
-                autoComplete="current-password"
-                name="currentPassword"
-                onChange={handlePasswordFieldChange}
-                placeholder="Nhập mật khẩu hiện tại"
-                type="password"
-                value={passwordForm.currentPassword}
-              />
-              {passwordErrors.currentPassword ? (
-                <span className="profile-field-error">{passwordErrors.currentPassword}</span>
-              ) : null}
-            </label>
-
-            <label className="profile-field">
-              <span><KeyRound size={16} /> Mật khẩu mới</span>
-              <input
-                autoComplete="new-password"
-                maxLength={72}
-                minLength={8}
-                name="newPassword"
-                onChange={handlePasswordFieldChange}
-                placeholder="Tối thiểu 8 ký tự"
-                type="password"
-                value={passwordForm.newPassword}
-              />
-              {passwordErrors.newPassword ? (
-                <span className="profile-field-error">{passwordErrors.newPassword}</span>
-              ) : null}
-            </label>
-
-            <label className="profile-field">
-              <span><KeyRound size={16} /> Xác nhận mật khẩu mới</span>
-              <input
-                autoComplete="new-password"
-                maxLength={72}
-                minLength={8}
-                name="confirmNewPassword"
-                onChange={handlePasswordFieldChange}
-                placeholder="Nhập lại mật khẩu mới"
-                type="password"
-                value={passwordForm.confirmNewPassword}
-              />
-              {passwordErrors.confirmNewPassword ? (
-                <span className="profile-field-error">{passwordErrors.confirmNewPassword}</span>
-              ) : null}
-            </label>
-
-            <button
-              className="profile-save-button"
-              disabled={isChangingPassword || (!passwordForm.currentPassword && !passwordForm.newPassword && !passwordForm.confirmNewPassword)}
-              type="submit"
-            >
-              <KeyRound size={18} />
-              {isChangingPassword ? 'Đang đổi mật khẩu...' : 'Đổi mật khẩu'}
-            </button>
-          </form>
-
-          <section className="profile-form settings-card profile-sessions-form" aria-labelledby="settings-sessions-title">
-            <div className="profile-form-heading">
-              <ShieldCheck size={18} />
-              <div>
-                <h2 id="settings-sessions-title">Phiên đăng nhập</h2>
-                <p>Xem thiết bị đang đăng nhập và thu hồi phiên khi cần.</p>
-              </div>
-            </div>
-
-            <div className="profile-session-toolbar">
+          {/* Password */}
+          <Card
+            icon={<KeyRound size={16} />}
+            title="Đổi mật khẩu"
+            description="Xác nhận bằng mật khẩu hiện tại trước khi thay đổi."
+            footer={
               <button
-                className="profile-session-button"
-                disabled={isLoadingSessions || refreshCooldown > 0}
-                onClick={() => void loadSessions()}
-                type="button"
+                className="sp-btn sp-btn--primary"
+                disabled={isChangingPassword || (!passwordForm.currentPassword && !passwordForm.newPassword && !passwordForm.confirmNewPassword)}
+                form="password-form"
+                type="submit"
               >
-                <RefreshCw size={14} className={isLoadingSessions ? 'spin' : ''} />
-                {isLoadingSessions ? 'Đang tải...' : refreshCooldown > 0 ? `Làm mới (${refreshCooldown}s)` : 'Làm mới'}
+                <KeyRound size={14} />
+                {isChangingPassword ? 'Đang lưu...' : 'Lưu mật khẩu'}
               </button>
-              <button
-                className="profile-session-button profile-session-danger"
-                disabled={isRevokingOtherSessions || activeSessions.length === 0}
-                onClick={confirmRevokeOtherSessions}
-                type="button"
-              >
-                <LogOut size={14} />
-                {isRevokingOtherSessions ? 'Đang xử lý...' : 'Đăng xuất thiết bị khác'}
-              </button>
-            </div>
+            }
+          >
+            <form id="password-form" className="sp-field-group" onSubmit={handlePasswordSubmit}>
+              <div className="sp-field">
+                <label htmlFor="currentPassword">Mật khẩu hiện tại</label>
+                <input
+                  autoComplete="current-password"
+                  id="currentPassword"
+                  name="currentPassword"
+                  onChange={handlePasswordFieldChange}
+                  placeholder="••••••••"
+                  type="password"
+                  value={passwordForm.currentPassword}
+                />
+                {passwordErrors.currentPassword && <span className="sp-field-error">{passwordErrors.currentPassword}</span>}
+              </div>
+              <div className="sp-field">
+                <label htmlFor="newPassword">Mật khẩu mới</label>
+                <input
+                  autoComplete="new-password"
+                  id="newPassword"
+                  maxLength={72}
+                  minLength={8}
+                  name="newPassword"
+                  onChange={handlePasswordFieldChange}
+                  placeholder="Tối thiểu 8 ký tự"
+                  type="password"
+                  value={passwordForm.newPassword}
+                />
+                {passwordErrors.newPassword && <span className="sp-field-error">{passwordErrors.newPassword}</span>}
+              </div>
+              <div className="sp-field">
+                <label htmlFor="confirmNewPassword">Xác nhận mật khẩu mới</label>
+                <input
+                  autoComplete="new-password"
+                  id="confirmNewPassword"
+                  maxLength={72}
+                  minLength={8}
+                  name="confirmNewPassword"
+                  onChange={handlePasswordFieldChange}
+                  placeholder="Nhập lại mật khẩu mới"
+                  type="password"
+                  value={passwordForm.confirmNewPassword}
+                />
+                {passwordErrors.confirmNewPassword && <span className="sp-field-error">{passwordErrors.confirmNewPassword}</span>}
+              </div>
+            </form>
+          </Card>
 
-            <div className="profile-session-summary">
-              <span>{sessionSummaryParts.length ? sessionSummaryParts.join(' · ') : 'Chưa có dữ liệu phiên'}</span>
-              {hiddenSessionCount > 0 ? (
+          {/* Sessions */}
+          <section className="sp-card" aria-labelledby="sessions-title">
+            <div className="sp-card-header">
+              <div className="sp-card-icon sp-card-icon--default">
+                <ShieldCheck size={16} />
+              </div>
+              <div className="sp-card-header-text">
+                <h2 id="sessions-title">Phiên đăng nhập</h2>
+                <p>Xem và thu hồi các thiết bị đang đăng nhập.</p>
+              </div>
+            </div>
+            <div className="sp-card-body">
+              <div className="sp-session-toolbar">
                 <button
-                  aria-controls="settings-session-list"
-                  aria-expanded={showAllSessions}
-                  className={showAllSessions ? 'profile-session-toggle is-open' : 'profile-session-toggle'}
-                  onClick={handleToggleSessionHistory}
+                  className="sp-btn sp-btn--ghost"
+                  disabled={isLoadingSessions || refreshCooldown > 0}
+                  onClick={() => void loadSessions()}
                   type="button"
                 >
-                  <ChevronDown size={16} />
-                  {showAllSessions ? 'Ẩn lịch sử' : `Xem thêm ${hiddenSessionCount} phiên`}
+                  <RefreshCw size={13} className={isLoadingSessions ? 'spin' : ''} />
+                  {isLoadingSessions ? 'Đang tải...' : refreshCooldown > 0 ? `Làm mới (${refreshCooldown}s)` : 'Làm mới'}
                 </button>
-              ) : null}
-            </div>
-
-            <div
-              className={showAllSessions ? 'profile-session-list is-expanded' : 'profile-session-list'}
-              id="settings-session-list"
-            >
-              {sessions.length === 0 && !isLoadingSessions ? (
-                <p className="profile-session-empty">Chưa có phiên đăng nhập nào!</p>
-              ) : null}
-              {sessionItems.map((session) => (
-                <article
-                  className={[
-                    'profile-session-item',
-                    session.revokedAt ? 'is-revoked' : '',
-                    session.viewGroup === 'history' ? 'is-history' : '',
-                    session.isCurrent ? 'is-current' : '',
-                    session.isCollapsible ? 'is-collapsible' : '',
-                    session.isCollapsible && !showAllSessions ? 'is-collapsed' : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                  key={session.id}
+                <button
+                  className="sp-btn sp-btn--danger"
+                  disabled={isRevokingOtherSessions || activeSessions.length === 0}
+                  onClick={confirmRevokeOtherSessions}
+                  type="button"
                 >
-                  <div className="profile-session-icon">
-                    <Laptop size={18} />
-                  </div>
-                  <div className="profile-session-main">
-                    <div className="profile-session-title-row">
-                      <strong>{getSessionTitle(session)}</strong>
-                      {session.isCurrent ? <span>Hiện tại</span> : null}
-                      {session.revokedAt ? <span>Đã thu hồi</span> : null}
-                    </div>
-                    <p>{session.userAgent || 'Không có thông tin trình duyệt!'}</p>
-                    <div className="profile-session-meta">
-                      <span>IP: {session.ipAddress || 'Không rõ!'}</span>
-                      <span>Tạo lúc: {formatDateTime(session.createdAt)}</span>
-                      <span>Hết hạn: {formatDateTime(session.expiresAt)}</span>
-                    </div>
-                  </div>
+                  <LogOut size={13} />
+                  {isRevokingOtherSessions ? 'Đang xử lý...' : 'Đăng xuất thiết bị khác'}
+                </button>
+              </div>
+
+              <div className="sp-session-summary">
+                <span>{sessionSummaryParts.length ? sessionSummaryParts.join(' · ') : 'Chưa có dữ liệu phiên'}</span>
+                {hiddenSessionCount > 0 && (
                   <button
-                    className="profile-session-revoke"
-                    disabled={Boolean(session.revokedAt) || revokingSessionId === session.id}
-                    onClick={() => confirmRevokeSession(session)}
+                    aria-controls="session-list-expanded"
+                    aria-expanded={showAllSessions}
+                    className="sp-toggle-link"
+                    onClick={handleToggleSessionHistory}
                     type="button"
                   >
-                    <LogOut size={16} />
-                    {revokingSessionId === session.id ? 'Đang thu hồi...' : 'Thu hồi'}
+                    <ChevronDown size={12} className={showAllSessions ? 'rotate-180' : ''} />
+                    {showAllSessions ? 'Ẩn lịch sử' : `Xem thêm ${hiddenSessionCount} phiên`}
                   </button>
-                </article>
-              ))}
-              {renderExpandedSessions ? (
-                <div
-                  aria-hidden={!showAllSessions}
-                  className={
-                    showAllSessions
-                      ? 'profile-session-expansion is-open'
-                      : 'profile-session-expansion'
-                  }
-                  style={{ maxHeight: showAllSessions ? expandedSessionHeight : 0 }}
-                >
-                  <div className="profile-session-expansion-inner" ref={expandedSessionsRef}>
-                    {expandedSessionItems.map((session) => (
-                      <article
-                        className={[
-                          'profile-session-item',
-                          session.revokedAt ? 'is-revoked' : '',
-                          session.viewGroup === 'history' ? 'is-history' : '',
-                          session.isCurrent ? 'is-current' : '',
-                          session.isCollapsible ? 'is-collapsible' : '',
-                        ]
-                          .filter(Boolean)
-                          .join(' ')}
-                        key={session.id}
-                      >
-                        <div className="profile-session-icon">
-                          <Laptop size={18} />
-                        </div>
-                        <div className="profile-session-main">
-                          <div className="profile-session-title-row">
-                            <strong>{getSessionTitle(session)}</strong>
-                            {session.isCurrent ? <span>Hiện tại</span> : null}
-                            {session.revokedAt ? <span>Đã thu hồi</span> : null}
-                          </div>
-                          <p>{session.userAgent || 'Không có thông tin trình duyệt!'}</p>
-                          <div className="profile-session-meta">
-                            <span>IP: {session.ipAddress || 'Không rõ!'}</span>
-                            <span>Tạo lúc: {formatDateTime(session.createdAt)}</span>
-                            <span>Hết hạn: {formatDateTime(session.expiresAt)}</span>
-                          </div>
-                        </div>
-                        <button
-                          className="profile-session-revoke"
-                          disabled={Boolean(session.revokedAt) || revokingSessionId === session.id}
-                          onClick={() => confirmRevokeSession(session)}
-                          tabIndex={showAllSessions ? undefined : -1}
-                          type="button"
-                        >
-                          <LogOut size={16} />
-                          {revokingSessionId === session.id ? 'Đang thu hồi...' : 'Thu hồi'}
-                        </button>
-                      </article>
-                    ))}
+                )}
+              </div>
+
+              <div className="sp-session-list">
+                {sessions.length === 0 && !isLoadingSessions && (
+                  <p className="sp-session-empty">Chưa có phiên đăng nhập nào!</p>
+                )}
+                {sessionItems.map((session) => (
+                  <SessionItem
+                    key={session.id}
+                    session={session}
+                    isRevoking={revokingSessionId === session.id}
+                    showAllSessions={showAllSessions}
+                    onRevoke={confirmRevokeSession}
+                  />
+                ))}
+
+                {renderExpandedSessions && (
+                  <div
+                    aria-hidden={!showAllSessions}
+                    className={`sp-session-expansion${showAllSessions ? ' sp-session-expansion--open' : ''}`}
+                    id="session-list-expanded"
+                    style={{ maxHeight: showAllSessions ? expandedSessionHeight : 0 }}
+                  >
+                    <div className="sp-session-expansion-inner" ref={expandedSessionsRef}>
+                      {expandedSessionItems.map((session) => (
+                        <SessionItem
+                          key={session.id}
+                          session={session}
+                          isRevoking={revokingSessionId === session.id}
+                          showAllSessions={showAllSessions}
+                          onRevoke={confirmRevokeSession}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ) : null}
-              {/* {!showAllSessions && hiddenSessionCount > 0 ? (
-                <p className="profile-session-empty">
-                  Đã ẩn {hiddenSessionCount} phiên cũ để giao diện gọn hơn.
-                </p>
-              ) : null} */}
+                )}
+              </div>
             </div>
           </section>
 
-          <form className="profile-form settings-card profile-danger-form" onSubmit={handleDeleteAccountSubmit}>
-            <div className="profile-form-heading profile-danger-heading">
-              <AlertTriangle size={18} />
-              <div>
-                <h2>Xoá tài khoản</h2>
-                <p>Hành động này sẽ vô hiệu hoá tài khoản, xoá thông tin hồ sơ và đăng xuất khỏi mọi phiên đăng nhập.</p>
+          {/* Delete account */}
+          <Card
+            icon={<AlertTriangle size={16} />}
+            iconVariant="danger"
+            title="Xóa tài khoản"
+            description="Vô hiệu hóa tài khoản, xóa hồ sơ và đăng xuất mọi phiên. Hành động không thể hoàn tác."
+            dangerBorder
+            footer={
+              <button
+                className="sp-btn sp-btn--danger"
+                disabled={isDeletingAccount || (!deleteForm.password && !deleteForm.confirmationText)}
+                form="delete-form"
+                type="submit"
+              >
+                <Trash2 size={14} />
+                {isDeletingAccount ? 'Đang xóa...' : 'Xóa tài khoản'}
+              </button>
+            }
+          >
+            <form id="delete-form" className="sp-field-group" onSubmit={handleDeleteAccountSubmit}>
+              <div className="sp-field">
+                <label htmlFor="delete-password">Mật khẩu hiện tại</label>
+                <input
+                  autoComplete="current-password"
+                  id="delete-password"
+                  name="password"
+                  onChange={handleDeleteFieldChange}
+                  placeholder="Xác nhận danh tính"
+                  type="password"
+                  value={deleteForm.password}
+                />
+                {deleteErrors.password && <span className="sp-field-error">{deleteErrors.password}</span>}
               </div>
-            </div>
-
-            <label className="profile-field">
-              <span><KeyRound size={16} /> Mật khẩu hiện tại</span>
-              <input
-                autoComplete="current-password"
-                name="password"
-                onChange={handleDeleteFieldChange}
-                placeholder="Nhập mật khẩu hiện tại"
-                type="password"
-                value={deleteForm.password}
-              />
-              {deleteErrors.password ? (
-                <span className="profile-field-error">{deleteErrors.password}</span>
-              ) : null}
-            </label>
-
-            <label className="profile-field">
-              <span><Trash2 size={16} /> Nhập XOA TAI KHOAN</span>
-              <input
-                autoComplete="off"
-                name="confirmationText"
-                onChange={handleDeleteFieldChange}
-                placeholder="XOA TAI KHOAN"
-                value={deleteForm.confirmationText}
-              />
-              {deleteErrors.confirmationText ? (
-                <span className="profile-field-error">{deleteErrors.confirmationText}</span>
-              ) : null}
-            </label>
-
-            <button
-              className="profile-save-button profile-delete-button"
-              disabled={isDeletingAccount || (!deleteForm.password && !deleteForm.confirmationText)}
-              type="submit"
-            >
-              <Trash2 size={18} />
-              {isDeletingAccount ? 'Đang xoá tài khoản...' : 'Xoá tài khoản'}
-            </button>
-          </form>
+              <div className="sp-field">
+                <label htmlFor="delete-confirm">Nhập XOA TAI KHOAN để xác nhận</label>
+                <input
+                  autoComplete="off"
+                  id="delete-confirm"
+                  name="confirmationText"
+                  onChange={handleDeleteFieldChange}
+                  placeholder="XOA TAI KHOAN"
+                  value={deleteForm.confirmationText}
+                />
+                {deleteErrors.confirmationText && <span className="sp-field-error">{deleteErrors.confirmationText}</span>}
+              </div>
+            </form>
+          </Card>
         </div>
       </div>
 
