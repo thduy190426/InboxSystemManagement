@@ -498,35 +498,37 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
               {showActivityStatus ? <Eye size={18} /> : <EyeOff size={18} />}
               <div>
                 <h2>Quyền riêng tư</h2>
-                <p>Cho phép người khác nhìn thấy trạng thái Online và thời điểm hoạt động gần nhất của bạn.</p>
+                <p>Quản lý trạng thái hoạt động và thông báo đã xem tin nhắn của bạn.</p>
               </div>
             </div>
 
-            <label className="privacy-toggle-row">
-              <span className="privacy-toggle-copy">
-                <strong>Hiển thị Last seen/Online</strong>
-                <small>{showActivityStatus ? 'Bạn bè có thể thấy bạn đang online.' : 'Người khác sẽ thấy bạn ngoại tuyến.'}</small>
-              </span>
-              <input
-                checked={showActivityStatus}
-                disabled={isSavingPrivacy}
-                onChange={(event) => setShowActivityStatus(event.target.checked)}
-                type="checkbox"
-              />
-            </label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
+              <label className="privacy-toggle-row">
+                <span className="privacy-toggle-copy">
+                  <strong>Hiển thị Last seen/Online</strong>
+                  <small>{showActivityStatus ? 'Bạn bè có thể thấy bạn đang online.' : 'Người khác sẽ thấy bạn ngoại tuyến.'}</small>
+                </span>
+                <input
+                  checked={showActivityStatus}
+                  disabled={isSavingPrivacy}
+                  onChange={(event) => setShowActivityStatus(event.target.checked)}
+                  type="checkbox"
+                />
+              </label>
 
-            <label className="privacy-toggle-row">
-              <span className="privacy-toggle-copy">
-                <strong>Hiển thị thông báo đã đọc</strong>
-                <small>{showReadReceipts ? 'Đối phương sẽ biết khi bạn đã xem tin nhắn của họ.' : 'Người khác sẽ không biết bạn đã xem tin nhắn.'}</small>
-              </span>
-              <input
-                checked={showReadReceipts}
-                disabled={isSavingPrivacy}
-                onChange={(event) => setShowReadReceipts(event.target.checked)}
-                type="checkbox"
-              />
-            </label>
+              <label className="privacy-toggle-row">
+                <span className="privacy-toggle-copy">
+                  <strong>Hiển thị thông báo đã đọc</strong>
+                  <small>{showReadReceipts ? 'Đối phương sẽ biết khi bạn đã xem tin nhắn của họ.' : 'Người khác sẽ không biết bạn đã xem tin nhắn.'}</small>
+                </span>
+                <input
+                  checked={showReadReceipts}
+                  disabled={isSavingPrivacy}
+                  onChange={(event) => setShowReadReceipts(event.target.checked)}
+                  type="checkbox"
+                />
+              </label>
+            </div>
 
             <button
               className="profile-save-button"
