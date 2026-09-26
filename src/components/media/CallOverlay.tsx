@@ -297,7 +297,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
       playToneSequence(CONNECTED_TONE_NOTES, 0.08)
     }
 
-    if (callStatus === 'ringing' && isCaller) {
+    if (callStatus === 'ringing') {
       startRingbackTone()
     } else {
       stopRingbackTone()
@@ -795,8 +795,8 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
         audio.loop = true
         audio.play().catch(() => undefined)
         customRingtoneRef.current = audio
-        return
       }
+      return
     }
 
     if (ringbackToneRef.current || typeof AudioContext === 'undefined') {
