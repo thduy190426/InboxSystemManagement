@@ -42,6 +42,7 @@ import {
   type MessageReportStatus,
 } from '../../services/api/adminApi'
 import type { AuthUser } from '../../services/api/authApi'
+import { AvatarFallback } from '../ui/AvatarFallback'
 import { ConfirmDialog, type ConfirmDialogState } from '../ui/ConfirmDialog'
 
 type AdminPageProps = {
@@ -623,7 +624,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
         <tr key={user.id}>
           <td>
             <div className="user-cell">
-              <div className="user-avatar">{user.name.charAt(0).toUpperCase()}</div>
+              <AvatarFallback className="user-avatar" name={user.fullName} src={user.avatarUrl} />
               <div>
                 <strong>{user.name}</strong>
                 <span>{user.email}</span>
@@ -1203,7 +1204,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
               <X size={18} />
             </button>
             <div className="admin-edit-hero">
-              <div className="admin-edit-avatar">{visibleEditUser.user.name.charAt(0).toUpperCase()}</div>
+              <AvatarFallback className="admin-edit-avatar" name={visibleEditUser.user.fullName} src={visibleEditUser.user.avatarUrl} />
               <div>
                 <span className={`admin-lock-pill ${visibleEditUser.user.isActive ? 'is-open' : 'is-locked'}`}>
                   {visibleEditUser.user.isActive ? <Unlock size={13} /> : <Lock size={13} />}
