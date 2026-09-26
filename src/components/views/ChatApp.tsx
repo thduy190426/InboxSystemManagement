@@ -1054,8 +1054,8 @@ export function ChatApp({
         newWidth = 250 + (deltaX - 10)
       } else if (newWidth < 250) {
         newWidth = 100
-      } else if (newWidth > 600) {
-        newWidth = 600
+      } else if (newWidth > 350) {
+        newWidth = 350
       }
       
       setInboxWidth(newWidth)
