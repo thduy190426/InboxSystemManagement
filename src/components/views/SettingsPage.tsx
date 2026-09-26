@@ -231,6 +231,7 @@ export function SettingsPage({
 
   // Privacy toggles
   const [showActivityStatus, setShowActivityStatus] = useState(currentUser?.showActivityStatus ?? true)
+  const [showTypingIndicator, setShowTypingIndicator] = useState(currentUser?.showTypingIndicator ?? true)
   const [showReadReceipts, setShowReadReceipts] = useState(currentUser?.showReadReceipts ?? true)
   const [showPhone, setShowPhone] = useState(currentUser?.showPhone ?? true)
   const [showAddress, setShowAddress] = useState(currentUser?.showAddress ?? true)
@@ -279,6 +280,7 @@ export function SettingsPage({
 
   useEffect(() => {
     setShowActivityStatus(currentUser?.showActivityStatus ?? true)
+    setShowTypingIndicator(currentUser?.showTypingIndicator ?? true)
     setShowReadReceipts(currentUser?.showReadReceipts ?? true)
     setShowPhone(currentUser?.showPhone ?? true)
     setShowAddress(currentUser?.showAddress ?? true)
@@ -287,7 +289,7 @@ export function SettingsPage({
     setShowBio(currentUser?.showBio ?? true)
     setShowStatusMessage(currentUser?.showStatusMessage ?? true)
   }, [
-    currentUser?.showActivityStatus, currentUser?.showReadReceipts,
+    currentUser?.showActivityStatus, currentUser?.showTypingIndicator, currentUser?.showReadReceipts,
     currentUser?.showPhone, currentUser?.showAddress, currentUser?.showGender,
     currentUser?.showBirthDate, currentUser?.showBio, currentUser?.showStatusMessage,
   ])
@@ -374,12 +376,13 @@ export function SettingsPage({
   }
 
   async function handlePrivacyChange(
-    key: 'showActivityStatus' | 'showReadReceipts' | 'showPhone' | 'showAddress' |
+    key: 'showActivityStatus' | 'showTypingIndicator' | 'showReadReceipts' | 'showPhone' | 'showAddress' |
          'showGender' | 'showBirthDate' | 'showBio' | 'showStatusMessage',
     value: boolean,
   ) {
     const setters: Record<typeof key, (v: boolean) => void> = {
       showActivityStatus: setShowActivityStatus,
+      showTypingIndicator: setShowTypingIndicator,
       showReadReceipts: setShowReadReceipts,
       showPhone: setShowPhone,
       showAddress: setShowAddress,
@@ -392,6 +395,7 @@ export function SettingsPage({
 
     const payload = {
       showActivityStatus: key === 'showActivityStatus' ? value : showActivityStatus,
+      showTypingIndicator: key === 'showTypingIndicator' ? value : showTypingIndicator,
       showReadReceipts: key === 'showReadReceipts' ? value : showReadReceipts,
       showPhone: key === 'showPhone' ? value : showPhone,
       showAddress: key === 'showAddress' ? value : showAddress,
@@ -544,6 +548,13 @@ export function SettingsPage({
                 checked={showActivityStatus}
                 disabled={isSavingPrivacy}
                 onChange={(v) => handlePrivacyChange('showActivityStatus', v)}
+              />
+              <ToggleRow
+                label="Hiển thị chỉ báo đang nhập"
+                description={showTypingIndicator ? 'Người khác sẽ biết khi bạn đang gõ tin nhắn.' : 'Ẩn trạng thái đang gõ tin nhắn.'}
+                checked={showTypingIndicator}
+                disabled={isSavingPrivacy}
+                onChange={(v) => handlePrivacyChange('showTypingIndicator', v)}
               />
               <ToggleRow
                 label="Hiển thị đã đọc"
