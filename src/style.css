@@ -9370,9 +9370,9 @@ html.dark .message-search-button.is-active {
 }
 
 .sp-page {
-  max-width: 1080px;
+  max-width: 1400px;
   margin: 0;
-  padding: 48px 24px 80px;
+  padding: 56px 40px 96px;
 }
 
 .sp-page-header {
@@ -9392,7 +9392,7 @@ html.dark .message-search-button.is-active {
 }
 
 .sp-page-header h1 {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 600;
   color: var(--sp-text, #e8eaf2);
   letter-spacing: -0.02em;
@@ -9400,8 +9400,8 @@ html.dark .message-search-button.is-active {
 
 .sp-layout {
   display: grid;
-  grid-template-columns: 240px 1fr;
-  gap: 40px;
+  grid-template-columns: 280px 1fr;
+  gap: 56px;
   align-items: start;
 }
 
@@ -9416,14 +9416,14 @@ html.dark .message-search-button.is-active {
 .sp-nav-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   width: 100%;
-  padding: 12px 16px;
+  padding: 16px 20px;
   border: none;
   border-radius: 8px;
   background: none;
   font-family: inherit;
-  font-size: 14.5px;
+  font-size: 16px;
   font-weight: 500;
   color: var(--sp-text-muted, #7c8299);
   cursor: pointer;
@@ -9459,7 +9459,7 @@ html.dark .message-search-button.is-active {
 .sp-main {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 32px;
 }
 
 .sp-card {
@@ -9476,15 +9476,15 @@ html.dark .message-search-button.is-active {
 .sp-card-header {
   display: flex;
   align-items: flex-start;
-  gap: 16px;
-  padding: 24px 30px;
+  gap: 20px;
+  padding: 32px 40px;
   border-bottom: 1px solid var(--sp-border, rgba(255, 255, 255, 0.07));
 }
 
 .sp-card-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -9507,30 +9507,30 @@ html.dark .message-search-button.is-active {
 }
 
 .sp-card-header-text h2 {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--sp-text, #e8eaf2);
   letter-spacing: -0.01em;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .sp-card-header-text p {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--sp-text-muted, #7c8299);
   line-height: 1.4;
 }
 
 .sp-card-body {
-  padding: 24px 30px;
+  padding: 32px 40px;
 }
 
 .sp-card-footer {
-  padding: 16px 30px;
+  padding: 20px 40px;
   border-top: 1px solid var(--sp-border, rgba(255, 255, 255, 0.07));
   background: var(--sp-footer-bg);
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 16px;
 }
 
 .sp-toggle-group {
@@ -9541,8 +9541,8 @@ html.dark .message-search-button.is-active {
 .sp-toggle-row {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px 0;
+  gap: 20px;
+  padding: 20px 0;
   border-bottom: 1px solid var(--sp-border, rgba(255, 255, 255, 0.07));
   cursor: pointer;
 }
@@ -9563,22 +9563,22 @@ html.dark .message-search-button.is-active {
 
 .sp-toggle-text strong {
   display: block;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
   color: var(--sp-text, #e8eaf2);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .sp-toggle-text small {
-  font-size: 13.5px;
+  font-size: 14.5px;
   color: var(--sp-text-muted, #7c8299);
   line-height: 1.4;
 }
 
 .sp-toggle-switch {
   position: relative;
-  width: 40px;
-  height: 22px;
+  width: 52px;
+  height: 28px;
   flex-shrink: 0;
 }
 
@@ -9601,10 +9601,10 @@ html.dark .message-search-button.is-active {
 
 .sp-toggle-thumb {
   position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 14px;
-  height: 14px;
+  top: 4px;
+  left: 4px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: var(--sp-text-dim, #4a5068);
   transition: transform 0.18s, background 0.18s;
@@ -9616,7 +9616,7 @@ html.dark .message-search-button.is-active {
 }
 
 .sp-toggle-switch input:checked ~ .sp-toggle-track .sp-toggle-thumb {
-  transform: translateX(18px);
+  transform: translateX(24px);
   background: #fff;
 }
 
@@ -9638,7 +9638,7 @@ html.dark .message-search-button.is-active {
 }
 
 .sp-field label {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -9649,8 +9649,8 @@ html.dark .message-search-button.is-active {
   background: var(--sp-surface-2, #1e2333);
   border: 1px solid var(--sp-border, rgba(255, 255, 255, 0.07));
   border-radius: 8px;
-  padding: 12px 16px;
-  font-size: 15px;
+  padding: 14px 20px;
+  font-size: 16px;
   font-family: inherit;
   color: var(--sp-text, #e8eaf2);
   outline: none;
@@ -9675,10 +9675,10 @@ html.dark .message-search-button.is-active {
 .sp-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
+  gap: 10px;
+  padding: 12px 24px;
   border-radius: 8px;
-  font-size: 14.5px;
+  font-size: 15.5px;
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
@@ -9784,11 +9784,11 @@ html.dark .message-search-button.is-active {
 .sp-session-item {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
+  gap: 20px;
+  padding: 20px 24px;
   background: var(--sp-surface-2, #1e2333);
   border: 1px solid var(--sp-border, rgba(255, 255, 255, 0.07));
-  border-radius: 12px;
+  border-radius: 14px;
   transition: border-color 0.14s;
 }
 
@@ -9801,9 +9801,9 @@ html.dark .message-search-button.is-active {
 }
 
 .sp-session-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
   background: var(--sp-icon-bg);
   display: flex;
   align-items: center;
@@ -9825,15 +9825,15 @@ html.dark .message-search-button.is-active {
 }
 
 .sp-session-title-row strong {
-  font-size: 14.5px;
+  font-size: 15.5px;
   font-weight: 500;
   color: var(--sp-text, #e8eaf2);
 }
 
 .sp-badge {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
-  padding: 4px 10px;
+  padding: 4px 12px;
   border-radius: 99px;
 }
 
@@ -9851,7 +9851,7 @@ html.dark .message-search-button.is-active {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--sp-text-dim, #4a5068);
 }
 
