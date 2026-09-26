@@ -795,6 +795,16 @@ export function ChatPanel({
       if (!showReadReceipts) {
         return 'Đã nhận!'
       }
+      
+      const timeToParse = message.readAt || (message.seenAt ? message.updatedAt : null)
+      if (timeToParse) {
+        const readDate = new Date(timeToParse)
+        if (!Number.isNaN(readDate.getTime())) {
+          const formattedTime = readDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+          return `Đã xem lúc ${formattedTime}!`
+        }
+      }
+      
       return message.seenAt ? `Đã xem lúc ${message.seenAt}!` : 'Đã xem!'
     }
 
