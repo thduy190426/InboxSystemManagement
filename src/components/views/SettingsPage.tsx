@@ -502,7 +502,7 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
               </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', gridColumn: '1 / -1' }}>
               <label className="privacy-toggle-row">
                 <span className="privacy-toggle-copy">
                   <strong>Hiển thị Last seen/Online</strong>
