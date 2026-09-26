@@ -621,11 +621,14 @@ export function ChatApp({
         return
       }
 
+      const isCustomSoundSender = notification.title === 'Trần Hoàng Duy' || notification.title === 'Bảo Nghi'
+
       showDedupedBrowserNotification(`notification:${notification.id}`, notification.title, {
         body: notification.body,
         url: notification.conversationId
           ? toAppPath({ view: 'chat', conversationId: notification.conversationId })
           : toAppPath({ view: 'notifications' }),
+        silent: isCustomSoundSender,
       })
     })
   }
