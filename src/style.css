@@ -2995,9 +2995,14 @@ h3 {
   grid-row: 1;
 }
 
-.profile-password-form {
+.profile-visibility-form {
   grid-column: 1;
   grid-row: 2;
+}
+
+.profile-password-form {
+  grid-column: 1;
+  grid-row: 3;
 }
 
 .settings-layout {
@@ -6891,6 +6896,7 @@ html.dark .scroll-to-latest-button:focus-visible {
   }
 
   .profile-privacy-form,
+  .profile-visibility-form,
   .profile-password-form,
   .profile-sessions-form,
   .profile-danger-form {

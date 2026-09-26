@@ -584,7 +584,7 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
           </div>
 
           <div 
-            className="settings-card profile-privacy-form" 
+            className="settings-card profile-visibility-form" 
             style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px', marginTop: '16px' }}
           >
             <div className="profile-form-heading">
