@@ -493,7 +493,12 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
         </aside>
 
         <div className="settings-main">
-          <form ref={privacyRef} className="profile-form settings-card profile-privacy-form" onSubmit={handlePrivacySubmit}>
+          <form 
+            ref={privacyRef} 
+            className="settings-card profile-privacy-form" 
+            onSubmit={handlePrivacySubmit}
+            style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px' }}
+          >
             <div className="profile-form-heading">
               {showActivityStatus ? <Eye size={18} /> : <EyeOff size={18} />}
               <div>
@@ -502,7 +507,7 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
               </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', gridColumn: '1 / -1' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <label className="privacy-toggle-row">
                 <span className="privacy-toggle-copy">
                   <strong>Hiển thị Last seen/Online</strong>
@@ -534,6 +539,7 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
               className="profile-save-button"
               disabled={isSavingPrivacy || (showActivityStatus === (currentUser?.showActivityStatus ?? true) && showReadReceipts === (currentUser?.showReadReceipts ?? true))}
               type="submit"
+              style={{ alignSelf: 'flex-start', marginTop: '4px' }}
             >
               {showActivityStatus ? <Eye size={18} /> : <EyeOff size={18} />}
               {isSavingPrivacy ? 'Đang lưu...' : 'Lưu quyền riêng tư'}
