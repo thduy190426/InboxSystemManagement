@@ -5,6 +5,7 @@ import {
   ChevronDown,
   Eye,
   EyeOff,
+  IdCard,
   KeyRound,
   Laptop,
   LogOut,
@@ -152,6 +153,12 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
   const [deleteErrors, setDeleteErrors] = useState<Partial<Record<keyof DeleteAccountPayload, string>>>({})
   const [showActivityStatus, setShowActivityStatus] = useState(currentUser?.showActivityStatus ?? true)
   const [showReadReceipts, setShowReadReceipts] = useState(currentUser?.showReadReceipts ?? true)
+  const [showPhone, setShowPhone] = useState(currentUser?.showPhone ?? true)
+  const [showAddress, setShowAddress] = useState(currentUser?.showAddress ?? true)
+  const [showGender, setShowGender] = useState(currentUser?.showGender ?? true)
+  const [showBirthDate, setShowBirthDate] = useState(currentUser?.showBirthDate ?? true)
+  const [showBio, setShowBio] = useState(currentUser?.showBio ?? true)
+  const [showStatusMessage, setShowStatusMessage] = useState(currentUser?.showStatusMessage ?? true)
   const [showAllSessions, setShowAllSessions] = useState(false)
   const [renderExpandedSessions, setRenderExpandedSessions] = useState(false)
   const [expandedSessionHeight, setExpandedSessionHeight] = useState(0)
@@ -217,7 +224,22 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
   useEffect(() => {
     setShowActivityStatus(currentUser?.showActivityStatus ?? true)
     setShowReadReceipts(currentUser?.showReadReceipts ?? true)
-  }, [currentUser?.showActivityStatus, currentUser?.showReadReceipts])
+    setShowPhone(currentUser?.showPhone ?? true)
+    setShowAddress(currentUser?.showAddress ?? true)
+    setShowGender(currentUser?.showGender ?? true)
+    setShowBirthDate(currentUser?.showBirthDate ?? true)
+    setShowBio(currentUser?.showBio ?? true)
+    setShowStatusMessage(currentUser?.showStatusMessage ?? true)
+  }, [
+    currentUser?.showActivityStatus,
+    currentUser?.showReadReceipts,
+    currentUser?.showPhone,
+    currentUser?.showAddress,
+    currentUser?.showGender,
+    currentUser?.showBirthDate,
+    currentUser?.showBio,
+    currentUser?.showStatusMessage,
+  ])
 
   useEffect(() => {
     if (showAllSessions) {
@@ -355,13 +377,25 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
     }
   }
 
-  async function handlePrivacyChange(key: 'showActivityStatus' | 'showReadReceipts', value: boolean) {
+  async function handlePrivacyChange(key: 'showActivityStatus' | 'showReadReceipts' | 'showPhone' | 'showAddress' | 'showGender' | 'showBirthDate' | 'showBio' | 'showStatusMessage', value: boolean) {
     if (key === 'showActivityStatus') setShowActivityStatus(value)
     if (key === 'showReadReceipts') setShowReadReceipts(value)
+    if (key === 'showPhone') setShowPhone(value)
+    if (key === 'showAddress') setShowAddress(value)
+    if (key === 'showGender') setShowGender(value)
+    if (key === 'showBirthDate') setShowBirthDate(value)
+    if (key === 'showBio') setShowBio(value)
+    if (key === 'showStatusMessage') setShowStatusMessage(value)
 
     const payload = {
       showActivityStatus: key === 'showActivityStatus' ? value : showActivityStatus,
       showReadReceipts: key === 'showReadReceipts' ? value : showReadReceipts,
+      showPhone: key === 'showPhone' ? value : showPhone,
+      showAddress: key === 'showAddress' ? value : showAddress,
+      showGender: key === 'showGender' ? value : showGender,
+      showBirthDate: key === 'showBirthDate' ? value : showBirthDate,
+      showBio: key === 'showBio' ? value : showBio,
+      showStatusMessage: key === 'showStatusMessage' ? value : showStatusMessage,
     }
 
     try {
@@ -373,6 +407,12 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
       pushToast(error instanceof Error ? error.message : 'Không thể cập nhật quyền riêng tư!', 'error')
       if (key === 'showActivityStatus') setShowActivityStatus(!value)
       if (key === 'showReadReceipts') setShowReadReceipts(!value)
+      if (key === 'showPhone') setShowPhone(!value)
+      if (key === 'showAddress') setShowAddress(!value)
+      if (key === 'showGender') setShowGender(!value)
+      if (key === 'showBirthDate') setShowBirthDate(!value)
+      if (key === 'showBio') setShowBio(!value)
+      if (key === 'showStatusMessage') setShowStatusMessage(!value)
     } finally {
       setIsSavingPrivacy(false)
     }
@@ -537,6 +577,99 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
                   checked={showReadReceipts}
                   disabled={isSavingPrivacy}
                   onChange={(event) => handlePrivacyChange('showReadReceipts', event.target.checked)}
+                  type="checkbox"
+                />
+              </label>
+            </div>
+          </div>
+
+          <div 
+            className="settings-card profile-privacy-form" 
+            style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px', marginTop: '16px' }}
+          >
+            <div className="profile-form-heading">
+              <IdCard size={18} />
+              <div>
+                <h2>Hiển thị trên hồ sơ</h2>
+                <p>Tùy chỉnh thông tin cá nhân sẽ hiển thị với người khác trong danh bạ.</p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <label className="privacy-toggle-row">
+                <span className="privacy-toggle-copy">
+                  <strong>Số điện thoại</strong>
+                  <small>{showPhone ? 'Mọi người có thể xem số điện thoại của bạn.' : 'Số điện thoại của bạn sẽ được ẩn.'}</small>
+                </span>
+                <input
+                  checked={showPhone}
+                  disabled={isSavingPrivacy}
+                  onChange={(event) => handlePrivacyChange('showPhone', event.target.checked)}
+                  type="checkbox"
+                />
+              </label>
+
+              <label className="privacy-toggle-row">
+                <span className="privacy-toggle-copy">
+                  <strong>Trạng thái cá nhân</strong>
+                  <small>{showStatusMessage ? 'Hiển thị trạng thái cá nhân trên hồ sơ.' : 'Ẩn trạng thái cá nhân của bạn.'}</small>
+                </span>
+                <input
+                  checked={showStatusMessage}
+                  disabled={isSavingPrivacy}
+                  onChange={(event) => handlePrivacyChange('showStatusMessage', event.target.checked)}
+                  type="checkbox"
+                />
+              </label>
+
+              <label className="privacy-toggle-row">
+                <span className="privacy-toggle-copy">
+                  <strong>Địa chỉ</strong>
+                  <small>{showAddress ? 'Mọi người có thể xem địa chỉ của bạn.' : 'Địa chỉ của bạn sẽ được ẩn.'}</small>
+                </span>
+                <input
+                  checked={showAddress}
+                  disabled={isSavingPrivacy}
+                  onChange={(event) => handlePrivacyChange('showAddress', event.target.checked)}
+                  type="checkbox"
+                />
+              </label>
+
+              <label className="privacy-toggle-row">
+                <span className="privacy-toggle-copy">
+                  <strong>Giới tính</strong>
+                  <small>{showGender ? 'Hiển thị giới tính của bạn.' : 'Ẩn giới tính của bạn.'}</small>
+                </span>
+                <input
+                  checked={showGender}
+                  disabled={isSavingPrivacy}
+                  onChange={(event) => handlePrivacyChange('showGender', event.target.checked)}
+                  type="checkbox"
+                />
+              </label>
+
+              <label className="privacy-toggle-row">
+                <span className="privacy-toggle-copy">
+                  <strong>Ngày sinh</strong>
+                  <small>{showBirthDate ? 'Hiển thị ngày sinh của bạn.' : 'Ẩn ngày sinh của bạn.'}</small>
+                </span>
+                <input
+                  checked={showBirthDate}
+                  disabled={isSavingPrivacy}
+                  onChange={(event) => handlePrivacyChange('showBirthDate', event.target.checked)}
+                  type="checkbox"
+                />
+              </label>
+
+              <label className="privacy-toggle-row">
+                <span className="privacy-toggle-copy">
+                  <strong>Phần giới thiệu (Bio)</strong>
+                  <small>{showBio ? 'Hiển thị phần giới thiệu bản thân.' : 'Ẩn phần giới thiệu bản thân.'}</small>
+                </span>
+                <input
+                  checked={showBio}
+                  disabled={isSavingPrivacy}
+                  onChange={(event) => handlePrivacyChange('showBio', event.target.checked)}
                   type="checkbox"
                 />
               </label>

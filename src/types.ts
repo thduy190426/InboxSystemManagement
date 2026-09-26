@@ -218,6 +218,12 @@ export type ContactUser = {
   lastSeenAt?: string | null
   onlineSince?: string | null
   showActivityStatus?: boolean
+  showPhone?: boolean
+  showAddress?: boolean
+  showGender?: boolean
+  showBirthDate?: boolean
+  showBio?: boolean
+  showStatusMessage?: boolean
   createdAt?: string | null
   updatedAt?: string | null
   contactCreatedAt?: string | null

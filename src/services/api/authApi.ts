@@ -20,6 +20,12 @@ export type AuthUser = {
   onlineSince?: string | null
   showActivityStatus: boolean
   showReadReceipts?: boolean
+  showPhone?: boolean
+  showAddress?: boolean
+  showGender?: boolean
+  showBirthDate?: boolean
+  showBio?: boolean
+  showStatusMessage?: boolean
   createdAt: string
   updatedAt: string
 }

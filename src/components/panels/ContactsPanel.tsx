@@ -496,42 +496,51 @@ export function ContactsPanel({
           </header>
 
           <div className="contact-profile-summary">
-
-            <div>
-              <Phone size={16} />
-              <span>
-                <strong>Số điện thoại</strong>
-                {user.phone || 'Chưa có số điện thoại!'}
-              </span>
-            </div>
-            <div>
-              <User size={16} />
-              <span>
-                <strong>Trạng thái</strong>
-                {user.statusMessage || 'Chưa có trạng thái cá nhân!'}
-              </span>
-            </div>
-            <div>
-              <MapPin size={16} />
-              <span>
-                <strong>Địa chỉ</strong>
-                {user.address || 'Chưa có địa chỉ!'}
-              </span>
-            </div>
-            <div>
-              <User size={16} />
-              <span>
-                <strong>Giới tính</strong>
-                {getGenderLabel(user.gender)}
-              </span>
-            </div>
-            <div>
-              <CalendarDays size={16} />
-              <span>
-                <strong>Ngày sinh</strong>
-                {formatProfileDate(user.birthDate) || 'Chưa có ngày sinh!'}
-              </span>
-            </div>
+            {user.showPhone !== false && (
+              <div>
+                <Phone size={16} />
+                <span>
+                  <strong>Số điện thoại</strong>
+                  {user.phone || 'Chưa có số điện thoại!'}
+                </span>
+              </div>
+            )}
+            {user.showStatusMessage !== false && (
+              <div>
+                <User size={16} />
+                <span>
+                  <strong>Trạng thái</strong>
+                  {user.statusMessage || 'Chưa có trạng thái cá nhân!'}
+                </span>
+              </div>
+            )}
+            {user.showAddress !== false && (
+              <div>
+                <MapPin size={16} />
+                <span>
+                  <strong>Địa chỉ</strong>
+                  {user.address || 'Chưa có địa chỉ!'}
+                </span>
+              </div>
+            )}
+            {user.showGender !== false && (
+              <div>
+                <User size={16} />
+                <span>
+                  <strong>Giới tính</strong>
+                  {getGenderLabel(user.gender)}
+                </span>
+              </div>
+            )}
+            {user.showBirthDate !== false && (
+              <div>
+                <CalendarDays size={16} />
+                <span>
+                  <strong>Ngày sinh</strong>
+                  {formatProfileDate(user.birthDate) || 'Chưa có ngày sinh!'}
+                </span>
+              </div>
+            )}
             <div>
               <Clock size={16} />
               <span>
@@ -548,10 +557,12 @@ export function ContactsPanel({
             </div>
           </div>
 
-          <div className="contact-profile-bio">
-            <strong>Giới thiệu</strong>
-            <p>{user.bio || 'Người dùng này chưa thêm phần giới thiệu!'}</p>
-          </div>
+          {user.showBio !== false && (
+            <div className="contact-profile-bio">
+              <strong>Giới thiệu</strong>
+              <p>{user.bio || 'Người dùng này chưa thêm phần giới thiệu!'}</p>
+            </div>
+          )}
         </section>
       </div>
     )
@@ -564,7 +575,13 @@ export function ContactsPanel({
         <div>
           <strong>{user.nickname || user.fullName}</strong>
           <span>{user.handle ? `@${user.handle}` : 'Chưa có định danh'}</span>
-          <small>{user.statusMessage || user.bio || 'Người dùng'}</small>
+          <small>
+            {user.showStatusMessage !== false && user.statusMessage
+              ? user.statusMessage
+              : user.showBio !== false && user.bio
+                ? user.bio
+                : 'Người dùng'}
+          </small>
         </div>
         <span className="contact-row-actions">
           <button
