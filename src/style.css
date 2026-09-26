@@ -1305,7 +1305,8 @@ img {
 .group-detail-member .avatar-fallback,
 .cp-card-avatar-wrap .avatar-fallback,
 .cp-avatar-wrap .avatar-fallback,
-.np-row-avatar .avatar-fallback {
+.np-row-avatar .avatar-fallback,
+.pp-avatar-wrap .avatar-fallback {
   display: inline-grid;
   place-items: center;
   border-radius: 50%;
@@ -1321,7 +1322,8 @@ img {
 .friend-avatar-frame .avatar-fallback,
 .cp-card-avatar-wrap .avatar-fallback,
 .cp-avatar-wrap .avatar-fallback,
-.np-row-avatar .avatar-fallback {
+.np-row-avatar .avatar-fallback,
+.pp-avatar-wrap .avatar-fallback {
   width: 100%;
   height: 100%;
   font-size: 18px;
@@ -10648,4 +10650,511 @@ html.dark .message-search-button.is-active {
 @media (max-width: 480px) {
   .np-page { padding: 24px 16px 60px; }
   .np-page-header { flex-direction: column; gap: 12px; }
+}
+
+/* ─────────────────────────────────────────────
+   ProfilePage.css
+   Design language mirrors NotificationsPanel
+   ───────────────────────────────────────────── */
+
+/* ── Page shell ── */
+.pp-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--color-bg, #f5f5f7);
+}
+
+/* ── Page header ── */
+.pp-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 24px 16px;
+  background: var(--color-surface, #ffffff);
+  border-bottom: 1px solid var(--color-border, #e5e5ea);
+  flex-shrink: 0;
+}
+
+.pp-page-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--color-accent, #6366f1);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.pp-page-header h1 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-primary, #1c1c1e);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.pp-header-aside {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.pp-unsaved-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffd97d;
+}
+
+/* ── Grid layout ── */
+.pp-grid {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Section card (mirrors np-section) ── */
+.pp-section {
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #e5e5ea);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.pp-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px 11px;
+  border-bottom: 1px solid var(--color-border, #e5e5ea);
+  background: var(--color-surface-subtle, #fafafa);
+}
+
+.pp-section-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--color-accent-subtle, #eef2ff);
+  color: var(--color-accent, #6366f1);
+  flex-shrink: 0;
+}
+
+.pp-section-header h2 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary, #1c1c1e);
+  margin: 0;
+  flex: 1;
+}
+
+.pp-section-body {
+  padding: 16px;
+}
+
+/* ── Avatar card ── */
+.pp-avatar-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pp-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.pp-avatar-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.pp-avatar-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary, #1c1c1e);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pp-avatar-handle {
+  font-size: 12px;
+  color: var(--color-text-tertiary, #8e8e93);
+  font-weight: 500;
+}
+
+.pp-avatar-status {
+  font-size: 12px;
+  color: var(--color-text-secondary, #48484a);
+  margin-top: 2px;
+}
+
+/* ── Role badge ── */
+.pp-role-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  border: 1.5px solid var(--color-surface, #fff);
+  white-space: nowrap;
+}
+
+.pp-role-badge--owner  { background: #fef3c7; color: #92400e; }
+.pp-role-badge--admin  { background: #fee2e2; color: #991b1b; }
+.pp-role-badge--moderator { background: #ede9fe; color: #5b21b6; }
+.pp-role-badge--user   { background: #e0f2fe; color: #075985; }
+
+/* ── Upload button ── */
+.pp-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-accent, #6366f1);
+  background: var(--color-accent-subtle, #eef2ff);
+  border: 1px solid var(--color-accent-border, #c7d2fe);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+.pp-upload-btn:hover {
+  background: #e0e7ff;
+  border-color: #a5b4fc;
+}
+
+.pp-upload-btn input {
+  display: none;
+}
+
+/* ── Bio preview ── */
+.pp-bio-preview p {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--color-text-secondary, #48484a);
+  margin: 0 0 8px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.pp-bio-preview p.is-expanded {
+  -webkit-line-clamp: unset;
+  display: block;
+}
+
+.pp-bio-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-accent, #6366f1);
+  cursor: pointer;
+}
+
+.pp-meta-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.pp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--color-surface-subtle, #f5f5f7);
+  border: 1px solid var(--color-border, #e5e5ea);
+  color: var(--color-text-secondary, #48484a);
+}
+
+/* ── Form card ── */
+.pp-form-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Fields grid ── */
+.pp-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* ── Individual field ── */
+.pp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: text;
+}
+
+.pp-field--wide {
+  grid-column: 1 / -1;
+}
+
+.pp-field-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-text-secondary, #48484a);
+  user-select: none;
+}
+
+.pp-field-label svg {
+  color: var(--color-text-tertiary, #8e8e93);
+  flex-shrink: 0;
+}
+
+/* ── Inputs ── */
+.pp-input {
+  width: 100%;
+  padding: 8px 11px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--color-text-primary, #1c1c1e);
+  background: var(--color-input-bg, #f5f5f7);
+  border: 1px solid var(--color-border, #e5e5ea);
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.pp-input:focus {
+  border-color: var(--color-accent, #6366f1);
+  background: var(--color-surface, #ffffff);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent, #6366f1) 12%, transparent);
+}
+
+.pp-input[readonly] {
+  color: var(--color-text-tertiary, #8e8e93);
+  cursor: default;
+  background: var(--color-surface-subtle, #fafafa);
+}
+
+.pp-field--error .pp-input {
+  border-color: #ef4444;
+}
+
+.pp-field--error .pp-input:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+}
+
+.pp-field-error {
+  font-size: 11px;
+  color: #ef4444;
+  font-weight: 500;
+}
+
+/* Select */
+.pp-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238e8e93' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+  color: var(--color-text-tertiary, #8e8e93);
+}
+
+.pp-select.has-value {
+  color: var(--color-text-primary, #1c1c1e);
+}
+
+/* Textarea */
+.pp-textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.55;
+}
+
+/* Handle input with @ prefix */
+.pp-input-prefix {
+  display: flex;
+  align-items: center;
+  background: var(--color-input-bg, #f5f5f7);
+  border: 1px solid var(--color-border, #e5e5ea);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.pp-input-prefix:focus-within {
+  border-color: var(--color-accent, #6366f1);
+  background: var(--color-surface, #ffffff);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent, #6366f1) 12%, transparent);
+}
+
+.pp-input-prefix > span {
+  padding: 0 6px 0 11px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-text-tertiary, #8e8e93);
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.pp-input-prefix .pp-input {
+  border: none;
+  background: transparent;
+  padding-left: 2px;
+  box-shadow: none !important;
+}
+
+.pp-input-prefix .pp-input:focus {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* ── Form footer ── */
+.pp-form-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 4px 0 2px;
+}
+
+/* ── Save button ── */
+.pp-save-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 20px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--color-accent, #6366f1);
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s, transform 0.1s;
+}
+
+.pp-save-btn:hover:not(:disabled) {
+  background: #4f46e5;
+  transform: translateY(-1px);
+}
+
+.pp-save-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.pp-save-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .pp-page-header {
+    padding: 16px 16px 12px;
+  }
+
+  .pp-grid {
+    padding: 16px 12px 24px;
+    gap: 10px;
+  }
+
+  .pp-avatar-card {
+    flex-wrap: wrap;
+  }
+
+  .pp-upload-btn {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .pp-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .pp-field--wide {
+    grid-column: 1;
+  }
+
+  .pp-save-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .pp-form-footer {
+    justify-content: stretch;
+  }
+}
+
+/* ── Dark mode ── */
+@media (prefers-color-scheme: dark) {
+  .pp-page {
+    --color-bg: #1c1c1e;
+    --color-surface: #2c2c2e;
+    --color-surface-subtle: #242426;
+    --color-border: #38383a;
+    --color-input-bg: #242426;
+    --color-text-primary: #f2f2f7;
+    --color-text-secondary: #aeaeb2;
+    --color-text-tertiary: #636366;
+    --color-accent: #818cf8;
+    --color-accent-subtle: #1e1e2e;
+    --color-accent-border: #3730a3;
+  }
+
+  .pp-role-badge--owner     { background: #451a03; color: #fbbf24; }
+  .pp-role-badge--admin     { background: #450a0a; color: #fca5a5; }
+  .pp-role-badge--moderator { background: #2e1065; color: #c4b5fd; }
+  .pp-role-badge--user      { background: #0c2a3f; color: #7dd3fc; }
+
+  .pp-chip {
+    background: #38383a;
+    border-color: #48484a;
+  }
+
+  .pp-unsaved-badge {
+    background: #3d2c00;
+    color: #fbbf24;
+    border-color: #78520a;
+  }
 }
