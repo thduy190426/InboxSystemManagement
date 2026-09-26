@@ -1,4 +1,4 @@
-import type { CSSProperties, ChangeEvent, FormEvent } from 'react'
+﻿import type { CSSProperties, ChangeEvent, FormEvent } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Archive, ArchiveRestore, BellOff, Check, ImagePlus, Inbox, MessageCircle, MessageSquare, MessageSquareOff, Pin, Plus, Search, SearchX, Trash2, Type, UserRound, Users, X } from 'lucide-react'
 import { globalSearch, type GlobalSearchResponse } from '../../services/api/searchApi'
@@ -338,11 +338,11 @@ export function InboxPanel({
     <section className={`inbox-panel ${isCollapsed ? 'is-collapsed' : ''}`} aria-label="Danh sách hội thoại">
       <header className="panel-header">
         <div>
-          <span className="section-kicker" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span className="section-kicker" >
             <MessageSquare size={14} />
             Inbox
           </span>
-          <h1 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h1 className="panel-title">
             Hộp thư
           </h1>
         </div>
@@ -664,7 +664,7 @@ export function InboxPanel({
             </div>
 
             <label className="group-field">
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span >
                 <Type size={16} /> Tên nhóm
               </span>
               <input
@@ -687,7 +687,7 @@ export function InboxPanel({
 
             <div className="group-member-picker">
               <div className="group-member-title">
-                <strong style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <strong >
                   <Users size={16} /> Thành viên
                 </strong>
                 <span>{selectedMemberIds.length} đã chọn</span>

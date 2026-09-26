@@ -9235,18 +9235,28 @@ html.dark .message-search-button.is-active {
 .inbox-panel.is-collapsed .conversation-copy,
 .inbox-panel.is-collapsed .conversation-meta,
 .inbox-panel.is-collapsed .friend-status-strip {
-  display: none;
+  display: none !important;
 }
 
 .inbox-panel.is-collapsed .panel-header {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 24px;
+  gap: 16px;
+  margin-bottom: 8px;
 }
 
 .inbox-panel.is-collapsed .panel-header-actions {
   flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.inbox-panel.is-collapsed .panel-header-actions .icon-button {
+  background: var(--surface-strong);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
 }
 
 .inbox-panel.is-collapsed .search-field {
@@ -9275,6 +9285,7 @@ html.dark .message-search-button.is-active {
   height: 44px;
   padding: 0;
   justify-content: center;
+  border-radius: 50%;
 }
 
 .inbox-panel.is-collapsed .conversation-row {
@@ -9308,4 +9319,9 @@ html.dark .message-search-button.is-active {
 }
 .app-shell.is-resizing * {
   pointer-events: none !important;
+}
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
