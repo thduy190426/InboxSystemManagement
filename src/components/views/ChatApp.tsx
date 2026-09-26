@@ -1050,10 +1050,10 @@ export function ChatApp({
       const deltaX = moveEvent.clientX - startX
       let newWidth = startWidth + deltaX
       
-      if (startWidth === 88 && deltaX > 10) {
+      if (startWidth === 100 && deltaX > 10) {
         newWidth = 250 + (deltaX - 10)
       } else if (newWidth < 250) {
-        newWidth = 88
+        newWidth = 100
       } else if (newWidth > 600) {
         newWidth = 600
       }
@@ -3172,7 +3172,7 @@ export function ChatApp({
           conversations={filteredConversations}
           friends={friends}
           isCompact={isCompactLayout}
-          isCollapsed={!isCompactLayout && inboxWidth === 88}
+          isCollapsed={!isCompactLayout && inboxWidth === 100}
           onResizeStart={!isCompactLayout ? handleResizerMouseDown : undefined}
           isCreatingGroup={isCreatingGroup}
           onClosePanel={() => setIsInboxOpen(false)}
