@@ -14,6 +14,34 @@ type NotificationsPanelProps = {
   onOpenNotification: (notification: AppNotification) => void
 }
 
+type NotificationSectionProps = {
+  icon: React.ReactNode
+  title: string
+  count: number
+  emptyText: string
+  children: React.ReactNode
+}
+
+function NotificationSection({ icon, title, count, emptyText, children }: NotificationSectionProps) {
+  return (
+    <section className="np-section">
+      <div className="np-section-header">
+        <span className="np-section-icon">{icon}</span>
+        <h2>{title}</h2>
+        <span className="np-section-count">{count}</span>
+      </div>
+      <div className="np-section-body">
+        {count > 0 ? children : (
+          <div className="np-empty">
+            <Bell size={26} strokeWidth={1.5} />
+            <span>{emptyText}</span>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
 export function NotificationsPanel({
   browserNotificationPermission,
   conversations,
@@ -24,158 +52,131 @@ export function NotificationsPanel({
   onOpenConversation,
   onOpenNotification,
 }: NotificationsPanelProps) {
-  const unreadConversations = conversations.filter((conversation) => conversation.unread > 0)
-  const mentionNotifications = notifications.filter((notification) => notification.type === 'mention')
-  const unreadMentionCount = mentionNotifications.filter((notification) => !notification.readAt).length
-  const totalUnreadMessages = unreadConversations.reduce(
-    (total, conversation) => total + conversation.unread,
-    0,
-  )
+  const unreadConversations = conversations.filter((c) => c.unread > 0)
+  const mentionNotifications = notifications.filter((n) => n.type === 'mention')
+  const unreadMentionCount = mentionNotifications.filter((n) => !n.readAt).length
+  const totalUnreadMessages = unreadConversations.reduce((total, c) => total + c.unread, 0)
   const totalNotifications = totalUnreadMessages + friendRequests.length + unreadMentionCount
+
   const browserNotificationLabel =
-    browserNotificationPermission === 'granted'
-      ? 'Đã bật thông báo đẩy!'
-      : browserNotificationPermission === 'denied'
-        ? 'Trình duyệt đang chặn thông báo!'
-        : browserNotificationPermission === 'unsupported'
-          ? 'Trình duyệt không hỗ trợ thông báo!'
-          : 'Bật thông báo trình duyệt?'
+    browserNotificationPermission === 'granted' ? 'Thông báo đẩy đã bật'
+    : browserNotificationPermission === 'denied' ? 'Trình duyệt đang chặn thông báo'
+    : browserNotificationPermission === 'unsupported' ? 'Trình duyệt không hỗ trợ'
+    : 'Bật thông báo trình duyệt'
+
+  const isBrowserBtnDisabled =
+    browserNotificationPermission === 'granted' ||
+    browserNotificationPermission === 'denied' ||
+    browserNotificationPermission === 'unsupported'
 
   return (
-    <section className="notifications-panel">
-      <header className="notifications-header">
+    <section className="np-page" aria-labelledby="notifications-title">
+      <header className="np-page-header">
         <div>
-          <span className="section-kicker" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Bell size={14} />
+          <div className="np-page-kicker">
+            <Bell size={12} />
             Thông báo
-          </span>
-          <h1>Cập nhật mới nhất</h1>
+          </div>
+          <h1 id="notifications-title">Cập nhật mới nhất</h1>
         </div>
-        <div className="notifications-header-actions">
+        <div className="np-header-aside">
           <button
-            disabled={
-              browserNotificationPermission === 'granted' ||
-              browserNotificationPermission === 'denied' ||
-              browserNotificationPermission === 'unsupported'
-            }
+            className={`np-push-btn${browserNotificationPermission === 'granted' ? ' np-push-btn--active' : ''}`}
+            disabled={isBrowserBtnDisabled}
             onClick={onEnableBrowserNotifications}
             type="button"
           >
-            <Bell size={16} />
+            <Bell size={14} />
             <span>{browserNotificationLabel}</span>
           </button>
-          <span className="notifications-count">{totalNotifications}</span>
+          {totalNotifications > 0 && (
+            <span className="np-total-badge">{totalNotifications}</span>
+          )}
         </div>
       </header>
 
-      <div className="notifications-grid">
-        <section className="notifications-section">
-          <div className="notifications-section-title">
-            <div>
-              <MessageCircle size={18} />
-              <h2>Tin nhắn chưa đọc</h2>
-            </div>
-            <span>{totalUnreadMessages}</span>
-          </div>
-
-          <div className="notification-list">
-            {unreadConversations.map((conversation) => (
-              <button
-                className="notification-row animate-in"
-                key={conversation.id}
-                onClick={() => onOpenConversation(conversation.id)}
-                type="button"
-              >
+      <div className="np-grid">
+        <NotificationSection
+          icon={<MessageCircle size={15} />}
+          title="Tin nhắn chưa đọc"
+          count={totalUnreadMessages}
+          emptyText="Không có tin nhắn chưa đọc!"
+        >
+          {unreadConversations.map((conversation) => (
+            <button
+              className="np-row"
+              key={conversation.id}
+              onClick={() => onOpenConversation(conversation.id)}
+              type="button"
+            >
+              <div className="np-row-avatar">
                 <AvatarFallback name={conversation.name} src={conversation.avatar} />
-                <div>
-                  <strong>{conversation.name}</strong>
-                  <span>{conversation.lastMessage}</span>
-                  <small>{conversation.lastTime}</small>
-                </div>
-                <em>{conversation.unread}</em>
-              </button>
-            ))}
-            {unreadConversations.length === 0 ? (
-              <div className="notification-empty">
-                <Bell size={18} />
-                <span>Không có tin nhắn chưa đọc!</span>
               </div>
-            ) : null}
-          </div>
-        </section>
+              <div className="np-row-content">
+                <strong>{conversation.name}</strong>
+                <span>{conversation.lastMessage}</span>
+                <small>{conversation.lastTime}</small>
+              </div>
+              <span className="np-badge">{conversation.unread}</span>
+            </button>
+          ))}
+        </NotificationSection>
 
-        <section className="notifications-section">
-          <div className="notifications-section-title">
-            <div>
-              <AtSign size={18} />
-              <h2>Nhắc đến bạn</h2>
-            </div>
-            <span>{unreadMentionCount}</span>
-          </div>
-
-          <div className="notification-list">
-            {mentionNotifications.map((notification) => (
-              <button
-                className={notification.readAt ? 'notification-row animate-in' : 'notification-row is-unread animate-in'}
-                key={notification.id}
-                onClick={() => onOpenNotification(notification)}
-                type="button"
-              >
+        <NotificationSection
+          icon={<AtSign size={15} />}
+          title="Nhắc đến bạn"
+          count={unreadMentionCount}
+          emptyText="Chưa có mention mới!"
+        >
+          {mentionNotifications.map((notification) => (
+            <button
+              className={`np-row${!notification.readAt ? ' np-row--unread' : ''}`}
+              key={notification.id}
+              onClick={() => onOpenNotification(notification)}
+              type="button"
+            >
+              <div className="np-row-avatar">
                 <AvatarFallback
                   name={notification.actor?.fullName || notification.conversationName}
                   src={notification.actor?.avatarUrl || notification.conversationAvatar}
                 />
-                <div>
-                  <strong>{notification.title}</strong>
-                  <span>{notification.body}</span>
-                  <small>{notification.conversationName} · {notification.time}</small>
-                </div>
-                {!notification.readAt ? <em>1</em> : null}
-              </button>
-            ))}
-            {mentionNotifications.length === 0 ? (
-              <div className="notification-empty">
-                <Bell size={18} />
-                <span>Chưa có mention mới!</span>
+                {!notification.readAt && <span className="np-unread-dot" />}
               </div>
-            ) : null}
-          </div>
-        </section>
+              <div className="np-row-content">
+                <strong>{notification.title}</strong>
+                <span>{notification.body}</span>
+                <small>{notification.conversationName} · {notification.time}</small>
+              </div>
+              {!notification.readAt && <span className="np-badge">1</span>}
+            </button>
+          ))}
+        </NotificationSection>
 
-        <section className="notifications-section">
-          <div className="notifications-section-title">
-            <div>
-              <UserPlus size={18} />
-              <h2>Lời mời kết bạn</h2>
-            </div>
-            <span>{friendRequests.length}</span>
-          </div>
-
-          <div className="notification-list">
-            {friendRequests.map((request) => (
-              <button
-                className="notification-row animate-in"
-                key={request.id}
-                onClick={onOpenContacts}
-                type="button"
-              >
+        <NotificationSection
+          icon={<UserPlus size={15} />}
+          title="Lời mời kết bạn"
+          count={friendRequests.length}
+          emptyText="Không có lời mời kết bạn mới!"
+        >
+          {friendRequests.map((request) => (
+            <button
+              className="np-row"
+              key={request.id}
+              onClick={onOpenContacts}
+              type="button"
+            >
+              <div className="np-row-avatar">
                 <AvatarFallback name={request.fullName} src={request.avatarUrl} />
-                <div>
-                  <strong>{request.fullName}</strong>
-                  <span>{request.email}</span>
-                  <small>Muốn kết bạn với bạn!</small>
-                </div>
-                <em>1</em>
-              </button>
-            ))}
-            {friendRequests.length === 0 ? (
-              <div className="notification-empty">
-                <Bell size={18} />
-                <span>Không có lời mời kết bạn mới!</span>
               </div>
-            ) : null}
-          </div>
-        </section>
+              <div className="np-row-content">
+                <strong>{request.fullName}</strong>
+                <span>{request.email}</span>
+                <small>Muốn kết bạn với bạn</small>
+              </div>
+              <span className="np-badge">1</span>
+            </button>
+          ))}
+        </NotificationSection>
       </div>
     </section>
   )
