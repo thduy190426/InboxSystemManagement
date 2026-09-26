@@ -139,10 +139,6 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null)
   const [profileErrors, setProfileErrors] = useState<ProfileErrors>({})
   const [isBioExpanded, setIsBioExpanded] = useState(false)
-  const [avatarCooldownLeft, setAvatarCooldownLeft] = useState(0)
-  const lastUploadRef = useRef<number>(0)
-  const cooldownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const AVATAR_COOLDOWN_SECONDS = 10
   const hasChanges = JSON.stringify(form) !== JSON.stringify(initialForm)
   const hasLongBio = form.bio.trim().length > 120
 
@@ -170,9 +166,6 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
 
     return () => {
       isMounted = false
-      if (cooldownTimerRef.current) {
-        clearInterval(cooldownTimerRef.current)
-      }
     }
   }, [])
 
@@ -195,17 +188,6 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
     if (!file) {
       return
     }
-
-    const now = Date.now()
-    const elapsed = (now - lastUploadRef.current) / 1000
-
-    if (lastUploadRef.current > 0 && elapsed < AVATAR_COOLDOWN_SECONDS) {
-      const remaining = Math.ceil(AVATAR_COOLDOWN_SECONDS - elapsed)
-      pushToast(`Vui lòng chờ ${remaining}s trước khi đổi ảnh lại!`, 'error')
-      event.target.value = ''
-      return
-    }
-
     const reader = new FileReader()
     reader.addEventListener('load', () => {
       setCropImageSrc(reader.result?.toString() || null)
@@ -224,23 +206,6 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
       onUserChange(response.user)
       setAvatarUrl(response.user.avatarUrl ?? '')
       pushToast('Đã cập nhật ảnh đại diện!', 'info')
-      lastUploadRef.current = Date.now()
-      setAvatarCooldownLeft(AVATAR_COOLDOWN_SECONDS)
-
-      if (cooldownTimerRef.current) {
-        clearInterval(cooldownTimerRef.current)
-      }
-
-      cooldownTimerRef.current = setInterval(() => {
-        setAvatarCooldownLeft((current) => {
-          if (current <= 1) {
-            clearInterval(cooldownTimerRef.current!)
-            cooldownTimerRef.current = null
-            return 0
-          }
-          return current - 1
-        })
-      }, 1000)
     } catch (error) {
       pushToast(error instanceof Error ? error.message : 'Không thể cập nhật ảnh đại diện!', 'error')
     } finally {
@@ -301,8 +266,8 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
           </div>
           <label className="profile-upload-button">
             <Camera size={18} />
-            {isUploading ? 'Đang tải ảnh...' : avatarCooldownLeft > 0 ? `Đổi ảnh đại diện (${avatarCooldownLeft}s)` : 'Đổi ảnh đại diện'}
-            <input accept="image/*" disabled={isUploading || avatarCooldownLeft > 0} onChange={handleAvatarChange} type="file" />
+            {isUploading ? 'Đang tải ảnh...' : 'Đổi ảnh đại diện'}
+            <input accept="image/*" disabled={isUploading} onChange={handleAvatarChange} type="file" />
           </label>
           <strong>{form.displayName || fullName || 'Người dùng'}</strong>
           {form.handle ? <span className="profile-preview-handle">@{form.handle}</span> : null}
