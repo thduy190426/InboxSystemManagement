@@ -782,13 +782,21 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
   }
 
   function startRingbackTone() {
-    if (call.direction === 'incoming' && call.caller.fullName === 'Trần Hoàng Duy') {
-      if (customRingtoneRef.current) return
-      const audio = new Audio('/audio/TDuy.mp3')
-      audio.loop = true
-      audio.play().catch(() => undefined)
-      customRingtoneRef.current = audio
-      return
+    if (call.direction === 'incoming') {
+      const customRingtones: Record<string, string> = {
+        'Trần Hoàng Duy': '/audio/TDuy.mp3',
+        'Bảo Nghi': '/audio/BNghi.mp3',
+      }
+      
+      const ringtonePath = customRingtones[call.caller.fullName]
+      if (ringtonePath) {
+        if (customRingtoneRef.current) return
+        const audio = new Audio(ringtonePath)
+        audio.loop = true
+        audio.play().catch(() => undefined)
+        customRingtoneRef.current = audio
+        return
+      }
     }
 
     if (ringbackToneRef.current || typeof AudioContext === 'undefined') {
