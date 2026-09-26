@@ -115,6 +115,7 @@ type MessagePaginationState = {
 }
 
 const SIDEBAR_STATE_KEY = 'sidebar_is_open'
+const INBOX_WIDTH_KEY = 'inbox_width'
 const OFFLINE_MESSAGE_QUEUE_KEY = 'offline_message_queue'
 const COMPACT_LAYOUT_MEDIA_QUERY = '(max-width: 1024px)'
 const MESSAGE_PAGE_LIMIT = 40
@@ -146,6 +147,11 @@ function prependOlderMessages(existingMessages: Message[], olderMessages: Messag
 
 function getInitialSidebarState() {
   return localStorage.getItem(SIDEBAR_STATE_KEY) === 'true'
+}
+
+function getInitialInboxWidth() {
+  const saved = localStorage.getItem(INBOX_WIDTH_KEY)
+  return saved ? parseInt(saved, 10) : 420
 }
 
 function getInitialCompactLayoutState() {
@@ -277,6 +283,7 @@ export function ChatApp({
   const [replyingTo, setReplyingTo] = useState<Message | null>(null)
   const [focusedMessageId, setFocusedMessageId] = useState('')
   const [isSidebarOpen, setIsSidebarOpen] = useState(getInitialSidebarState)
+  const [inboxWidth, setInboxWidth] = useState(getInitialInboxWidth)
   const [isCompactLayout, setIsCompactLayout] = useState(getInitialCompactLayoutState)
   const [isInboxOpen, setIsInboxOpen] = useState(
     () =>
@@ -1029,7 +1036,37 @@ export function ChatApp({
     }
 
     localStorage.setItem(SIDEBAR_STATE_KEY, String(isSidebarOpen))
-  }, [isCompactLayout, isSidebarOpen])
+    localStorage.setItem(INBOX_WIDTH_KEY, String(inboxWidth))
+  }, [isCompactLayout, isSidebarOpen, inboxWidth])
+
+  const handleResizerMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault()
+    const startX = e.clientX
+    const startWidth = inboxWidth
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaX = moveEvent.clientX - startX
+      let newWidth = startWidth + deltaX
+      
+      if (startWidth === 88 && deltaX > 10) {
+        newWidth = 250 + (deltaX - 10)
+      } else if (newWidth < 250) {
+        newWidth = 88
+      } else if (newWidth > 600) {
+        newWidth = 600
+      }
+      
+      setInboxWidth(newWidth)
+    }
+
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }
 
   useEffect(() => {
     const mediaQuery = window.matchMedia(COMPACT_LAYOUT_MEDIA_QUERY)
@@ -3132,6 +3169,8 @@ export function ChatApp({
           conversations={filteredConversations}
           friends={friends}
           isCompact={isCompactLayout}
+          isCollapsed={!isCompactLayout && inboxWidth === 88}
+          onResizeStart={!isCompactLayout ? handleResizerMouseDown : undefined}
           isCreatingGroup={isCreatingGroup}
           onClosePanel={() => setIsInboxOpen(false)}
           onCreateGroup={handleCreateGroup}
@@ -3201,9 +3240,13 @@ export function ChatApp({
     .filter(Boolean)
     .join(' ')
 
+  const shellStyle = {
+    '--inbox-width': `${inboxWidth}px`
+  } as React.CSSProperties
+
   if (activeView === 'contacts') {
     return (
-      <main className={`${shellClassName} contacts-shell`}>
+      <main className={`${shellClassName} contacts-shell`} style={shellStyle}>
         {renderNavRail()}
         <ContactsPanel
           contactToOpen={profileContactToOpen}
@@ -3221,7 +3264,7 @@ export function ChatApp({
 
   if (activeView === 'profile') {
     return (
-      <main className={`${shellClassName} profile-shell`}>
+      <main className={`${shellClassName} profile-shell`} style={shellStyle}>
         {renderNavRail()}
         <ProfilePage
           currentUser={currentUser}
@@ -3237,7 +3280,7 @@ export function ChatApp({
 
   if (activeView === 'settings') {
     return (
-      <main className={`${shellClassName} profile-shell settings-shell`}>
+      <main className={`${shellClassName} profile-shell settings-shell`} style={shellStyle}>
         {renderNavRail()}
         <SettingsPage
           currentUser={currentUser}
@@ -3255,7 +3298,7 @@ export function ChatApp({
 
   if (activeView === 'admin') {
     return (
-      <main className={`${shellClassName} admin-shell`}>
+      <main className={`${shellClassName} admin-shell`} style={shellStyle}>
         {renderNavRail()}
         <AdminPage
           currentUser={currentUser}
@@ -3270,7 +3313,7 @@ export function ChatApp({
 
   if (activeView === 'notifications') {
     return (
-      <main className={`${shellClassName} notifications-shell`}>
+      <main className={`${shellClassName} notifications-shell`} style={shellStyle}>
         {renderNavRail()}
         <NotificationsPanel
           browserNotificationPermission={browserNotificationPermission}
@@ -3301,7 +3344,7 @@ export function ChatApp({
 
   if (!activeConversation) {
     return (
-      <main className={`${shellClassName} empty-chat-shell`}>
+      <main className={`${shellClassName} empty-chat-shell`} style={shellStyle}>
         {renderNavRail()}
         {renderInboxPanel()}
         <section className="loading-panel">
@@ -3313,7 +3356,7 @@ export function ChatApp({
   }
 
   return (
-    <main className={shellClassName}>
+    <main className={shellClassName} style={shellStyle}>
       {renderNavRail()}
       {renderInboxPanel()}
       <ChatPanel

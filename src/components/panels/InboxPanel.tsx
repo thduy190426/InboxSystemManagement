@@ -15,6 +15,7 @@ type InboxPanelProps = {
   conversations: Conversation[]
   friends: ContactUser[]
   isCompact?: boolean
+  isCollapsed?: boolean
   isCreatingGroup?: boolean
   query: string
   onCreateGroup: (payload: {
@@ -29,6 +30,7 @@ type InboxPanelProps = {
   onRestoreConversation: (conversationId: string) => Promise<void> | void
   onQueryChange: (query: string) => void
   onSelectConversation: (conversationId: string) => void
+  onResizeStart?: (e: React.MouseEvent) => void
 }
 
 function getStartOfDay(date: Date) {
@@ -84,11 +86,13 @@ export function InboxPanel({
   conversations,
   friends,
   isCompact = false,
+  isCollapsed = false,
   isCreatingGroup = false,
   query,
   onCreateGroup,
   onStartDirectMessage,
   onClosePanel,
+  onResizeStart,
   onDeleteConversation,
   onFilterChange,
   onRestoreConversation,
@@ -331,7 +335,7 @@ export function InboxPanel({
   }
 
   return (
-    <section className="inbox-panel" aria-label="Danh sách hội thoại">
+    <section className={`inbox-panel ${isCollapsed ? 'is-collapsed' : ''}`} aria-label="Danh sách hội thoại">
       <header className="panel-header">
         <div>
           <span className="section-kicker" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -726,6 +730,13 @@ export function InboxPanel({
           </form>
         </div>
       ) : null}
+
+      {onResizeStart && !isCompact && (
+        <div 
+          className="inbox-resizer" 
+          onMouseDown={onResizeStart}
+        />
+      )}
     </section>
   )
 }

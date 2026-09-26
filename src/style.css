@@ -9214,3 +9214,92 @@ html.dark .message-search-button.is-active {
   background: rgba(15, 159, 142, 0.15);
   color: var(--primary);
 }
+
+/* Collapsed Inbox Panel */
+.app-shell.is-inbox-collapsed {
+  --content-columns: 88px minmax(0, 1fr) 0fr;
+}
+.app-shell.is-inbox-collapsed.is-detail-open {
+  --content-columns: 88px minmax(0, 1fr) var(--detail-width);
+}
+
+.inbox-panel.is-collapsed {
+  padding: 24px 12px;
+  align-items: center;
+}
+
+.inbox-panel.is-collapsed .panel-header h1,
+.inbox-panel.is-collapsed .panel-header .section-kicker,
+.inbox-panel.is-collapsed .search-field input,
+.inbox-panel.is-collapsed .quick-filters span,
+.inbox-panel.is-collapsed .conversation-copy,
+.inbox-panel.is-collapsed .conversation-meta,
+.inbox-panel.is-collapsed .friend-status-strip {
+  display: none;
+}
+
+.inbox-panel.is-collapsed .panel-header {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+}
+
+.inbox-panel.is-collapsed .panel-header-actions {
+  flex-direction: column;
+}
+
+.inbox-panel.is-collapsed .search-field {
+  padding: 12px;
+  background: transparent;
+  justify-content: center;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  margin: 0 auto;
+  cursor: pointer;
+  box-shadow: none;
+}
+.inbox-panel.is-collapsed .search-field:hover {
+  background: var(--line);
+}
+
+.inbox-panel.is-collapsed .quick-filters {
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.inbox-panel.is-collapsed .quick-filters button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  justify-content: center;
+}
+
+.inbox-panel.is-collapsed .conversation-row {
+  min-width: 0;
+  grid-template-columns: 1fr;
+  padding: 12px;
+  justify-content: center;
+}
+.inbox-panel.is-collapsed .empty-state p {
+  display: none;
+}
+.inbox-panel {
+  position: relative;
+}
+.inbox-resizer {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 40;
+  transition: background-color 0.2s;
+}
+.inbox-resizer:hover,
+.inbox-resizer:active {
+  background-color: var(--primary);
+}
