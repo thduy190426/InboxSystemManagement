@@ -157,7 +157,7 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
   const [expandedSessionHeight, setExpandedSessionHeight] = useState(0)
   const expandedSessionsRef = useRef<HTMLDivElement | null>(null)
   const overviewRef = useRef<HTMLElement | null>(null)
-  const privacyRef = useRef<HTMLFormElement | null>(null)
+  const privacyRef = useRef<HTMLDivElement | null>(null)
   const [refreshCooldown, setRefreshCooldown] = useState(0)
 
   useEffect(() => {
@@ -355,16 +355,24 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
     }
   }
 
-  async function handlePrivacySubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  async function handlePrivacyChange(key: 'showActivityStatus' | 'showReadReceipts', value: boolean) {
+    if (key === 'showActivityStatus') setShowActivityStatus(value)
+    if (key === 'showReadReceipts') setShowReadReceipts(value)
+
+    const payload = {
+      showActivityStatus: key === 'showActivityStatus' ? value : showActivityStatus,
+      showReadReceipts: key === 'showReadReceipts' ? value : showReadReceipts,
+    }
 
     try {
       setIsSavingPrivacy(true)
-      const response = await updatePrivacy({ showActivityStatus, showReadReceipts })
+      const response = await updatePrivacy(payload)
       onUserChange(response.user)
       pushToast(response.message || 'Đã cập nhật quyền riêng tư!', 'info')
     } catch (error) {
       pushToast(error instanceof Error ? error.message : 'Không thể cập nhật quyền riêng tư!', 'error')
+      if (key === 'showActivityStatus') setShowActivityStatus(!value)
+      if (key === 'showReadReceipts') setShowReadReceipts(!value)
     } finally {
       setIsSavingPrivacy(false)
     }
@@ -493,10 +501,9 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
         </aside>
 
         <div className="settings-main">
-          <form 
+          <div 
             ref={privacyRef} 
             className="settings-card profile-privacy-form" 
-            onSubmit={handlePrivacySubmit}
             style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px' }}
           >
             <div className="profile-form-heading">
@@ -516,7 +523,7 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
                 <input
                   checked={showActivityStatus}
                   disabled={isSavingPrivacy}
-                  onChange={(event) => setShowActivityStatus(event.target.checked)}
+                  onChange={(event) => handlePrivacyChange('showActivityStatus', event.target.checked)}
                   type="checkbox"
                 />
               </label>
@@ -529,22 +536,12 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
                 <input
                   checked={showReadReceipts}
                   disabled={isSavingPrivacy}
-                  onChange={(event) => setShowReadReceipts(event.target.checked)}
+                  onChange={(event) => handlePrivacyChange('showReadReceipts', event.target.checked)}
                   type="checkbox"
                 />
               </label>
             </div>
-
-            <button
-              className="profile-save-button"
-              disabled={isSavingPrivacy || (showActivityStatus === (currentUser?.showActivityStatus ?? true) && showReadReceipts === (currentUser?.showReadReceipts ?? true))}
-              type="submit"
-              style={{ alignSelf: 'flex-start', marginTop: '4px' }}
-            >
-              {showActivityStatus ? <Eye size={18} /> : <EyeOff size={18} />}
-              {isSavingPrivacy ? 'Đang lưu...' : 'Lưu quyền riêng tư'}
-            </button>
-          </form>
+          </div>
 
           <form className="profile-form settings-card profile-password-form" onSubmit={handlePasswordSubmit}>
             <div className="profile-form-heading">
