@@ -10,15 +10,12 @@ self.addEventListener('push', (event) => {
   const payload = event.data?.json?.() || {}
   const title = payload.title || 'Inbox'
 
-  const isCustomSoundSender = title.includes('Trần Hoàng Duy') || title.includes('Bảo Nghi')
-
   event.waitUntil(
     self.registration.showNotification(title, {
       body: payload.body || '',
       icon: payload.icon || '/favicon.svg',
       badge: payload.badge || '/favicon.svg',
       tag: payload.tag || 'inbox-notification',
-      silent: isCustomSoundSender,
       data: {
         url: payload.url || '/',
       },
