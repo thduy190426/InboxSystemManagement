@@ -148,11 +148,12 @@ type CardProps = {
   children: React.ReactNode
   footer?: React.ReactNode
   dangerBorder?: boolean
+  id?: string
 }
 
-function Card({ icon, iconVariant = 'default', title, description, children, footer, dangerBorder }: CardProps) {
+function Card({ id, icon, iconVariant = 'default', title, description, children, footer, dangerBorder }: CardProps) {
   return (
-    <div className={`sp-card${dangerBorder ? ' sp-card--danger' : ''}`}>
+    <div id={id} className={`sp-card${dangerBorder ? ' sp-card--danger' : ''}`}>
       <div className="sp-card-header">
         <div className={`sp-card-icon sp-card-icon--${iconVariant}`}>{icon}</div>
         <div className="sp-card-header-text">
@@ -247,6 +248,40 @@ export function SettingsPage({
   const expandedSessionsRef = useRef<HTMLDivElement | null>(null)
   const cooldownIntervalRef = useRef<number | null>(null)
   const [refreshCooldown, setRefreshCooldown] = useState(0)
+
+  const [activeSection, setActiveSection] = useState<string>('privacy-activity')
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        let maxRatio = 0
+        let visibleSection = ''
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && entry.intersectionRatio > maxRatio) {
+            maxRatio = entry.intersectionRatio
+            visibleSection = entry.target.id
+          }
+        })
+        if (visibleSection) {
+          setActiveSection(visibleSection)
+        }
+      },
+      { root: null, rootMargin: '-20% 0px -60% 0px', threshold: [0, 0.25, 0.5, 0.75, 1] }
+    )
+
+    const sections = ['privacy-activity', 'privacy-profile', 'password', 'sessions', 'delete-account']
+    sections.forEach((id) => {
+      const el = document.getElementById(id)
+      if (el) observer.observe(el)
+    })
+
+    return () => observer.disconnect()
+  }, [])
+
+  function scrollToSection(id: string) {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+    setActiveSection(id)
+  }
 
   // Derived session data
   const sortedSessions = [...sessions].sort((a, b) => {
@@ -516,20 +551,20 @@ export function SettingsPage({
       <div className="sp-layout">
         {/* Sidebar nav */}
         <nav className="sp-nav" aria-label="Điều hướng cài đặt">
-          <button className="sp-nav-item sp-nav-item--active" type="button">
+          <button className={`sp-nav-item${activeSection === 'privacy-activity' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('privacy-activity')}>
             <Eye size={15} /> Quyền riêng tư
           </button>
-          <button className="sp-nav-item" type="button">
+          <button className={`sp-nav-item${activeSection === 'privacy-profile' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('privacy-profile')}>
             <IdCard size={15} /> Hồ sơ
           </button>
-          <button className="sp-nav-item" type="button">
+          <button className={`sp-nav-item${activeSection === 'password' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('password')}>
             <KeyRound size={15} /> Mật khẩu
           </button>
-          <button className="sp-nav-item" type="button">
+          <button className={`sp-nav-item${activeSection === 'sessions' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('sessions')}>
             <ShieldCheck size={15} /> Phiên đăng nhập
           </button>
           <div className="sp-nav-divider" />
-          <button className="sp-nav-item sp-nav-item--danger" type="button">
+          <button className={`sp-nav-item sp-nav-item--danger${activeSection === 'delete-account' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('delete-account')}>
             <Trash2 size={15} /> Xóa tài khoản
           </button>
         </nav>
@@ -537,6 +572,7 @@ export function SettingsPage({
         <div className="sp-main">
           {/* Privacy: activity */}
           <Card
+            id="privacy-activity"
             icon={showActivityStatus ? <Eye size={16} /> : <EyeOff size={16} />}
             title="Quyền riêng tư"
             description="Trạng thái hoạt động và thông báo đã đọc tin nhắn."
@@ -568,6 +604,7 @@ export function SettingsPage({
 
           {/* Privacy: profile visibility */}
           <Card
+            id="privacy-profile"
             icon={<IdCard size={16} />}
             iconVariant="neutral"
             title="Hiển thị trên hồ sơ"
@@ -585,6 +622,7 @@ export function SettingsPage({
 
           {/* Password */}
           <Card
+            id="password"
             icon={<KeyRound size={16} />}
             title="Đổi mật khẩu"
             description="Xác nhận bằng mật khẩu hiện tại trước khi thay đổi."
@@ -648,7 +686,7 @@ export function SettingsPage({
           </Card>
 
           {/* Sessions */}
-          <section className="sp-card" aria-labelledby="sessions-title">
+          <section id="sessions" className="sp-card" aria-labelledby="sessions-title">
             <div className="sp-card-header">
               <div className="sp-card-icon sp-card-icon--default">
                 <ShieldCheck size={16} />
@@ -736,6 +774,7 @@ export function SettingsPage({
 
           {/* Delete account */}
           <Card
+            id="delete-account"
             icon={<AlertTriangle size={16} />}
             iconVariant="danger"
             title="Xóa tài khoản"
