@@ -10652,12 +10652,7 @@ html.dark .message-search-button.is-active {
   .np-page-header { flex-direction: column; gap: 12px; }
 }
 
-/* ─────────────────────────────────────────────
-   ProfilePage.css
-   Design language mirrors NotificationsPanel
-   ───────────────────────────────────────────── */
 
-/* ── Page shell ── */
 .pp-page {
   display: flex;
   flex-direction: column;
@@ -10666,7 +10661,6 @@ html.dark .message-search-button.is-active {
   background: var(--color-bg, #f5f5f7);
 }
 
-/* ── Page header ── */
 .pp-page-header {
   display: flex;
   align-items: flex-start;
@@ -10719,7 +10713,6 @@ html.dark .message-search-button.is-active {
   border: 1px solid #ffd97d;
 }
 
-/* ── Grid layout ── */
 .pp-grid {
   flex: 1;
   overflow-y: auto;
@@ -10729,7 +10722,6 @@ html.dark .message-search-button.is-active {
   gap: 12px;
 }
 
-/* ── Section card (mirrors np-section) ── */
 .pp-section {
   background: var(--color-surface, #ffffff);
   border: 1px solid var(--color-border, #e5e5ea);
@@ -10860,7 +10852,6 @@ html.dark .message-search-button.is-active {
   display: none;
 }
 
-/* ── Bio preview ── */
 .pp-bio-preview p {
   font-size: 13px;
   line-height: 1.6;
@@ -10868,12 +10859,14 @@ html.dark .message-search-button.is-active {
   margin: 0 0 8px;
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
 .pp-bio-preview p.is-expanded {
   -webkit-line-clamp: unset;
+  line-clamp: unset;
   display: block;
 }
 
