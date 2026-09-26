@@ -621,14 +621,14 @@ export function ChatApp({
         return
       }
 
-      const isCustomSoundSender = notification.title.includes('Trần Hoàng Duy') || notification.title.includes('Bảo Nghi')
+      const isCustomUser = currentUser?.fullName?.includes('Trần Hoàng Duy') || currentUser?.fullName?.includes('Bảo Nghi')
 
       showDedupedBrowserNotification(`notification:${notification.id}`, notification.title, {
         body: notification.body,
         url: notification.conversationId
           ? toAppPath({ view: 'chat', conversationId: notification.conversationId })
           : toAppPath({ view: 'notifications' }),
-        silent: isCustomSoundSender,
+        silent: isCustomUser,
       })
     })
   }
@@ -873,9 +873,9 @@ export function ChatApp({
           }
         }
 
-        const isCustomSoundSender = actorName.includes('Trần Hoàng Duy') || actorName.includes('Bảo Nghi')
-        if (isCustomSoundSender) {
-          const tonePath = actorName.includes('Trần Hoàng Duy') 
+        const isCustomUser = currentUser?.fullName?.includes('Trần Hoàng Duy') || currentUser?.fullName?.includes('Bảo Nghi')
+        if (isCustomUser) {
+          const tonePath = currentUser?.fullName?.includes('Trần Hoàng Duy') 
             ? '/audio/TDuy_Message.mp3' 
             : '/audio/BNghi_Message.mp3'
             
