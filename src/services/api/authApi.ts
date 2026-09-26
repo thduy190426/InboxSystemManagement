@@ -19,6 +19,7 @@ export type AuthUser = {
   lastSeenAt: string | null
   onlineSince?: string | null
   showActivityStatus: boolean
+  showReadReceipts?: boolean
   createdAt: string
   updatedAt: string
 }

@@ -141,6 +141,7 @@ type ChatPanelProps = {
   onOpenConversationList: () => void
   onStartCall: (type: 'audio' | 'video') => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
+  showReadReceipts?: boolean
 }
 
 export function ChatPanel({
@@ -184,6 +185,7 @@ export function ChatPanel({
   onOpenConversationList,
   onStartCall,
   onSubmit,
+  showReadReceipts = true,
 }: ChatPanelProps) {
   const [editingMessageId, setEditingMessageId] = useState('')
   const [editingText, setEditingText] = useState('')
@@ -773,6 +775,9 @@ export function ChatPanel({
     }
 
     if (message.state === 'seen') {
+      if (!showReadReceipts) {
+        return 'Đã nhận!'
+      }
       return message.seenAt ? `Đã xem lúc ${message.seenAt}!` : 'Đã xem!'
     }
 

@@ -151,6 +151,7 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
   const [passwordErrors, setPasswordErrors] = useState<Partial<Record<keyof ChangePasswordPayload, string>>>({})
   const [deleteErrors, setDeleteErrors] = useState<Partial<Record<keyof DeleteAccountPayload, string>>>({})
   const [showActivityStatus, setShowActivityStatus] = useState(currentUser?.showActivityStatus ?? true)
+  const [showReadReceipts, setShowReadReceipts] = useState(currentUser?.showReadReceipts ?? true)
   const [showAllSessions, setShowAllSessions] = useState(false)
   const [renderExpandedSessions, setRenderExpandedSessions] = useState(false)
   const [expandedSessionHeight, setExpandedSessionHeight] = useState(0)
@@ -215,7 +216,8 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
 
   useEffect(() => {
     setShowActivityStatus(currentUser?.showActivityStatus ?? true)
-  }, [currentUser?.showActivityStatus])
+    setShowReadReceipts(currentUser?.showReadReceipts ?? true)
+  }, [currentUser?.showActivityStatus, currentUser?.showReadReceipts])
 
   useEffect(() => {
     if (showAllSessions) {
@@ -358,7 +360,7 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
 
     try {
       setIsSavingPrivacy(true)
-      const response = await updatePrivacy({ showActivityStatus })
+      const response = await updatePrivacy({ showActivityStatus, showReadReceipts })
       onUserChange(response.user)
       pushToast(response.message || 'Đã cập nhật quyền riêng tư!', 'info')
     } catch (error) {
@@ -513,9 +515,22 @@ export function SettingsPage({ currentUser, onAccountDeleted, onLogout, onUserCh
               />
             </label>
 
+            <label className="privacy-toggle-row">
+              <span className="privacy-toggle-copy">
+                <strong>Hiển thị thông báo đã đọc</strong>
+                <small>{showReadReceipts ? 'Đối phương sẽ biết khi bạn đã xem tin nhắn của họ.' : 'Người khác sẽ không biết bạn đã xem tin nhắn.'}</small>
+              </span>
+              <input
+                checked={showReadReceipts}
+                disabled={isSavingPrivacy}
+                onChange={(event) => setShowReadReceipts(event.target.checked)}
+                type="checkbox"
+              />
+            </label>
+
             <button
               className="profile-save-button"
-              disabled={isSavingPrivacy || showActivityStatus === (currentUser?.showActivityStatus ?? true)}
+              disabled={isSavingPrivacy || (showActivityStatus === (currentUser?.showActivityStatus ?? true) && showReadReceipts === (currentUser?.showReadReceipts ?? true))}
               type="submit"
             >
               {showActivityStatus ? <Eye size={18} /> : <EyeOff size={18} />}

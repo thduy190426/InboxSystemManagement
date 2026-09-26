@@ -3363,6 +3363,7 @@ export function ChatApp({
       {renderNavRail()}
       {renderInboxPanel()}
       <ChatPanel
+        showReadReceipts={currentUser?.showReadReceipts ?? true}
         activeConversation={activeConversation}
         draft={draft}
         busyMessageId={busyMessageId}

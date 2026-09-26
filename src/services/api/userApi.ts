@@ -51,6 +51,7 @@ export type DeleteAccountPayload = {
 
 export type PrivacyPayload = {
   showActivityStatus: boolean
+  showReadReceipts?: boolean
 }
 
 async function requestProfile(path: string, options: RequestInit = {}) {
