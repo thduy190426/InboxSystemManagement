@@ -574,7 +574,7 @@ export function ChatApp({
   function showDedupedBrowserNotification(
     key: string,
     title: string,
-    payload: { body?: string; url?: string; requireInteraction?: boolean } = {},
+    payload: { body?: string; url?: string; requireInteraction?: boolean; silent?: boolean } = {},
   ) {
     if (recentBrowserNotificationKeysRef.current.has(key)) {
       return
