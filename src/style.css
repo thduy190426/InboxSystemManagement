@@ -10123,12 +10123,13 @@ html.dark .message-search-button.is-active {
 
 .cp-presence-dot {
   position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 9px;
-  height: 9px;
+  bottom: 1px;
+  right: 1px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  border: 2px solid var(--sp-surface-2, #1e2333);
+  border: 2.5px solid var(--sp-surface-2, #1e2333);
+  z-index: 2;
 }
 
 .cp-presence--online { background: #4ade80; }
