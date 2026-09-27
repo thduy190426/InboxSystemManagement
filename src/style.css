@@ -2171,9 +2171,15 @@ h3 {
   flex-direction: column;
   min-height: 0;
   min-width: 0;
-  align-items: center;
+  align-items: flex-end;
   gap: 8px;
   color: var(--primary-strong);
+}
+
+.conversation-meta .conversation-time {
+  flex: 0 0 auto;
+  color: var(--subtle);
+  font-size: 12px;
 }
 
 .conversation-context-menu {

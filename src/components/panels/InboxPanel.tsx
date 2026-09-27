@@ -626,13 +626,13 @@ export function InboxPanel({
                   <strong>{getResolvedConversationName(conversation)}</strong>
                   {conversation.muted ? <BellOff size={14} aria-label="Đã tắt tiếng" style={{ flexShrink: 0, color: 'var(--subtle)' }} /> : null}
                 </span>
-                {activeFilter !== 'archived' ? (
-                  <span>{formatConversationLastTime(conversation)}</span>
-                ) : null}
               </span>
               <span className="conversation-preview">{getConversationPreview(conversation)}</span>
             </span>
             <span className="conversation-meta">
+              {activeFilter !== 'archived' ? (
+                <span className="conversation-time">{formatConversationLastTime(conversation)}</span>
+              ) : null}
               {activeFilter === 'archived' ? (
                 <span className="restore-chip">
                   <ArchiveRestore size={14} />
