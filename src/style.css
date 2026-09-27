@@ -4560,15 +4560,20 @@ html.dark .scroll-to-latest-button:focus-visible {
   max-width: min(620px, 72vw);
   min-width: 0;
   padding: 8px 11px 7px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 8px;
-  background: var(--surface);
-  box-shadow: 0 6px 16px rgba(22, 35, 43, 0.06);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  color: #1c1c1e;
 }
 
 .outgoing .message-bubble {
-  border-color: rgba(15, 159, 142, 0.28);
-  background: #dff7f3;
+  border-color: rgba(15, 159, 142, 0.4);
+  background: rgba(15, 159, 142, 0.9);
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(15, 159, 142, 0.2);
 }
 
 .message-sender-name {
@@ -11394,3 +11399,38 @@ html.dark .pp-unsaved-badge {
 }
 
 .conversation-seen-avatar { width: 14px !important; height: 14px !important; font-size: 8px !important; border-radius: 50%; overflow: hidden; object-fit: cover; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+
+/* Message Bubble Enhancements */
+.message-bubble {
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08) !important;
+  color: #1c1c1e !important;
+}
+.message-bubble p {
+  color: inherit !important;
+}
+.outgoing .message-bubble {
+  border-color: rgba(15, 159, 142, 0.4) !important;
+  background: rgba(15, 159, 142, 0.9) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 15px rgba(15, 159, 142, 0.2) !important;
+}
+.outgoing .message-time {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+html.dark .message-bubble {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(44, 44, 46, 0.85) !important;
+  color: #f2f2f7 !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
+}
+html.dark .outgoing .message-bubble {
+  border-color: rgba(15, 159, 142, 0.5) !important;
+  background: rgba(15, 159, 142, 0.85) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5) !important;
+}
+
