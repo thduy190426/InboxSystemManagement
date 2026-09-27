@@ -42,8 +42,8 @@ export function showBrowserNotification(title: string, payload: BrowserNotificat
 
   const notification = new Notification(title, {
     body: payload.body,
-    icon: '/favicon.svg',
-    badge: '/favicon.svg',
+    icon: '/MessageIcon.jpg',
+    badge: '/MessageIcon.jpg',
     tag: payload.tag,
     requireInteraction: payload.requireInteraction,
     silent: payload.silent,

@@ -22,40 +22,54 @@ Mục tiêu cốt lõi của dự án là mang lại một không gian trò chuy
 
 ### 1. Trò Chuyện Thời Gian Thực (Real-time Chat)
 - Nhắn tin cá nhân (1-1) và nhắn tin nhóm với tốc độ phản hồi tức thì nhờ công nghệ WebSockets (`Socket.IO`).
-- Hỗ trợ đa dạng loại nội dung: Văn bản, hình ảnh, video, âm thanh (voice message), và tệp đính kèm.
+- Hỗ trợ đa dạng loại nội dung: Văn bản, hình ảnh, video, âm thanh (voice message), tệp đính kèm và **GIPHY (GIFs)**.
 - Các thao tác tin nhắn nâng cao:
   - Trả lời tin nhắn (Reply)
   - Chuyển tiếp tin nhắn (Forward)
   - Ghim tin nhắn quan trọng (Pin)
-  - Thu hồi tin nhắn (Unsend)
+  - Thu hồi / Chỉnh sửa tin nhắn (Unsend / Edit)
+  - Báo cáo tin nhắn (Report) vi phạm cho quản trị viên.
 - Trạng thái tin nhắn chi tiết: Đang gửi, Đã gửi, Đã nhận, Đã xem (Read Receipts).
 - Tương tác tin nhắn: Thả biểu tượng cảm xúc (reactions) vào từng tin nhắn cụ thể.
 - Hiển thị trạng thái "đang nhập tin nhắn..." (typing indicator).
+- Tìm kiếm tin nhắn trong cuộc trò chuyện (Search within conversation).
+- Lưu trữ (Archive), Ẩn (Hide) và phân loại cuộc trò chuyện (Tất cả, Chưa đọc, Đã lưu trữ).
 
-### 2. Quản Lý Cuộc Gọi (Audio/Video Call)
+### 2. Quản Lý Nhóm & Cuộc Trò Chuyện (Group & Chat Management)
+- Tạo và quản lý nhóm trò chuyện chuyên sâu.
+- Phân quyền nhóm: Chủ nhóm (Owner) và Thành viên (Member).
+- Cài đặt nhóm: Đổi tên, thay đổi ảnh đại diện nhóm.
+- Duyệt thành viên qua Yêu cầu tham gia (Join Requests) hoặc Link mời tham gia nhóm (Invite Link).
+- Cài đặt biệt danh (Nickname) cho từng thành viên trong nhóm hoặc bạn bè.
+- Tuỳ chỉnh giao diện chat: Thay đổi hình nền (Background) cho từng cuộc trò chuyện.
+- Rời nhóm, giải tán nhóm (Disband) dễ dàng cho quản trị viên nhóm.
+
+### 3. Quản Lý Cuộc Gọi (Audio/Video Call)
 - Tích hợp tính năng gọi điện thoại và gọi video trực tuyến chất lượng cao.
 - Giao diện cuộc gọi hiện đại dạng Overlay, không làm gián đoạn trải nghiệm sử dụng.
 - Lưu trữ và hiển thị chi tiết lịch sử cuộc gọi (Thời gian, thời lượng, cuộc gọi nhỡ).
 
-### 3. Quản Lý Danh Bạ & Bạn Bè
-- Tìm kiếm và gửi lời mời kết bạn dễ dàng với những người dùng khác trong hệ thống.
-- Quản lý lời mời: Đồng ý hoặc từ chối kết bạn.
+### 4. Quản Lý Danh Bạ & Bạn Bè
+- Tìm kiếm, gửi/nhận lời mời kết bạn dễ dàng với những người dùng khác trong hệ thống.
+- Cài đặt biệt danh (Nickname) riêng tư cho bạn bè.
 - Danh sách chặn người dùng (Block List) để hạn chế sự làm phiền và bảo vệ quyền riêng tư.
 - Hiển thị trạng thái hoạt động theo thời gian thực: Trực tuyến (Online), Ngoại tuyến (Offline), Bận (Busy), Vắng mặt (Away) cùng với huy hiệu thời gian online.
 
-### 4. Hệ Thống Thông Báo
+### 5. Hệ Thống Thông Báo
 - Hệ thống thông báo đẩy (Web Push Notifications) giúp người dùng nhận thông báo ngay cả khi không mở tab ứng dụng.
 - Thông báo In-app sinh động về tin nhắn mới, lời mời kết bạn, cuộc gọi nhỡ và các tương tác khác.
 
-### 5. Quản Trị Hệ Thống (Admin Dashboard)
+### 6. Quản Trị Hệ Thống (Admin Dashboard)
 - Giao diện quản trị hiện đại, tổng quan (Dashboard) dành riêng cho Ban Quản Trị.
-- Thống kê trực quan: Tổng số người dùng, người dùng đang hoạt động (active), thống kê tin nhắn và cảnh báo hệ thống.
-- Quản lý người dùng: Xem danh sách, cấp quyền, khóa tài khoản (ban) hoặc can thiệp vào các hoạt động để đảm bảo an ninh hệ thống.
+- Biểu đồ thống kê trực quan: Lượt đăng ký và truy cập trong 7 ngày gần nhất, tổng số người dùng, người dùng đang hoạt động (active).
+- Quản lý báo cáo (Report Management): Xem xét và xử lý các tin nhắn bị báo cáo.
+- Quản lý người dùng: Xem danh sách, cấp quyền, tạm ngưng/khóa tài khoản (Suspend/Ban) hoặc can thiệp vào các hoạt động để đảm bảo an ninh hệ thống.
 
-### 6. Tùy Chỉnh & Trải Nghiệm Người Dùng
+### 7. Tùy Chỉnh & Trải Nghiệm Người Dùng
+- Hỗ trợ đa ngôn ngữ (Internationalization/i18n) giúp người dùng linh hoạt đổi ngôn ngữ giao diện.
 - Hỗ trợ Chế độ Tối/Sáng (Dark/Light Mode) toàn diện và mượt mà.
-- Cài đặt tài khoản cá nhân, cập nhật ảnh đại diện (Avatar), mật khẩu, quyền riêng tư.
-- Bảo mật xác thực: Đăng nhập, Đăng ký, Quên mật khẩu, Xác thực email qua Mailtrap, và thử thách Captcha chống spam.
+- Cài đặt tài khoản cá nhân, công cụ cắt ảnh đại diện trực tiếp (Avatar Cropper), cập nhật mật khẩu, quyền riêng tư.
+- Bảo mật xác thực: Đăng nhập, Đăng ký, Quên mật khẩu, Xác thực email (qua Resend hoặc Mailtrap), và thử thách bảo mật Google reCAPTCHA v2 chống spam.
 
 ---
 
@@ -70,6 +84,9 @@ Mục tiêu cốt lõi của dự án là mang lại một không gian trò chuy
   - `lucide-react`: Bộ biểu tượng SVG sắc nét, nhẹ và hiện đại.
   - `emoji-picker-react`: Tích hợp bộ chọn Emoji phong phú.
   - `socket.io-client`: Quản lý kết nối thời gian thực phía máy khách.
+  - `i18next` & `react-i18next`: Hỗ trợ đa ngôn ngữ (i18n).
+  - `react-easy-crop`: Công cụ cắt sửa ảnh đại diện.
+  - `react-google-recaptcha`: Bảo mật chống Spam/Bot.
 
 ### Máy Chủ & Dịch Vụ (Backend)
 - **Môi trường & Framework:** Node.js, ExpressJS
@@ -78,39 +95,39 @@ Mục tiêu cốt lõi của dự án là mang lại một không gian trò chuy
 - **Lưu trữ Đám mây:** Cloudinary (Tối ưu hóa, lưu trữ an toàn hình ảnh, video, tệp đính kèm).
 - **Dịch vụ & Bảo mật:**
   - `web-push`: Triển khai thông báo đẩy (Push Notifications) an toàn.
-  - `mailtrap`: Dịch vụ kiểm thử và gửi email xác thực.
+  - `resend` & `nodemailer`: Dịch vụ gửi email thông báo và mã OTP.
   - `bcryptjs`: Mã hóa mật khẩu một chiều mạnh mẽ.
-  - `helmet` & `cors`: Tăng cường bảo mật máy chủ, chống các lỗ hổng web phổ biến.
+  - `helmet`, `cors`, **Rate Limiting**: Tăng cường bảo mật máy chủ, chống các lỗ hổng web phổ biến và hạn chế request tần suất cao.
   - `multer`: Xử lý tệp tải lên (upload file).
 
 ---
 
 ## Cấu Trúc Thư Mục Dự Án
 
-```plaintext
+\`\`\`plaintext
 InboxSystemManagement/
 ├── backend/                # Mã nguồn Backend (Node.js & Express)
 │   ├── src/
 │   │   ├── config/         # Cấu hình CSDL, Cloudinary, v.v.
-│   │   ├── controllers/    # Logic xử lý API (Auth, Chat, Admin, v.v.)
-│   │   ├── middleware/     # Các middleware (Auth JWT, Rate Limit, Error)
+│   │   ├── controllers/    # Logic xử lý API (Auth, Chat, Admin, System, v.v.)
+│   │   ├── middleware/     # Các middleware (Auth JWT, Rate Limit, Error Handler)
 │   │   ├── realtime/       # Logic xử lý Socket.IO
 │   │   ├── routes/         # Định tuyến API
-│   │   ├── services/       # Dịch vụ bên ngoài (Mailtrap, Push Notification)
+│   │   ├── services/       # Dịch vụ bên ngoài (Resend, Mailtrap, Push Notification)
 │   │   └── utils/          # Các hàm tiện ích
 │   └── package.json
 ├── database/               # Các tập lệnh SQL để khởi tạo cơ sở dữ liệu
 ├── public/                 # Các tệp tĩnh (Favicon, Logo...)
 ├── src/                    # Mã nguồn Frontend (React & Vite)
-│   ├── components/         # Các UI Components tái sử dụng (ChatPanel, ContactsPanel, Admin...)
-│   ├── pages/              # Các trang giao diện (Login, Register, Verify...)
-│   ├── services/           # Các hàm gọi API từ phía Client
+│   ├── components/         # Các UI Components (Layout, Panels, Views, UI elements)
+│   ├── pages/              # Các trang giao diện
+│   ├── services/           # Các hàm gọi API từ phía Client (Auth, Chat, Notifications)
 │   ├── types.ts            # Định nghĩa kiểu dữ liệu TypeScript
 │   ├── style.css           # File CSS toàn cục chứa Design System & Dark Mode
 │   └── main.tsx            # Điểm vào của ứng dụng React
 ├── package.json            # Quản lý dependencies của Frontend
 └── README.md               # Tài liệu dự án
-```
+\`\`\`
 
 ---
 
@@ -121,17 +138,19 @@ InboxSystemManagement/
 - **Node.js** (Phiên bản v18.0.0 trở lên)
 - **MySQL Server** (Đang chạy tại local hoặc remote)
 - Tài khoản **Cloudinary** (Lấy API Key, Secret)
-- Tài khoản **Mailtrap** (Lấy thông tin SMTP)
+- Tài khoản **Resend** hoặc **Mailtrap** (Cấu hình gửi mail OTP)
+- **GIPHY API Key** (Sử dụng cho tính năng gửi GIF)
+- **Google reCAPTCHA v2 Key** (Cho tính năng đăng ký, quên mật khẩu)
 
 ### Các Bước Cài Đặt
 
 1. **Khởi tạo Cơ sở dữ liệu:**
    - Tạo một Database mới trong MySQL.
-   - Chạy các file `.sql` có trong thư mục `database/` để khởi tạo cấu trúc bảng.
+   - Chạy các file \`.sql\` có trong thư mục \`database/\` để khởi tạo cấu trúc bảng.
 
 2. **Thiết lập Biến môi trường (Environment Variables):**
-   - Di chuyển vào thư mục `backend/`, tạo một tệp có tên `.env` dựa trên `.env.example` (nếu có) hoặc khai báo các thông tin sau:
-     ```env
+   - Di chuyển vào thư mục \`backend/\`, tạo một tệp có tên \`.env\` dựa trên \`.env.example\` (nếu có) hoặc khai báo các thông tin sau:
+     \`\`\`env
      PORT=5000
      DB_HOST=localhost
      DB_USER=root
@@ -141,32 +160,37 @@ InboxSystemManagement/
      CLOUDINARY_CLOUD_NAME=your_cloud_name
      CLOUDINARY_API_KEY=your_api_key
      CLOUDINARY_API_SECRET=your_api_secret
+     RESEND_API_KEY=your_resend_api_key
      MAILTRAP_USER=your_mailtrap_user
      MAILTRAP_PASS=your_mailtrap_pass
      VAPID_PUBLIC_KEY=your_vapid_public_key
      VAPID_PRIVATE_KEY=your_vapid_private_key
-     ```
-   - Trở lại thư mục gốc (nơi chứa Frontend), tạo tệp `.env` nếu cần thiết (Vite yêu cầu biến bắt đầu bằng `VITE_`).
+     \`\`\`
+   - Trở lại thư mục gốc (nơi chứa Frontend), tạo tệp \`.env\` với các biến (Vite yêu cầu biến bắt đầu bằng \`VITE_\`):
+     \`\`\`env
+     VITE_GIPHY_API_KEY=your_giphy_api_key
+     VITE_RECAPTCHA_SITE_KEY=your_recaptcha_site_key
+     \`\`\`
 
 3. **Cài đặt các gói phụ thuộc (Dependencies):**
    - Tại **thư mục gốc**, mở terminal và chạy:
-     ```bash
+     \`\`\`bash
      npm install
-     ```
+     \`\`\`
    - Di chuyển vào thư mục **backend**, và chạy:
-     ```bash
+     \`\`\`bash
      cd backend
      npm install
-     ```
+     \`\`\`
 
 4. **Khởi chạy Ứng dụng:**
-   - Trở lại thư mục gốc của dự án, sử dụng lệnh sau để khởi chạy ĐỒNG THỜI cả Frontend và Backend (Sử dụng thư viện `concurrently`):
-     ```bash
+   - Trở lại thư mục gốc của dự án, sử dụng lệnh sau để khởi chạy ĐỒNG THỜI cả Frontend và Backend (Sử dụng thư viện \`concurrently\`):
+     \`\`\`bash
      npm run dev:all
-     ```
+     \`\`\`
    - Hệ thống sẽ tự động khởi chạy:
-     - Frontend tại: `http://localhost:5173` (mặc định của Vite)
-     - Backend tại: `http://localhost:5000` (theo cấu hình `.env`)
+     - Frontend tại: \`http://localhost:5173\` (mặc định của Vite)
+     - Backend tại: \`http://localhost:5000\` (theo cấu hình \`.env\`)
 
 ---
 
@@ -174,9 +198,9 @@ InboxSystemManagement/
 
 Chúng tôi luôn hoan nghênh những đóng góp để hệ thống trở nên hoàn thiện và mạnh mẽ hơn. Nếu bạn tìm thấy lỗi (bug), có ý tưởng tối ưu hóa, hoặc muốn thêm tính năng mới:
 1. **Fork** dự án này về tài khoản của bạn.
-2. Tạo một nhánh mới (branch) cho tính năng hoặc sửa lỗi của bạn (`git checkout -b feature/AmazingFeature`).
-3. Commit những thay đổi của bạn (`git commit -m 'Add some AmazingFeature'`).
-4. Đẩy (Push) lên nhánh đó (`git push origin feature/AmazingFeature`).
+2. Tạo một nhánh mới (branch) cho tính năng hoặc sửa lỗi của bạn (\`git checkout -b feature/AmazingFeature\`).
+3. Commit những thay đổi của bạn (\`git commit -m 'Add some AmazingFeature'\`).
+4. Đẩy (Push) lên nhánh đó (\`git push origin feature/AmazingFeature\`).
 5. Tạo một **Pull Request** để chúng tôi xem xét.
 
 Vui lòng tuân thủ các quy chuẩn lập trình, format code đang được sử dụng trong dự án.

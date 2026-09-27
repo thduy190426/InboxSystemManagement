@@ -13,8 +13,8 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(title, {
       body: payload.body || '',
-      icon: payload.icon || '/favicon.svg',
-      badge: payload.badge || '/favicon.svg',
+      icon: payload.icon || '/MessageIcon.jpg',
+      badge: payload.badge || '/MessageIcon.jpg',
       tag: payload.tag || 'inbox-notification',
       data: {
         url: payload.url || '/',

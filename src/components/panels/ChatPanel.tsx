@@ -228,6 +228,7 @@ export function ChatPanel({
   const [isSearchingMessages, setIsSearchingMessages] = useState(false)
   const [isSearchFilterOpen, setIsSearchFilterOpen] = useState(false)
   const [activeSearchIndex, setActiveSearchIndex] = useState(0)
+  const [optimisticHiddenMessageIds, setOptimisticHiddenMessageIds] = useState<Set<string>>(new Set())
   const [recordingKind, setRecordingKind] = useState<'audio' | 'video' | null>(null)
   const [recordingDuration, setRecordingDuration] = useState(0)
   const [recordingError, setRecordingError] = useState('')
@@ -337,6 +338,17 @@ export function ChatPanel({
       setActiveSearchIndex(0)
     }
   }, [activeSearchIndex, searchMatches.length])
+
+  useEffect(() => {
+    setOptimisticHiddenMessageIds(new Set())
+  }, [activeConversation.id])
+
+  const displayMessages = useMemo(() => {
+    if (optimisticHiddenMessageIds.size === 0) {
+      return messages
+    }
+    return messages.filter((m) => !optimisticHiddenMessageIds.has(m.id))
+  }, [messages, optimisticHiddenMessageIds])
 
   useEffect(() => {
     if (!activeSearchMessageId) {
@@ -672,7 +684,7 @@ export function ChatPanel({
     }
   }
 
-  async function handleEditSubmit(event: FormEvent<HTMLFormElement>, message: Message) {
+  function handleEditSubmit(event: FormEvent<HTMLFormElement>, message: Message) {
     event.preventDefault()
 
     const text = editingText.trim()
@@ -686,46 +698,61 @@ export function ChatPanel({
       title: 'Cập nhật tin nhắn?',
       description: 'Nội dung tin nhắn sẽ được thay đổi và hiển thị trạng thái đã chỉnh sửa.',
       confirmLabel: 'Lưu thay đổi',
-      onConfirm: async () => {
-        try {
-          await onEditMessage(message.id, text)
-          cancelEditing()
-        } catch {
-        }
+      onConfirm: () => {
+        // Không block bằng await để UI phản hồi ngay lập tức
+        Promise.resolve(onEditMessage(message.id, text)).catch(console.error)
+        cancelEditing()
       },
     })
   }
 
-  async function handleDeleteForMe(message: Message) {
+  function handleDeleteForMe(message: Message) {
     setConfirmDialog({
       title: 'Xoá tin nhắn?',
       description: 'Tin nhắn này sẽ bị xoá khỏi cuộc trò chuyện của bạn.',
       confirmLabel: 'Xoá tin nhắn',
       tone: 'danger',
-      onConfirm: async () => {
+      onConfirm: () => {
         if (editingMessageId === message.id) {
           cancelEditing()
         }
 
         setOpenActionMenuId('')
-        await onDeleteMessage(message.id)
+        setOptimisticHiddenMessageIds((prev) => new Set(prev).add(message.id))
+
+        Promise.resolve(onDeleteMessage(message.id)).catch(() => {
+          // Revert nếu có lỗi
+          setOptimisticHiddenMessageIds((prev) => {
+            const next = new Set(prev)
+            next.delete(message.id)
+            return next
+          })
+        })
       },
     })
   }
 
-  async function handleRecall(message: Message) {
+  function handleRecall(message: Message) {
     setConfirmDialog({
       title: 'Thu hồi tin nhắn?',
       description: 'Tin nhắn này sẽ bị gỡ khỏi cuộc trò chuyện của tất cả mọi người.',
       confirmLabel: 'Thu hồi',
       tone: 'danger',
-      onConfirm: async () => {
+      onConfirm: () => {
         if (editingMessageId === message.id) {
           cancelEditing()
         }
 
         setOpenActionMenuId('')
-        await onRecallMessage(message.id)
+        setOptimisticHiddenMessageIds((prev) => new Set(prev).add(message.id))
+
+        Promise.resolve(onRecallMessage(message.id)).catch(() => {
+          setOptimisticHiddenMessageIds((prev) => {
+            const next = new Set(prev)
+            next.delete(message.id)
+            return next
+          })
+        })
       },
     })
   }
@@ -741,9 +768,9 @@ export function ChatPanel({
       description: 'Báo cáo sẽ được gửi đến admin để xem xét nội dung vi phạm!',
       confirmLabel: 'Gửi báo cáo',
       tone: 'danger',
-      onConfirm: async () => {
+      onConfirm: () => {
         setOpenActionMenuId('')
-        await onReportMessage(message.id)
+        Promise.resolve(onReportMessage(message.id)).catch(console.error)
       },
     })
   }
@@ -1385,7 +1412,7 @@ export function ChatPanel({
           </button>
         ) : null}
 
-        {messages.length === 0 && activeConversation.type !== 'group' ? (
+        {displayMessages.length === 0 && activeConversation.type !== 'group' ? (
           <div className="thread-empty-state">
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
               <MessageSquare size={48} strokeWidth={1.5} style={{ opacity: 0.2 }} />
@@ -1394,9 +1421,9 @@ export function ChatPanel({
           </div>
         ) : null}
 
-        {messages.map((message, index) => {
-          const previousMessage = messages[index - 1]
-          const nextMessage = messages[index + 1]
+        {displayMessages.map((message, index) => {
+          const previousMessage = displayMessages[index - 1]
+          const nextMessage = displayMessages[index + 1]
           const dateDividerLabel = getDateDividerLabel(message, previousMessage)
           const isGroupedWithPrevious = isSameMessageGroup(message, previousMessage)
           const isGroupedWithNext = isSameMessageGroup(message, nextMessage)
@@ -1416,11 +1443,11 @@ export function ChatPanel({
             if (isSameAsPrev) {
               isHiddenSystemMessage = true
             } else {
-              for (let i = index + 1; i < messages.length; i++) {
+              for (let i = index + 1; i < displayMessages.length; i++) {
                 if (
-                  messages[i].author === 'system' &&
-                  messages[i].text === message.text &&
-                  isSameLocalDay(parseMessageDate(messages[i]), parseMessageDate(message))
+                  displayMessages[i].author === 'system' &&
+                  displayMessages[i].text === message.text &&
+                  isSameLocalDay(parseMessageDate(displayMessages[i]), parseMessageDate(message))
                 ) {
                   systemGroupCount++
                 } else {
