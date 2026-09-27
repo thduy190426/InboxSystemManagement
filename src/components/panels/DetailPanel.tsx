@@ -1,4 +1,4 @@
-﻿import type { ChangeEvent, FormEvent } from 'react'
+import type { ChangeEvent, FormEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { useEffect, useMemo, useState } from 'react'
 import {
@@ -560,9 +560,9 @@ export function DetailPanel({
                 }
               }}
               type="button"
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', background: 'var(--surface-soft)', border: '1px solid var(--line)', borderRadius: '8px', cursor: Boolean(busyAction) ? 'not-allowed' : 'pointer', fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}
+              style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: '8px', padding: '10px 14px', background: 'var(--surface-soft)', border: '1px solid var(--line)', borderRadius: '8px', cursor: Boolean(busyAction) ? 'not-allowed' : 'pointer', fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}
             >
-              <Trash2 size={16} color="var(--danger)" /> Gỡ ảnh nền
+              <Trash2 size={16} color="#ef4444" /> Gỡ ảnh nền
             </button>
           )}
         </div>
