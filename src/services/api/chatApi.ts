@@ -101,7 +101,13 @@ async function request<T>(path: string, options: RequestInit = {}) {
 }
 
 export async function fetchConversations(options: { archived?: boolean } = {}) {
-  const path = options.archived ? '/conversations?archived=true' : '/conversations'
+  const qs = new URLSearchParams()
+  if (options.archived) {
+    qs.set('archived', 'true')
+  }
+  qs.set('_t', Date.now().toString())
+
+  const path = `/conversations?${qs.toString()}`
   const response = await request<ConversationsResponse>(path)
 
   return response.conversations

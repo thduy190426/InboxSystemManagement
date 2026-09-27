@@ -880,7 +880,9 @@ export function ChatApp({
       }
 
       if (conversationId && payload.eventType === 'background:changed') {
-        fetchConversations().then(setConversations).catch(() => undefined)
+        if (!isFromCurrentUser) {
+          fetchConversations().then(setConversations).catch(() => undefined)
+        }
         return
       }
 
