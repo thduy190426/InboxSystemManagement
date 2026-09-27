@@ -197,6 +197,23 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
   async function handleAvatarChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     if (!file) return
+
+    if (file.type === 'image/gif') {
+      try {
+        setIsUploading(true)
+        const response = await uploadAvatar(file)
+        onUserChange(response.user)
+        setAvatarUrl(response.user.avatarUrl ?? '')
+        pushToast('Đã cập nhật ảnh đại diện!', 'info')
+      } catch (error) {
+        pushToast(error instanceof Error ? error.message : 'Không thể cập nhật ảnh đại diện!', 'error')
+      } finally {
+        setIsUploading(false)
+      }
+      event.target.value = ''
+      return
+    }
+
     const reader = new FileReader()
     reader.addEventListener('load', () => {
       setCropImageSrc(reader.result?.toString() || null)
