@@ -320,9 +320,6 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
         <form className="pp-form-card" onSubmit={handleSubmit}>
           <ProfileSection icon={<IdCard size={15} />} title="Thông tin cơ bản">
             <div className="pp-fields">
-              <ProfileField label="Họ và tên" icon={<User size={14} />}>
-                <input className="pp-input" name="fullName" readOnly value={fullName} />
-              </ProfileField>
 
               <ProfileField label="Tên hiển thị" icon={<IdCard size={14} />} error={profileErrors.displayName}>
                 <input

@@ -1,4 +1,4 @@
-import type { ChangeEvent, FormEvent } from 'react'
+﻿import type { ChangeEvent, FormEvent } from 'react'
 import { Fragment, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { EmojiClickData, EmojiStyle, Theme } from 'emoji-picker-react'
 import {
@@ -821,7 +821,7 @@ export function ChatPanel({
         return 'Đã nhận!'
       }
       
-      const timeToParse = message.readAt || (message.seenAt ? message.updatedAt : null)
+      const timeToParse = message.readAt || message.seenAt
       if (timeToParse) {
         const readDate = new Date(timeToParse)
         if (!Number.isNaN(readDate.getTime())) {
