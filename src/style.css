@@ -11440,3 +11440,31 @@ html.dark .outgoing .message-bubble {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5) !important;
 }
 
+
+.message-bubble.media-only {
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.message-bubble.media-only .message-time {
+  padding: 4px 8px 8px;
+}
+
+.message-bubble.media-only .message-sender-name {
+  padding: 8px 8px 0;
+}
+
+.message-bubble.media-only .message-attachments {
+  margin-top: 0;
+}
+
+.message-bubble.media-only .message-image-link img,
+.message-bubble.media-only .message-file-attachment {
+  border-radius: 0;
+  border: none;
+  margin: 0;
+}
+
+.message-bubble.media-only .message-pin-badge {
+  padding: 8px 8px 0;
+}

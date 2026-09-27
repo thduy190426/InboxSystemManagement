@@ -1517,7 +1517,7 @@ export function ChatPanel({
                         )}
                       </span>
                     ) : null}
-                    <div className="message-bubble">
+                    <div className={`message-bubble ${(!shouldRenderMessageText(message) && message.attachments && message.attachments.length > 0) ? 'media-only' : ''}`}>
                       {shouldShowSenderName ? (
                         <span className="message-sender-name">
                           {message.senderName || activeConversation.name}
