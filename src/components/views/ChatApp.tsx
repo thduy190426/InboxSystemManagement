@@ -879,13 +879,6 @@ export function ChatApp({
         setShouldAutoScrollToLatest(true)
       }
 
-      if (conversationId && payload.eventType === 'background:changed') {
-        if (!isFromCurrentUser) {
-          fetchConversations().then(setConversations).catch(() => undefined)
-        }
-        return
-      }
-
       if (conversationId && payload.eventType === 'group:disbanded') {
         if (locallyDisbandedConversationIdsRef.current.has(conversationId)) {
           locallyDisbandedConversationIdsRef.current.delete(conversationId)
@@ -1234,7 +1227,21 @@ export function ChatApp({
     }
   }, [activeId, messagePaginationByConversation, syncDeliveredReceipts])
 
-  const activeConversation = conversations.find((conversation) => conversation.id === activeId)
+  let activeConversation = conversations.find((conversation) => conversation.id === activeId)
+  if (activeConversation) {
+    try {
+      const savedOverride = localStorage.getItem(`bg-override-${activeConversation.id}`)
+      const knownBackend = localStorage.getItem(`bg-known-backend-${activeConversation.id}`)
+      const currentBackendBg = activeConversation.backgroundImage || ''
+
+      if (knownBackend !== null && currentBackendBg !== knownBackend && currentBackendBg !== savedOverride) {
+        localStorage.removeItem(`bg-override-${activeConversation.id}`)
+        localStorage.removeItem(`bg-known-backend-${activeConversation.id}`)
+      } else if (savedOverride !== null) {
+        activeConversation = { ...activeConversation, backgroundImage: savedOverride === 'null' ? null : savedOverride }
+      }
+    } catch (e) {}
+  }
   const messages = activeId ? messagesByConversation[activeId] ?? [] : []
   const activeMessagePagination = activeId ? messagePaginationByConversation[activeId] : undefined
   const hasOlderMessages = Boolean(activeMessagePagination?.hasMore)
@@ -2781,6 +2788,17 @@ export function ChatApp({
       console.log('Calling updateConversationBackground API...');
       const updatedConversation = await updateConversationBackground(activeConversation.id, payload)
       console.log('API response:', updatedConversation);
+
+      try {
+        const newUrl = updatedConversation.backgroundImage || 'null'
+        const oldUrl = activeConversation.backgroundImage || ''
+        localStorage.setItem(`bg-override-${activeConversation.id}`, newUrl)
+        localStorage.setItem(`bg-known-backend-${activeConversation.id}`, oldUrl)
+      } catch (e) {}
+      
+      setTimeout(() => {
+        fetchConversations().then(setConversations).catch(() => undefined)
+      }, 5000)
 
       setConversations((current) =>
         current.map((conversation) =>
