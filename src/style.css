@@ -1132,7 +1132,7 @@ img {
 .app-shell {
   --sidebar-width: 76px;
   --content-columns: var(--inbox-width, minmax(420px, 490px)) minmax(0, 1fr) 0fr;
-  --detail-width: minmax(280px, 320px);
+  --detail-width: minmax(320px, 360px);
   --sidebar-motion: 360ms cubic-bezier(0.22, 1, 0.36, 1);
 
   display: grid;
@@ -7778,6 +7778,10 @@ html.dark .scroll-to-latest-button:focus-visible {
   margin-left: 72px;
 }
 
+.admin-page-container > * {
+  flex-shrink: 0;
+}
+
 @media (max-width: 768px) {
   .admin-page-container {
     padding: 24px 20px;
@@ -8127,6 +8131,7 @@ html.dark .scroll-to-latest-button:focus-visible {
   flex-direction: column;
   min-height: 0;
   min-width: 0;
+  flex-shrink: 0;
 }
 
 .section-header {

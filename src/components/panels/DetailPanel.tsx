@@ -1,4 +1,4 @@
-import type { ChangeEvent, FormEvent } from 'react'
+﻿import type { ChangeEvent, FormEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { useEffect, useMemo, useState } from 'react'
 import {
@@ -157,6 +157,13 @@ export function DetailPanel({
   const canManageGroup = currentMember?.role === 'owner' || currentMember?.role === 'admin'
   const memberIds = useMemo(() => new Set(members.map((member) => member.id)), [members])
   const addableFriends = friends.filter((friend) => !memberIds.has(friend.id))
+
+  const validAttachments = useMemo(() => {
+    return (activeConversation.attachments || []).filter((attachment) => {
+      const nameLower = attachment.name.toLowerCase()
+      return !nameLower.includes('gif') && !nameLower.includes('emoji') && !nameLower.includes('sticker')
+    })
+  }, [activeConversation.attachments])
 
   useEffect(() => {
     setGroupTitle(activeConversation.name)
@@ -603,10 +610,10 @@ export function DetailPanel({
           <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <FolderOpen size={16} /> Tệp gần đây
           </h3>
-          <span>{activeConversation.attachments.length}</span>
+          <span>{validAttachments.length}</span>
         </div>
         <div className="attachment-list">
-          {activeConversation.attachments.map((attachment) => (
+          {validAttachments.map((attachment) => (
             <a
               className="attachment-row"
               download={attachment.name}
