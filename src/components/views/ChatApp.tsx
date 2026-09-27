@@ -344,6 +344,7 @@ export function ChatApp({
   const locallyDisbandedConversationIdsRef = useRef(new Set<string>())
   const deliveredSyncKeysRef = useRef(new Set<string>())
   const toastTimersRef = useRef<Record<string, number>>({})
+  const pendingBackgroundOverridesRef = useRef<Record<string, { url: string | null; expiresAt: number }>>({})
   const notifiedNotificationIdsRef = useRef(new Set<string>())
   const recentBrowserNotificationKeysRef = useRef(new Set<string>())
   const hasSyncedWebPushRef = useRef(false)
@@ -1227,7 +1228,13 @@ export function ChatApp({
     }
   }, [activeId, messagePaginationByConversation, syncDeliveredReceipts])
 
-  const activeConversation = conversations.find((conversation) => conversation.id === activeId)
+  let activeConversation = conversations.find((conversation) => conversation.id === activeId)
+  if (activeConversation) {
+    const override = pendingBackgroundOverridesRef.current[activeConversation.id]
+    if (override && override.expiresAt > Date.now()) {
+      activeConversation = { ...activeConversation, backgroundImage: override.url }
+    }
+  }
   const messages = activeId ? messagesByConversation[activeId] ?? [] : []
   const activeMessagePagination = activeId ? messagePaginationByConversation[activeId] : undefined
   const hasOlderMessages = Boolean(activeMessagePagination?.hasMore)
@@ -2774,6 +2781,11 @@ export function ChatApp({
       console.log('Calling updateConversationBackground API...');
       const updatedConversation = await updateConversationBackground(activeConversation.id, payload)
       console.log('API response:', updatedConversation);
+
+      pendingBackgroundOverridesRef.current[activeConversation.id] = {
+        url: updatedConversation.backgroundImage ?? null,
+        expiresAt: Date.now() + 5000,
+      }
 
       setConversations((current) =>
         current.map((conversation) =>
