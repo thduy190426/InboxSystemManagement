@@ -2180,12 +2180,20 @@ h3 {
   position: fixed;
   z-index: 80;
   display: flex;
+  flex-direction: column;
+  gap: 4px;
   min-width: 176px;
   padding: 6px;
   border: 1px solid rgba(203, 213, 220, 0.9);
   border-radius: 8px;
   background: #ffffff;
   box-shadow: 0 18px 42px rgba(22, 35, 43, 0.18);
+}
+
+html.dark .conversation-context-menu {
+  background: rgba(26, 29, 36, 0.95);
+  border-color: var(--line);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.4);
 }
 
 .conversation-context-menu button {
@@ -2205,11 +2213,27 @@ h3 {
 }
 
 .conversation-context-menu button:hover {
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--surface-soft);
+}
+
+html.dark .conversation-context-menu button:hover {
+  background: var(--surface-soft);
 }
 
 .conversation-context-menu button.is-danger {
   color: #dc2626;
+}
+
+.conversation-context-menu button.is-danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+html.dark .conversation-context-menu button.is-danger {
+  color: #fb7185;
+}
+
+html.dark .conversation-context-menu button.is-danger:hover {
+  background: rgba(225, 29, 72, 0.15);
 }
 
 .restore-chip {
