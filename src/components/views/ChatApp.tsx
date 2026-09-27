@@ -344,7 +344,6 @@ export function ChatApp({
   const locallyDisbandedConversationIdsRef = useRef(new Set<string>())
   const deliveredSyncKeysRef = useRef(new Set<string>())
   const toastTimersRef = useRef<Record<string, number>>({})
-  const pendingBackgroundOverridesRef = useRef<Record<string, { url: string | null; expiresAt: number }>>({})
   const notifiedNotificationIdsRef = useRef(new Set<string>())
   const recentBrowserNotificationKeysRef = useRef(new Set<string>())
   const hasSyncedWebPushRef = useRef(false)
