@@ -78,8 +78,6 @@ function updateContactsQuery(query: string) {
   }
 }
 
-// ─── Profile dialog ───────────────────────────────────────────────────────────
-
 type ContactProfileProps = {
   user: ContactUser
   isClosing: boolean
@@ -236,8 +234,6 @@ function ContactCard({ user, busyId, onProfile, onMessage, action }: ContactCard
   )
 }
 
-// ─── Section wrapper ──────────────────────────────────────────────────────────
-
 type SectionProps = {
   icon: React.ReactNode
   title: string
@@ -266,8 +262,6 @@ function ContactSection({ icon, title, count, emptyIcon, emptyText, children }: 
     </section>
   )
 }
-
-// ─── Main component ───────────────────────────────────────────────────────────
 
 export function ContactsPanel({
   contactToOpen = null,

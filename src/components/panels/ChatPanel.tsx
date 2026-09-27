@@ -699,7 +699,6 @@ export function ChatPanel({
       description: 'Nội dung tin nhắn sẽ được thay đổi và hiển thị trạng thái đã chỉnh sửa.',
       confirmLabel: 'Lưu thay đổi',
       onConfirm: () => {
-        // Không block bằng await để UI phản hồi ngay lập tức
         Promise.resolve(onEditMessage(message.id, text)).catch(console.error)
         cancelEditing()
       },
@@ -721,7 +720,6 @@ export function ChatPanel({
         setOptimisticHiddenMessageIds((prev) => new Set(prev).add(message.id))
 
         Promise.resolve(onDeleteMessage(message.id)).catch(() => {
-          // Revert nếu có lỗi
           setOptimisticHiddenMessageIds((prev) => {
             const next = new Set(prev)
             next.delete(message.id)
@@ -1105,58 +1103,46 @@ export function ChatPanel({
     return !message.attachments?.some((attachment) => attachment.name === message.text)
   }
 
+  function renderImageGallery(images: MessageAttachment[]) {
+    if (images.length === 1) {
+      return renderAttachmentPreview(images[0])
+    }
+
+    const gridClass = `message-image-gallery gallery-count-${images.length > 4 ? 'many' : images.length}`
+
+    return (
+      <div className={gridClass}>
+        {images.map((img) => (
+          <button
+            key={img.url}
+            className="gallery-image-link"
+            onClick={() => setGalleryImage(img)}
+            title={img.name}
+            type="button"
+          >
+            <img alt={img.name} src={img.url} />
+          </button>
+        ))}
+      </div>
+    )
+  }
+
   function renderAttachments(message: Message) {
     if (!message.attachments?.length) {
       return null
     }
-    const attachments = message.attachments
+    
+    const isGif = (a: MessageAttachment) => a.mimeType === 'image/gif' || a.name.toLowerCase().endsWith('.gif') || a.url.toLowerCase().includes('.gif')
+
+    const imageAttachments = message.attachments.filter((a) => a.type === 'image' && !isGif(a))
+    const otherAttachments = message.attachments.filter((a) => !(a.type === 'image' && !isGif(a)))
 
     return (
       <div className="message-attachments">
-        {attachments.map((attachment) => renderAttachmentPreview(attachment))}
+        {imageAttachments.length > 0 && renderImageGallery(imageAttachments)}
+        {otherAttachments.map((attachment) => renderAttachmentPreview(attachment))}
       </div>
     )
-
-    /* return (
-      <div className="message-attachments">
-        {message.attachments.map((attachment) =>
-          attachment.type === 'image' ? (
-            <a
-              className="message-image-link"
-              href={attachment.url}
-              key={attachment.url}
-              rel="noreferrer"
-              target="_blank"
-              title={attachment.name}
-            >
-              <img alt={attachment.name} src={attachment.url} />
-            </a>
-          ) : attachment.type === 'audio' ? (
-            <div className="message-audio-attachment" key={attachment.url}>
-              <Mic size={16} />
-              <span>
-                <strong>Tin nhắn thoại</strong>
-                <small>{attachment.meta}</small>
-              </span>
-              <audio controls preload="metadata" src={attachment.url} />
-            </div>
-          ) : (
-            <a
-              className="message-file-link"
-              download={attachment.name}
-              href={attachment.url}
-              key={attachment.url}
-            >
-              <Paperclip size={16} />
-              <span>
-                <strong>{attachment.name}</strong>
-                <small>{attachment.meta}</small>
-              </span>
-            </a>
-          ),
-        )}
-      </div>
-    ) */
   }
 
   function renderReactions(message: Message) {

@@ -151,7 +151,7 @@ html {
 
 body {
   min-width: 320px;
-  min-height: 100svh;
+  height: 100svh; overflow: hidden;
   margin: 0;
   overflow: hidden;
 }
@@ -177,14 +177,14 @@ img {
 }
 
 #root {
-  min-height: 100svh;
+  height: 100svh; overflow: hidden;
 }
 
 .auth-shell {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100svh;
+  height: 100svh; overflow: hidden;
   padding: 32px;
   background: var(--bg);
 }
@@ -230,6 +230,8 @@ img {
 .auth-form {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 16px;
 }
 
@@ -270,6 +272,8 @@ img {
 .auth-field {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 8px;
   color: var(--text);
   font-size: 14px;
@@ -326,6 +330,8 @@ img {
 .captcha-challenge {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 10px;
   padding: 12px;
   border: 1px solid var(--line-strong);
@@ -404,6 +410,8 @@ img {
   min-width: 0;
   flex: 1;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 6px;
   color: var(--muted);
   font-size: 12px;
@@ -630,7 +638,7 @@ img {
 
 .not-found-shell {
   display: grid;
-  min-height: 100svh;
+  height: 100svh; overflow: hidden;
   place-items: center;
   padding: 32px;
   background:
@@ -642,6 +650,8 @@ img {
 .not-found-panel {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 32px;
   width: min(860px, 100%);
   padding: 32px;
@@ -662,6 +672,8 @@ img {
 .not-found-visual {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   justify-content: center;
   align-items: center;
   flex-shrink: 0;
@@ -712,6 +724,8 @@ img {
 .not-found-content-wrapper {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 24px;
   flex: 1;
   min-width: 0;
@@ -735,6 +749,8 @@ img {
 .not-found-suggestions {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 12px;
   padding: 18px;
   background: var(--surface-soft);
@@ -796,7 +812,7 @@ img {
 }
 
 .legal-shell {
-  min-height: 100svh;
+  height: 100svh; overflow: hidden;
   padding: 32px;
   background:
     linear-gradient(135deg, rgba(15, 159, 142, 0.1), transparent 34%),
@@ -895,6 +911,8 @@ img {
 .legal-section {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 16px;
   padding: 20px;
   border: 1px solid var(--line);
@@ -1119,7 +1137,7 @@ img {
 
   display: grid;
   grid-template-columns: var(--sidebar-width) var(--content-columns);
-  min-height: 100svh;
+  height: 100svh; overflow: hidden;
   background: var(--surface);
   transition: grid-template-columns var(--sidebar-motion);
 }
@@ -1144,6 +1162,8 @@ img {
   top: 0;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   align-items: center;
   gap: 14px;
   height: 100svh;
@@ -1363,6 +1383,8 @@ img {
   display: flex;
   flex: 1;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 8px;
   width: 100%;
   padding-top: 4px;
@@ -1521,8 +1543,10 @@ img {
 .inbox-panel {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 16px;
-  min-height: 100svh;
+  height: 100svh; overflow: hidden;
   padding: 24px 18px;
   background: var(--surface-soft);
   border-right: 1px solid var(--line);
@@ -1797,6 +1821,8 @@ h3 {
   max-width: 70px;
   flex: 0 0 auto;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   align-items: center;
   gap: 7px;
   padding: 0;
@@ -1964,6 +1990,8 @@ h3 {
   display: flex;
   flex: 1;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 10px;
   min-height: 0;
   overflow: auto;
@@ -2092,6 +2120,8 @@ h3 {
   display: flex;
   min-width: 0;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 7px;
 }
 
@@ -2139,6 +2169,8 @@ h3 {
 .conversation-meta {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   align-items: center;
   gap: 8px;
   color: var(--primary-strong);
@@ -2219,6 +2251,8 @@ h3 {
   width: min(520px, 100%);
   max-height: min(720px, calc(100svh - 36px));
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 16px;
   overflow: auto;
   padding: 20px;
@@ -2245,6 +2279,8 @@ h3 {
 .group-field {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 8px;
   color: var(--text);
   font-size: 14px;
@@ -2302,6 +2338,8 @@ h3 {
   display: flex;
   min-height: 0;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 10px;
 }
 
@@ -2319,6 +2357,8 @@ h3 {
 .group-member-stack {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 8px;
 }
 
@@ -2436,6 +2476,8 @@ h3 {
   display: flex;
   min-width: 0;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 8px;
 }
 
@@ -2507,7 +2549,7 @@ h3 {
 
 .loading-panel {
   display: grid;
-  min-height: 100svh;
+  height: 100svh; overflow: hidden;
   place-items: center;
   padding: 24px;
   background: var(--surface);
@@ -2555,14 +2597,14 @@ h3 {
 
 .contacts-panel {
   min-width: 0;
-  min-height: 100svh;
+  height: 100svh; overflow: hidden;
   padding: 26px;
   background: var(--surface-soft);
 }
 
 .notifications-panel {
   min-width: 0;
-  min-height: 100svh;
+  height: 100svh; overflow: hidden;
   padding: 26px;
   background: var(--surface-soft);
 }
@@ -2680,6 +2722,8 @@ h3 {
 .notification-list {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
 }
 
 .notification-row {
@@ -2778,9 +2822,9 @@ h3 {
   color: var(--subtle);
 }
 
-.profile-page {
+.profile-page { overflow-y: auto; height: 100%; min-height: 0;
   min-width: 0;
-  min-height: 100svh;
+  height: 100svh; overflow: hidden;
   padding: 26px;
   background: var(--surface-soft);
 }
@@ -2789,7 +2833,7 @@ h3 {
   margin-bottom: 18px;
 }
 
-.profile-layout {
+.profile-layout { min-height: 0; min-width: 0; 
   display: grid;
   grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
   gap: 18px;
@@ -2808,6 +2852,8 @@ h3 {
   display: flex;
   min-width: 0;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   align-items: center;
   gap: 12px;
   padding: 22px;
@@ -3032,7 +3078,7 @@ h3 {
   grid-row: 3;
 }
 
-.settings-layout {
+.settings-layout { min-height: 0; min-width: 0; 
   display: grid;
   grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
   gap: 18px;
@@ -3268,6 +3314,8 @@ h3 {
   display: flex;
   min-width: 0;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 8px;
   color: var(--text);
   font-size: 14px;
@@ -3768,6 +3816,8 @@ html.dark .profile-field select {
   background: var(--surface);
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
 }
 
 .contacts-section-title {
@@ -3794,6 +3844,8 @@ html.dark .profile-field select {
 .contact-list {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 8px;
   padding: 12px;
   flex: 1;
@@ -4039,7 +4091,7 @@ html.dark .profile-field select {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   height: 100svh;
-  min-height: 100svh;
+  height: 100svh; overflow: hidden;
   overflow: hidden;
   background: linear-gradient(180deg, #ffffff 0%, #f8fbfb 100%);
 }
@@ -4240,6 +4292,8 @@ html.dark .profile-field select {
 .thread-content {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 14px;
 }
 
@@ -4673,6 +4727,8 @@ html.dark .scroll-to-latest-button:focus-visible {
 .message-attachments {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 8px;
   margin-top: 7px;
 }
@@ -4975,6 +5031,8 @@ html.dark .scroll-to-latest-button:focus-visible {
   display: flex;
   min-width: 140px;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   padding: 5px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -6276,9 +6334,11 @@ html.dark .scroll-to-latest-button:focus-visible {
 .detail-panel {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 24px;
   min-width: 0;
-  min-height: 100svh;
+  height: 100svh; overflow: hidden;
   padding: 24px 20px;
   overscroll-behavior: contain;
   overflow-x: hidden;
@@ -6313,6 +6373,8 @@ html.dark .scroll-to-latest-button:focus-visible {
 .profile-block {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   align-items: center;
   gap: 9px;
   padding: 14px 0 2px;
@@ -6356,6 +6418,8 @@ html.dark .scroll-to-latest-button:focus-visible {
   min-height: 56px;
   padding: 6px 4px;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   align-items: center;
   justify-content: center;
   gap: 4px;
@@ -6395,6 +6459,8 @@ html.dark .scroll-to-latest-button:focus-visible {
 .detail-section {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 12px;
 }
 
@@ -6453,6 +6519,8 @@ html.dark .scroll-to-latest-button:focus-visible {
 .group-advanced-management {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 10px;
   padding: 10px;
   border: 1px solid rgba(20, 184, 166, 0.18);
@@ -6488,6 +6556,8 @@ html.dark .scroll-to-latest-button:focus-visible {
 .group-join-request-stack {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 8px;
 }
 
@@ -6597,12 +6667,16 @@ html.dark .scroll-to-latest-button:focus-visible {
 .attachment-list {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 8px;
 }
 
 .pinned-message-list {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 8px;
 }
 
@@ -6652,6 +6726,8 @@ html.dark .scroll-to-latest-button:focus-visible {
 .call-history-list {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 8px;
 }
 
@@ -6816,7 +6892,7 @@ html.dark .scroll-to-latest-button:focus-visible {
     display: none;
   }
 
-  .settings-layout {
+  .settings-layout { min-height: 0; min-width: 0; 
     grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
   }
 
@@ -6865,7 +6941,7 @@ html.dark .scroll-to-latest-button:focus-visible {
     bottom: 0;
     z-index: 30;
     width: min(450px, calc(100vw - var(--sidebar-width) - 20px));
-    min-height: 100svh;
+    height: 100svh; overflow: hidden;
     padding: 20px 16px;
     border-right: 1px solid var(--line);
     border-radius: 0 24px 24px 0;
@@ -6927,7 +7003,7 @@ html.dark .scroll-to-latest-button:focus-visible {
   .contacts-grid,
   .notifications-grid,
   .profile-layout,
-  .settings-layout {
+  .settings-layout { min-height: 0; min-width: 0; 
     grid-template-columns: 1fr;
   }
 
@@ -6988,7 +7064,7 @@ html.dark .scroll-to-latest-button:focus-visible {
 
 @media (max-width: 760px) {
   .auth-shell {
-    min-height: 100svh;
+    height: 100svh; overflow: hidden;
     padding: 12px;
   }
 
@@ -7036,13 +7112,15 @@ html.dark .scroll-to-latest-button:focus-visible {
 
   .contacts-panel,
   .notifications-panel,
-  .profile-page {
+  .profile-page { overflow-y: auto; height: 100%; min-height: 0;
     padding: 16px;
   }
 
   .notifications-header {
     align-items: flex-start;
     flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   }
 
   .notifications-header-actions {
@@ -7101,6 +7179,8 @@ html.dark .scroll-to-latest-button:focus-visible {
     min-height: 58px;
     flex: 1 1 0;
     flex-direction: column;
+  min-height: 0;
+  min-width: 0;
     gap: 4px;
     padding: 7px 3px 6px;
     font-size: 10.5px;
@@ -7313,7 +7393,7 @@ html.dark .scroll-to-latest-button:focus-visible {
     padding: 18px;
   }
 
-  .settings-layout {
+  .settings-layout { min-height: 0; min-width: 0; 
     gap: 14px;
   }
 
@@ -7331,6 +7411,8 @@ html.dark .scroll-to-latest-button:focus-visible {
   .profile-session-summary {
     align-items: stretch;
     flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   }
 
   .profile-session-button,
@@ -7408,6 +7490,8 @@ html.dark .scroll-to-latest-button:focus-visible {
   .auth-switch {
     align-items: flex-start;
     flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   }
 
   .contacts-search {
@@ -7431,7 +7515,7 @@ html.dark .scroll-to-latest-button:focus-visible {
     padding: 18px;
   }
 
-  .settings-page {
+  .settings-page { overflow-y: auto; height: 100%; min-height: 0;
     padding: 12px;
   }
 
@@ -7646,6 +7730,8 @@ html.dark .scroll-to-latest-button:focus-visible {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 8px;
 }
 
@@ -7685,6 +7771,8 @@ html.dark .scroll-to-latest-button:focus-visible {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   padding: 32px 40px;
   overflow-y: auto;
   margin-left: 72px;
@@ -7858,6 +7946,8 @@ html.dark .scroll-to-latest-button:focus-visible {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 18px;
   min-width: 0;
   padding: 22px;
@@ -8035,6 +8125,8 @@ html.dark .scroll-to-latest-button:focus-visible {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
 }
 
 .section-header {
@@ -8670,6 +8762,8 @@ html.dark .scroll-to-latest-button:focus-visible {
 .nav-bottom-actions {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 8px;
   width: 100%;
 }
@@ -8747,15 +8841,15 @@ html.dark .contacts-panel {
   background: var(--surface);
 }
 
-html.dark .settings-page {
+html.dark .settings-page { overflow-y: auto; height: 100%; min-height: 0;
   background: var(--surface);
 }
 
-html.dark .admin-page {
+html.dark .admin-page { overflow-y: auto; height: 100%; min-height: 0;
   background: var(--surface);
 }
 
-html.dark .profile-page {
+html.dark .profile-page { overflow-y: auto; height: 100%; min-height: 0;
   background: var(--surface);
 }
 
@@ -8941,15 +9035,15 @@ html.dark .profile-field textarea.has-value {
   color: var(--text);
 }
 
-html.dark .settings-page {
+html.dark .settings-page { overflow-y: auto; height: 100%; min-height: 0;
   background: var(--surface);
 }
 
-html.dark .admin-page {
+html.dark .admin-page { overflow-y: auto; height: 100%; min-height: 0;
   background: var(--surface);
 }
 
-html.dark .profile-page {
+html.dark .profile-page { overflow-y: auto; height: 100%; min-height: 0;
   background: var(--surface);
 }
 
@@ -9321,6 +9415,8 @@ html.dark .message-search-button.is-active {
 
 .inbox-panel.is-collapsed .panel-header {
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   justify-content: center;
   align-items: center;
   gap: 16px;
@@ -9329,6 +9425,8 @@ html.dark .message-search-button.is-active {
 
 .inbox-panel.is-collapsed .panel-header-actions {
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   align-items: center;
   width: 100%;
 }
@@ -9357,6 +9455,8 @@ html.dark .message-search-button.is-active {
 
 .inbox-panel.is-collapsed .quick-filters {
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 12px;
   align-items: center;
 }
@@ -9407,7 +9507,7 @@ html.dark .message-search-button.is-active {
   gap: 8px;
 }
 
-.sp-page {
+.sp-page { overflow-y: auto; height: 100%; min-height: 0;
   width: 100%;
   min-height: 100%;
   padding: 56px 40px 96px;
@@ -9448,6 +9548,8 @@ html.dark .message-search-button.is-active {
   top: 24px;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 2px;
 }
 
@@ -9497,6 +9599,8 @@ html.dark .message-search-button.is-active {
 .sp-main {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 32px;
 }
 
@@ -9574,6 +9678,8 @@ html.dark .message-search-button.is-active {
 .sp-toggle-group {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
 }
 
 .sp-toggle-row {
@@ -9666,12 +9772,16 @@ html.dark .message-search-button.is-active {
 .sp-field-group {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 14px;
 }
 
 .sp-field {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 6px;
 }
 
@@ -9809,6 +9919,8 @@ html.dark .message-search-button.is-active {
 .sp-session-list {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 8px;
 }
 
@@ -9901,6 +10013,8 @@ html.dark .message-search-button.is-active {
 .sp-session-expansion-inner {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 8px;
   padding-top: 8px;
 }
@@ -9928,12 +10042,12 @@ html.dark .message-search-button.is-active {
     display: none;
   }
 
-  .sp-page {
+  .sp-page { overflow-y: auto; height: 100%; min-height: 0;
     padding: 28px 16px 60px;
   }
 }
 
-.cp-page {
+.cp-page { overflow-y: auto; height: 100%; min-height: 0;
   width: 100%;
   min-height: 100%;
   padding: 56px 40px 96px;
@@ -10026,6 +10140,8 @@ html.dark .message-search-button.is-active {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
 }
 
 .cp-section-header {
@@ -10068,6 +10184,8 @@ html.dark .message-search-button.is-active {
   padding: 16px;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 10px;
   flex: 1;
 }
@@ -10075,6 +10193,8 @@ html.dark .message-search-button.is-active {
 .cp-empty {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   align-items: center;
   gap: 12px;
   padding: 48px 20px;
@@ -10118,6 +10238,8 @@ html.dark .message-search-button.is-active {
   min-width: 0;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 4px;
 }
 
@@ -10268,6 +10390,8 @@ html.dark .message-search-button.is-active {
   padding: 32px 24px 24px;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   align-items: center;
   gap: 12px;
   text-align: center;
@@ -10319,6 +10443,8 @@ html.dark .message-search-button.is-active {
 .cp-hero-text {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   align-items: center;
   gap: 3px;
 }
@@ -10380,6 +10506,8 @@ html.dark .message-search-button.is-active {
 .cp-info-text {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 3px;
 }
 
@@ -10418,12 +10546,12 @@ html.dark .message-search-button.is-active {
 }
 
 @media (max-width: 600px) {
-  .cp-page { padding: 24px 16px 60px; }
+  .cp-page { overflow-y: auto; height: 100%; min-height: 0; padding: 24px 16px 60px; }
   .cp-card-actions { gap: 4px; }
   .cp-btn--sm { padding: 5px 9px; font-size: 12px; }
 }
 
-.np-page {
+.np-page { overflow-y: auto; height: 100%; min-height: 0;
   width: 100%;
   min-height: 100%;
   padding: 56px 40px 96px;
@@ -10534,6 +10662,8 @@ html.dark .message-search-button.is-active {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
 }
 
 .np-section-header {
@@ -10571,6 +10701,8 @@ html.dark .message-search-button.is-active {
 .np-section-body {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   flex: 1;
   padding: 16px;
   gap: 8px;
@@ -10579,6 +10711,8 @@ html.dark .message-search-button.is-active {
 .np-empty {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   align-items: center;
   gap: 12px;
   padding: 48px 20px;
@@ -10638,6 +10772,8 @@ html.dark .message-search-button.is-active {
   min-width: 0;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 4px;
 }
 
@@ -10679,12 +10815,14 @@ html.dark .message-search-button.is-active {
 }
 
 @media (max-width: 480px) {
-  .np-page { padding: 24px 16px 60px; }
-  .np-page-header { flex-direction: column; gap: 12px; }
+  .np-page { overflow-y: auto; height: 100%; min-height: 0; padding: 24px 16px 60px; }
+  .np-page-header { flex-direction: column;
+  min-height: 0;
+  min-width: 0; gap: 12px; }
 }
 
 
-.pp-page {
+.pp-page { overflow-y: auto; height: 100%; min-height: 0;
   width: 100%;
   min-height: 100%;
   padding: 56px 40px 96px;
@@ -10743,6 +10881,8 @@ html.dark .message-search-button.is-active {
 .pp-grid {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 12px;
 }
 
@@ -10804,6 +10944,8 @@ html.dark .message-search-button.is-active {
 .pp-avatar-info {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 3px;
   flex: 1;
   min-width: 0;
@@ -10927,6 +11069,8 @@ html.dark .message-search-button.is-active {
 .pp-form-card {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 12px;
 }
 
@@ -10939,6 +11083,8 @@ html.dark .message-search-button.is-active {
 .pp-field {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  min-width: 0;
   gap: 6px;
   cursor: text;
 }
@@ -10962,7 +11108,6 @@ html.dark .message-search-button.is-active {
   flex-shrink: 0;
 }
 
-/* ── Inputs ── */
 .pp-input {
   width: 100%;
   padding: 8px 11px;
@@ -11004,7 +11149,6 @@ html.dark .message-search-button.is-active {
   font-weight: 500;
 }
 
-/* Select */
 .pp-select {
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238e8e93' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
@@ -11098,7 +11242,7 @@ html.dark .message-search-button.is-active {
 }
 
 @media (max-width: 600px) {
-  .pp-page {
+  .pp-page { overflow-y: auto; height: 100%; min-height: 0;
     padding: 28px 16px 60px;
   }
 
@@ -11134,7 +11278,7 @@ html.dark .message-search-button.is-active {
   }
 }
 
-html.dark .pp-page {
+html.dark .pp-page { overflow-y: auto; height: 100%; min-height: 0;
   --color-bg: #1c1c1e;
   --color-surface: #2c2c2e;
   --color-surface-subtle: #242426;
@@ -11163,3 +11307,61 @@ html.dark .pp-unsaved-badge {
   color: #fbbf24;
   border-color: #78520a;
 }
+
+.message-image-gallery {
+  display: grid;
+  gap: 3px;
+  border-radius: 12px;
+  overflow: hidden;
+  width: min(320px, 65vw);
+}
+
+.message-image-gallery .gallery-image-link {
+  display: block;
+  width: 100%;
+  border: none;
+  background: var(--line, #e2e8f0);
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+  position: relative;
+}
+
+.message-image-gallery .gallery-image-link img {
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  max-height: 180px;
+  object-fit: cover;
+  display: block;
+  transition: filter 0.2s;
+}
+
+.message-image-gallery .gallery-image-link:hover img {
+  filter: brightness(0.9);
+}
+
+.gallery-count-2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.gallery-count-3 {
+  grid-template-columns: 1fr 1fr;
+}
+.gallery-count-3 .gallery-image-link:first-child {
+  grid-column: span 2;
+}
+.gallery-count-3 .gallery-image-link:first-child img {
+  aspect-ratio: 16/9;
+  max-height: 200px;
+}
+
+.gallery-count-4,
+.gallery-count-many {
+  grid-template-columns: 1fr 1fr;
+}
+.gallery-count-many {
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+}
+
+.conversation-seen-avatar { width: 14px !important; height: 14px !important; font-size: 8px !important; border-radius: 50%; overflow: hidden; object-fit: cover; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }

@@ -2,7 +2,7 @@ import type { CSSProperties, ChangeEvent, FormEvent } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Archive, ArchiveRestore, BellOff, Check, ImagePlus, Inbox, MessageCircle, MessageSquare, MessageSquareOff, Pin, Plus, Search, SearchX, Trash2, Type, UserRound, Users, X } from 'lucide-react'
 import { globalSearch, type GlobalSearchResponse } from '../../services/api/searchApi'
-import type { ContactUser, Conversation } from '../../types'
+import type { ContactUser, Conversation, Message } from '../../types'
 import { AvatarFallback } from '../ui/AvatarFallback'
 import { OnlineDurationBadge } from '../ui/OnlineDurationBadge'
 
@@ -15,6 +15,7 @@ type InboxPanelProps = {
   conversations: Conversation[]
   friends: ContactUser[]
   isCompact?: boolean
+  messagesByConversation?: Record<string, Message[]>
   isCollapsed?: boolean
   isCreatingGroup?: boolean
   query: string
@@ -86,6 +87,7 @@ export function InboxPanel({
   activeFilter,
   conversations,
   friends,
+  messagesByConversation,
   isCompact = false,
   isCollapsed = false,
   isCreatingGroup = false,
@@ -638,6 +640,17 @@ export function InboxPanel({
                 </span>
               ) : null}
               {conversation.pinned ? <Pin size={14} aria-label="Đã ghim" /> : null}
+              {conversation.lastMessageByMe ? (
+                messagesByConversation?.[conversation.id]?.at(-1)?.state === 'seen' || !messagesByConversation?.[conversation.id] ? (
+                  <AvatarFallback
+                    className="conversation-seen-avatar"
+                    name={getResolvedConversationName(conversation)}
+                    src={conversation.avatar}
+                  />
+                ) : (
+                  <Check size={14} className="conversation-sent-icon" style={{ color: 'var(--subtle)' }} />
+                )
+              ) : null}
             </span>
           </button>
         ))}

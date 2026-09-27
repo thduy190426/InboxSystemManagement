@@ -210,8 +210,6 @@ function SessionItem({ session, isRevoking, showAllSessions, onRevoke }: Session
   )
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
-
 export function SettingsPage({
   currentUser, onAccountDeleted, onLogout, onUserChange, pushToast,
 }: SettingsPageProps) {

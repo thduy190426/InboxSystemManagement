@@ -239,7 +239,7 @@ function getAttachmentPreview(message?: Message) {
   }
 
   if (attachmentType === 'video') {
-    return 'Da gui mot video!'
+    return 'Đã gửi một video!'
   }
 
   if (attachmentType === 'file') {
@@ -3218,6 +3218,7 @@ export function ChatApp({
           activeConversation={activeConversation}
           activeFilter={conversationFilter}
           conversations={filteredConversations}
+            messagesByConversation={messagesByConversation}
           friends={friends}
           isCompact={isCompactLayout}
           isCollapsed={!isCompactLayout && inboxWidth === 100}
