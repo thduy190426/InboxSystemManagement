@@ -2784,8 +2784,12 @@ export function ChatApp({
 
       pendingBackgroundOverridesRef.current[activeConversation.id] = {
         url: updatedConversation.backgroundImage ?? null,
-        expiresAt: Date.now() + 5000,
+        expiresAt: Date.now() + 10000,
       }
+      
+      setTimeout(() => {
+        fetchConversations().then(setConversations).catch(() => undefined)
+      }, 5000)
 
       setConversations((current) =>
         current.map((conversation) =>
