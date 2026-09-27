@@ -135,14 +135,24 @@ function mergeLatestMessages(existingMessages: Message[], incomingMessages: Mess
   const updatedMessages = existingMessages.map((message) => incomingById.get(message.id) ?? message)
   const newMessages = incomingMessages.filter((message) => !existingIds.has(message.id))
 
-  return [...updatedMessages, ...newMessages]
+  const merged = [...updatedMessages, ...newMessages]
+  return merged.sort((a, b) => {
+    const aTime = new Date(a.createdAt || a.updatedAt || 0).getTime()
+    const bTime = new Date(b.createdAt || b.updatedAt || 0).getTime()
+    return aTime - bTime
+  })
 }
 
 function prependOlderMessages(existingMessages: Message[], olderMessages: Message[]) {
   const existingIds = new Set(existingMessages.map((message) => message.id))
   const newOlderMessages = olderMessages.filter((message) => !existingIds.has(message.id))
 
-  return [...newOlderMessages, ...existingMessages]
+  const merged = [...newOlderMessages, ...existingMessages]
+  return merged.sort((a, b) => {
+    const aTime = new Date(a.createdAt || a.updatedAt || 0).getTime()
+    const bTime = new Date(b.createdAt || b.updatedAt || 0).getTime()
+    return aTime - bTime
+  })
 }
 
 function getInitialSidebarState() {
@@ -1544,11 +1554,16 @@ export function ChatApp({
       return conversation.messageRequestStatus !== 'pending'
     })
 
+    const sortedByType = [
+      ...filteredByType.filter((c) => c.pinned),
+      ...filteredByType.filter((c) => !c.pinned),
+    ]
+
     if (!keyword) {
-      return filteredByType
+      return sortedByType
     }
 
-    return filteredByType.filter((conversation) =>
+    return sortedByType.filter((conversation) =>
       `${conversation.name} ${conversation.role} ${conversation.lastMessage}`
         .toLocaleLowerCase('vi-VN')
         .includes(keyword),
@@ -2159,7 +2174,9 @@ export function ChatApp({
 
       setMessagesByConversation((current) => ({
         ...current,
-        [activeConversation.id]: serverMessagePage.messages,
+        [activeConversation.id]: mergeLatestMessages(current[activeConversation.id] ?? [], serverMessagePage.messages).filter(
+          (message) => message.id !== messageId,
+        ),
       }))
       setMessagePaginationByConversation((current) => ({
         ...current,
@@ -2435,6 +2452,38 @@ export function ChatApp({
       }
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Không thể lưu trữ cuộc trò chuyện!')
+    } finally {
+      setBusyConversationAction('')
+    }
+  }
+
+  async function handleTogglePinConversation(conversationId: string, pinned: boolean) {
+    if (busyConversationAction) {
+      return
+    }
+
+    try {
+      if (pinned) {
+        const pinnedCount = conversations.filter((c) => c.pinned).length
+        if (pinnedCount >= 3) {
+          pushToast('Chỉ có thể ghim tối đa 3 cuộc hội thoại!', 'error')
+          return
+        }
+      }
+
+      setBusyConversationAction('pin-conversation')
+      setErrorMessage('')
+      
+      const updatedConversation = await updateConversationSettings(conversationId, { pinned })
+      
+      setConversations((current) => {
+        const next = current.map((c) => (c.id === conversationId ? updatedConversation : c))
+        return [...next.filter((c) => c.pinned), ...next.filter((c) => !c.pinned)]
+      })
+      
+      pushToast(pinned ? 'Đã ghim hội thoại!' : 'Đã bỏ ghim hội thoại!', 'info')
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Không thể ghim/bỏ ghim hội thoại!')
     } finally {
       setBusyConversationAction('')
     }
@@ -3182,6 +3231,7 @@ export function ChatApp({
           onRestoreConversation={handleRestoreConversation}
           onSelectConversation={handleSelectConversation}
           onStartDirectMessage={handleStartDirectMessage}
+          onTogglePinConversation={handleTogglePinConversation}
           query={query}
         />
       </>

@@ -1,4 +1,4 @@
-import { Mic, MicOff, Phone, PhoneOff, Volume2, VolumeX, Video, VideoOff, X, MonitorUp, Signal } from 'lucide-react'
+import { Mic, MicOff, Phone, PhoneOff, Volume2, VolumeX, Video, VideoOff, X, MonitorUp, Signal, Minimize2, Maximize2 } from 'lucide-react'
 import { memo, useEffect, useRef, useState } from 'react'
 import {
   acceptRealtimeCall,
@@ -145,6 +145,7 @@ const RemoteVideoTile = memo(function RemoteVideoTile({ remotePeer }: RemoteVide
 
 export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverlayProps) {
   const [callStatus, setCallStatus] = useState(call.status)
+  const [isMinimized, setIsMinimized] = useState(false)
   const [isMicOn, setIsMicOn] = useState(true)
   const [isSpeakerOn, setIsSpeakerOn] = useState(true)
   const [isCameraOn, setIsCameraOn] = useState(call.type === 'video')
@@ -1185,12 +1186,13 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
   const isEnded = ['declined', 'missed', 'completed', 'cancelled', 'timeout', 'left'].includes(callStatus)
 
   return (
-    <div className={isOverlayClosing ? 'call-overlay is-exiting' : 'call-overlay'} role="dialog" aria-modal="true">
+    <div className={`call-overlay ${isOverlayClosing ? 'is-exiting' : ''} ${isMinimized ? 'is-minimized' : ''}`} role="dialog" aria-modal="true">
       <div
         className={[
           'call-window-shell',
           (canShowVideo && !isEnded) ? 'is-video' : '',
           isEnded ? 'is-ended' : '',
+          isMinimized ? 'is-minimized' : '',
           dragPosition ? 'is-positioned' : '',
           overlaySize ? 'is-sized' : '',
           isDragging ? 'is-dragging' : '',
@@ -1223,9 +1225,14 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
               <span style={{ fontSize: '13px', opacity: 0.8 }}>{fullStatusLabel}</span>
             </div>
           </div>
-          <button onClick={hangUp} title="Đóng" type="button">
-            <X size={18} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button onClick={() => setIsMinimized(!isMinimized)} title={isMinimized ? "Phóng to" : "Thu nhỏ"} type="button">
+              {isMinimized ? <Maximize2 size={18} /> : <Minimize2 size={18} />}
+            </button>
+            <button onClick={hangUp} title="Đóng" type="button">
+              <X size={18} />
+            </button>
+          </div>
         </header>
 
         {!isEnded && (<>

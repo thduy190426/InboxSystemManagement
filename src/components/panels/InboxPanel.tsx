@@ -1,4 +1,4 @@
-﻿import type { CSSProperties, ChangeEvent, FormEvent } from 'react'
+import type { CSSProperties, ChangeEvent, FormEvent } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Archive, ArchiveRestore, BellOff, Check, ImagePlus, Inbox, MessageCircle, MessageSquare, MessageSquareOff, Pin, Plus, Search, SearchX, Trash2, Type, UserRound, Users, X } from 'lucide-react'
 import { globalSearch, type GlobalSearchResponse } from '../../services/api/searchApi'
@@ -30,6 +30,7 @@ type InboxPanelProps = {
   onRestoreConversation: (conversationId: string) => Promise<void> | void
   onQueryChange: (query: string) => void
   onSelectConversation: (conversationId: string) => void
+  onTogglePinConversation: (conversationId: string, pinned: boolean) => void
   onResizeStart?: (e: React.MouseEvent) => void
 }
 
@@ -98,6 +99,7 @@ export function InboxPanel({
   onRestoreConversation,
   onQueryChange,
   onSelectConversation,
+  onTogglePinConversation,
 }: InboxPanelProps) {
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false)
   const [isCreateGroupClosing, setIsCreateGroupClosing] = useState(false)
@@ -273,6 +275,12 @@ export function InboxPanel({
         : activeFilter === 'group'
           ? conversations.filter((conversation) => conversation.type === 'group')
           : conversations
+  function getResolvedConversationName(conversation: { type?: string; name: string }) {
+    if (conversation.type !== 'group' && conversation.name === 'Hội thoại') {
+      return 'Người dùng không xác định'
+    }
+    return conversation.name
+  }
 
   function getLastNameWord(name: string) {
     const words = name.trim().split(/\s+/).filter(Boolean)
@@ -287,7 +295,12 @@ export function InboxPanel({
         : `${conversation.unreadSenders.length} người gửi`
     }
 
-    return getLastNameWord(conversation.name)
+    const resolvedName = getResolvedConversationName(conversation)
+    if (resolvedName === 'Người dùng không xác định') {
+      return 'Ẩn danh'
+    }
+
+    return getLastNameWord(resolvedName)
   }
 
   function getConversationPreview(conversation: Conversation) {
@@ -323,7 +336,7 @@ export function InboxPanel({
 
     return (
       <>
-        <AvatarFallback name={conversation.name} src={conversation.avatar} />
+        <AvatarFallback name={getResolvedConversationName(conversation)} src={conversation.avatar} />
         <span className={`friend-presence-dot ${conversation.presence}`} />
         <OnlineDurationBadge
           compact
@@ -342,8 +355,18 @@ export function InboxPanel({
             <MessageSquare size={14} />
             Inbox
           </span>
-          <h1 className="panel-title">
-            Hộp thư
+          <h1 className="panel-title" style={{
+            fontFamily: '"Outfit", "Inter", system-ui, sans-serif',
+            background: 'linear-gradient(135deg, #34d399 0%, #3b82f6 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            fontWeight: 800,
+            letterSpacing: '-0.5px',
+            fontSize: '28px',
+            margin: 0,
+            paddingBottom: '2px'
+          }}>
+            TDuyyMessage
           </h1>
         </div>
         <div className="panel-header-actions">
@@ -413,9 +436,9 @@ export function InboxPanel({
                   onClick={() => openConversationFromSearch(conversation.id)}
                   type="button"
                 >
-                  <AvatarFallback name={conversation.name} src={conversation.avatar} />
+                  <AvatarFallback name={getResolvedConversationName(conversation)} src={conversation.avatar} />
                   <span>
-                    <strong>{conversation.name}</strong>
+                    <strong>{getResolvedConversationName(conversation)}</strong>
                     <small>{conversation.lastMessage || conversation.time}</small>
                   </span>
                   <MessageSquare size={16} />
@@ -587,7 +610,7 @@ export function InboxPanel({
             type="button"
           >
             <span className="avatar-wrap">
-              <AvatarFallback name={conversation.name} src={conversation.avatar} />
+              <AvatarFallback name={getResolvedConversationName(conversation)} src={conversation.avatar} />
               <span className={`presence-dot ${conversation.presence}`} />
               <OnlineDurationBadge
                 compact
@@ -598,7 +621,7 @@ export function InboxPanel({
             <span className="conversation-copy">
               <span className="conversation-topline">
                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0, flex: '1 1 auto', fontSize: 'inherit', color: 'inherit' }}>
-                  <strong>{conversation.name}</strong>
+                  <strong>{getResolvedConversationName(conversation)}</strong>
                   {conversation.muted ? <BellOff size={14} aria-label="Đã tắt tiếng" style={{ flexShrink: 0, color: 'var(--subtle)' }} /> : null}
                 </span>
                 {activeFilter !== 'archived' ? (
@@ -634,6 +657,19 @@ export function InboxPanel({
           onClick={(event) => event.stopPropagation()}
           style={{ left: conversationMenu.x, top: conversationMenu.y }}
         >
+          <button
+            onClick={() => {
+              const conversation = conversations.find(c => c.id === conversationMenu.conversationId)
+              if (conversation) {
+                onTogglePinConversation(conversation.id, !conversation.pinned)
+                setConversationMenu(null)
+              }
+            }}
+            type="button"
+          >
+            <Pin size={16} />
+            <span>{conversations.find(c => c.id === conversationMenu.conversationId)?.pinned ? 'Bỏ ghim' : 'Ghim'}</span>
+          </button>
           <button
             className="is-danger"
             onClick={() => handleDeleteConversation(conversationMenu.conversationId)}

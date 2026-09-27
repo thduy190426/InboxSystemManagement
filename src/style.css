@@ -153,7 +153,7 @@ body {
   min-width: 320px;
   min-height: 100svh;
   margin: 0;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 button,
@@ -5687,6 +5687,36 @@ html.dark .scroll-to-latest-button:focus-visible {
   padding: 18px;
   background: rgba(8, 13, 18, 0.58);
   backdrop-filter: blur(10px);
+}
+
+.call-overlay.is-minimized {
+  pointer-events: none;
+  background: transparent;
+  backdrop-filter: none;
+}
+
+.call-overlay.is-minimized .call-window-shell {
+  pointer-events: auto;
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  top: auto !important;
+  left: auto !important;
+  width: auto !important;
+  height: auto !important;
+  min-width: 0;
+  min-height: 0;
+}
+
+.call-window-shell.is-minimized .call-window {
+  min-height: auto !important;
+  grid-template-rows: auto auto !important;
+}
+
+.call-window-shell.is-minimized .call-stage,
+.call-window-shell.is-minimized .call-device-panel,
+.call-window-shell.is-minimized .call-resize-handle {
+  display: none !important;
 }
 
 .call-window-shell {

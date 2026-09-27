@@ -386,7 +386,15 @@ export function ContactsPanel({
 
   async function handleSendRequest(user: ContactUser) {
     const isCancelling = user.friendshipStatus === 'pending' && user.requestDirection === 'outgoing' && Boolean(user.contactId)
-    const actionKey = isCancelling ? `cancel:${user.contactId}` : `send:${user.id}`
+    const isAccepting = user.friendshipStatus === 'pending' && user.requestDirection === 'incoming' && Boolean(user.contactId)
+    
+    if (user.friendshipStatus === 'pending' && !user.contactId) {
+      pushToast('Dữ liệu liên hệ không đồng bộ. Đang tải lại...', 'error')
+      await loadDirectoryAndCurrentSearch()
+      return
+    }
+
+    const actionKey = isCancelling ? `cancel:${user.contactId}` : isAccepting ? `accept:${user.contactId}` : `send:${user.id}`
     if (pendingContactActionsRef.current.has(actionKey)) return
     pendingContactActionsRef.current.add(actionKey)
     try {
@@ -394,21 +402,18 @@ export function ContactsPanel({
       setMessage('')
       if (isCancelling && user.contactId) {
         await cancelFriendRequest(user.contactId)
-        await loadDirectory()
-        setResults((c) => c.map((i) => i.id === user.id ? { ...i, friendshipStatus: 'none', requestDirection: null, contactId: null } : i))
+        await loadDirectoryAndCurrentSearch()
         pushToast('Đã hủy lời mời kết bạn!', 'info')
         return
       }
-      if (user.friendshipStatus === 'pending' && user.requestDirection === 'incoming' && user.contactId) {
+      if (isAccepting && user.contactId) {
         const res = await acceptFriendRequest(user.contactId)
-        await loadDirectory()
-        setResults((c) => c.map((i) => i.id === user.id ? { ...i, friendshipStatus: 'accepted', requestDirection: null } : i))
+        await loadDirectoryAndCurrentSearch()
         onAccepted(res.conversationId)
         return
       }
       await sendFriendRequest(user.id)
-      setResults((c) => c.map((i) => i.id === user.id ? { ...i, friendshipStatus: 'pending', requestDirection: 'outgoing' } : i))
-      setSuggestions((c) => c.map((i) => i.id === user.id ? { ...i, friendshipStatus: 'pending', requestDirection: 'outgoing' } : i))
+      await loadDirectoryAndCurrentSearch()
       pushToast('Đã gửi lời mời kết bạn!', 'info')
     } catch (err) {
       pushToast(err instanceof Error ? err.message : 'Không thể xử lý lời mời!', 'error')
@@ -423,7 +428,7 @@ export function ContactsPanel({
     try {
       setBusyId(request.id)
       const res = await acceptFriendRequest(request.contactId)
-      await loadDirectory()
+      await loadDirectoryAndCurrentSearch()
       onAccepted(res.conversationId)
     } catch (err) {
       pushToast(err instanceof Error ? err.message : 'Không thể chấp nhận lời mời!', 'error')
@@ -435,8 +440,7 @@ export function ContactsPanel({
     try {
       setBusyId(request.id)
       await declineFriendRequest(request.contactId)
-      await loadDirectory()
-      setResults((c) => c.map((i) => i.id === request.id ? { ...i, friendshipStatus: 'none', requestDirection: null, contactId: null } : i))
+      await loadDirectoryAndCurrentSearch()
       pushToast('Đã từ chối lời mời kết bạn.', 'info')
     } catch (err) {
       pushToast(err instanceof Error ? err.message : 'Không thể từ chối lời mời!', 'error')
@@ -448,8 +452,7 @@ export function ContactsPanel({
     try {
       setBusyId(friend.id)
       await unfriend(friend.contactId)
-      await loadDirectory()
-      setResults((c) => c.map((i) => i.id === friend.id ? { ...i, friendshipStatus: 'none', requestDirection: null, contactId: null } : i))
+      await loadDirectoryAndCurrentSearch()
       pushToast('Đã hủy kết bạn!', 'info')
     } catch (err) {
       pushToast(err instanceof Error ? err.message : 'Không thể hủy kết bạn!', 'error')
