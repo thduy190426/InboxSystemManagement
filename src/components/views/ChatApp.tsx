@@ -1230,10 +1230,18 @@ export function ChatApp({
 
   let activeConversation = conversations.find((conversation) => conversation.id === activeId)
   if (activeConversation) {
-    const override = pendingBackgroundOverridesRef.current[activeConversation.id]
-    if (override && override.expiresAt > Date.now()) {
-      activeConversation = { ...activeConversation, backgroundImage: override.url }
-    }
+    try {
+      const savedOverride = localStorage.getItem(`bg-override-${activeConversation.id}`)
+      const knownBackend = localStorage.getItem(`bg-known-backend-${activeConversation.id}`)
+      const currentBackendBg = activeConversation.backgroundImage || ''
+
+      if (knownBackend !== null && currentBackendBg !== knownBackend && currentBackendBg !== savedOverride) {
+        localStorage.removeItem(`bg-override-${activeConversation.id}`)
+        localStorage.removeItem(`bg-known-backend-${activeConversation.id}`)
+      } else if (savedOverride !== null) {
+        activeConversation = { ...activeConversation, backgroundImage: savedOverride === 'null' ? null : savedOverride }
+      }
+    } catch (e) {}
   }
   const messages = activeId ? messagesByConversation[activeId] ?? [] : []
   const activeMessagePagination = activeId ? messagePaginationByConversation[activeId] : undefined
@@ -2782,10 +2790,12 @@ export function ChatApp({
       const updatedConversation = await updateConversationBackground(activeConversation.id, payload)
       console.log('API response:', updatedConversation);
 
-      pendingBackgroundOverridesRef.current[activeConversation.id] = {
-        url: updatedConversation.backgroundImage ?? null,
-        expiresAt: Date.now() + 10000,
-      }
+      try {
+        const newUrl = updatedConversation.backgroundImage || 'null'
+        const oldUrl = activeConversation.backgroundImage || ''
+        localStorage.setItem(`bg-override-${activeConversation.id}`, newUrl)
+        localStorage.setItem(`bg-known-backend-${activeConversation.id}`, oldUrl)
+      } catch (e) {}
       
       setTimeout(() => {
         fetchConversations().then(setConversations).catch(() => undefined)
