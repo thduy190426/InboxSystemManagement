@@ -11515,6 +11515,15 @@ html.dark .outgoing .message-bubble {
 .story-avatar-wrap .avatar-fallback {
   width: 100%;
   height: 100%;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #14b8a6, #2563eb);
+  color: #fff;
+  font-weight: 900;
+  font-size: 18px;
+  text-transform: uppercase;
+  object-fit: cover;
 }
 .create-story-badge {
   position: absolute;
