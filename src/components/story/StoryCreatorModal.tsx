@@ -1,4 +1,4 @@
-﻿import { useState, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { X, Image as ImageIcon, Send } from 'lucide-react'
 import { storyApi } from '../../services/api/storyApi'
 
@@ -6,9 +6,10 @@ type StoryCreatorModalProps = {
   onClose: () => void
   onSuccess: () => void
   pushToast: (text: string, tone?: 'info' | 'error') => void
+  isClosing?: boolean
 }
 
-export function StoryCreatorModal({ onClose, onSuccess, pushToast }: StoryCreatorModalProps) {
+export function StoryCreatorModal({ onClose, onSuccess, pushToast, isClosing }: StoryCreatorModalProps) {
   const [file, setFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [privacy, setPrivacy] = useState('friends')
@@ -39,8 +40,8 @@ export function StoryCreatorModal({ onClose, onSuccess, pushToast }: StoryCreato
   }
 
   return (
-    <div className="story-creator-overlay">
-      <div className="story-creator-modal animate-in">
+    <div className={`story-creator-overlay ${isClosing ? 'is-closing' : ''}`}>
+      <div className={`story-creator-modal ${isClosing ? 'is-closing' : ''}`}>
         <header>
           <h2>Tạo tin mới</h2>
           <button className="close-btn" onClick={onClose} disabled={isUploading} type="button">

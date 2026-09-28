@@ -8,9 +8,10 @@ type StoryViewerOverlayProps = {
   allGroups: UserStoryGroup[]
   onClose: () => void
   onReply: (userId: number, text: string) => void
+  isClosing?: boolean
 }
 
-export function StoryViewerOverlay({ initialGroup, allGroups, onClose, onReply }: StoryViewerOverlayProps) {
+export function StoryViewerOverlay({ initialGroup, allGroups, onClose, onReply, isClosing }: StoryViewerOverlayProps) {
   const [currentGroupIndex, setCurrentGroupIndex] = useState(() => allGroups.findIndex(g => g.user_id === initialGroup.user_id))
   const [currentItemIndex, setCurrentItemIndex] = useState(0)
   const [progress, setProgress] = useState(0)
@@ -77,7 +78,7 @@ export function StoryViewerOverlay({ initialGroup, allGroups, onClose, onReply }
   if (!currentItem) return null
 
   return (
-    <div className="story-viewer-overlay">
+    <div className={`story-viewer-overlay ${isClosing ? 'is-closing' : ''}`}>
       <div className="story-viewer-backdrop" onClick={onClose} />
       
       <button className="story-nav-btn prev" onClick={handlePrev}>

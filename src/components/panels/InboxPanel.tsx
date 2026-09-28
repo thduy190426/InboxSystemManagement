@@ -1,9 +1,13 @@
-import type { CSSProperties, ChangeEvent, FormEvent } from 'react'
+﻿import type { CSSProperties, ChangeEvent, FormEvent } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Archive, ArchiveRestore, BellOff, Check, ImagePlus, Inbox, MessageCircle, MessageSquare, MessageSquareOff, Pin, Plus, Search, SearchX, Trash2, Type, UserRound, Users, X } from 'lucide-react'
 import { globalSearch, type GlobalSearchResponse } from '../../services/api/searchApi'
 import type { ContactUser, Conversation, Message } from '../../types'
 import { AvatarFallback } from '../ui/AvatarFallback'
+import { StoryFeed } from '../story/StoryFeed'
+import { StoryCreatorModal } from '../story/StoryCreatorModal'
+import { StoryViewerOverlay } from '../story/StoryViewerOverlay'
+import type { UserStoryGroup } from '../../types'
 import { OnlineDurationBadge } from '../ui/OnlineDurationBadge'
 
 export type ConversationFilter = 'all' | 'unread' | 'requests' | 'group' | 'archived'
@@ -33,6 +37,7 @@ type InboxPanelProps = {
   onSelectConversation: (conversationId: string) => void
   onTogglePinConversation: (conversationId: string, pinned: boolean) => void
   onResizeStart?: (e: React.MouseEvent) => void
+  pushToast?: (text: string, tone?: 'info' | 'error') => void
 }
 
 function getStartOfDay(date: Date) {
@@ -102,6 +107,7 @@ export function InboxPanel({
   onQueryChange,
   onSelectConversation,
   onTogglePinConversation,
+  pushToast,
 }: InboxPanelProps) {
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false)
   const [isCreateGroupClosing, setIsCreateGroupClosing] = useState(false)
@@ -111,6 +117,27 @@ export function InboxPanel({
   const [globalResults, setGlobalResults] = useState<GlobalSearchResponse | null>(null)
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false)
   const [isSearchingGlobally, setIsSearchingGlobally] = useState(false)
+  const [showStoryCreator, setShowStoryCreator] = useState(false)
+  const [isStoryCreatorClosing, setIsStoryCreatorClosing] = useState(false)
+  const [viewingStoryGroup, setViewingStoryGroup] = useState<UserStoryGroup | null>(null)
+  const [isStoryViewerClosing, setIsStoryViewerClosing] = useState(false)
+
+  function handleCloseStoryViewer() {
+    setIsStoryViewerClosing(true)
+    setTimeout(() => {
+      setViewingStoryGroup(null)
+      setIsStoryViewerClosing(false)
+    }, 300)
+  }
+
+  function handleCloseStoryCreator() {
+    setIsStoryCreatorClosing(true)
+    setTimeout(() => {
+      setShowStoryCreator(false)
+      setIsStoryCreatorClosing(false)
+    }, 300)
+  }
+  const [allStoryGroups, setAllStoryGroups] = useState<UserStoryGroup[]>([])
   const [globalSearchError, setGlobalSearchError] = useState('')
   const [conversationMenu, setConversationMenu] = useState<{
     conversationId: string
@@ -406,6 +433,14 @@ export function InboxPanel({
           value={query}
         />
       </label>
+
+      <StoryFeed 
+        onCreateClick={() => setShowStoryCreator(true)}
+        onStoryClick={(group, allGroups) => {
+          setViewingStoryGroup(group)
+          setAllStoryGroups(allGroups)
+        }}
+      />
 
       {isGlobalSearchOpen ? (
         <section className="global-search-panel" aria-label="Kết quả tìm kiếm">
@@ -784,6 +819,24 @@ export function InboxPanel({
         <div 
           className="inbox-resizer" 
           onMouseDown={onResizeStart}
+        />
+      )}
+      {showStoryCreator && (
+        <StoryCreatorModal 
+          onClose={handleCloseStoryCreator}
+          onSuccess={handleCloseStoryCreator}
+          pushToast={pushToast || (() => {}) } isClosing={isStoryCreatorClosing}
+        />
+      )}
+
+      {viewingStoryGroup && (
+        <StoryViewerOverlay
+          initialGroup={viewingStoryGroup}
+          allGroups={allStoryGroups}
+          onClose={handleCloseStoryViewer} isClosing={isStoryViewerClosing}
+          onReply={(userId, text) => {
+            console.log('Reply to', userId, text)
+          }}
         />
       )}
     </section>

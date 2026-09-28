@@ -3266,6 +3266,7 @@ export function ChatApp({
           onStartDirectMessage={handleStartDirectMessage}
           onTogglePinConversation={handleTogglePinConversation}
           query={query}
+          pushToast={pushToast}
         />
       </>
     )

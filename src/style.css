@@ -1166,7 +1166,7 @@ img {
   min-width: 0;
   align-items: center;
   gap: 14px;
-  height: 100svh;
+  height: 100%;
   padding: 16px 10px;
   background:
     linear-gradient(180deg, rgba(20, 184, 166, 0.12), transparent 24%),
@@ -1546,7 +1546,7 @@ img {
   min-height: 0;
   min-width: 0;
   gap: 16px;
-  height: 100svh; overflow: hidden;
+  height: 100%; overflow: hidden;
   padding: 24px 18px;
   background: var(--surface-soft);
   border-right: 1px solid var(--line);
@@ -2579,7 +2579,7 @@ html.dark .conversation-context-menu button.is-danger:hover {
 
 .loading-panel {
   display: grid;
-  height: 100svh; overflow: hidden;
+  height: 100%; overflow: hidden;
   place-items: center;
   padding: 24px;
   background: var(--surface);
@@ -2627,14 +2627,14 @@ html.dark .conversation-context-menu button.is-danger:hover {
 
 .contacts-panel {
   min-width: 0;
-  height: 100svh; overflow: hidden;
+  height: 100%; overflow: hidden;
   padding: 26px;
   background: var(--surface-soft);
 }
 
 .notifications-panel {
   min-width: 0;
-  height: 100svh; overflow: hidden;
+  height: 100%; overflow: hidden;
   padding: 26px;
   background: var(--surface-soft);
 }
@@ -2854,7 +2854,7 @@ html.dark .conversation-context-menu button.is-danger:hover {
 
 .profile-page { overflow-y: auto; height: 100%; min-height: 0;
   min-width: 0;
-  height: 100svh; overflow: hidden;
+  height: 100%; overflow: hidden;
   padding: 26px;
   background: var(--surface-soft);
 }
@@ -4120,8 +4120,8 @@ html.dark .profile-field select {
   position: relative;
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
-  height: 100svh;
-  height: 100svh; overflow: hidden;
+  height: 100%;
+  overflow: hidden;
   overflow: hidden;
   background: linear-gradient(180deg, #ffffff 0%, #f8fbfb 100%);
 }
@@ -6376,7 +6376,7 @@ html.dark .scroll-to-latest-button:focus-visible {
   min-width: 0;
   gap: 24px;
   min-width: 0;
-  height: 100svh; overflow: hidden;
+  height: 100%; overflow: hidden;
   padding: 24px 20px;
   overscroll-behavior: contain;
   overflow-x: hidden;
@@ -6979,7 +6979,7 @@ html.dark .scroll-to-latest-button:focus-visible {
     bottom: 0;
     z-index: 30;
     width: min(450px, calc(100vw - var(--sidebar-width) - 20px));
-    height: 100svh; overflow: hidden;
+    height: 100%; overflow: hidden;
     padding: 20px 16px;
     border-right: 1px solid var(--line);
     border-radius: 0 24px 24px 0;
@@ -7102,7 +7102,7 @@ html.dark .scroll-to-latest-button:focus-visible {
 
 @media (max-width: 760px) {
   .auth-shell {
-    height: 100svh; overflow: hidden;
+    height: 100%; overflow: hidden;
     padding: 12px;
   }
 
@@ -7131,15 +7131,15 @@ html.dark .scroll-to-latest-button:focus-visible {
   }
 
   .app-shell {
-    --sidebar-width: 1fr;
+    --sidebar-width: 0px;
 
     grid-template-columns: 1fr;
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
     padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
   }
 
   .app-shell.is-sidebar-open {
-    --sidebar-width: 1fr;
+    --sidebar-width: 0px;
   }
 
   .contacts-shell,
@@ -7813,7 +7813,6 @@ html.dark .scroll-to-latest-button:focus-visible {
   min-width: 0;
   padding: 32px 40px;
   overflow-y: auto;
-  margin-left: 72px;
 }
 
 .admin-page-container > * {
@@ -11803,3 +11802,64 @@ html.dark .outgoing .message-bubble {
   cursor: pointer;
 }
 
+.avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.story-viewer-backdrop {
+  animation: modal-backdrop-in var(--modal-motion-duration) var(--modal-motion-ease) both;
+}
+
+.story-viewer-overlay.is-closing .story-viewer-backdrop {
+  animation: modal-backdrop-out 140ms ease-in both;
+}
+
+.story-viewer-content {
+  transform-origin: center;
+  animation: modal-panel-in var(--modal-motion-duration) var(--modal-motion-ease) both;
+  will-change: transform, opacity;
+}
+
+.story-viewer-overlay.is-closing .story-viewer-content {
+  animation: modal-panel-out 140ms ease-in both;
+}
+
+.story-creator-modal {
+  animation: storySlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.story-creator-modal.is-closing {
+  animation: storySlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes storySlideUp {
+  from { opacity: 0; transform: translateY(40px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes storySlideDown {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(40px) scale(0.95); }
+}
+
+.story-nav-btn { animation: modal-backdrop-in var(--modal-motion-duration) var(--modal-motion-ease) both; }
+.story-viewer-overlay.is-closing .story-nav-btn { animation: modal-backdrop-out 140ms ease-in both; }
+
+@media (max-width: 760px) {
+  .story-creator-modal {
+    max-height: 90vh;
+  }
+  .story-creator-body {
+    overflow-y: auto;
+  }
+  .story-nav-btn {
+    display: none;
+  }
+  .story-viewer-content {
+    max-height: 100vh;
+    border-radius: 0;
+  }
+}

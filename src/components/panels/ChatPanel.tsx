@@ -1,4 +1,4 @@
-import type { ChangeEvent, FormEvent } from 'react'
+﻿import type { ChangeEvent, FormEvent } from 'react'
 import { Fragment, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { EmojiClickData, EmojiStyle, Theme } from 'emoji-picker-react'
 import {
@@ -1399,10 +1399,10 @@ export function ChatPanel({
         ) : null}
 
         {displayMessages.length === 0 && activeConversation.type !== 'group' ? (
-          <div className="thread-empty-state">
+          <div className="thread-empty-state" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
               <MessageSquare size={48} strokeWidth={1.5} style={{ opacity: 0.2 }} />
-              <span>Hãy bắt đầu cuộc trò chuyện cùng với {activeConversation.name} nào!</span>
+              <span style={{ color: 'var(--subtle)' }}>Hãy bắt đầu cuộc trò chuyện cùng với {activeConversation.name} nào!</span>
             </div>
           </div>
         ) : null}
