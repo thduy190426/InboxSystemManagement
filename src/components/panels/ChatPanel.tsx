@@ -1,4 +1,4 @@
-﻿import type { ChangeEvent, FormEvent } from 'react'
+import type { ChangeEvent, FormEvent } from 'react'
 import { Fragment, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { EmojiClickData, EmojiStyle, Theme } from 'emoji-picker-react'
 import {
@@ -1598,6 +1598,15 @@ export function ChatPanel({
                           type="button"
                         >
                           <Reply size={17} />
+                        </button>
+                        <button
+                          className="message-more-button"
+                          disabled={Boolean(busyMessageId)}
+                          onClick={() => startForwarding(message)}
+                          title="Chuyển tiếp"
+                          type="button"
+                        >
+                          <SendHorizontal size={17} />
                         </button>
                         <button
                           className="message-more-button"
