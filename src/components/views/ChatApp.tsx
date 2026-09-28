@@ -84,7 +84,7 @@ import { AdminPage } from './AdminPage'
 import { CallOverlay } from '../media/CallOverlay'
 import { ChatPanel } from '../panels/ChatPanel'
 import { ConfirmDialog, type ConfirmDialogState } from '../ui/ConfirmDialog'
-import { ContactsPanel } from '../panels/ContactsPanel'
+import { ContactsPanel, ContactProfile } from '../panels/ContactsPanel'
 import { DetailPanel } from '../panels/DetailPanel'
 import type { ConversationFilter } from '../panels/InboxPanel'
 import { InboxPanel } from '../panels/InboxPanel'
@@ -308,6 +308,7 @@ export function ChatApp({
   const [archivedConversations, setArchivedConversations] = useState<Conversation[]>([])
   const [friends, setFriends] = useState<ContactUser[]>([])
   const [profileContactToOpen, setProfileContactToOpen] = useState<ContactUser | null>(null)
+  const [isProfileClosing, setIsProfileClosing] = useState(false)
   const [friendRequests, setFriendRequests] = useState<ContactUser[]>([])
   const [notifications, setNotifications] = useState<AppNotification[]>([])
   const [browserNotificationPermission, setBrowserNotificationPermission] =
@@ -1685,9 +1686,15 @@ export function ChatApp({
     }
 
     setProfileContactToOpen(contactProfile)
-    setActiveView('contacts')
-    setIsInboxOpen(false)
-    window.history.pushState(null, '', toAppPath({ view: 'contacts' }))
+    setIsProfileClosing(false)
+  }
+
+  function closeContactProfile() {
+    setIsProfileClosing(true)
+    window.setTimeout(() => {
+      setProfileContactToOpen(null)
+      setIsProfileClosing(false)
+    }, 140)
   }
 
   function handleSelectConversation(conversationId: string) {
@@ -3328,10 +3335,8 @@ export function ChatApp({
       <main className={`${shellClassName} contacts-shell`} style={shellStyle}>
         {renderNavRail()}
         <ContactsPanel
-          contactToOpen={profileContactToOpen}
           onAccepted={handleAcceptedFriend}
           onMessage={handleStartDirectMessage}
-          onProfileOpened={() => setProfileContactToOpen(null)}
           pushToast={pushToast}
         />
         {renderCallOverlay()}
@@ -3511,6 +3516,13 @@ export function ChatApp({
         onUpdateMemberNickname={handleUpdateMemberNickname}
         onUpdateMemberRole={handleUpdateMemberRole}
       />
+      {profileContactToOpen && (
+        <ContactProfile
+          user={profileContactToOpen}
+          isClosing={isProfileClosing}
+          onClose={closeContactProfile}
+        />
+      )}
       {renderCallOverlay()}
       {renderConfirmDialog()}
       {renderToasts()}

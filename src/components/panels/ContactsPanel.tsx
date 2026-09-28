@@ -88,7 +88,7 @@ type ContactProfileProps = {
   onClose: () => void
 }
 
-function ContactProfile({ user, isClosing, onClose }: ContactProfileProps) {
+export function ContactProfile({ user, isClosing, onClose }: ContactProfileProps) {
   const safePresence = ['online', 'away', 'busy'].includes(user.presence) ? user.presence : 'offline'
   const presenceLabel =
     safePresence === 'online' ? 'Đang trực tuyến'

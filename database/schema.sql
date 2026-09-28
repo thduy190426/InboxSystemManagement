@@ -680,14 +680,9 @@ ALTER TABLE conversation_participants
   ADD COLUMN message_request_status ENUM('none', 'pending') NOT NULL DEFAULT 'none';
 
 
--- =========================================
--- File: 011_user_handles.sql
--- =========================================
-
 ALTER TABLE users
   ADD COLUMN handle VARCHAR(32) NULL AFTER display_name,
   ADD UNIQUE KEY uq_users_handle (handle);
-
 
 
 CREATE TABLE stories (
