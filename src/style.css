@@ -4311,6 +4311,8 @@ html.dark .profile-field select {
 }
 
 .thread {
+  display: flex;
+  flex-direction: column;
   grid-row: 3;
   min-height: 0;
   overscroll-behavior: contain;
@@ -4321,6 +4323,7 @@ html.dark .profile-field select {
 
 .thread-content {
   display: flex;
+  flex: 1;
   flex-direction: column;
   min-height: 0;
   min-width: 0;

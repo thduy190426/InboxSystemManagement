@@ -21,7 +21,6 @@ exports.createStory = async (req, res, next) => {
       resourceType = 'video';
     }
 
-    // Upload to Cloudinary
     const uploadOptions = {
       folder: 'stories',
       resource_type: resourceType,
@@ -29,7 +28,7 @@ exports.createStory = async (req, res, next) => {
     const uploadResult = await uploadBufferToCloudinary(file, uploadOptions);
 
     const storyId = crypto.randomUUID();
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); 
 
     await pool.query(
       `INSERT INTO stories (id, user_id, media_url, media_type, text_content, privacy, expires_at)
