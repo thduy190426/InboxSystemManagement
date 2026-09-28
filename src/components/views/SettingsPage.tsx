@@ -235,6 +235,8 @@ export function SettingsPage({
   const [showBirthDate, setShowBirthDate] = useState(currentUser?.showBirthDate ?? true)
   const [showBio, setShowBio] = useState(currentUser?.showBio ?? true)
   const [showStatusMessage, setShowStatusMessage] = useState(currentUser?.showStatusMessage ?? true)
+  const [allowCamera, setAllowCamera] = useState(() => localStorage.getItem('allowCamera') !== 'false')
+  const [allowMicrophone, setAllowMicrophone] = useState(() => localStorage.getItem('allowMicrophone') !== 'false')
 
   const [showAllSessions, setShowAllSessions] = useState(false)
   const [renderExpandedSessions, setRenderExpandedSessions] = useState(false)
@@ -263,7 +265,7 @@ export function SettingsPage({
       { root: null, rootMargin: '-20% 0px -60% 0px', threshold: [0, 0.25, 0.5, 0.75, 1] }
     )
 
-    const sections = ['privacy-activity', 'privacy-profile', 'password', 'sessions', 'delete-account']
+    const sections = ['privacy-activity', 'device-settings', 'privacy-profile', 'password', 'sessions', 'delete-account']
     sections.forEach((id) => {
       const el = document.getElementById(id)
       if (el) observer.observe(el)
@@ -399,6 +401,18 @@ export function SettingsPage({
     } finally {
       setIsChangingPassword(false)
     }
+  }
+
+  function handleAllowCameraChange(value: boolean) {
+    setAllowCamera(value)
+    localStorage.setItem('allowCamera', String(value))
+    pushToast(value ? 'Đã cho phép sử dụng camera!' : 'Đã chặn sử dụng camera!', 'info')
+  }
+
+  function handleAllowMicrophoneChange(value: boolean) {
+    setAllowMicrophone(value)
+    localStorage.setItem('allowMicrophone', String(value))
+    pushToast(value ? 'Đã cho phép sử dụng micro!' : 'Đã chặn sử dụng micro!', 'info')
   }
 
   async function handlePrivacyChange(
@@ -544,6 +558,9 @@ export function SettingsPage({
           <button className={`sp-nav-item${activeSection === 'privacy-activity' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('privacy-activity')}>
             <Eye size={15} /> Quyền riêng tư
           </button>
+          <button className={`sp-nav-item${activeSection === 'device-settings' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('device-settings')}>
+            <Laptop size={15} /> Thiết bị
+          </button>
           <button className={`sp-nav-item${activeSection === 'privacy-profile' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('privacy-profile')}>
             <IdCard size={15} /> Hồ sơ
           </button>
@@ -587,6 +604,28 @@ export function SettingsPage({
                 checked={showReadReceipts}
                 disabled={isSavingPrivacy}
                 onChange={(v) => handlePrivacyChange('showReadReceipts', v)}
+              />
+            </div>
+          </Card>
+
+          <Card
+            id="device-settings"
+            icon={<Laptop size={16} />}
+            title="Quyền thiết bị"
+            description="Quản lý quyền truy cập thiết bị trong cuộc gọi video."
+          >
+            <div className="sp-toggle-group">
+              <ToggleRow
+                label="Cho phép sử dụng Camera"
+                description={allowCamera ? 'Trang web có thể dùng camera khi gọi video.' : 'Camera sẽ bị tắt trong các cuộc gọi.'}
+                checked={allowCamera}
+                onChange={handleAllowCameraChange}
+              />
+              <ToggleRow
+                label="Cho phép sử dụng Microphone"
+                description={allowMicrophone ? 'Trang web có thể dùng micro khi gọi video/thoại.' : 'Microphone sẽ bị tắt trong các cuộc gọi.'}
+                checked={allowMicrophone}
+                onChange={handleAllowMicrophoneChange}
               />
             </div>
           </Card>

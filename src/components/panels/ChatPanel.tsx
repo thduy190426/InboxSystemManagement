@@ -15,6 +15,7 @@ import {
   Image,
   Info,
   Loader2,
+  MapPin,
   Menu,
   MessageSquare,
   Mic,
@@ -232,6 +233,8 @@ export function ChatPanel({
   const [recordingKind, setRecordingKind] = useState<'audio' | 'video' | null>(null)
   const [recordingDuration, setRecordingDuration] = useState(0)
   const [recordingError, setRecordingError] = useState('')
+  const [isSharingLocation, setIsSharingLocation] = useState(false)
+  const [locationError, setLocationError] = useState('')
   const [recordedMediaUrl, setRecordedMediaUrl] = useState('')
   const [recordedMediaFile, setRecordedMediaFile] = useState<File | null>(null)
   const [recordedMediaKind, setRecordedMediaKind] = useState<'audio' | 'video' | null>(null)
@@ -598,6 +601,34 @@ export function ChatPanel({
 
     recordingStreamRef.current?.getTracks().forEach((track) => track.stop())
     recordingStreamRef.current = null
+  }
+
+  const handleShareLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError('Trình duyệt không hỗ trợ vị trí!')
+      return
+    }
+
+    setIsSharingLocation(true)
+    setLocationError('')
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setIsSharingLocation(false)
+        const { latitude, longitude } = position.coords
+        const mapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`
+        void onSendQuickMessage(`📍 Vị trí hiện tại: ${mapsUrl}`)
+      },
+      (error) => {
+        setIsSharingLocation(false)
+        let errMsg = 'Không thể lấy vị trí!'
+        if (error.code === error.PERMISSION_DENIED) errMsg = 'Bạn đã từ chối quyền truy cập vị trí!'
+        else if (error.code === error.POSITION_UNAVAILABLE) errMsg = 'Vị trí không khả dụng!'
+        else if (error.code === error.TIMEOUT) errMsg = 'Lấy vị trí quá hạn!'
+        setLocationError(errMsg)
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    )
   }
 
   function cancelMediaRecording() {
@@ -1928,6 +1959,15 @@ export function ChatPanel({
         ) : (
           <>
           <button
+            className={`icon-button composer-extra${isSharingLocation ? ' is-active' : ''}`}
+            disabled={isBlocked || isUploadingAttachment || isSharingLocation}
+            onClick={handleShareLocation}
+            title="Chia sẻ vị trí"
+            type="button"
+          >
+            {isSharingLocation ? <Loader2 size={20} className="spin" /> : <MapPin size={20} />}
+          </button>
+          <button
             className="icon-button composer-extra voice-record-button"
             disabled={isBlocked || isUploadingAttachment}
             onClick={() => startMediaRecording('audio')}
@@ -1958,6 +1998,8 @@ export function ChatPanel({
         ) : null}
         {recordingError ? (
           <span className="composer-error">{recordingError}</span>
+        ) : locationError ? (
+          <span className="composer-error">{locationError}</span>
         ) : isBlocked ? (
           <span className="composer-error">Đã chặn người dùng!</span>
         ) : null}
