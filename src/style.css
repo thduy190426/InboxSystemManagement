@@ -11409,7 +11409,6 @@ html.dark .pp-unsaved-badge {
 
 .conversation-seen-avatar { width: 14px !important; height: 14px !important; font-size: 8px !important; border-radius: 50%; overflow: hidden; object-fit: cover; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
 
-/* Message Bubble Enhancements */
 .message-bubble {
   border: 1px solid rgba(255, 255, 255, 0.4) !important;
   background: rgba(255, 255, 255, 0.85) !important;
@@ -11472,7 +11471,6 @@ html.dark .outgoing .message-bubble {
   padding: 8px 8px 0;
 }
 
-/* === STORY COMPONENTS === */
 .story-feed {
   padding: 16px 20px;
   border-bottom: 1px solid var(--line);
@@ -11542,7 +11540,6 @@ html.dark .outgoing .message-bubble {
   text-align: center;
 }
 
-/* Story Creator */
 .story-creator-overlay {
   position: fixed;
   inset: 0;
@@ -11638,7 +11635,6 @@ html.dark .outgoing .message-bubble {
   justify-content: flex-end;
 }
 
-/* Story Viewer */
 .story-viewer-overlay {
   position: fixed;
   inset: 0;

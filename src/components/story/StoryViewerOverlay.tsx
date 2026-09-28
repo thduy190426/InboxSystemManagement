@@ -19,11 +19,9 @@ export function StoryViewerOverlay({ initialGroup, allGroups, onClose, onReply }
   const currentGroup = allGroups[currentGroupIndex]
   const currentItem = currentGroup?.items[currentItemIndex]
 
-  // Auto-advance progress
   useEffect(() => {
     if (!currentItem) return
     const isVideo = currentItem.media_type === 'video'
-    // If video, progress should be tied to video duration, but for simplicity we'll use a fixed timeout or just longer timeout for images.
     const duration = isVideo ? 15000 : 5000
     
     let start = Date.now()
@@ -145,6 +143,5 @@ export function StoryViewerOverlay({ initialGroup, allGroups, onClose, onReply }
 }
 
 function pushToast(text: string) {
-  // Simple fallback toast if needed
   alert(text)
 }

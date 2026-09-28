@@ -51,7 +51,6 @@ exports.createStory = async (req, res, next) => {
       [storyId, userId, uploadResult.secure_url, media_type, text_content, privacy, expiresAt]
     );
 
-    // Fetch user details for the response
     const [userRows] = await pool.query(
       'SELECT full_name, display_name, avatar_url FROM users WHERE id = ?',
       [userId]
@@ -74,7 +73,6 @@ exports.createStory = async (req, res, next) => {
       created_at: new Date(),
     };
 
-    // Emit event to connected users (friends)
     const io = getIO();
     io.emit('story:created', newStory);
 
@@ -93,8 +91,6 @@ exports.getActiveStories = async (req, res, next) => {
   try {
     const userId = req.user.id;
 
-    // Fetch stories that have not expired yet
-    // For now, fetch my stories and public/friends stories
     const [stories] = await pool.query(
       `SELECT s.id, s.user_id, s.media_url, s.media_type, s.text_content, s.privacy, s.expires_at, s.created_at,
               u.full_name, u.display_name, u.avatar_url, u.public_id
@@ -104,7 +100,6 @@ exports.getActiveStories = async (req, res, next) => {
        ORDER BY s.created_at DESC`
     );
 
-    // Group by user for easier consumption by frontend
     const groupedStories = {};
     for (const story of stories) {
       if (!groupedStories[story.user_id]) {

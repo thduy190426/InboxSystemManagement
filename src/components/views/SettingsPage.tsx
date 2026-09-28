@@ -226,7 +226,6 @@ export function SettingsPage({
   const [passwordErrors, setPasswordErrors] = useState<Partial<Record<keyof ChangePasswordPayload, string>>>({})
   const [deleteErrors, setDeleteErrors] = useState<Partial<Record<keyof DeleteAccountPayload, string>>>({})
 
-  // Privacy toggles
   const [showActivityStatus, setShowActivityStatus] = useState(currentUser?.showActivityStatus ?? true)
   const [showTypingIndicator, setShowTypingIndicator] = useState(currentUser?.showTypingIndicator ?? true)
   const [showReadReceipts, setShowReadReceipts] = useState(currentUser?.showReadReceipts ?? true)
@@ -237,7 +236,6 @@ export function SettingsPage({
   const [showBio, setShowBio] = useState(currentUser?.showBio ?? true)
   const [showStatusMessage, setShowStatusMessage] = useState(currentUser?.showStatusMessage ?? true)
 
-  // Session expansion
   const [showAllSessions, setShowAllSessions] = useState(false)
   const [renderExpandedSessions, setRenderExpandedSessions] = useState(false)
   const [expandedSessionHeight, setExpandedSessionHeight] = useState(0)
@@ -279,7 +277,6 @@ export function SettingsPage({
     setActiveSection(id)
   }
 
-  // Derived session data
   const sortedSessions = [...sessions].sort((a, b) => {
     if (a.isCurrent !== b.isCurrent) return a.isCurrent ? -1 : 1
     if (Boolean(a.revokedAt) !== Boolean(b.revokedAt)) return a.revokedAt ? 1 : -1
@@ -306,7 +303,6 @@ export function SettingsPage({
     isCollapsible: true,
   }))
 
-  // Effects
   useEffect(() => { loadSessions() }, [])
 
   useEffect(() => {
@@ -342,7 +338,6 @@ export function SettingsPage({
     return () => ro?.disconnect()
   }, [renderExpandedSessions, sessions])
 
-  // Handlers
   async function loadSessions() {
     try {
       setIsLoadingSessions(true)
@@ -545,7 +540,6 @@ export function SettingsPage({
       </header>
 
       <div className="sp-layout">
-        {/* Sidebar nav */}
         <nav className="sp-nav" aria-label="Điều hướng cài đặt">
           <button className={`sp-nav-item${activeSection === 'privacy-activity' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('privacy-activity')}>
             <Eye size={15} /> Quyền riêng tư
@@ -566,7 +560,6 @@ export function SettingsPage({
         </nav>
 
         <div className="sp-main">
-          {/* Privacy: activity */}
           <Card
             id="privacy-activity"
             icon={showActivityStatus ? <Eye size={16} /> : <EyeOff size={16} />}
@@ -598,7 +591,6 @@ export function SettingsPage({
             </div>
           </Card>
 
-          {/* Privacy: profile visibility */}
           <Card
             id="privacy-profile"
             icon={<IdCard size={16} />}
@@ -616,7 +608,6 @@ export function SettingsPage({
             </div>
           </Card>
 
-          {/* Password */}
           <Card
             id="password"
             icon={<KeyRound size={16} />}
@@ -681,7 +672,6 @@ export function SettingsPage({
             </form>
           </Card>
 
-          {/* Sessions */}
           <section id="sessions" className="sp-card" aria-labelledby="sessions-title">
             <div className="sp-card-header">
               <div className="sp-card-icon sp-card-icon--default">
@@ -768,7 +758,6 @@ export function SettingsPage({
             </div>
           </section>
 
-          {/* Delete account */}
           <Card
             id="delete-account"
             icon={<AlertTriangle size={16} />}
