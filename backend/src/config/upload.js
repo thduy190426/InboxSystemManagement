@@ -150,7 +150,7 @@ const messageUpload = {
 const backgroundUpload = {
   single(fieldName) {
     return [
-      avatarMulter.single(fieldName), // Reusing avatar limits and filter (image only)
+      avatarMulter.single(fieldName), 
       cloudinaryUploadMiddleware({
         folder: 'backgrounds',
         resourceType: 'image',

@@ -1,17 +1,28 @@
-const crypto = require('crypto');
+﻿const crypto = require('crypto');
 const { pool } = require('../../config/db');
 const { uploadBufferToCloudinary } = require('../../config/upload');
 const { getIO } = require('../../realtime/socket');
 
 exports.createStory = async (req, res, next) => {
+  console.log('[story.controller] createStory endpoint hit!');
+  console.log('[story.controller] Request body:', req.body);
+  console.log('[story.controller] Request file exists:', !!req.file);
+  
   try {
     const userId = req.user.id;
     const { privacy = 'friends', text_content = '' } = req.body;
     const file = req.file;
 
     if (!file) {
+      console.warn('[story.controller] No file provided in request.');
       return res.status(400).json({ success: false, message: 'Media file is required for a story' });
     }
+
+    console.log('[story.controller] File details:', {
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size
+    });
 
     let media_type = 'image';
     let resourceType = 'image';
@@ -19,13 +30,17 @@ exports.createStory = async (req, res, next) => {
     if (file.mimetype.startsWith('video/')) {
       media_type = 'video';
       resourceType = 'video';
+      console.log('[story.controller] Detected video type, setting resourceType to video.');
     }
 
     const uploadOptions = {
       folder: 'stories',
       resource_type: resourceType,
     };
+    
+    console.log('[story.controller] Starting Cloudinary upload with options:', uploadOptions);
     const uploadResult = await uploadBufferToCloudinary(file, uploadOptions);
+    console.log('[story.controller] Cloudinary upload success. URL:', uploadResult.secure_url);
 
     const storyId = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); 
@@ -67,7 +82,9 @@ exports.createStory = async (req, res, next) => {
       success: true,
       story: newStory,
     });
+    console.log('[story.controller] createStory success. Sent response.');
   } catch (error) {
+    console.error('[story.controller] Error in createStory:', error);
     next(error);
   }
 };
@@ -119,3 +136,5 @@ exports.getActiveStories = async (req, res, next) => {
     next(error);
   }
 };
+
+

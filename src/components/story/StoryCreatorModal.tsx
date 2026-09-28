@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+﻿import { useState, useRef } from 'react'
 import { X, Image as ImageIcon, Send } from 'lucide-react'
 import { storyApi } from '../../services/api/storyApi'
 
@@ -29,10 +29,10 @@ export function StoryCreatorModal({ onClose, onSuccess, pushToast }: StoryCreato
     setIsUploading(true)
     try {
       await storyApi.createStory(file, privacy, textContent)
-      pushToast('Đã đăng tin thành công!', 'info')
+      pushToast('ÄÃ£ Ä‘Äƒng tin thÃ nh cÃ´ng!', 'info')
       onSuccess()
     } catch (err) {
-      pushToast('Lỗi khi đăng tin!', 'error')
+      pushToast('Lá»—i khi Ä‘Äƒng tin!', 'error')
     } finally {
       setIsUploading(false)
     }
@@ -42,7 +42,7 @@ export function StoryCreatorModal({ onClose, onSuccess, pushToast }: StoryCreato
     <div className="story-creator-overlay">
       <div className="story-creator-modal animate-in">
         <header>
-          <h2>Tạo tin mới</h2>
+          <h2>Táº¡o tin má»›i</h2>
           <button className="close-btn" onClick={onClose} disabled={isUploading} type="button">
             <X size={20} />
           </button>
@@ -52,7 +52,7 @@ export function StoryCreatorModal({ onClose, onSuccess, pushToast }: StoryCreato
           {!previewUrl ? (
             <div className="upload-placeholder" onClick={() => fileInputRef.current?.click()}>
               <ImageIcon size={48} />
-              <p>Nhấp để chọn ảnh hoặc video</p>
+              <p>Nháº¥p Ä‘á»ƒ chá»n áº£nh hoáº·c video</p>
               <input 
                 type="file" 
                 ref={fileInputRef} 
@@ -75,17 +75,17 @@ export function StoryCreatorModal({ onClose, onSuccess, pushToast }: StoryCreato
             <div className="story-options">
               <input 
                 type="text" 
-                placeholder="Thêm văn bản vào tin..." 
+                placeholder="ThÃªm vÄƒn báº£n vÃ o tin..." 
                 value={textContent}
                 onChange={e => setTextContent(e.target.value)}
                 className="story-text-input"
               />
               <div className="privacy-select">
-                <label>Quyền riêng tư:</label>
+                <label>Quyá»n riÃªng tÆ°:</label>
                 <select value={privacy} onChange={e => setPrivacy(e.target.value)}>
-                  <option value="public">Công khai</option>
-                  <option value="friends">Bạn bè</option>
-                  <option value="only_me">Chỉ mình tôi</option>
+                  <option value="public">CÃ´ng khai</option>
+                  <option value="friends">Báº¡n bÃ¨</option>
+                  <option value="only_me">Chá»‰ mÃ¬nh tÃ´i</option>
                 </select>
               </div>
             </div>
@@ -101,7 +101,7 @@ export function StoryCreatorModal({ onClose, onSuccess, pushToast }: StoryCreato
               type="button"
             >
               <Send size={16} />
-              {isUploading ? 'Đang tải lên...' : 'Chia sẻ lên tin'}
+              {isUploading ? 'Äang táº£i lÃªn...' : 'Chia sáº» lÃªn tin'}
             </button>
           )}
         </footer>
@@ -109,3 +109,4 @@ export function StoryCreatorModal({ onClose, onSuccess, pushToast }: StoryCreato
     </div>
   )
 }
+

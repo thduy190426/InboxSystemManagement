@@ -683,7 +683,6 @@ export function ContactsPanel({
           allGroups={allStoryGroups}
           onClose={() => setViewingStoryGroup(null)}
           onReply={(userId, text) => {
-            // handle reply logic here - could be redirecting to chat or calling an API
             console.log('Reply to', userId, text)
           }}
         />

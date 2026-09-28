@@ -1,7 +1,3 @@
--- =========================================
--- File: 001_schema.sql
--- =========================================
-
 CREATE DATABASE IF NOT EXISTS inbox_system_management
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
@@ -392,10 +388,6 @@ CREATE TABLE audit_logs (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
--- =========================================
--- File: 002_audit_timestamps.sql
--- =========================================
-
 USE inbox_system_management;
 
 SET NAMES utf8mb4;
@@ -490,11 +482,6 @@ DROP PROCEDURE rename_seen_at_to_read_at;
 DROP PROCEDURE add_index_if_missing;
 DROP PROCEDURE add_column_if_missing;
 
-
--- =========================================
--- File: 003_online_since.sql
--- =========================================
-
 USE inbox_system_management;
 
 SET NAMES utf8mb4;
@@ -504,19 +491,12 @@ ALTER TABLE users
   ADD COLUMN IF NOT EXISTS online_since DATETIME NULL AFTER last_seen_at;
 
 
--- =========================================
--- File: 004_call_flow_status.sql
--- =========================================
 
 USE inbox_system_management;
 
 ALTER TABLE call_logs
 MODIFY COLUMN status ENUM('ringing', 'ongoing', 'missed', 'declined', 'completed', 'cancelled') NOT NULL;
 
-
--- =========================================
--- File: 005_message_pins.sql
--- =========================================
 
 USE inbox_system_management;
 
@@ -541,10 +521,6 @@ CREATE TABLE IF NOT EXISTS message_pins (
     ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
--- =========================================
--- File: 006_message_polls.sql
--- =========================================
 
 USE inbox_system_management;
 
@@ -598,10 +574,6 @@ CREATE TABLE IF NOT EXISTS message_poll_votes (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
--- =========================================
--- File: 007_user_verification_tokens.sql
--- =========================================
-
 USE inbox_system_management;
 
 CREATE TABLE IF NOT EXISTS user_verification_tokens (
@@ -622,10 +594,6 @@ CREATE TABLE IF NOT EXISTS user_verification_tokens (
     ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
--- =========================================
--- File: 008_message_reports.sql
--- =========================================
 
 CREATE TABLE IF NOT EXISTS message_reports (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -664,17 +632,9 @@ CREATE TABLE IF NOT EXISTS message_reports (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
--- =========================================
--- File: 009_activity_privacy.sql
--- =========================================
-
 ALTER TABLE users
   ADD COLUMN IF NOT EXISTS show_activity_status TINYINT(1) NOT NULL DEFAULT 1 AFTER online_since;
 
-
--- =========================================
--- File: 010_message_requests.sql
--- =========================================
 
 ALTER TABLE conversation_participants
   ADD COLUMN message_request_status ENUM('none', 'pending') NOT NULL DEFAULT 'none';
