@@ -636,7 +636,7 @@ export function ChatPanel({
 
     const fetchIpLocation = async () => {
       try {
-        const response = await fetch('https://ipapi.co/json/')
+        const response = await fetch('https://get.geojs.io/v1/ip/geo.json')
         const data = await response.json()
         if (data.latitude && data.longitude) {
           const mapsUrl = `https://www.google.com/maps?q=${data.latitude},${data.longitude}`
