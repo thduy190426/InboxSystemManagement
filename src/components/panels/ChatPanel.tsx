@@ -38,6 +38,7 @@ import {
 import type { Conversation, Message, MessageAttachment } from '../../types'
 import type { MessageSearchFilters, MessageSearchType } from '../../services/api/chatApi'
 import { fetchGifs, type GifSearchResult } from '../../services/api/gifApi'
+import { AttachmentPreviewOverlay, type PendingAttachment } from './AttachmentPreviewOverlay'
 import { AvatarFallback } from '../ui/AvatarFallback'
 import { ConfirmDialog, type ConfirmDialogState } from '../ui/ConfirmDialog'
 import { OnlineDurationBadge } from '../ui/OnlineDurationBadge'
@@ -241,6 +242,7 @@ export function ChatPanel({
   const [recordedMediaUrl, setRecordedMediaUrl] = useState('')
   const [recordedMediaFile, setRecordedMediaFile] = useState<File | null>(null)
   const [recordedMediaKind, setRecordedMediaKind] = useState<'audio' | 'video' | null>(null)
+  const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([])
   const [galleryImage, setGalleryImage] = useState<MessageAttachment | null>(null)
   const [isAtLatestMessage, setIsAtLatestMessage] = useState(true)
   const isAtLatestMessageRef = useRef(isAtLatestMessage)
@@ -506,11 +508,82 @@ export function ChatPanel({
       setRecordingError('')
     }
 
-    for (const file of validFiles) {
-      await onUploadAttachment(file)
-    }
+    const newAttachments = validFiles.map(file => {
+      const type = file.type.startsWith('image/') ? 'image' 
+        : file.type.startsWith('video/') ? 'video' 
+        : file.type.startsWith('audio/') ? 'audio' 
+        : 'file'
+      return {
+        id: Math.random().toString(36).substring(7),
+        file,
+        url: URL.createObjectURL(file),
+        type,
+        size: file.size,
+        viewOnce: false,
+        rotation: 0
+      } as PendingAttachment
+    })
+
+    setPendingAttachments(current => [...current, ...newAttachments])
 
     event.target.value = ''
+  }
+
+  async function handleSendPendingAttachments() {
+    for (const attachment of pendingAttachments) {
+      if (attachment.type === 'image' && attachment.rotation) {
+        try {
+          const rotatedFile = await rotateImageFile(attachment.file, attachment.rotation)
+          await onUploadAttachment(rotatedFile)
+        } catch (error) {
+          await onUploadAttachment(attachment.file)
+        }
+      } else {
+        await onUploadAttachment(attachment.file)
+      }
+    }
+    setPendingAttachments([])
+  }
+
+  function rotateImageFile(file: File, rotation: number): Promise<File> {
+    return new Promise((resolve, reject) => {
+      const img = new globalThis.Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return reject('No context')
+        
+        if (rotation === 90 || rotation === 270) {
+          canvas.width = img.height
+          canvas.height = img.width
+        } else {
+          canvas.width = img.width
+          canvas.height = img.height
+        }
+        
+        ctx.translate(canvas.width / 2, canvas.height / 2)
+        ctx.rotate((rotation * Math.PI) / 180)
+        ctx.drawImage(img, -img.width / 2, -img.height / 2)
+        
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(new File([blob], file.name, { type: file.type }))
+          } else {
+            reject('Canvas toBlob failed')
+          }
+        }, file.type)
+      }
+      img.onerror = reject
+      img.src = URL.createObjectURL(file)
+    })
+  }
+
+  function handleUpdatePendingAttachment(id: string, updates: Partial<PendingAttachment>) {
+    setPendingAttachments(current => current.map(att => att.id === id ? { ...att, ...updates } : att))
+  }
+
+  function handleRemovePendingAttachment(id: string) {
+    setPendingAttachments(current => current.filter(att => att.id !== id))
   }
 
   function isSupportedAttachment(file: File) {
@@ -1907,6 +1980,16 @@ export function ChatPanel({
           <ChevronDown size={20} />
         </button>
       ) : null}
+
+      {pendingAttachments.length > 0 && (
+        <AttachmentPreviewOverlay
+          attachments={pendingAttachments}
+          onClose={() => setPendingAttachments([])}
+          onRemove={handleRemovePendingAttachment}
+          onUpdate={handleUpdatePendingAttachment}
+          onSend={handleSendPendingAttachments}
+        />
+      )}
 
       <form className="composer" onSubmit={onSubmit}>
         {replyingTo ? (
