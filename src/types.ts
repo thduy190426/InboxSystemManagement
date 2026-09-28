@@ -156,6 +156,7 @@ export type Conversation = {
   onlineSince?: string | null
   friendshipStatus: ContactUser['friendshipStatus'] | null
   blocked: boolean
+  restricted?: boolean
   presence: 'online' | 'away' | 'busy' | 'offline'
   unreadSenders?: UnreadSender[]
   memberCount?: number

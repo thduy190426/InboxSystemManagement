@@ -920,7 +920,7 @@ export function ChatPanel({
     }
 
     if (message.state === 'seen') {
-      if (!showReadReceipts) {
+      if (!showReadReceipts || activeConversation.restricted) {
         return 'Đã nhận!'
       }
       
@@ -1314,16 +1314,20 @@ export function ChatPanel({
           >
             <span className="avatar-wrap compact">
               <AvatarFallback name={activeConversation.name} src={activeConversation.avatar} />
-              <span className={`presence-dot ${activeConversation.presence}`} />
-              <OnlineDurationBadge
-                compact
-                onlineSince={activeConversation.onlineSince}
-                presence={activeConversation.presence}
-              />
+              {!activeConversation.restricted ? (
+                <>
+                  <span className={`presence-dot ${activeConversation.presence}`} />
+                  <OnlineDurationBadge
+                    compact
+                    onlineSince={activeConversation.onlineSince}
+                    presence={activeConversation.presence}
+                  />
+                </>
+              ) : null}
             </span>
             <span className="chat-profile-copy">
               <h2>{activeConversation.name}</h2>
-              <p>{activeConversation.status}</p>
+              <p>{activeConversation.restricted ? 'Ngoại tuyến' : activeConversation.status}</p>
             </span>
           </button>
         </div>
@@ -1448,7 +1452,7 @@ export function ChatPanel({
         <div className="header-actions">
           <button
             className="icon-button"
-            disabled={isBlocked}
+            disabled={isBlocked || activeConversation.restricted}
             onClick={() => onStartCall('video')}
             title="Gọi video"
             type="button"
@@ -1457,7 +1461,7 @@ export function ChatPanel({
           </button>
           <button
             className="icon-button"
-            disabled={isBlocked}
+            disabled={isBlocked || activeConversation.restricted}
             onClick={() => onStartCall('audio')}
             title="Gọi audio"
             type="button"

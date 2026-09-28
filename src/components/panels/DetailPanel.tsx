@@ -24,9 +24,10 @@ import {
   X,
   MoreHorizontal,
   Tag,
-  Users,
   Settings2,
   FolderOpen,
+  EyeOff,
+  Users,
 } from 'lucide-react'
 import type { ContactUser, Conversation, ConversationMember, GroupJoinRequest, Message } from '../../types'
 import { AvatarFallback } from '../ui/AvatarFallback'
@@ -42,6 +43,7 @@ type DetailPanelProps = {
   joinRequests?: GroupJoinRequest[]
   members: ConversationMember[]
   pinnedMessages: Message[]
+  restrictedContacts?: ContactUser[]
   onAddMember: (userId: string) => Promise<void> | void
   onArchive: () => void
   onCopyGroupInviteLink: () => Promise<void> | void
@@ -52,6 +54,7 @@ type DetailPanelProps = {
   onResetGroupInviteLink: () => Promise<void> | void
   onReviewGroupJoinRequest: (requestId: string, action: 'approve' | 'decline') => Promise<void> | void
   onToggleBlocked: () => void
+  onToggleRestricted?: () => void
   onToggleMuted: () => void
   onTogglePinned: () => void
   onTransferOwner: (userId: string) => Promise<void> | void
@@ -72,6 +75,7 @@ export function DetailPanel({
   joinRequests = [],
   members,
   pinnedMessages,
+  restrictedContacts = [],
   onAddMember,
   onArchive,
   onCopyGroupInviteLink,
@@ -82,6 +86,7 @@ export function DetailPanel({
   onResetGroupInviteLink,
   onReviewGroupJoinRequest,
   onToggleBlocked,
+  onToggleRestricted,
   onToggleMuted,
   onTogglePinned,
   onTransferOwner,
@@ -100,6 +105,9 @@ export function DetailPanel({
   const [isMembersModalClosing, setIsMembersModalClosing] = useState(false)
   const [actionMenuMemberId, setActionMenuMemberId] = useState<string | null>(null)
   const [editingNicknameId, setEditingNicknameId] = useState<string | null>(null)
+  
+  const [isRestrictedModalOpen, setIsRestrictedModalOpen] = useState(false)
+  const [isRestrictedModalClosing, setIsRestrictedModalClosing] = useState(false)
 
   const [isEditGroupModalOpen, setIsEditGroupModalOpen] = useState(false)
   const [isEditGroupModalClosing, setIsEditGroupModalClosing] = useState(false)
@@ -148,6 +156,19 @@ export function DetailPanel({
     setTimeout(() => {
       setIsAddMemberModalOpen(false)
       setIsAddMemberModalClosing(false)
+    }, 140)
+  }
+
+  function openRestrictedModal() {
+    setIsRestrictedModalClosing(false)
+    setIsRestrictedModalOpen(true)
+  }
+
+  function closeRestrictedModal() {
+    setIsRestrictedModalClosing(true)
+    setTimeout(() => {
+      setIsRestrictedModalOpen(false)
+      setIsRestrictedModalClosing(false)
     }, 140)
   }
 
@@ -331,16 +352,37 @@ export function DetailPanel({
           <span>Lưu trữ</span>
         </button>
         {activeConversation.type === 'direct' && activeConversation.contactId ? (
-          <button
-            className={activeConversation.blocked ? 'is-active' : 'is-danger'}
-            disabled={Boolean(busyAction)}
-            onClick={onToggleBlocked}
-            type="button"
-            title={activeConversation.blocked ? 'Bỏ chặn' : 'Chặn'}
-          >
-            {activeConversation.blocked ? <UserCheck size={18} /> : <UserX size={18} />}
-            <span>{activeConversation.blocked ? 'Bỏ chặn' : 'Chặn'}</span>
-          </button>
+          <>
+            <button
+              className={activeConversation.restricted ? 'is-active' : ''}
+              disabled={Boolean(busyAction)}
+              onClick={() => onToggleRestricted?.()}
+              type="button"
+              title={activeConversation.restricted ? 'Bỏ hạn chế' : 'Hạn chế'}
+            >
+              <EyeOff size={18} />
+              <span>{activeConversation.restricted ? 'Bỏ hạn chế' : 'Hạn chế'}</span>
+            </button>
+            <button
+              className={activeConversation.blocked ? 'is-active' : 'is-danger'}
+              disabled={Boolean(busyAction)}
+              onClick={onToggleBlocked}
+              type="button"
+              title={activeConversation.blocked ? 'Bỏ chặn' : 'Chặn'}
+            >
+              {activeConversation.blocked ? <UserCheck size={18} /> : <UserX size={18} />}
+              <span>{activeConversation.blocked ? 'Bỏ chặn' : 'Chặn'}</span>
+            </button>
+            <button
+              disabled={Boolean(busyAction)}
+              onClick={openRestrictedModal}
+              type="button"
+              title="Danh sách hạn chế"
+            >
+              <Shield size={18} />
+              <span>Danh sách hạn chế</span>
+            </button>
+          </>
         ) : null}
       </div>
 
@@ -907,8 +949,61 @@ export function DetailPanel({
               </button>
             </div>
           </div>
-        </div>
       , document.body) : null}
+
+      {isRestrictedModalOpen ? createPortal(
+        <div className={isRestrictedModalClosing ? 'modal-backdrop is-exiting' : 'modal-backdrop'} role="presentation" style={{ zIndex: 100 }}>
+          <div className="group-modal" style={{ maxWidth: '440px', width: '100%' }}>
+            <div className="group-modal-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 24px 16px', borderBottom: '1px solid var(--line)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '44px', height: '44px', borderRadius: '50%', background: 'var(--surface-soft)', color: 'var(--text)' }}>
+                  <Shield size={22} />
+                </div>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '18px' }}>Tài khoản đã hạn chế</h2>
+                  <p style={{ margin: 0, marginTop: '4px', color: 'var(--muted)', fontSize: '14px' }}>{restrictedContacts.length} tài khoản</p>
+                </div>
+              </div>
+              <button className="icon-button" onClick={closeRestrictedModal} type="button" title="Đóng" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--subtle)' }}>
+                <X size={18} />
+              </button>
+            </div>
+            
+            <div className="group-member-stack" style={{ padding: '16px 24px 24px', maxHeight: '65vh', overflowY: 'auto' }}>
+              <p style={{ fontSize: '13px', color: 'var(--subtle)', marginBottom: '16px', lineHeight: 1.5 }}>
+                Những tài khoản này không thể thấy trạng thái hoạt động hoặc trạng thái đã xem của bạn. Tin nhắn từ họ sẽ không hiển thị thông báo.
+              </p>
+              {restrictedContacts.map((contact) => (
+                <div className="group-detail-member" key={contact.id} style={{ position: 'relative' }}>
+                  <AvatarFallback name={contact.fullName} src={contact.avatarUrl} />
+                  <div className="group-member-body">
+                    <span>
+                      <strong>{contact.fullName}</strong>
+                    </span>
+                  </div>
+                  <button
+                    className="primary-button outline"
+                    style={{ padding: '4px 12px', fontSize: '13px' }}
+                    onClick={() => {
+                      if (activeConversation.contactId === contact.id) {
+                        onToggleRestricted?.()
+                      }
+                    }}
+                  >
+                    Bỏ hạn chế
+                  </button>
+                </div>
+              ))}
+              {restrictedContacts.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--subtle)' }}>
+                  Chưa có tài khoản nào bị hạn chế.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body,
+      ) : null}
     </aside>
   )
 }

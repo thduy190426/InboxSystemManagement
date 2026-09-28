@@ -1555,18 +1555,18 @@ export function ChatApp({
       }
 
       if (conversationFilter === 'unread') {
-        return conversation.unread > 0 && conversation.messageRequestStatus !== 'pending'
+        return conversation.unread > 0 && conversation.messageRequestStatus !== 'pending' && !conversation.restricted
       }
 
       if (conversationFilter === 'requests') {
-        return conversation.messageRequestStatus === 'pending'
+        return conversation.messageRequestStatus === 'pending' || conversation.restricted
       }
 
       if (conversationFilter === 'group') {
-        return conversation.type === 'group' && conversation.messageRequestStatus !== 'pending'
+        return conversation.type === 'group' && conversation.messageRequestStatus !== 'pending' && !conversation.restricted
       }
 
-      return conversation.messageRequestStatus !== 'pending'
+      return conversation.messageRequestStatus !== 'pending' && !conversation.restricted
     })
 
     const sortedByType = [
