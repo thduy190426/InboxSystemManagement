@@ -7,6 +7,7 @@ import {
   CheckCheck,
   ChevronDown,
   ChevronUp,
+  Copy,
   Download,
   Filter,
   Film,
@@ -632,8 +633,6 @@ export function ChatPanel({
     setIsSharingLocation(true)
     setLocationError('')
 
-    const options = { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
-
     const fetchIpLocation = async () => {
       try {
         const response = await fetch('https://get.geojs.io/v1/ip/geo.json')
@@ -651,26 +650,46 @@ export function ChatPanel({
       }
     }
 
+    const tryLowAccuracy = () => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setIsSharingLocation(false)
+          const { latitude, longitude } = position.coords
+          const mapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`
+          void onSendQuickMessage(`📍 Vị trí hiện tại: ${mapsUrl}`)
+        },
+        (error) => {
+          if (error.code === error.TIMEOUT || error.code === error.POSITION_UNAVAILABLE) {
+            void fetchIpLocation()
+          } else {
+            setIsSharingLocation(false)
+            let errMsg = 'Không thể lấy vị trí!'
+            if (error.code === error.PERMISSION_DENIED) errMsg = 'Bạn đã từ chối quyền truy cập vị trí!'
+            setLocationError(errMsg)
+          }
+        },
+        { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
+      )
+    }
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setIsSharingLocation(false)
         const { latitude, longitude } = position.coords
         const mapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`
-        void onSendQuickMessage(`📍 Vị trí hiện tại: ${mapsUrl}`)
+        void onSendQuickMessage(`📍 Vị trí chính xác: ${mapsUrl}`)
       },
       (error) => {
         if (error.code === error.TIMEOUT || error.code === error.POSITION_UNAVAILABLE) {
-          void fetchIpLocation()
+          tryLowAccuracy()
         } else {
           setIsSharingLocation(false)
           let errMsg = 'Không thể lấy vị trí!'
-          if (error.code === error.PERMISSION_DENIED) {
-            errMsg = 'Bạn đã từ chối quyền truy cập vị trí!'
-          }
+          if (error.code === error.PERMISSION_DENIED) errMsg = 'Bạn đã từ chối quyền truy cập vị trí!'
           setLocationError(errMsg)
         }
       },
-      options
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     )
   }
 
@@ -967,6 +986,25 @@ export function ChatPanel({
     await onJumpToMessage(result.id)
   }
 
+  function linkifyText(text: string) {
+    if (!text) return text
+    const urlRegex = /(https?:\/\/[^\s]+)/g
+    if (!urlRegex.test(text)) {
+      return text
+    }
+    const parts = text.split(urlRegex)
+    return parts.map((part, index) => {
+      if (part.match(urlRegex)) {
+        return (
+          <a key={index} href={part} target="_blank" rel="noopener noreferrer" className="message-link">
+            {part}
+          </a>
+        )
+      }
+      return part
+    })
+  }
+
   function renderHighlightedText(message: Message) {
     if (!normalizedSearch) {
       const mentionNames = message.mentions?.flatMap((mention) => [
@@ -983,7 +1021,7 @@ export function ChatPanel({
         : null
 
       if (!pattern) {
-        return message.text
+        return linkifyText(message.text)
       }
 
       return message.text.split(pattern).map((part, index) => {
@@ -994,7 +1032,7 @@ export function ChatPanel({
             {part}
           </mark>
         ) : (
-          part
+          linkifyText(part)
         )
       })
     }
@@ -1003,7 +1041,7 @@ export function ChatPanel({
     const matchIndex = lowerText.indexOf(normalizedSearch)
 
     if (matchIndex === -1) {
-      return message.text
+      return linkifyText(message.text)
     }
 
     const before = message.text.slice(0, matchIndex)
@@ -1012,9 +1050,9 @@ export function ChatPanel({
 
     return (
       <>
-        {before}
+        {linkifyText(before)}
         <mark>{match}</mark>
-        {after}
+        {linkifyText(after)}
       </>
     )
   }
@@ -1737,6 +1775,19 @@ export function ChatPanel({
                         </button>
                         {openActionMenuId === message.id ? (
                           <span className="message-action-menu">
+                            {message.text && (
+                              <button
+                                disabled={Boolean(busyMessageId)}
+                                onClick={() => {
+                                  navigator.clipboard.writeText(message.text).catch(() => {})
+                                  setOpenActionMenuId('')
+                                }}
+                                type="button"
+                              >
+                                <Copy size={14} />
+                                <span>Sao chép</span>
+                              </button>
+                            )}
                             <button
                               disabled={Boolean(busyMessageId)}
                               onClick={() => handleTogglePin(message.id)}
