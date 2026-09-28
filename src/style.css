@@ -1807,7 +1807,7 @@ h3 {
   gap: 12px;
   min-height: 98px;
   margin: 0;
-  padding: 14px 0 8px;
+  padding: 14px 4px 8px;
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: thin;
@@ -7324,7 +7324,7 @@ html.dark .scroll-to-latest-button:focus-visible {
   .friend-status-strip {
     min-height: 94px;
     gap: 11px;
-    padding: 14px 0 8px;
+    padding: 14px 4px 8px;
   }
 
   .friend-status-card {
@@ -11479,7 +11479,7 @@ html.dark .outgoing .message-bubble {
   display: flex;
   gap: 16px;
   overflow-x: auto;
-  padding-bottom: 4px;
+  padding: 0 4px 4px;
   scrollbar-width: none;
 }
 .story-feed-scroll::-webkit-scrollbar {
