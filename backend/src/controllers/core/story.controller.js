@@ -1,4 +1,4 @@
-﻿const crypto = require('crypto');
+const crypto = require('crypto');
 const { pool } = require('../../config/db');
 const { uploadBufferToCloudinary } = require('../../config/upload');
 const { getIO } = require('../../realtime/socket');
@@ -35,7 +35,7 @@ exports.createStory = async (req, res, next) => {
 
     const uploadOptions = {
       folder: 'stories',
-      resource_type: resourceType,
+      resourceType: resourceType,
     };
     
     console.log('[story.controller] Starting Cloudinary upload with options:', uploadOptions);
