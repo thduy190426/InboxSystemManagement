@@ -15,6 +15,8 @@ export type Message = {
   seenAt?: string
   isEdited?: boolean
   isPinned?: boolean
+  pinnedBy?: string
+  pinnedAt?: string
   senderAvatar?: string | null
   senderName?: string | null
   replyTo?: MessageReply | null

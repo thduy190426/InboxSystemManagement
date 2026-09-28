@@ -850,7 +850,15 @@ export function ChatPanel({
 
   async function handleTogglePin(messageId: string) {
     setOpenActionMenuId('')
+    const message = messages.find((m) => m.id === messageId)
     await onToggleMessagePin(messageId)
+    if (message) {
+      if (message.isPinned) {
+        void onSendQuickMessage(`📌 Đã bỏ ghim một tin nhắn`)
+      } else {
+        void onSendQuickMessage(`📌 Đã ghim một tin nhắn`)
+      }
+    }
   }
 
   function handleReport(message: Message) {
@@ -1480,7 +1488,14 @@ export function ChatPanel({
               <Pin size={14} />
               <span>
                 <strong>{getReplyAuthorLabel(message)}</strong>
-                <small>{getReplyText(message)}</small>
+                <small>
+                  {getReplyText(message)}
+                  {message.pinnedBy && message.pinnedAt && (
+                    <span style={{ display: 'block', color: 'var(--subtle)', fontSize: '0.85em', marginTop: '2px' }}>
+                      Ghim bởi {message.pinnedBy} lúc {new Date(message.pinnedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  )}
+                </small>
               </span>
             </button>
           ))}
