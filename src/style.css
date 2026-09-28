@@ -323,7 +323,7 @@ img {
 }
 
 .password-toggle:hover {
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
 }
 
@@ -376,7 +376,7 @@ img {
 }
 
 .captcha-header button:hover {
-  background: #e8f7f5;
+  background: var(--surface-strong);
 }
 
 .captcha-header button:disabled {
@@ -806,7 +806,7 @@ img {
 }
 
 .not-found-secondary:hover {
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
   border-color: rgba(15, 159, 142, 0.3);
 }
@@ -861,7 +861,7 @@ img {
   height: 58px;
   place-items: center;
   border-radius: 8px;
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
 }
 
@@ -946,7 +946,7 @@ img {
 }
 
 .legal-section:nth-child(odd) .legal-section-icon {
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
 }
 
@@ -1629,7 +1629,7 @@ h3 {
 }
 
 .icon-button:hover {
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
 }
 
@@ -1692,7 +1692,7 @@ h3 {
   padding: 12px;
   border: 1px solid rgba(203, 213, 220, 0.9);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.98);
+  background: var(--surface); backdrop-filter: blur(12px);
   box-shadow: 0 18px 42px rgba(22, 35, 43, 0.16);
 }
 
@@ -1720,7 +1720,7 @@ h3 {
 }
 
 .global-search-panel header button:hover {
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
 }
 
@@ -2249,7 +2249,7 @@ html.dark .conversation-context-menu button.is-danger:hover {
   min-height: 28px;
   padding: 0 8px;
   border-radius: 999px;
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
   font-size: 12px;
   font-weight: 900;
@@ -2342,7 +2342,7 @@ html.dark .conversation-context-menu button.is-danger:hover {
   padding: 0 12px;
   overflow: hidden;
   border-radius: 8px;
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
   font-size: 13px;
   font-weight: 800;
@@ -2486,7 +2486,7 @@ html.dark .conversation-context-menu button.is-danger:hover {
   min-width: 0;
   height: 38px;
   border-radius: 8px;
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
   cursor: pointer;
 }
@@ -2573,7 +2573,7 @@ html.dark .conversation-context-menu button.is-danger:hover {
 }
 
 .group-member-toggle:hover {
-  background: #e8f7f5;
+  background: var(--surface-strong);
   border-color: rgba(15, 159, 142, 0.4);
 }
 
@@ -2693,7 +2693,7 @@ html.dark .conversation-context-menu button.is-danger:hover {
   height: 42px;
   place-items: center;
   border-radius: 50%;
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
   font-weight: 900;
 }
@@ -2926,7 +2926,7 @@ html.dark .conversation-context-menu button.is-danger:hover {
   min-width: 174px;
   padding: 0 14px;
   overflow: hidden;
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
 }
 
@@ -3976,7 +3976,7 @@ html.dark .profile-field select {
 }
 
 .contact-profile-header>button:hover {
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
 }
 
@@ -4207,7 +4207,7 @@ html.dark .profile-field select {
   padding: 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.98);
+  background: var(--surface); backdrop-filter: blur(12px);
   box-shadow: var(--shadow);
 }
 
@@ -4237,7 +4237,7 @@ html.dark .profile-field select {
 }
 
 .message-search-button:hover {
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
 }
 
@@ -4268,7 +4268,7 @@ html.dark .profile-field select {
 }
 
 .chat-profile-trigger:hover {
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
 }
 
@@ -4354,7 +4354,7 @@ html.dark .profile-field select {
 .scroll-to-latest-button:hover,
 .scroll-to-latest-button:focus-visible {
   border-color: rgba(20, 184, 166, 0.44);
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary);
   box-shadow: 0 18px 38px rgba(15, 23, 42, 0.18);
   transform: translateY(-2px);
@@ -4878,7 +4878,7 @@ html.dark .scroll-to-latest-button:focus-visible {
   padding: 6px 9px;
   border: 1px solid rgba(15, 159, 142, 0.22);
   border-radius: 8px;
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: #0b766b;
   font-size: 12px;
   font-weight: 900;
@@ -4970,7 +4970,7 @@ html.dark .scroll-to-latest-button:focus-visible {
 .message-reaction:hover,
 .message-reaction.is-mine {
   border-color: rgba(15, 159, 142, 0.42);
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
 }
 
@@ -5010,7 +5010,7 @@ html.dark .scroll-to-latest-button:focus-visible {
 }
 
 .message-more-button:hover {
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
 }
 
@@ -5095,7 +5095,7 @@ html.dark .scroll-to-latest-button:focus-visible {
 }
 
 .message-action-menu button:hover {
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
 }
 
@@ -5220,7 +5220,7 @@ html.dark .scroll-to-latest-button:focus-visible {
 }
 
 .forward-dialog header button:hover {
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
 }
 
@@ -5267,7 +5267,7 @@ html.dark .scroll-to-latest-button:focus-visible {
 }
 
 .forward-targets button:hover {
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
 }
 
@@ -5475,7 +5475,7 @@ html.dark .scroll-to-latest-button:focus-visible {
 }
 
 .mention-suggestions button:hover {
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
 }
 
@@ -6227,7 +6227,7 @@ html.dark .scroll-to-latest-button:focus-visible {
   padding: 20px;
   border: 1px solid rgba(203, 213, 220, 0.94);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.98);
+  background: var(--surface); backdrop-filter: blur(12px);
   box-shadow: 0 24px 70px rgba(22, 35, 43, 0.24);
 }
 
@@ -6246,7 +6246,7 @@ html.dark .scroll-to-latest-button:focus-visible {
 }
 
 .confirm-dialog-close:hover {
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
 }
 
@@ -6256,7 +6256,7 @@ html.dark .scroll-to-latest-button:focus-visible {
   height: 44px;
   place-items: center;
   border-radius: 8px;
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
 }
 
@@ -6468,7 +6468,7 @@ html.dark .scroll-to-latest-button:focus-visible {
 }
 
 .detail-actions button:hover {
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
 }
 
@@ -6523,7 +6523,7 @@ html.dark .scroll-to-latest-button:focus-visible {
   place-items: center;
   overflow: hidden;
   border-radius: 8px;
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
   cursor: pointer;
 }
@@ -6547,7 +6547,7 @@ html.dark .scroll-to-latest-button:focus-visible {
 }
 
 .group-add-row button {
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
 }
 
@@ -6583,7 +6583,7 @@ html.dark .scroll-to-latest-button:focus-visible {
   min-width: 34px;
   height: 34px;
   border-radius: 8px;
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
   cursor: pointer;
 }
@@ -6791,7 +6791,7 @@ html.dark .scroll-to-latest-button:focus-visible {
   height: 32px;
   place-items: center;
   border-radius: 8px;
-  background: #e8f7f5;
+  background: var(--surface-strong);
   color: var(--primary-strong);
 }
 
