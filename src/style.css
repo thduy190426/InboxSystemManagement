@@ -5067,15 +5067,15 @@ html.dark .scroll-to-latest-button:focus-visible {
   right: 0;
   z-index: 8;
   display: flex;
-  min-width: 140px;
+  min-width: 180px;
   flex-direction: column;
   min-height: 0;
-  min-width: 0;
-  padding: 5px;
+
+  padding: 8px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--surface);
-  box-shadow: 0 14px 30px rgba(22, 35, 43, 0.16);
+  box-shadow: 0 16px 32px rgba(22, 35, 43, 0.2);
 }
 
 .outgoing .message-action-menu {
@@ -5086,15 +5086,16 @@ html.dark .scroll-to-latest-button:focus-visible {
 .message-action-menu button {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 34px;
-  padding: 0 9px;
-  border-radius: 7px;
+  gap: 10px;
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 8px;
   background: transparent;
   color: var(--text);
-  font-size: 13px;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .message-action-menu button:hover {
