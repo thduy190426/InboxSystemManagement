@@ -236,3 +236,23 @@ export type AuthPageProps = {
   onSubmit: (payload: Record<string, string>) => Promise<void> | void
   onSwitchMode: () => void
 }
+
+export type Story = {
+  id: string
+  media_url: string
+  media_type: 'image' | 'video'
+  text_content: string | null
+  privacy: string
+  expires_at: string
+  created_at: string
+}
+
+export type UserStoryGroup = {
+  user_id: number
+  public_id: string
+  full_name: string
+  display_name: string
+  avatar_url: string
+  items: Story[]
+}
+

@@ -462,7 +462,7 @@ function getAttachmentPreview(type, mimeType = '') {
   }
 
   if (type === 'video') {
-    return 'Da gui mot video!'
+    return 'Đã gửi một video!'
   }
 
   if (type === 'file') {

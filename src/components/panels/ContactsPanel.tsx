@@ -34,6 +34,10 @@ import { getRealtimeSocket } from '../../services/realtime/realtime'
 import type { ContactUser } from '../../types'
 import { AvatarFallback } from '../ui/AvatarFallback'
 import { ConfirmDialog, type ConfirmDialogState } from '../ui/ConfirmDialog'
+import { StoryFeed } from '../story/StoryFeed'
+import { StoryCreatorModal } from '../story/StoryCreatorModal'
+import { StoryViewerOverlay } from '../story/StoryViewerOverlay'
+import type { UserStoryGroup } from '../../types'
 
 type ContactsPanelProps = {
   contactToOpen?: ContactUser | null
@@ -282,6 +286,9 @@ export function ContactsPanel({
   const [isProfileClosing, setIsProfileClosing] = useState(false)
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null)
   const [isConfirming, setIsConfirming] = useState(false)
+  const [showStoryCreator, setShowStoryCreator] = useState(false)
+  const [viewingStoryGroup, setViewingStoryGroup] = useState<UserStoryGroup | null>(null)
+  const [allStoryGroups, setAllStoryGroups] = useState<UserStoryGroup[]>([])
   const pendingContactActionsRef = useRef(new Set<string>())
   const queryRef = useRef(query)
 
@@ -502,6 +509,14 @@ export function ContactsPanel({
         <h1 id="contacts-title">Bạn bè &amp; Gợi ý kết bạn</h1>
       </header>
 
+      <StoryFeed 
+        onCreateClick={() => setShowStoryCreator(true)}
+        onStoryClick={(group, allGroups) => {
+          setViewingStoryGroup(group)
+          setAllStoryGroups(allGroups)
+        }}
+      />
+
       <form className="cp-search" onSubmit={handleSearch}>
         <span className="cp-search-icon"><Search size={16} /></span>
         <input
@@ -653,6 +668,26 @@ export function ContactsPanel({
         onCancel={() => setConfirmDialog(null)}
         onConfirm={() => void handleConfirmDialog()}
       />
+
+      {showStoryCreator && (
+        <StoryCreatorModal 
+          onClose={() => setShowStoryCreator(false)}
+          onSuccess={() => setShowStoryCreator(false)}
+          pushToast={pushToast}
+        />
+      )}
+
+      {viewingStoryGroup && (
+        <StoryViewerOverlay 
+          initialGroup={viewingStoryGroup}
+          allGroups={allStoryGroups}
+          onClose={() => setViewingStoryGroup(null)}
+          onReply={(userId, text) => {
+            // handle reply logic here - could be redirecting to chat or calling an API
+            console.log('Reply to', userId, text)
+          }}
+        />
+      )}
     </section>
   )
 }

@@ -689,3 +689,19 @@ ALTER TABLE users
   ADD UNIQUE KEY uq_users_handle (handle);
 
 
+
+CREATE TABLE stories (
+  id CHAR(36) NOT NULL,
+  user_id BIGINT UNSIGNED NOT NULL,
+  media_url VARCHAR(500) NOT NULL,
+  media_type ENUM('image', 'video') NOT NULL DEFAULT 'image',
+  text_content TEXT NULL,
+  privacy ENUM('public', 'friends', 'only_me') NOT NULL DEFAULT 'friends',
+  expires_at DATETIME NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_stories_user_id (user_id),
+  KEY idx_stories_expires_at (expires_at),
+  CONSTRAINT fk_stories_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
