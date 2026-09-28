@@ -473,20 +473,40 @@ export function ChatPanel({
   }
 
   async function handleAttachmentChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]
+    const files = event.target.files
 
-    if (!file) {
+    if (!files || files.length === 0) {
       return
     }
 
-    if (!isSupportedAttachment(file)) {
+    const validFiles: File[] = []
+    let hasInvalidFiles = false
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      if (isSupportedAttachment(file)) {
+        validFiles.push(file)
+      } else {
+        hasInvalidFiles = true
+      }
+    }
+
+    if (validFiles.length === 0) {
       setRecordingError('Chỉ hỗ trợ gửi tệp hình ảnh tối đa 2MB!')
       event.target.value = ''
       return
     }
 
-    setRecordingError('')
-    await onUploadAttachment(file)
+    if (hasInvalidFiles) {
+      setRecordingError('Một số tệp bị loại bỏ do định dạng không hỗ trợ hoặc vượt quá 2MB!')
+    } else {
+      setRecordingError('')
+    }
+
+    for (const file of validFiles) {
+      await onUploadAttachment(file)
+    }
+
     event.target.value = ''
   }
 
@@ -1835,6 +1855,7 @@ export function ChatPanel({
             aria-label="Đính kèm file"
             accept="image/*,audio/*,video/*"
             disabled={isBlocked || isUploadingAttachment}
+            multiple
             onChange={handleAttachmentChange}
             type="file"
           />
