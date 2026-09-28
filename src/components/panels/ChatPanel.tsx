@@ -604,47 +604,51 @@ export function ChatPanel({
   }
 
   const handleShareLocation = () => {
-    console.log('[Location Share] Started')
     if (!navigator.geolocation) {
-      console.error('[Location Share] Browser does not support geolocation')
       setLocationError('Trình duyệt không hỗ trợ vị trí!')
       return
     }
 
-    console.log('[Location Share] Geolocation is supported, requesting position...')
     setIsSharingLocation(true)
     setLocationError('')
 
-    const options = { enableHighAccuracy: false, timeout: 30000, maximumAge: 60000 }
-    console.log('[Location Share] Using options:', options)
+    const options = { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
+
+    const fetchIpLocation = async () => {
+      try {
+        const response = await fetch('https://ipapi.co/json/')
+        const data = await response.json()
+        if (data.latitude && data.longitude) {
+          const mapsUrl = `https://www.google.com/maps?q=${data.latitude},${data.longitude}`
+          void onSendQuickMessage(`📍 Vị trí (ước tính qua IP): ${mapsUrl}`)
+          setIsSharingLocation(false)
+        } else {
+          throw new Error('No location data')
+        }
+      } catch (err) {
+        setIsSharingLocation(false)
+        setLocationError('Không thể lấy vị trí thiết bị!')
+      }
+    }
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        console.log('[Location Share] Success!', position)
-        console.log('[Location Share] Coords:', position.coords)
         setIsSharingLocation(false)
         const { latitude, longitude } = position.coords
         const mapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`
         void onSendQuickMessage(`📍 Vị trí hiện tại: ${mapsUrl}`)
       },
       (error) => {
-        console.error('[Location Share] Error occurred:', error)
-        console.error('[Location Share] Error Code:', error.code, 'Message:', error.message)
-        setIsSharingLocation(false)
-        let errMsg = 'Không thể lấy vị trí!'
-        if (error.code === error.PERMISSION_DENIED) {
-          errMsg = 'Bạn đã từ chối quyền truy cập vị trí!'
-          console.log('[Location Share] Reason: PERMISSION_DENIED')
+        if (error.code === error.TIMEOUT || error.code === error.POSITION_UNAVAILABLE) {
+          void fetchIpLocation()
+        } else {
+          setIsSharingLocation(false)
+          let errMsg = 'Không thể lấy vị trí!'
+          if (error.code === error.PERMISSION_DENIED) {
+            errMsg = 'Bạn đã từ chối quyền truy cập vị trí!'
+          }
+          setLocationError(errMsg)
         }
-        else if (error.code === error.POSITION_UNAVAILABLE) {
-          errMsg = 'Vị trí không khả dụng!'
-          console.log('[Location Share] Reason: POSITION_UNAVAILABLE')
-        }
-        else if (error.code === error.TIMEOUT) {
-          errMsg = 'Lấy vị trí quá hạn!'
-          console.log('[Location Share] Reason: TIMEOUT (Browser failed to get location in time)')
-        }
-        setLocationError(errMsg)
       },
       options
     )
