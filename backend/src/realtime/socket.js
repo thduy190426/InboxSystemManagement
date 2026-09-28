@@ -858,8 +858,16 @@ function emitToConversation(conversationId, eventName, payload = {}) {
   io.to(getConversationRoom(conversationId)).emit(eventName, payload)
 }
 
+function getIO() {
+  if (!io) {
+    throw new Error('Socket.io is not initialized!')
+  }
+  return io
+}
+
 module.exports = {
   emitToConversation,
   emitToUsers,
   initRealtime,
+  getIO,
 }
