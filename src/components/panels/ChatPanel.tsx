@@ -627,7 +627,7 @@ export function ChatPanel({
         else if (error.code === error.TIMEOUT) errMsg = 'Lấy vị trí quá hạn!'
         setLocationError(errMsg)
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      { enableHighAccuracy: false, timeout: 20000, maximumAge: 60000 }
     )
   }
 
