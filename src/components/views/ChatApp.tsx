@@ -3524,6 +3524,7 @@ export function ChatApp({
         onUpdateBackground={handleUpdateBackground}
         onUpdateMemberNickname={handleUpdateMemberNickname}
         onUpdateMemberRole={handleUpdateMemberRole}
+        onClose={() => setIsDetailOpen(false)}
       />
       {profileContactToOpen && (
         <ContactProfile

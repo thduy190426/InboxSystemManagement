@@ -63,6 +63,7 @@ type DetailPanelProps = {
   onUpdateBackground?: (payload: { backgroundImage?: File | null; removeBackground?: boolean }) => Promise<void> | void
   onUpdateMemberNickname: (userId: string, nickname: string) => Promise<void> | void
   onUpdateMemberRole: (userId: string, role: 'admin' | 'member') => Promise<void> | void
+  onClose?: () => void
 }
 
 export function DetailPanel({
@@ -95,9 +96,43 @@ export function DetailPanel({
   onUpdateBackground,
   onUpdateMemberNickname,
   onUpdateMemberRole,
+  onClose,
 }: DetailPanelProps) {
   const [groupTitle, setGroupTitle] = useState(activeConversation.name)
   const [groupAvatar, setGroupAvatar] = useState<File | null>(null)
+
+  const [touchStartX, setTouchStartX] = useState<number | null>(null)
+  const [touchCurrentX, setTouchCurrentX] = useState<number | null>(null)
+
+  function handleTouchStart(e: React.TouchEvent) {
+    if (window.innerWidth <= 1180) {
+      setTouchStartX(e.targetTouches[0].clientX)
+      setTouchCurrentX(e.targetTouches[0].clientX)
+    }
+  }
+
+  function handleTouchMove(e: React.TouchEvent) {
+    if (touchStartX !== null) {
+      setTouchCurrentX(e.targetTouches[0].clientX)
+    }
+  }
+
+  function handleTouchEnd() {
+    if (touchStartX !== null && touchCurrentX !== null) {
+      const diffX = touchCurrentX - touchStartX
+      if (diffX > 60) {
+        onClose?.()
+      }
+    }
+    setTouchStartX(null)
+    setTouchCurrentX(null)
+  }
+
+  const isSwiping = touchStartX !== null && touchCurrentX !== null
+  const swipeOffset = isSwiping ? Math.max(0, touchCurrentX - touchStartX) : 0
+  const swipeStyle = isSwiping && window.innerWidth <= 1180
+    ? { transform: `translateX(${swipeOffset}px)`, transition: 'none' }
+    : undefined
   const [directNickname, setDirectNickname] = useState(activeConversation.nickname || '')
   const [memberNicknames, setMemberNicknames] = useState<Record<string, string>>({})
   const [selectedFriendId, setSelectedFriendId] = useState('')
@@ -307,6 +342,10 @@ export function DetailPanel({
       className={isOpen ? 'detail-panel is-open' : 'detail-panel'}
       aria-hidden={!isOpen}
       aria-label="Thông tin hội thoại"
+      style={swipeStyle}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       <div className="profile-block">
         <span className="profile-avatar-shell">
