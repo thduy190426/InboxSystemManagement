@@ -4289,13 +4289,18 @@ html.dark .profile-field select {
 
 .chat-identity h2,
 .profile-block h2 {
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .chat-identity p {
   margin-top: 4px;
   color: var(--muted);
   font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .header-actions {
@@ -7118,11 +7123,17 @@ html.dark .chat-pinned-more:hover {
   }
 
   .chat-header {
-    padding: 14px 16px;
+    min-height: 66px;
+    flex-wrap: wrap;
+    padding: 12px 14px;
   }
 
   .message-search {
-    grid-template-columns: minmax(160px, 1fr) auto auto auto auto;
+    order: 3;
+    grid-column: 1 / -1;
+    width: 100%;
+    margin-left: 0;
+    grid-template-columns: minmax(0, 1fr) auto auto auto auto;
   }
 
   .thread {
@@ -7397,20 +7408,6 @@ html.dark .chat-pinned-more:hover {
   .app-shell.has-inbox-drawer .chat-panel {
     height: calc(100svh - 72px);
     min-height: calc(100svh - 72px);
-  }
-
-  .chat-header {
-    min-height: 66px;
-    flex-wrap: wrap;
-    padding: 12px 14px;
-  }
-
-  .message-search {
-    order: 3;
-    grid-column: 1 / -1;
-    width: 100%;
-    margin-left: 0;
-    grid-template-columns: minmax(0, 1fr) auto auto auto auto;
   }
 
   .mobile-menu {
