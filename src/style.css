@@ -11502,7 +11502,7 @@ html.dark .pp-unsaved-badge {
   grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
 }
 
-.conversation-seen-avatar { width: 14px !important; height: 14px !important; font-size: 8px !important; border-radius: 50%; overflow: hidden; object-fit: cover; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.conversation-seen-avatar { width: 14px !important; height: 14px !important; font-size: 8px !important; border-radius: 50%; overflow: hidden; object-fit: cover; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #14b8a6, #2563eb); color: #fff; }
 
 .message-bubble {
   border: 1px solid rgba(255, 255, 255, 0.4) !important;
