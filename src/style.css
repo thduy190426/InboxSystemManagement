@@ -4669,6 +4669,12 @@ html.dark .scroll-to-latest-button:focus-visible {
   background: #eef7f6;
 }
 
+html.dark .chat-pinned-message:hover,
+html.dark .chat-pinned-more:hover {
+  background: rgba(15, 159, 142, 0.25) !important;
+  border-color: var(--primary) !important;
+}
+
 .chat-pinned-message:disabled {
   cursor: default;
   opacity: 0.65;
@@ -11864,3 +11870,4 @@ html.dark .outgoing .message-bubble {
     border-radius: 0;
   }
 }
+
