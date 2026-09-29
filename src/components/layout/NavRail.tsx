@@ -63,7 +63,7 @@ export function NavRail({
   const asideRef = useRef<HTMLElement>(null)
 
   function handlePointerDown(e: React.PointerEvent) {
-    if (e.pointerType === 'mouse' && e.button !== 0) return; // Only left click
+    if (e.pointerType === 'mouse' && e.button !== 0) return; 
 
     setDragStartX(e.clientX)
     setDragCurrentX(e.clientX)
@@ -75,12 +75,10 @@ export function NavRail({
       setDragCurrentX(currentX)
       const diffX = currentX - dragStartX
 
-      // Only capture pointer if the user has moved > 5px (prevents breaking simple clicks)
       if (Math.abs(diffX) > 5 && asideRef.current && !asideRef.current.hasPointerCapture(e.pointerId)) {
         asideRef.current.setPointerCapture(e.pointerId)
       }
 
-      // Provide visual feedback by dynamically adjusting --sidebar-width on the app-shell
       const appShell = document.querySelector('.app-shell') as HTMLElement | null
       if (appShell) {
         if (isOpen && diffX < 0) {
@@ -110,7 +108,6 @@ export function NavRail({
       asideRef.current.releasePointerCapture(e.pointerId)
     }
 
-    // Reset styles on app-shell so CSS classes take over
     const appShell = document.querySelector('.app-shell') as HTMLElement | null
     if (appShell) {
       appShell.style.removeProperty('--sidebar-width')
