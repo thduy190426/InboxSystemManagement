@@ -560,41 +560,46 @@ export function InboxPanel({
           className={activeFilter === 'all' ? 'is-active' : ''}
           onClick={() => onFilterChange('all')}
           type="button"
+          title="Tất cả"
+          aria-label="Tất cả"
         >
-          <Inbox size={16} />
-          <span>Tất cả</span>
+          <Inbox size={18} />
         </button>
         <button
           className={activeFilter === 'unread' ? 'is-active' : ''}
           onClick={() => onFilterChange('unread')}
           type="button"
+          title="Chưa đọc"
+          aria-label="Chưa đọc"
         >
-          <MessageCircle size={16} />
-          <span>Chưa đọc</span>
+          <MessageCircle size={18} />
         </button>
         <button
           className={activeFilter === 'requests' ? 'is-active' : ''}
           onClick={() => onFilterChange('requests')}
           type="button"
+          title="Tin nhắn chờ"
+          aria-label="Tin nhắn chờ"
         >
-          <MessageSquare size={16} />
-          <span>Tin nhắn chờ</span>
+          <MessageSquare size={18} />
         </button>
         <button
           className={activeFilter === 'group' ? 'is-active' : ''}
           onClick={() => onFilterChange('group')}
           type="button"
+          title="Nhóm"
+          aria-label="Nhóm"
         >
-          <Users size={16} />
-          <span>Nhóm</span>
+          <Users size={18} />
         </button>
         <button
           className={activeFilter === 'archived' ? 'is-active' : ''}
           onClick={() => onFilterChange('archived')}
           type="button"
+          title="Lưu trữ"
+          aria-label="Lưu trữ"
         >
-          <Archive size={16} />
-          <span>Lưu trữ</span>
+          <Archive size={18} />
         </button>
       </div>
 
