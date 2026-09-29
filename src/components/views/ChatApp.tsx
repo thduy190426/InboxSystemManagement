@@ -3488,6 +3488,14 @@ export function ChatApp({
         onStartCall={handleStartCall}
         onSubmit={handleSubmit}
       />
+      {isDetailOpen ? (
+        <button
+          aria-label="Đóng thông tin hội thoại"
+          className="detail-backdrop"
+          onClick={() => setIsDetailOpen(false)}
+          type="button"
+        />
+      ) : null}
       <DetailPanel
         activeConversation={activeConversation}
         busyAction={busyConversationAction}
