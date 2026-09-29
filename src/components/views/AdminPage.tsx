@@ -161,13 +161,13 @@ function TrendLineChart({
             dataKey="label" 
             axisLine={false} 
             tickLine={false} 
-            tick={{ fill: 'var(--text-muted)', fontSize: 12 }} 
+            tick={{ fill: 'var(--muted)', fontSize: 12 }} 
             dy={10}
           />
           <YAxis 
             axisLine={false} 
             tickLine={false} 
-            tick={{ fill: 'var(--text-muted)', fontSize: 12 }}
+            tick={{ fill: 'var(--muted)', fontSize: 12 }}
           />
           <Tooltip 
             contentStyle={{ backgroundColor: 'var(--surface)', borderColor: 'var(--line)', borderRadius: '12px', color: 'var(--text)', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
@@ -226,7 +226,7 @@ function DistributionChart({
             formatter={(value: any) => [formatNumber(Number(value)), 'Số lượng']}
           />
           <Legend 
-            wrapperStyle={{ fontSize: '13px', color: 'var(--text-muted)' }} 
+            wrapperStyle={{ fontSize: '13px', color: 'var(--muted)' }} 
             layout="vertical" 
             verticalAlign="middle" 
             align="right"
