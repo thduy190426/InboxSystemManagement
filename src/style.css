@@ -6459,52 +6459,80 @@ html.dark .chat-pinned-more:hover {
 
 .detail-actions {
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  padding: 4px 16px;
 }
 
 .detail-actions button {
   display: flex;
-  flex: 1;
-  min-width: 0;
-  min-height: 56px;
-  padding: 6px 4px;
+  flex: 1 1 calc(33.333% - 10px);
+  min-width: 72px;
+  max-width: 120px;
+  height: 88px;
+  padding: 10px 4px;
   flex-direction: column;
-  min-height: 0;
-  min-width: 0;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  border-radius: 8px;
+  gap: 8px;
+  border-radius: 18px;
   background: var(--surface-soft);
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 700;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 150ms ease;
+  border: 1px solid transparent;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  text-align: center;
+  line-height: 1.25;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.detail-actions button svg {
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  flex-shrink: 0;
+  margin-bottom: 2px;
 }
 
 .detail-actions button:hover {
   background: var(--surface-strong);
-  color: var(--primary-strong);
+  color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+}
+
+.detail-actions button:hover svg {
+  transform: scale(1.15) rotate(-2deg);
 }
 
 .detail-actions button.is-active {
-  background: #dff7f3;
-  color: var(--primary-strong);
+  background: var(--primary);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 4px 14px var(--primary-soft);
+}
+
+.detail-actions button.is-active:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px var(--primary-soft);
 }
 
 .detail-actions button.is-danger {
-  background: rgba(219, 39, 119, 0.08);
-  color: #9d174d;
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
 }
 
 .detail-actions button.is-danger:hover {
-  background: rgba(219, 39, 119, 0.14);
+  background: rgba(239, 68, 68, 0.15);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.15);
 }
 
 .detail-actions button:disabled {
   cursor: not-allowed;
-  opacity: 0.58;
+  opacity: 0.5;
+  transform: none;
+  box-shadow: none;
 }
 
 .detail-section {

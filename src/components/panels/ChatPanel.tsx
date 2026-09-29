@@ -591,7 +591,7 @@ export function ChatPanel({
   }
 
   function isSupportedAttachment(file: File) {
-    if (file.size > MAX_ATTACHMENT_SIZE_BYTES) {
+    if (file.size === 0 || file.size > MAX_ATTACHMENT_SIZE_BYTES) {
       return false
     }
 
@@ -793,6 +793,12 @@ export function ChatPanel({
 
   async function sendRecordedMedia() {
     if (!recordedMediaFile) {
+      return
+    }
+
+    if (recordedMediaFile.size === 0 || recordingDuration === 0) {
+      setRecordingError('Không thể gửi ghi âm có thời lượng 0s hoặc 0MB!')
+      clearRecordedMedia()
       return
     }
 
