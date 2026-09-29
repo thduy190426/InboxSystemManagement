@@ -23,8 +23,11 @@ import {
   MoreHorizontal,
   Pencil,
   Phone,
+  PhoneMissed,
   Pin,
   PinOff,
+  Play,
+  Pause,
   Reply,
   Search,
   Send,
@@ -210,6 +213,7 @@ export function ChatPanel({
   const [editingMessageId, setEditingMessageId] = useState('')
   const [editingText, setEditingText] = useState('')
   const [openActionMenuId, setOpenActionMenuId] = useState('')
+  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null)
   const [isPinnedModalOpen, setIsPinnedModalOpen] = useState(false)
   const [pinnedSearchQuery, setPinnedSearchQuery] = useState('')
   const [isComposerEmojiOpen, setIsComposerEmojiOpen] = useState(false)
@@ -1213,10 +1217,54 @@ export function ChatPanel({
     )
   }
 
+  function renderCallMessage(message: Message) {
+    if (!message.text) return null
+    const text = message.text
+    
+    let title = 'Cuộc gọi'
+    let subtitle = ''
+    let isMissed = false
+    let isVideo = false
+    
+    if (text.includes('video')) isVideo = true
+    
+    if (text.includes('Không bắt máy') || text.includes('nhỡ')) {
+      title = `Đã nhỡ cuộc gọi ${isVideo ? 'video' : 'thoại'}`
+      subtitle = formatMessageTime(message)
+      isMissed = true
+    } else if (text.includes('Thời lượng')) {
+      title = `Cuộc gọi ${isVideo ? 'video' : 'thoại'}`
+      const match = text.match(/Thời lượng:\s*(.+)/) || text.match(/Thời lượng\s*(.+)/)
+      subtitle = match ? match[1] : formatMessageTime(message)
+    } else if (text.includes('Đã hủy')) {
+      title = `Đã hủy cuộc gọi ${isVideo ? 'video' : 'thoại'}`
+      subtitle = formatMessageTime(message)
+    }
+    
+    return (
+      <div className={`message-call-card ${isMissed ? 'is-missed' : ''}`}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="call-icon">
+            {isMissed ? <PhoneMissed size={20} /> : (isVideo ? <Video size={20} /> : <Phone size={20} />)}
+          </div>
+          <div className="call-info">
+            <strong>{title}</strong>
+            <small>{subtitle}</small>
+          </div>
+        </div>
+        <button 
+          className="call-action-btn"
+          onClick={() => onStartCall(isVideo ? 'video' : 'audio')}
+          type="button"
+        >
+          Gọi lại
+        </button>
+      </div>
+    )
+  }
+
   function renderAttachmentPreview(attachment: MessageAttachment) {
     if (attachment.type === 'image') {
-      const isGif = attachment.mimeType === 'image/gif' || attachment.name.toLowerCase().endsWith('.gif') || attachment.url.toLowerCase().includes('.gif')
-
       return (
         <div className="message-image-attachment" key={attachment.url}>
           <button
@@ -1227,26 +1275,45 @@ export function ChatPanel({
           >
             <img alt={attachment.name} src={attachment.url} />
           </button>
-          {!isGif && (
-            <div className="attachment-toolbar">
-              <span>{attachment.name}</span>
-              {renderDownloadLink(attachment)}
-            </div>
-          )}
         </div>
       )
     }
 
     if (attachment.type === 'audio') {
+      const heights = [20, 40, 60, 30, 80, 50, 90, 70, 40, 60, 30, 80, 50, 90, 70, 40, 60, 30, 20, 10]
+      const safeId = `audio-${attachment.url.replace(/[^a-zA-Z0-9]/g, '')}`
       return (
-        <div className="message-audio-attachment" key={attachment.url}>
-          <Mic size={16} />
-          <span>
-            <strong>Tin nhắn thoại</strong>
-            <small>{attachment.meta}</small>
-          </span>
-          {renderDownloadLink(attachment)}
-          <audio controls preload="metadata" src={attachment.url} />
+        <div className="message-audio-attachment custom-audio-player" key={attachment.url}>
+          <button 
+            className="audio-play-btn"
+            onClick={() => {
+               const audio = document.getElementById(safeId) as HTMLAudioElement
+               if (audio) {
+                 if (audio.paused) {
+                   audio.play()
+                   setPlayingAudioId(attachment.url)
+                 } else {
+                   audio.pause()
+                   setPlayingAudioId(null)
+                 }
+               }
+            }}
+            type="button"
+          >
+            {playingAudioId === attachment.url ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+          </button>
+          <div className="audio-waveform">
+             {heights.map((h, i) => (
+               <div key={i} className="waveform-bar" style={{ height: `${h}%` }}></div>
+             ))}
+          </div>
+          <span className="audio-duration">{attachment.meta || '0:05'}</span>
+          <audio 
+            id={safeId} 
+            src={attachment.url} 
+            style={{ display: 'none' }} 
+            onEnded={() => setPlayingAudioId(null)}
+          />
         </div>
       )
     }
@@ -1683,25 +1750,39 @@ export function ChatPanel({
                 }}
               >
                 {message.author === 'system' ? (
-                  <div className="system-message">
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      {message.text?.startsWith('Cuộc gọi') ? <Phone size={14} /> : null}
-                      {renderHighlightedText(message)}
-                      {systemGroupCount > 1 && (
-                        <span style={{ 
-                          fontSize: '11px', 
-                          backgroundColor: 'var(--border-color)', 
-                          color: 'var(--text-color)',
-                          padding: '2px 6px', 
-                          borderRadius: '10px', 
-                          marginLeft: '4px',
-                          fontWeight: 'bold'
-                        }}>
-                          x{systemGroupCount}
-                        </span>
-                      )}
-                    </span>
-                  </div>
+                  message.text?.startsWith('Cuộc gọi') ? (
+                    <div className="system-call-wrapper" style={{ display: 'flex', gap: '8px', alignItems: 'flex-end', maxWidth: '70%', alignSelf: 'flex-start', margin: '8px 0' }}>
+                      <span className="avatar-wrap message-avatar-wrap">
+                        <AvatarFallback
+                          className="message-avatar"
+                          name={activeConversation.name}
+                          src={activeConversation.avatar}
+                        />
+                      </span>
+                      <div className="message-bubble media-only" style={{ padding: 0, background: 'transparent' }}>
+                        {renderCallMessage(message)}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="system-message">
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {renderHighlightedText(message)}
+                        {systemGroupCount > 1 && (
+                          <span style={{ 
+                            fontSize: '11px', 
+                            backgroundColor: 'var(--border-color)', 
+                            color: 'var(--text-color)',
+                            padding: '2px 6px', 
+                            borderRadius: '10px', 
+                            marginLeft: '4px',
+                            fontWeight: 'bold'
+                          }}>
+                            x{systemGroupCount}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  )
                 ) : (
                   <>
                     {message.author === 'them' ? (
@@ -1869,6 +1950,28 @@ export function ChatPanel({
                         </button>
                         {openActionMenuId === message.id ? (
                           <span className="message-action-menu">
+                            {message.attachments && message.attachments.some(a => a.type === 'image') && (
+                              <button
+                                disabled={Boolean(busyMessageId)}
+                                onClick={() => {
+                                  message.attachments?.forEach(attachment => {
+                                    if (attachment.type === 'image') {
+                                      const a = document.createElement('a')
+                                      a.href = attachment.url
+                                      a.download = attachment.name || 'image'
+                                      a.target = '_blank'
+                                      a.rel = 'noreferrer'
+                                      a.click()
+                                    }
+                                  })
+                                  setOpenActionMenuId('')
+                                }}
+                                type="button"
+                              >
+                                <Download size={14} />
+                                <span>Tải xuống</span>
+                              </button>
+                            )}
                             {message.text && (
                               <button
                                 disabled={Boolean(busyMessageId)}
