@@ -32,6 +32,8 @@ function createInitialForm(user: AuthUser | null): ProfilePayload {
     birthDate: user?.birthDate ? user.birthDate.slice(0, 10) : '',
     bio: user?.bio ?? '',
     statusMessage: user?.statusMessage ?? '',
+    statusEmoji: user?.statusEmoji ?? '💬',
+    statusDuration: user?.statusDuration ?? 'none',
   }
 }
 
@@ -303,7 +305,9 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
               {form.handle && (
                 <span className="pp-avatar-handle">@{form.handle}</span>
               )}
-              <span className="pp-avatar-status">{form.statusMessage || 'Chưa cập nhật trạng thái'}</span>
+              <span className="pp-avatar-status">
+                {form.statusEmoji} {form.statusMessage || 'Chưa cập nhật trạng thái'}
+              </span>
             </div>
             <label className="pp-upload-btn">
               <Camera size={14} />
@@ -421,15 +425,50 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
               </ProfileField>
 
               <ProfileField label="Trạng thái cá nhân" icon={<MessageSquare size={14} />} error={profileErrors.statusMessage} wide>
-                <input
-                  className="pp-input"
-                  maxLength={120}
-                  name="statusMessage"
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <select
+                    className="pp-input pp-select"
+                    name="statusEmoji"
+                    onChange={handleChange}
+                    style={{ width: '60px', flexShrink: 0, padding: '0 4px', textAlign: 'center' }}
+                    value={form.statusEmoji}
+                  >
+                    <option value="💬">💬</option>
+                    <option value="💼">💼</option>
+                    <option value="🏠">🏠</option>
+                    <option value="🤒">🤒</option>
+                    <option value="☕️">☕️</option>
+                    <option value="🚗">🚗</option>
+                    <option value="✈️">✈️</option>
+                    <option value="🌴">🌴</option>
+                    <option value="🎮">🎮</option>
+                  </select>
+                  <input
+                    className="pp-input"
+                    maxLength={120}
+                    name="statusMessage"
+                    onChange={handleChange}
+                    placeholder="Ví dụ: Đang sẵn sàng hỗ trợ"
+                    required
+                    style={{ flexGrow: 1 }}
+                    value={form.statusMessage}
+                  />
+                </div>
+              </ProfileField>
+
+              <ProfileField label="Thời gian hiển thị" icon={<CalendarDays size={14} />} wide>
+                <select
+                  className={`pp-input pp-select${form.statusDuration ? ' has-value' : ''}`}
+                  name="statusDuration"
                   onChange={handleChange}
-                  placeholder="Ví dụ: Đang sẵn sàng hỗ trợ"
-                  required
-                  value={form.statusMessage}
-                />
+                  value={form.statusDuration}
+                >
+                  <option value="none">Không xóa (Mặc định)</option>
+                  <option value="1h">1 giờ</option>
+                  <option value="4h">4 giờ</option>
+                  <option value="today">Đến cuối ngày</option>
+                  <option value="week">Đến cuối tuần</option>
+                </select>
               </ProfileField>
 
               <ProfileField label="Giới thiệu" icon={<AlignLeft size={14} />} error={profileErrors.bio} wide>

@@ -13,6 +13,8 @@ export type AuthUser = {
   avatarUrl: string | null
   bio: string | null
   statusMessage: string | null
+  statusEmoji?: string | null
+  statusDuration?: string | null
   role: string
   presence: string
   isEmailVerified: boolean

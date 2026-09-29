@@ -36,6 +36,8 @@ export type ProfilePayload = {
   birthDate: string
   bio: string
   statusMessage: string
+  statusEmoji?: string
+  statusDuration?: string
 }
 
 export type ChangePasswordPayload = {
