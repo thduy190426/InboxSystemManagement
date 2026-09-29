@@ -1,4 +1,4 @@
-﻿import type { CSSProperties, ChangeEvent, FormEvent } from 'react'
+import type { CSSProperties, ChangeEvent, FormEvent } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Archive, ArchiveRestore, BellOff, Check, ImagePlus, Inbox, MessageCircle, MessageSquare, MessageSquareOff, Pin, Plus, Search, SearchX, Trash2, Type, UserRound, Users, X } from 'lucide-react'
 import { globalSearch, type GlobalSearchResponse } from '../../services/api/searchApi'
@@ -440,6 +440,7 @@ export function InboxPanel({
           setViewingStoryGroup(group)
           setAllStoryGroups(allGroups)
         }}
+        pushToast={pushToast}
       />
 
       {isGlobalSearchOpen ? (

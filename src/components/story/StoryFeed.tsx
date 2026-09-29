@@ -9,9 +9,10 @@ import { getStoredAuthSession } from '../../services/storage/authStorage'
 type StoryFeedProps = {
   onCreateClick: () => void
   onStoryClick: (group: UserStoryGroup, allGroups: UserStoryGroup[]) => void
+  pushToast?: (text: string, tone?: 'info' | 'error') => void
 }
 
-export function StoryFeed({ onCreateClick, onStoryClick }: StoryFeedProps) {
+export function StoryFeed({ onCreateClick, onStoryClick, pushToast }: StoryFeedProps) {
   const user = getStoredAuthSession()?.user
   const [storyGroups, setStoryGroups] = useState<UserStoryGroup[]>([])
 
@@ -23,7 +24,18 @@ export function StoryFeed({ onCreateClick, onStoryClick }: StoryFeedProps) {
     const socket = getRealtimeSocket()
     if (!socket) return
 
-    const handleStoryCreated = () => {
+    const handleStoryCreated = (newStory?: any) => {
+      if (newStory && String(newStory.user_id) !== String(user?.id) && newStory.media_type === 'video') {
+        const authorName = newStory.user?.display_name || newStory.user?.full_name || 'Một người bạn'
+        if (pushToast) {
+          pushToast(`${authorName} vừa đăng tải 1 video story mới`, 'info')
+        }
+        import('../../services/core/browserNotifications').then(({ showBrowserNotification }) => {
+          showBrowserNotification('Tin mới', {
+            body: `${authorName} vừa đăng tải 1 video story mới`
+          })
+        }).catch(err => console.error(err))
+      }
       loadStories()
     }
 
