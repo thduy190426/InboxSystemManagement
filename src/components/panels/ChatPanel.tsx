@@ -2069,7 +2069,7 @@ export function ChatPanel({
           <strong>{activeConversation.name} đang nhập...</strong>
         </div>
       ) : null}
-          <div ref={threadEndRef} />
+          <div ref={threadEndRef} style={{ height: '32px', flexShrink: 0 }} />
         </div>
       </div>
 
