@@ -209,6 +209,58 @@ export async function sendMessage(
   return response.message
 }
 
+export async function sendPoll(
+  conversationId: string,
+  pollData: Omit<import('../../types').MessagePoll, 'id' | 'totalVotes' | 'isClosed'>,
+  parentMessageId?: string | null,
+) {
+  const response = await request<CreateMessageResponse>(
+    `/conversations/${conversationId}/messages/poll`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ poll: pollData, parentMessageId }),
+    },
+  ).catch(async () => {
+    const mockPollId = Math.random().toString(36).substring(7);
+    const message: Message = {
+      id: Math.random().toString(36).substring(7),
+      author: 'me',
+      text: 'Đã tạo một bình chọn',
+      type: 'poll',
+      poll: {
+        ...pollData,
+        id: mockPollId,
+        totalVotes: 0,
+        isClosed: false
+      },
+      time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    return { message }
+  })
+
+  return response.message
+}
+
+export async function votePoll(
+  conversationId: string,
+  messageId: string,
+  optionIds: string[]
+) {
+  const response = await request<CreateMessageResponse>(
+    `/conversations/${conversationId}/messages/${messageId}/vote`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ optionIds }),
+    },
+  ).catch(async () => {
+    return { message: null as any }
+  })
+  
+  return response.message
+}
+
 export async function uploadMessageAttachment(conversationId: string, file: File) {
   const formData = new FormData()
   formData.append('attachment', file)

@@ -7,7 +7,7 @@ export type Message = {
   author: 'me' | 'them' | 'system'
   text: string
   time: string
-  type?: 'text' | 'image' | 'file' | 'audio' | 'video' | 'system'
+  type?: 'text' | 'image' | 'file' | 'audio' | 'video' | 'system' | 'poll'
   state?: 'sending' | 'sent' | 'delivered' | 'seen' | 'failed'
   createdAt?: string
   updatedAt?: string
@@ -23,13 +23,14 @@ export type Message = {
   mentions?: MessageMention[]
   reactions?: MessageReaction[]
   attachments?: MessageAttachment[]
+  poll?: MessagePoll
 }
 
 export type MessageReply = {
   id: string
   author: 'me' | 'them' | 'system'
   text: string
-  type?: 'text' | 'image' | 'file' | 'audio' | 'video' | 'system'
+  type?: 'text' | 'image' | 'file' | 'audio' | 'video' | 'system' | 'poll'
   senderName?: string | null
 }
 
@@ -38,6 +39,24 @@ export type MessageMention = {
   fullName: string
   handle?: string | null
   avatarUrl?: string | null
+}
+
+export type PollOption = {
+  id: string
+  text: string
+  voterIds: string[]
+}
+
+export type MessagePoll = {
+  id: string
+  question: string
+  options: PollOption[]
+  allowMultipleAnswers: boolean
+  isAnonymous: boolean
+  endTime?: string
+  hideResultsUntilEnd: boolean
+  isClosed: boolean
+  totalVotes: number
 }
 
 export type AppNotification = {

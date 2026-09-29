@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { ChatApp } from './components/views/ChatApp'
-import { LoginPage } from './pages/auth/LoginPage'
-import { NotFoundPage } from './pages/errors/NotFoundPage'
-import { PrivacyPolicyPage } from './pages/legal/PrivacyPolicyPage'
-import { RegisterPage } from './pages/auth/RegisterPage'
-import { TermsPage } from './pages/legal/TermsPage'
+import { useCallback, useEffect, useRef, useState, lazy, Suspense } from 'react'
+
+const ChatApp = lazy(() => import('./components/views/ChatApp').then(m => ({ default: m.ChatApp })))
+const LoginPage = lazy(() => import('./pages/auth/LoginPage').then(m => ({ default: m.LoginPage })))
+const NotFoundPage = lazy(() => import('./pages/errors/NotFoundPage').then(m => ({ default: m.NotFoundPage })))
+const PrivacyPolicyPage = lazy(() => import('./pages/legal/PrivacyPolicyPage').then(m => ({ default: m.PrivacyPolicyPage })))
+const RegisterPage = lazy(() => import('./pages/auth/RegisterPage').then(m => ({ default: m.RegisterPage })))
+const TermsPage = lazy(() => import('./pages/legal/TermsPage').then(m => ({ default: m.TermsPage })))
+
 import {
   ApiError,
   login,
@@ -465,7 +467,13 @@ export function App() {
 
   return (
     <>
-      {content}
+      <Suspense fallback={
+        <div className="flex items-center justify-center h-screen bg-[#F0F2F5] dark:bg-[#111B21]">
+          <div className="w-10 h-10 rounded-full border-4 border-[#00A884] border-t-transparent animate-spin"></div>
+        </div>
+      }>
+        {content}
+      </Suspense>
       {isRouteLoaderDisabled ? null : <RouteTransitionLoader isVisible={isRouteTransitioning} />}
       {renderToasts()}
     </>

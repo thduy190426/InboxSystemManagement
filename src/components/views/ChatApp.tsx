@@ -1,3 +1,4 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { FormEvent } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { AuthUser } from '../../services/api/authApi'
@@ -51,6 +52,8 @@ import {
   updateGroupMemberRole,
   updateTypingStatus,
   updateMessage,
+  sendPoll,
+  votePoll,
   type MessageSearchFilters,
 } from '../../services/api/chatApi'
 import {
@@ -80,6 +83,8 @@ import type {
   GroupJoinRequest,
   Message,
 } from '../../types'
+import { useOfflineQueue } from '../../hooks/chat/useOfflineQueue'
+import { getQueuedMessagesForUser, removeQueuedMessage, upsertQueuedMessage, mergeQueuedMessages, mergeLatestMessages, type QueuedMessage, prependOlderMessages, getInitialSidebarState, getInitialInboxWidth, getInitialCompactLayoutState, MESSAGE_PAGE_LIMIT, CONVERSATION_FILTERS, COMPACT_LAYOUT_MEDIA_QUERY, SIDEBAR_STATE_KEY, INBOX_WIDTH_KEY } from '../../services/core/offlineQueue'
 import { AdminPage } from './AdminPage'
 import { CallOverlay } from '../media/CallOverlay'
 import { ChatPanel } from '../panels/ChatPanel'
@@ -114,113 +119,6 @@ type MessagePaginationState = {
   nextCursor: string | null
 }
 
-const SIDEBAR_STATE_KEY = 'sidebar_is_open'
-const INBOX_WIDTH_KEY = 'inbox_width'
-const OFFLINE_MESSAGE_QUEUE_KEY = 'offline_message_queue'
-const COMPACT_LAYOUT_MEDIA_QUERY = '(max-width: 1024px)'
-const MESSAGE_PAGE_LIMIT = 40
-const CONVERSATION_FILTERS: ConversationFilter[] = ['all', 'unread', 'requests', 'group', 'archived']
-
-type QueuedMessage = {
-  conversationId: string
-  message: Message
-  parentMessageId: string | null
-  userId: string
-  updatedAt: string
-}
-
-function mergeLatestMessages(existingMessages: Message[], incomingMessages: Message[]) {
-  const incomingById = new Map(incomingMessages.map((message) => [message.id, message]))
-  const existingIds = new Set(existingMessages.map((message) => message.id))
-  const updatedMessages = existingMessages.map((message) => incomingById.get(message.id) ?? message)
-  const newMessages = incomingMessages.filter((message) => !existingIds.has(message.id))
-
-  const merged = [...updatedMessages, ...newMessages]
-  return merged.sort((a, b) => {
-    const aTime = new Date(a.createdAt || a.updatedAt || 0).getTime()
-    const bTime = new Date(b.createdAt || b.updatedAt || 0).getTime()
-    return aTime - bTime
-  })
-}
-
-function prependOlderMessages(existingMessages: Message[], olderMessages: Message[]) {
-  const existingIds = new Set(existingMessages.map((message) => message.id))
-  const newOlderMessages = olderMessages.filter((message) => !existingIds.has(message.id))
-
-  const merged = [...newOlderMessages, ...existingMessages]
-  return merged.sort((a, b) => {
-    const aTime = new Date(a.createdAt || a.updatedAt || 0).getTime()
-    const bTime = new Date(b.createdAt || b.updatedAt || 0).getTime()
-    return aTime - bTime
-  })
-}
-
-function getInitialSidebarState() {
-  return localStorage.getItem(SIDEBAR_STATE_KEY) === 'true'
-}
-
-function getInitialInboxWidth() {
-  const saved = localStorage.getItem(INBOX_WIDTH_KEY)
-  const width = saved ? parseInt(saved, 10) : 420
-  return Math.max(350, Math.min(width, 600))
-}
-
-function getInitialCompactLayoutState() {
-  return typeof window !== 'undefined' && window.matchMedia(COMPACT_LAYOUT_MEDIA_QUERY).matches
-}
-
-function readOfflineMessageQueue() {
-  try {
-    const rawQueue = localStorage.getItem(OFFLINE_MESSAGE_QUEUE_KEY)
-
-    if (!rawQueue) {
-      return []
-    }
-
-    const queue = JSON.parse(rawQueue)
-
-    return Array.isArray(queue) ? (queue as QueuedMessage[]) : []
-  } catch {
-    return []
-  }
-}
-
-function writeOfflineMessageQueue(queue: QueuedMessage[]) {
-  localStorage.setItem(OFFLINE_MESSAGE_QUEUE_KEY, JSON.stringify(queue))
-}
-
-function getQueuedMessagesForUser(userId: string) {
-  if (!userId) {
-    return []
-  }
-
-  return readOfflineMessageQueue().filter((item) => item.userId === userId)
-}
-
-function upsertQueuedMessage(item: QueuedMessage) {
-  const queue = readOfflineMessageQueue()
-  const nextQueue = [
-    ...queue.filter((queuedItem) => queuedItem.message.id !== item.message.id),
-    item,
-  ]
-
-  writeOfflineMessageQueue(nextQueue)
-}
-
-function removeQueuedMessage(messageId: string) {
-  writeOfflineMessageQueue(
-    readOfflineMessageQueue().filter((queuedItem) => queuedItem.message.id !== messageId),
-  )
-}
-
-function mergeQueuedMessages(existingMessages: Message[], queuedMessages: Message[]) {
-  const queuedById = new Map(queuedMessages.map((message) => [message.id, message]))
-  const mergedMessages = existingMessages.map((message) => queuedById.get(message.id) ?? message)
-  const existingIds = new Set(existingMessages.map((message) => message.id))
-  const missingQueuedMessages = queuedMessages.filter((message) => !existingIds.has(message.id))
-
-  return [...mergedMessages, ...missingQueuedMessages]
-}
 
 function getAttachmentPreview(message?: Message) {
   const attachment = message?.attachments?.[0]
@@ -304,37 +202,66 @@ export function ChatApp({
       !initialRoute.conversationId,
   )
   const [isDetailOpen, setIsDetailOpen] = useState(false)
-  const [conversations, setConversations] = useState<Conversation[]>([])
-  const [archivedConversations, setArchivedConversations] = useState<Conversation[]>([])
-  const [friends, setFriends] = useState<ContactUser[]>([])
+  const queryClient = useQueryClient()
+
+  const { data: conversations = [], isLoading: isConversationsLoading } = useQuery<Conversation[]>({
+    queryKey: ['conversations'],
+    queryFn: () => fetchConversations(),
+    refetchInterval: 30000,
+  })
+
+  const setConversations = useCallback((updater: React.SetStateAction<any>) => {
+    queryClient.setQueryData(['conversations'], updater)
+  }, [queryClient])
+
+  const { data: archivedConversations = [] } = useQuery<Conversation[]>({
+    queryKey: ['archivedConversations'],
+    queryFn: () => fetchConversations({ archived: true }),
+  })
+
+  const setArchivedConversations = useCallback((updater: React.SetStateAction<any>) => {
+    queryClient.setQueryData(['archivedConversations'], updater)
+  }, [queryClient])
+
+  const { data: friends = [] } = useQuery<ContactUser[]>({
+    queryKey: ['friends'],
+    queryFn: () => fetchFriends(),
+  })
+
+  const setFriends = useCallback((updater: React.SetStateAction<any>) => {
+    queryClient.setQueryData(['friends'], updater)
+  }, [queryClient])
+
+  const { data: friendRequests = [] } = useQuery<ContactUser[]>({
+    queryKey: ['friendRequests'],
+    queryFn: () => fetchIncomingRequests(),
+  })
+
+  const setFriendRequests = useCallback((updater: React.SetStateAction<any>) => {
+    queryClient.setQueryData(['friendRequests'], updater)
+  }, [queryClient])
+
+  const { data: notifications = [] } = useQuery<AppNotification[]>({
+    queryKey: ['notifications'],
+    queryFn: () => fetchNotifications(),
+    refetchInterval: 60000,
+  })
+
+  const setNotifications = useCallback((updater: React.SetStateAction<any>) => {
+    queryClient.setQueryData(['notifications'], updater)
+  }, [queryClient])
+
+  const isLoading = isConversationsLoading
+
   const [profileContactToOpen, setProfileContactToOpen] = useState<ContactUser | null>(null)
   const [isProfileClosing, setIsProfileClosing] = useState(false)
-  const [friendRequests, setFriendRequests] = useState<ContactUser[]>([])
-  const [notifications, setNotifications] = useState<AppNotification[]>([])
   const [browserNotificationPermission, setBrowserNotificationPermission] =
     useState<BrowserNotificationPermission>(() => getBrowserNotificationPermission())
   const [membersByConversation, setMembersByConversation] = useState<Record<string, ConversationMember[]>>({})
   const [groupInviteTokensByConversation, setGroupInviteTokensByConversation] = useState<Record<string, string>>({})
   const [groupJoinRequestsByConversation, setGroupJoinRequestsByConversation] = useState<Record<string, GroupJoinRequest[]>>({})
-  const [messagesByConversation, setMessagesByConversation] = useState<Record<string, Message[]>>(
-    {},
-  )
-  const [messagePaginationByConversation, setMessagePaginationByConversation] = useState<
-    Record<string, MessagePaginationState>
-  >({})
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSending, setIsSending] = useState(false)
-  const [isCreatingGroup, setIsCreatingGroup] = useState(false)
-  const [isUploadingAttachment, setIsUploadingAttachment] = useState(false)
-  const [busyMessageId, setBusyMessageId] = useState('')
-  const [busyConversationAction, setBusyConversationAction] = useState('')
-  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null)
-  const [isConfirming, setIsConfirming] = useState(false)
-  const [readSyncKey, setReadSyncKey] = useState('')
-  const [pageErrorMessage, setPageErrorMessage] = useState('')
-  const [typingByConversation, setTypingByConversation] = useState<Record<string, boolean>>({})
-  const [activeCall, setActiveCall] = useState<CallSession | null>(null)
-  const [shouldAutoScrollToLatest, setShouldAutoScrollToLatest] = useState(false)
+  const [messagesByConversation, setMessagesByConversation] = useState<Record<string, Message[]>>({})
+
   const [toasts, setToasts] = useState<Toast[]>([])
   const typingStopTimerRef = useRef<number | null>(null)
   const lastSentTypingRef = useRef<{ conversationId: string; isTyping: boolean } | null>(null)
@@ -348,7 +275,6 @@ export function ChatApp({
   const notifiedNotificationIdsRef = useRef(new Set<string>())
   const recentBrowserNotificationKeysRef = useRef(new Set<string>())
   const hasSyncedWebPushRef = useRef(false)
-  const isFlushingOfflineQueueRef = useRef(false)
   const hasHandledGroupInviteRef = useRef(false)
 
   useEffect(() => {
@@ -369,27 +295,6 @@ export function ChatApp({
   }, [currentUser?.id])
 
   useEffect(() => {
-    const queuedMessages = getQueuedMessagesForUser(currentUser?.id ?? '')
-
-    if (queuedMessages.length === 0) {
-      return
-    }
-
-    setMessagesByConversation((current) => {
-      const nextMessagesByConversation = { ...current }
-
-      queuedMessages.forEach((queuedItem) => {
-        nextMessagesByConversation[queuedItem.conversationId] = mergeQueuedMessages(
-          nextMessagesByConversation[queuedItem.conversationId] ?? [],
-          [{ ...queuedItem.message, state: 'failed' }],
-        )
-      })
-
-      return nextMessagesByConversation
-    })
-  }, [currentUser?.id])
-
-  useEffect(() => {
     conversationsRef.current = conversations
   }, [conversations])
 
@@ -403,13 +308,11 @@ export function ChatApp({
   }, [activeId])
 
   const loadConversations = useCallback(async () => {
-    setIsLoading(true)
     setPageErrorMessage('')
 
     const nextConversations = await fetchConversations()
 
     setConversations(nextConversations)
-    setIsLoading(false)
 
     return nextConversations
   }, [])
@@ -452,6 +355,26 @@ export function ChatApp({
     },
     [dismissToast],
   )
+  useOfflineQueue({
+    currentUserId: currentUser?.id,
+    setMessagesByConversation,
+    pushToast
+  })
+
+  const [messagePaginationByConversation, setMessagePaginationByConversation] = useState<Record<string, MessagePaginationState>>({})
+  const [isSending, setIsSending] = useState(false)
+  const [isCreatingGroup, setIsCreatingGroup] = useState(false)
+  const [isUploadingAttachment, setIsUploadingAttachment] = useState(false)
+  const [busyMessageId, setBusyMessageId] = useState('')
+  const [busyConversationAction, setBusyConversationAction] = useState('')
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null)
+  const [isConfirming, setIsConfirming] = useState(false)
+  const [readSyncKey, setReadSyncKey] = useState('')
+  const [pageErrorMessage, setPageErrorMessage] = useState('')
+  const [typingByConversation, setTypingByConversation] = useState<Record<string, boolean>>({})
+  const [activeCall, setActiveCall] = useState<CallSession | null>(null)
+  const [shouldAutoScrollToLatest, setShouldAutoScrollToLatest] = useState(false)
+
 
   useEffect(() => {
     if (hasHandledGroupInviteRef.current) {
@@ -475,7 +398,7 @@ export function ChatApp({
         const joinedConversation = response.conversation
 
         if (joinedConversation) {
-          setConversations((current) => {
+          setConversations((current: Conversation[] = []) => {
             const withoutConversation = current.filter(
               (conversation) => conversation.id !== joinedConversation.id,
             )
@@ -493,77 +416,6 @@ export function ChatApp({
         pushToast(getErrorMessage(error, 'Không thể mở link nhóm!'))
       })
   }, [pushToast])
-
-  const flushOfflineMessageQueue = useCallback(async () => {
-    if (isFlushingOfflineQueueRef.current || !navigator.onLine) {
-      return
-    }
-
-    const queuedMessages = getQueuedMessagesForUser(currentUserIdRef.current)
-
-    if (queuedMessages.length === 0) {
-      return
-    }
-
-    isFlushingOfflineQueueRef.current = true
-
-    try {
-      for (const queuedItem of queuedMessages) {
-        try {
-          setMessagesByConversation((current) => ({
-            ...current,
-            [queuedItem.conversationId]: (current[queuedItem.conversationId] ?? []).map((message) =>
-              message.id === queuedItem.message.id ? { ...message, state: 'sending' } : message,
-            ),
-          }))
-
-          const createdMessage = await sendMessage(
-            queuedItem.conversationId,
-            queuedItem.message.text,
-            queuedItem.parentMessageId,
-          )
-
-          removeQueuedMessage(queuedItem.message.id)
-          setMessagesByConversation((current) => ({
-            ...current,
-            [queuedItem.conversationId]: (current[queuedItem.conversationId] ?? []).map((message) =>
-              message.id === queuedItem.message.id ? createdMessage : message,
-            ),
-          }))
-        } catch {
-          setMessagesByConversation((current) => ({
-            ...current,
-            [queuedItem.conversationId]: (current[queuedItem.conversationId] ?? []).map((message) =>
-              message.id === queuedItem.message.id ? { ...message, state: 'failed' } : message,
-            ),
-          }))
-          break
-        }
-      }
-    } finally {
-      isFlushingOfflineQueueRef.current = false
-    }
-  }, [])
-
-  useEffect(() => {
-    flushOfflineMessageQueue().catch(() => undefined)
-
-    function handleOnline() {
-      flushOfflineMessageQueue()
-        .then(() => {
-          if (getQueuedMessagesForUser(currentUserIdRef.current).length === 0) {
-            pushToast('Tin nhắn offline đã được gửi lại.', 'info')
-          }
-        })
-        .catch(() => undefined)
-    }
-
-    window.addEventListener('online', handleOnline)
-
-    return () => {
-      window.removeEventListener('online', handleOnline)
-    }
-  }, [flushOfflineMessageQueue, pushToast])
 
   const setErrorMessage = useCallback(
     (message: string) => {
@@ -644,7 +496,7 @@ export function ChatApp({
   function markConversationNotificationsReadLocally(conversationId: string) {
     const readAt = new Date().toISOString()
 
-    setNotifications((current) =>
+    setNotifications((current: AppNotification[] = []) =>
       current.map((notification) =>
         notification.conversationId === conversationId && !notification.readAt
           ? {
@@ -685,92 +537,18 @@ export function ChatApp({
   }, [])
 
   useEffect(() => {
-    let isMounted = true
-
-    async function loadInitialData() {
-      try {
-        const [nextConversations, nextFriends, nextFriendRequests, nextNotifications] = await Promise.all([
-          fetchConversations(),
-          fetchFriends(),
-          fetchIncomingRequests(),
-          fetchNotifications(),
-        ])
-
-        if (!isMounted) {
-          return
-        }
-
-        setConversations(nextConversations)
-        setFriends(nextFriends)
-        setFriendRequests(nextFriendRequests)
-        setNotifications(nextNotifications)
-        nextNotifications.forEach((notification) => {
-          notifiedNotificationIdsRef.current.add(notification.id)
-        })
-      } catch (error) {
-        if (isMounted) {
-          setPageErrorMessage(error instanceof Error ? error.message : 'Không thể tải hội thoại!')
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false)
-        }
-      }
-    }
-
-    loadInitialData()
-
-    return () => {
-      isMounted = false
-    }
-  }, [])
-
-  useEffect(() => {
     touchPresence().catch(() => undefined)
 
     const presenceTimer = window.setInterval(() => {
       touchPresence().catch(() => undefined)
     }, 60_000)
 
-    const conversationTimer = window.setInterval(() => {
-      fetchConversations()
-        .then((nextConversations) => {
-          setConversations(nextConversations)
-        })
-        .catch(() => undefined)
-    }, 30_000)
-
     return () => {
       window.clearInterval(presenceTimer)
-      window.clearInterval(conversationTimer)
     }
   }, [])
 
-  useEffect(() => {
-    if (conversationFilter !== 'archived') {
-      return
-    }
 
-    let isMounted = true
-
-    fetchConversations({ archived: true })
-      .then((nextConversations) => {
-        if (isMounted) {
-          setArchivedConversations(nextConversations)
-        }
-      })
-      .catch((error) => {
-        if (isMounted) {
-          setPageErrorMessage(
-            error instanceof Error ? error.message : 'Không thể tải hội thoại lưu trữ!',
-          )
-        }
-      })
-
-    return () => {
-      isMounted = false
-    }
-  }, [conversationFilter])
 
   useEffect(() => {
     const socket = getRealtimeSocket()
@@ -819,7 +597,7 @@ export function ChatApp({
     }
 
     function removeConversationLocally(conversationId: string) {
-      setConversations((current) => {
+      setConversations((current: Conversation[] = []) => {
         const nextConversations = current.filter((conversation) => conversation.id !== conversationId)
         const nextConversationId =
           activeIdRef.current === conversationId ? nextConversations[0]?.id || '' : activeIdRef.current
@@ -1061,13 +839,13 @@ export function ChatApp({
     const handleMouseMove = (moveEvent: MouseEvent) => {
       const deltaX = moveEvent.clientX - startX
       let newWidth = startWidth + deltaX
-      
+
       if (newWidth < 350) {
         newWidth = 350
       } else if (newWidth > 600) {
         newWidth = 600
       }
-      
+
       setInboxWidth(newWidth)
     }
 
@@ -1241,7 +1019,7 @@ export function ChatApp({
       } else if (savedOverride !== null) {
         activeConversation = { ...activeConversation, backgroundImage: savedOverride === 'null' ? null : savedOverride }
       }
-    } catch (e) {}
+    } catch (e) { }
   }
   const messages = activeId ? messagesByConversation[activeId] ?? [] : []
   const activeMessagePagination = activeId ? messagePaginationByConversation[activeId] : undefined
@@ -1520,7 +1298,7 @@ export function ChatApp({
           ...current,
           [activeId]: mergeLatestMessages(current[activeId] ?? [], response.messages),
         }))
-        setConversations((current) =>
+        setConversations((current: Conversation[] = []) =>
           current.map((conversation) =>
             conversation.id === activeId
               ? {
@@ -1570,8 +1348,8 @@ export function ChatApp({
     })
 
     const sortedByType = [
-      ...filteredByType.filter((c) => c.pinned),
-      ...filteredByType.filter((c) => !c.pinned),
+      ...filteredByType.filter((c: Conversation) => c.pinned),
+      ...filteredByType.filter((c: Conversation) => !c.pinned),
     ]
 
     if (!keyword) {
@@ -1646,7 +1424,7 @@ export function ChatApp({
 
     if (view === 'notifications') {
       const readAt = new Date().toISOString()
-      setNotifications((current) =>
+      setNotifications((current: AppNotification[] = []) =>
         current.map((notification) => ({
           ...notification,
           readAt: notification.readAt || readAt,
@@ -1717,7 +1495,7 @@ export function ChatApp({
     setIsInboxOpen(false)
     setFocusedMessageId('')
     setReplyingTo(null)
-    setConversations((current) =>
+    setConversations((current: Conversation[] = []) =>
       current.map((conversation) =>
         conversation.id === conversationId
           ? {
@@ -1725,7 +1503,7 @@ export function ChatApp({
             unread: 0,
             unreadSenders: [],
           }
-        : conversation,
+          : conversation,
       ),
     )
     markConversationNotificationsReadLocally(conversationId)
@@ -1748,7 +1526,7 @@ export function ChatApp({
   async function handleOpenNotification(notification: AppNotification) {
     try {
       await markNotificationRead(notification.id)
-      setNotifications((current) =>
+      setNotifications((current: AppNotification[] = []) =>
         current.map((item) =>
           item.id === notification.id
             ? {
@@ -1837,7 +1615,7 @@ export function ChatApp({
       return
     }
 
-    const parentMessageId = retryMessage?.replyTo?.id ?? replyingTo?.id ?? null
+    const parentMessageId = retryMessage?.replyTo?.id ?? replyingTo?.id ?? undefined
     const temporaryMessage: Message =
       retryMessage ?? {
         id: `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -1865,8 +1643,7 @@ export function ChatApp({
       message: temporaryMessage,
       parentMessageId,
       userId: currentUserIdRef.current,
-      updatedAt: new Date().toISOString(),
-    }
+          }
 
     try {
       setIsSending(true)
@@ -1887,7 +1664,7 @@ export function ChatApp({
       }))
       setShouldAutoScrollToLatest(true)
 
-      setConversations((current) =>
+      setConversations((current: Conversation[] = []) =>
         current.map((conversation) =>
           conversation.id === activeConversation.id
             ? {
@@ -1940,8 +1717,7 @@ export function ChatApp({
       upsertQueuedMessage({
         ...queuedMessage,
         message: { ...temporaryMessage, state: 'failed' },
-        updatedAt: new Date().toISOString(),
-      })
+              })
       pushToast(
         error instanceof Error
           ? `${error.message} Tin nhắn đã được giữ lại, bạn có thể thử gửi lại!`
@@ -1954,6 +1730,74 @@ export function ChatApp({
 
   async function handleSendQuickMessage(text: string) {
     await sendActiveConversationMessage(text)
+  }
+
+  async function handleSendPoll(pollData: Omit<import('../../types').MessagePoll, 'id' | 'totalVotes' | 'isClosed'>) {
+    if (!activeConversation) return
+    try {
+      const createdMessage = await sendPoll(activeConversation.id, pollData, replyingTo?.id)
+      setMessagesByConversation((current) => ({
+        ...current,
+        [activeConversation.id]: [...(current[activeConversation.id] ?? []), createdMessage],
+      }))
+      setConversations((current: Conversation[] = []) =>
+        current.map((conversation) =>
+          conversation.id === activeConversation.id
+            ? {
+              ...conversation,
+              lastMessage: 'Đã tạo một bình chọn',
+              lastMessageByMe: true,
+              lastMessageAt: createdMessage.createdAt ?? null,
+              lastTime: createdMessage.time,
+            }
+            : conversation,
+        ),
+      )
+      setReplyingTo(null)
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : 'Không thể tạo bình chọn')
+    }
+  }
+
+  async function handleVotePoll(messageId: string, optionIds: string[]) {
+    if (!activeConversation) return
+    try {
+      setMessagesByConversation((current) => {
+        const conversationMessages = current[activeConversation.id] ?? []
+        return {
+          ...current,
+          [activeConversation.id]: conversationMessages.map(msg => {
+            if (msg.id === messageId && msg.poll) {
+              const updatedPoll = { ...msg.poll }
+              const prevVotedOptionIds = new Set(
+                updatedPoll.options
+                  .filter(o => o.voterIds.includes(currentUserIdRef.current))
+                  .map(o => o.id)
+              )
+              let voteChange = 0
+              updatedPoll.options = updatedPoll.options.map(o => {
+                const isSelected = optionIds.includes(o.id)
+                const wasSelected = prevVotedOptionIds.has(o.id)
+                const voterIds = o.voterIds.filter(id => id !== currentUserIdRef.current)
+                if (isSelected) voterIds.push(currentUserIdRef.current)
+
+                if (isSelected && !wasSelected) voteChange++
+                if (!isSelected && wasSelected) voteChange--
+
+                return { ...o, voterIds }
+              })
+              updatedPoll.totalVotes += voteChange
+              return { ...msg, poll: updatedPoll }
+            }
+            return msg
+          })
+        }
+      })
+
+      await votePoll(activeConversation.id, messageId, optionIds)
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : 'Không thể bình chọn')
+    }
   }
 
   async function handleRetryMessage(message: Message) {
@@ -1979,7 +1823,7 @@ export function ChatApp({
         [activeConversation.id]: [...(current[activeConversation.id] ?? []), createdMessage],
       }))
 
-      setConversations((current) =>
+      setConversations((current: Conversation[] = []) =>
         current.map((conversation) =>
           conversation.id === activeConversation.id
             ? {
@@ -2030,7 +1874,7 @@ export function ChatApp({
         [activeConversation.id]: [...(current[activeConversation.id] ?? []), createdMessage],
       }))
 
-      setConversations((current) =>
+      setConversations((current: Conversation[] = []) =>
         current.map((conversation) =>
           conversation.id === activeConversation.id
             ? {
@@ -2073,7 +1917,7 @@ export function ChatApp({
         ),
       }))
 
-      setConversations((current) =>
+      setConversations((current: Conversation[] = []) =>
         current.map((conversation) =>
           conversation.id === activeConversation.id && conversation.lastMessage !== 'Chưa có tin nhắn!'
             ? {
@@ -2120,7 +1964,7 @@ export function ChatApp({
       }))
       setReplyingTo((current) => (current?.id === messageId ? null : current))
 
-      setConversations((current) =>
+      setConversations((current: Conversation[] = []) =>
         current.map((conversation) =>
           conversation.id === activeConversation.id
             ? {
@@ -2182,7 +2026,7 @@ export function ChatApp({
       }))
       setReplyingTo((current) => (current?.id === messageId ? null : current))
 
-      setConversations((current) =>
+      setConversations((current: Conversation[] = []) =>
         current.map((conversation) =>
           conversation.id === activeConversation.id ? updatedConversation : conversation,
         ),
@@ -2259,7 +2103,7 @@ export function ChatApp({
         }
       })
 
-      setConversations((current) =>
+      setConversations((current: Conversation[] = []) =>
         current
           .map((conversation) =>
             conversation.id === targetConversationId
@@ -2269,7 +2113,7 @@ export function ChatApp({
               }
               : conversation,
           )
-          .sort((first, second) => Number(second.pinned) - Number(first.pinned)),
+          .sort((first: any, second: any) => Number(second.pinned) - Number(first.pinned)),
       )
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Không thể chuyển tiếp tin nhắn!')
@@ -2360,7 +2204,7 @@ export function ChatApp({
         pinned: !activeConversation.pinned,
       })
 
-      setConversations((current) =>
+      setConversations((current: Conversation[] = []) =>
         current
           .map((conversation) =>
             conversation.id === activeConversation.id
@@ -2370,7 +2214,7 @@ export function ChatApp({
               }
               : conversation,
           )
-          .sort((first, second) => Number(second.pinned) - Number(first.pinned)),
+          .sort((first: any, second: any) => Number(second.pinned) - Number(first.pinned)),
       )
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Không thể cập nhật ghim!')
@@ -2392,7 +2236,7 @@ export function ChatApp({
         muted: !activeConversation.muted,
       })
 
-      setConversations((current) =>
+      setConversations((current: Conversation[] = []) =>
         current.map((conversation) =>
           conversation.id === activeConversation.id
             ? {
@@ -2485,7 +2329,7 @@ export function ChatApp({
 
     try {
       if (pinned) {
-        const pinnedCount = conversations.filter((c) => c.pinned).length
+        const pinnedCount = conversations.filter((c: Conversation) => c.pinned).length
         if (pinnedCount >= 3) {
           pushToast('Chỉ có thể ghim tối đa 3 cuộc hội thoại!', 'error')
           return
@@ -2494,14 +2338,14 @@ export function ChatApp({
 
       setBusyConversationAction('pin-conversation')
       setErrorMessage('')
-      
+
       const updatedConversation = await updateConversationSettings(conversationId, { pinned })
-      
-      setConversations((current) => {
-        const next = current.map((c) => (c.id === conversationId ? updatedConversation : c))
-        return [...next.filter((c) => c.pinned), ...next.filter((c) => !c.pinned)]
+
+      setConversations((current: Conversation[] = []) => {
+        const next = current.map((c: Conversation) => (c.id === conversationId ? updatedConversation : c))
+        return [...next.filter((c: Conversation) => c.pinned), ...next.filter((c: Conversation) => !c.pinned)]
       })
-      
+
       pushToast(pinned ? 'Đã ghim hội thoại!' : 'Đã bỏ ghim hội thoại!', 'info')
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Không thể ghim/bỏ ghim hội thoại!')
@@ -2623,7 +2467,7 @@ export function ChatApp({
       const restoredConversation = await unarchiveConversation(conversationId)
       const nextConversations = await fetchConversations()
 
-      setArchivedConversations((current) =>
+      setArchivedConversations((current: Conversation[] = []) =>
         current.filter((conversation) => conversation.id !== conversationId),
       )
       setConversations(nextConversations)
@@ -2666,7 +2510,7 @@ export function ChatApp({
         : await blockContact(activeConversation.contactId)
       const isBlocked = response.friendshipStatus === 'blocked'
 
-      setConversations((current) =>
+      setConversations((current: Conversation[] = []) =>
         current.map((conversation) =>
           conversation.id === activeConversation.id
             ? {
@@ -2727,7 +2571,7 @@ export function ChatApp({
 
       const conversation = await createGroupConversation(payload)
 
-      setConversations((current) => [conversation, ...current])
+      setConversations((current: Conversation[] = []) => [conversation, ...current])
       handleSelectConversation(conversation.id)
       setIsDetailOpen(true)
     } catch (error) {
@@ -2741,7 +2585,7 @@ export function ChatApp({
   async function handleStartDirectMessage(user: Pick<ContactUser, 'id' | 'fullName' | 'friendshipStatus' | 'contactId'>) {
     const conversation = await createDirectConversation(user.id)
 
-    setConversations((current) => [
+    setConversations((current: Conversation[] = []) => [
       conversation,
       ...current.filter((item) => item.id !== conversation.id),
     ])
@@ -2801,13 +2645,13 @@ export function ChatApp({
         const oldUrl = activeConversation.backgroundImage || ''
         localStorage.setItem(`bg-override-${activeConversation.id}`, newUrl)
         localStorage.setItem(`bg-known-backend-${activeConversation.id}`, oldUrl)
-      } catch (e) {}
-      
+      } catch (e) { }
+
       setTimeout(() => {
         fetchConversations().then(setConversations).catch(() => undefined)
       }, 5000)
 
-      setConversations((current) =>
+      setConversations((current: Conversation[] = []) =>
         current.map((conversation) =>
           conversation.id === activeConversation.id
             ? {
@@ -2837,7 +2681,7 @@ export function ChatApp({
       setBusyConversationAction('group')
       const updatedConversation = await updateGroupConversation(activeConversation.id, payload)
 
-      setConversations((current) =>
+      setConversations((current: Conversation[] = []) =>
         current.map((conversation) =>
           conversation.id === activeConversation.id
             ? {
@@ -3250,7 +3094,7 @@ export function ChatApp({
           activeConversation={activeConversation}
           activeFilter={conversationFilter}
           conversations={filteredConversations}
-            messagesByConversation={messagesByConversation}
+          messagesByConversation={messagesByConversation}
           friends={friends}
           isCompact={isCompactLayout}
           isCollapsed={!isCompactLayout && inboxWidth === 100}
@@ -3477,6 +3321,8 @@ export function ChatApp({
         onRetryMessage={handleRetryMessage}
         onLoadOlderMessages={handleLoadOlderMessages}
         onSendQuickMessage={handleSendQuickMessage}
+        onSendPoll={handleSendPoll}
+        onVotePoll={handleVotePoll}
         onAutoScrollComplete={() => setShouldAutoScrollToLatest(false)}
         onToggleReaction={handleToggleMessageReaction}
         onUploadAttachment={handleUploadAttachment}
