@@ -579,12 +579,23 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
 
   const reportsContent = useMemo(() => {
     if (isReportsLoading) {
-      return (
-        <div className="admin-loading-row">
-          <Loader2 size={18} />
-          Đang tải báo cáo...
-        </div>
-      )
+      return Array.from({ length: 3 }).map((_, i) => (
+        <article className="message-report-row" key={`skeleton-${i}`}>
+          <div className="message-report-main">
+            <div className="message-report-topline">
+              <div className="skeleton skeleton-text" style={{ width: '80px', height: '20px', borderRadius: '10px' }}></div>
+              <div className="skeleton skeleton-text" style={{ width: '100px', height: '12px' }}></div>
+            </div>
+            <div className="skeleton skeleton-text" style={{ width: '120px', height: '16px', margin: '8px 0' }}></div>
+            <div className="skeleton skeleton-text" style={{ width: '100%', height: '16px', marginBottom: '8px' }}></div>
+            <div className="skeleton skeleton-text" style={{ width: '80%', height: '16px' }}></div>
+          </div>
+          <div className="message-report-actions">
+            <div className="skeleton skeleton-text" style={{ width: '80px', height: '32px', borderRadius: '6px' }}></div>
+            <div className="skeleton skeleton-text" style={{ width: '80px', height: '32px', borderRadius: '6px' }}></div>
+          </div>
+        </article>
+      ))
     }
 
     if (reports.length === 0) {
@@ -634,16 +645,29 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
 
   const tableContent = useMemo(() => {
     if (isUsersLoading) {
-      return (
-        <tr>
-          <td colSpan={5}>
-            <div className="admin-loading-row">
-              <Loader2 size={18} />
-              Đang tải danh sách người dùng...
+      return Array.from({ length: 5 }).map((_, i) => (
+        <tr key={i} className="skeleton-row">
+          <td data-label="Người dùng">
+            <div className="user-cell">
+              <div className="skeleton skeleton-avatar"></div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div className="skeleton skeleton-text" style={{ width: '120px', height: '16px' }}></div>
+                <div className="skeleton skeleton-text" style={{ width: '160px', height: '12px' }}></div>
+              </div>
+            </div>
+          </td>
+          <td data-label="Vai trò"><div className="skeleton skeleton-text" style={{ width: '80px', height: '24px', borderRadius: '12px' }}></div></td>
+          <td data-label="Tài khoản"><div className="skeleton skeleton-text" style={{ width: '100px', height: '24px', borderRadius: '12px' }}></div></td>
+          <td data-label="Đăng nhập cuối"><div className="skeleton skeleton-text" style={{ width: '140px', height: '16px' }}></div></td>
+          <td data-label="Thao tác">
+            <div className="action-buttons">
+              <div className="skeleton skeleton-icon"></div>
+              <div className="skeleton skeleton-icon"></div>
+              <div className="skeleton skeleton-icon"></div>
             </div>
           </td>
         </tr>
-      )
+      ))
     }
 
     if (users.length === 0) {
@@ -664,7 +688,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
 
       return (
         <tr key={user.id}>
-          <td>
+          <td data-label="Người dùng">
             <div className="user-cell">
               <AvatarFallback className="user-avatar" name={user.fullName} src={user.avatarUrl} />
               <div>
@@ -673,19 +697,19 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
               </div>
             </div>
           </td>
-          <td>
+          <td data-label="Vai trò">
             <span className={`role-badge role-${user.role}`}>
               {user.role}
             </span>
           </td>
-          <td>
+          <td data-label="Tài khoản">
             <span className={`status-badge status-${user.status}`}>
               {isLocked ? <Lock size={12} /> : user.status === 'active' ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
               {getStatusLabel(user.status)}
             </span>
           </td>
-          <td className="text-muted">{formatLastLogin(user.lastLogin)}</td>
-          <td>
+          <td className="text-muted" data-label="Đăng nhập cuối">{formatLastLogin(user.lastLogin)}</td>
+          <td data-label="Thao tác">
             <div className="action-buttons">
               <button
                 title="Chỉnh sửa"
@@ -948,24 +972,24 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
           <div className="stat-icon users-icon"><Users size={24} /></div>
           <div className="stat-info">
             <h3>Tổng người dùng</h3>
-            <p className="stat-value">{isStatsLoading ? '...' : formatNumber(stats.totalUsers)}</p>
-            <span className="stat-trend positive">{formatNumber(stats.suspendedUsers)} tài khoản bị khóa</span>
+            <p className="stat-value">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '80px', height: '28px', marginTop: '4px' }}></div> : formatNumber(stats.totalUsers)}</p>
+            <span className="stat-trend positive">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '120px', height: '14px', marginTop: '4px' }}></div> : `${formatNumber(stats.suspendedUsers)} tài khoản bị khóa`}</span>
           </div>
         </div>
         <div className="stat-card">
           <div className="stat-icon active-icon"><Activity size={24} /></div>
           <div className="stat-info">
             <h3>Tài khoản mở khóa</h3>
-            <p className="stat-value">{isStatsLoading ? '...' : formatNumber(stats.activeUsers)}</p>
-            <span className="stat-trend">{formatNumber(stats.onlineUsers)} đang online</span>
+            <p className="stat-value">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '80px', height: '28px', marginTop: '4px' }}></div> : formatNumber(stats.activeUsers)}</p>
+            <span className="stat-trend">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '100px', height: '14px', marginTop: '4px' }}></div> : `${formatNumber(stats.onlineUsers)} đang online`}</span>
           </div>
         </div>
         <div className="stat-card">
           <div className="stat-icon alert-icon"><AlertCircle size={24} /></div>
           <div className="stat-info">
             <h3>Cảnh báo hệ thống</h3>
-            <p className="stat-value">{isStatsLoading ? '...' : formatNumber(stats.alertCount)}</p>
-            <span className="stat-trend negative">cần xử lý</span>
+            <p className="stat-value">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '80px', height: '28px', marginTop: '4px' }}></div> : formatNumber(stats.alertCount)}</p>
+            <span className="stat-trend negative">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '60px', height: '14px', marginTop: '4px' }}></div> : 'cần xử lý'}</span>
           </div>
         </div>
       </div>

@@ -400,8 +400,8 @@ export function InboxPanel({
           >
             <Plus size={20} />
           </button>
-          {isCompact && onClosePanel ? (
-            <button className="icon-button" onClick={onClosePanel} title="Đóng danh sách" type="button">
+          {onClosePanel ? (
+            <button className="icon-button inbox-close-btn" onClick={onClosePanel} title="Đóng danh sách" type="button">
               <X size={18} />
             </button>
           ) : null}

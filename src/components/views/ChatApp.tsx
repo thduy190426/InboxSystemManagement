@@ -84,7 +84,7 @@ import type {
   Message,
 } from '../../types'
 import { useOfflineQueue } from '../../hooks/chat/useOfflineQueue'
-import { getQueuedMessagesForUser, removeQueuedMessage, upsertQueuedMessage, mergeQueuedMessages, mergeLatestMessages, type QueuedMessage, prependOlderMessages, getInitialSidebarState, getInitialInboxWidth, getInitialCompactLayoutState, MESSAGE_PAGE_LIMIT, CONVERSATION_FILTERS, COMPACT_LAYOUT_MEDIA_QUERY, SIDEBAR_STATE_KEY, INBOX_WIDTH_KEY } from '../../services/core/offlineQueue'
+import { getQueuedMessagesForUser, removeQueuedMessage, upsertQueuedMessage, mergeQueuedMessages, mergeLatestMessages, type QueuedMessage, prependOlderMessages, getInitialSidebarState, getInitialInboxWidth, getInitialCompactLayoutState, MESSAGE_PAGE_LIMIT, CONVERSATION_FILTERS, SIDEBAR_STATE_KEY, INBOX_WIDTH_KEY } from '../../services/core/offlineQueue'
 import { AdminPage } from './AdminPage'
 import { CallOverlay } from '../media/CallOverlay'
 import { ChatPanel } from '../panels/ChatPanel'
@@ -194,7 +194,6 @@ export function ChatApp({
   const [isSidebarOpen, setIsSidebarOpen] = useState(getInitialSidebarState)
   const [inboxWidth, setInboxWidth] = useState(getInitialInboxWidth)
   const [isResizing, setIsResizing] = useState(false)
-  const [isCompactLayout, setIsCompactLayout] = useState(getInitialCompactLayoutState)
   const [isInboxOpen, setIsInboxOpen] = useState(
     () =>
       getInitialCompactLayoutState() &&
@@ -822,13 +821,9 @@ export function ChatApp({
   )
 
   useEffect(() => {
-    if (isCompactLayout) {
-      return
-    }
-
     localStorage.setItem(SIDEBAR_STATE_KEY, String(isSidebarOpen))
     localStorage.setItem(INBOX_WIDTH_KEY, String(inboxWidth))
-  }, [isCompactLayout, isSidebarOpen, inboxWidth])
+  }, [isSidebarOpen, inboxWidth])
 
   const handleResizerMouseDown = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -859,33 +854,9 @@ export function ChatApp({
     document.addEventListener('mouseup', handleMouseUp)
   }
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia(COMPACT_LAYOUT_MEDIA_QUERY)
 
-    function handleChange() {
-      const isCompact = mediaQuery.matches
-
-      setIsCompactLayout(isCompact)
-
-      if (isCompact) {
-        setIsSidebarOpen(false)
-      }
-    }
-
-    handleChange()
-    mediaQuery.addEventListener('change', handleChange)
-
-    return () => {
-      mediaQuery.removeEventListener('change', handleChange)
-    }
-  }, [])
 
   useEffect(() => {
-    if (!isCompactLayout) {
-      setIsInboxOpen(false)
-      return
-    }
-
     if (activeView !== 'chat') {
       setIsInboxOpen(false)
       return
@@ -894,7 +865,7 @@ export function ChatApp({
     if (!activeId) {
       setIsInboxOpen(true)
     }
-  }, [activeId, activeView, isCompactLayout])
+  }, [activeId, activeView])
 
   useEffect(() => {
     function handleLocationChange() {
@@ -906,7 +877,7 @@ export function ChatApp({
       setQuery(route.view === 'chat' ? params.query : '')
       setConversationFilter(route.view === 'chat' ? params.filter : 'all')
       setIsInboxOpen(
-        isCompactLayout && route.view === 'chat' && !route.conversationId,
+        route.view === 'chat' && !route.conversationId,
       )
     }
 
@@ -917,7 +888,7 @@ export function ChatApp({
       window.removeEventListener('popstate', handleLocationChange)
       window.removeEventListener('hashchange', handleLocationChange)
     }
-  }, [isCompactLayout])
+  }, [])
 
   useEffect(() => {
     if (activeView !== 'chat') {
@@ -3062,18 +3033,11 @@ export function ChatApp({
       <NavRail
         activeView={activeView}
         currentUser={currentUser}
-        isOpen={!isCompactLayout && isSidebarOpen}
+        isOpen={isSidebarOpen}
         notificationCount={notificationBadgeCount}
         onChangeView={handleChangeView}
         onLogout={handleLogout}
-        onToggleOpen={() => {
-          if (isCompactLayout) {
-            setIsSidebarOpen(false)
-            return
-          }
-
-          setIsSidebarOpen((current) => !current)
-        }}
+        onToggleOpen={() => setIsSidebarOpen((current) => !current)}
         onUserChange={onUserChange}
       />
     )
@@ -3082,23 +3046,20 @@ export function ChatApp({
   function renderInboxPanel() {
     return (
       <>
-        {isCompactLayout && isInboxOpen ? (
-          <button
-            aria-label="Đóng danh sách hội thoại"
-            className="inbox-backdrop"
-            onClick={() => setIsInboxOpen(false)}
-            type="button"
-          />
-        ) : null}
+        <button
+          aria-label="Đóng danh sách hội thoại"
+          className={`inbox-backdrop ${isInboxOpen ? 'is-active' : ''}`}
+          onClick={() => setIsInboxOpen(false)}
+          type="button"
+        />
         <InboxPanel
           activeConversation={activeConversation}
           activeFilter={conversationFilter}
           conversations={filteredConversations}
           messagesByConversation={messagesByConversation}
           friends={friends}
-          isCompact={isCompactLayout}
-          isCollapsed={!isCompactLayout && inboxWidth === 100}
-          onResizeStart={!isCompactLayout ? handleResizerMouseDown : undefined}
+          isCollapsed={inboxWidth === 100}
+          onResizeStart={handleResizerMouseDown}
           isCreatingGroup={isCreatingGroup}
           onClosePanel={() => setIsInboxOpen(false)}
           onCreateGroup={handleCreateGroup}
@@ -3162,10 +3123,10 @@ export function ChatApp({
 
   const shellClassName = [
     'app-shell',
-    !isCompactLayout && isSidebarOpen ? 'is-sidebar-open' : '',
+    isSidebarOpen ? 'is-sidebar-open' : '',
     isDetailOpen && activeView === 'chat' ? 'is-detail-open' : '',
-    isCompactLayout && activeView === 'chat' ? 'has-inbox-drawer' : '',
-    isCompactLayout && activeView === 'chat' && isInboxOpen ? 'is-inbox-open' : '',
+    activeView === 'chat' ? 'has-inbox-drawer' : '',
+    activeView === 'chat' && isInboxOpen ? 'is-inbox-open' : '',
     isResizing ? 'is-resizing' : '',
   ]
     .filter(Boolean)
