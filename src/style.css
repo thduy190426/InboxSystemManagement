@@ -9317,7 +9317,7 @@ html.dark .send-button:disabled {
 html.dark {
   color-scheme: dark;
 }
-@media (max-width: 768px) {
+@media (max-width: 760px) {
   .nav-bottom-actions {
     flex-direction: row;
     width: auto;
@@ -12015,5 +12015,6 @@ html.dark .message-pin-badge {
 
 
 .detail-backdrop { display: none; }
+
 
 
