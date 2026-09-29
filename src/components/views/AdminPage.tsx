@@ -242,7 +242,7 @@ function DistributionChart({
             nameKey="label"
             stroke="none"
           >
-            {formattedData.map((entry, index) => (
+            {formattedData.map((_, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
