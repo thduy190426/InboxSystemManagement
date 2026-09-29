@@ -58,8 +58,41 @@ export function NavRail({
     prevCountRef.current = notificationCount
   }, [notificationCount])
 
+  const [touchStartX, setTouchStartX] = useState<number | null>(null)
+  const [touchCurrentX, setTouchCurrentX] = useState<number | null>(null)
+
+  function handleTouchStart(e: React.TouchEvent) {
+    setTouchStartX(e.targetTouches[0].clientX)
+    setTouchCurrentX(e.targetTouches[0].clientX)
+  }
+
+  function handleTouchMove(e: React.TouchEvent) {
+    if (touchStartX !== null) {
+      setTouchCurrentX(e.targetTouches[0].clientX)
+    }
+  }
+
+  function handleTouchEnd() {
+    if (touchStartX !== null && touchCurrentX !== null) {
+      const diffX = touchCurrentX - touchStartX
+      if (isOpen && diffX < -50) {
+        onToggleOpen()
+      } else if (!isOpen && diffX > 50) {
+        onToggleOpen()
+      }
+    }
+    setTouchStartX(null)
+    setTouchCurrentX(null)
+  }
+
   return (
-    <aside className={isOpen ? 'nav-rail is-open' : 'nav-rail'} aria-label="Điều hướng chính">
+    <aside
+      className={isOpen ? 'nav-rail is-open' : 'nav-rail'}
+      aria-label="Điều hướng chính"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       <button
         className="sidebar-toggle"
         onClick={onToggleOpen}
