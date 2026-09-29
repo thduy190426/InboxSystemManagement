@@ -384,17 +384,7 @@ export function InboxPanel({
             <MessageSquare size={14} />
             Inbox
           </span>
-          <h1 className="panel-title" style={{
-            fontFamily: '"Outfit", "Inter", system-ui, sans-serif',
-            background: 'linear-gradient(135deg, #34d399 0%, #3b82f6 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            fontWeight: 800,
-            letterSpacing: '-0.5px',
-            fontSize: '28px',
-            margin: 0,
-            paddingBottom: '2px'
-          }}>
+          <h1 className="panel-title inbox-brand-title">
             TDuyyMessage
           </h1>
         </div>

@@ -7044,6 +7044,10 @@ html.dark .chat-pinned-more:hover {
   .mobile-menu {
     display: inline-grid;
   }
+
+  .inbox-brand-title {
+    font-size: 24px;
+  }
 }
 
 @media (max-width: 900px) {
@@ -7352,6 +7356,10 @@ html.dark .chat-pinned-more:hover {
 
   h1 {
     font-size: 25px;
+  }
+
+  .inbox-brand-title {
+    font-size: 22px;
   }
 
   .friend-status-strip {
@@ -9549,6 +9557,18 @@ html.dark .message-search-button.is-active {
 .app-shell.is-resizing * {
   pointer-events: none !important;
 }
+.inbox-brand-title {
+  font-family: "Outfit", "Inter", system-ui, sans-serif;
+  background: linear-gradient(135deg, #34d399 0%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  font-size: 28px;
+  margin: 0;
+  padding-bottom: 2px;
+}
+
 .panel-title {
   display: flex;
   align-items: center;
