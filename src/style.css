@@ -7346,27 +7346,12 @@ html.dark .chat-pinned-more:hover {
     opacity: 0;
   }
 
-  .inbox-panel {
-    min-height: 0;
-    max-height: 318px;
-    padding: 16px;
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
-  }
-
   .panel-header {
     align-items: flex-start;
   }
 
   h1 {
     font-size: 25px;
-  }
-
-  .conversation-list {
-    flex-direction: row;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 0 0 6px;
   }
 
   .friend-status-strip {
@@ -7395,16 +7380,6 @@ html.dark .chat-pinned-more:hover {
   .friend-status-card>span:last-child {
     font-size: 12px;
   }
-
-  .conversation-row {
-    min-width: 248px;
-  }
-
-  .chat-panel {
-    height: calc(100svh - 318px - 72px);
-    min-height: calc(100svh - 318px - 72px);
-  }
-
   .app-shell.has-inbox-drawer .chat-panel {
     height: calc(100svh - 72px);
     min-height: calc(100svh - 72px);
