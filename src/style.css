@@ -11981,3 +11981,7 @@ html.dark .audio-duration {
 }
 
 
+
+html.dark .message-pin-badge {
+  color: #4ade80;
+}
