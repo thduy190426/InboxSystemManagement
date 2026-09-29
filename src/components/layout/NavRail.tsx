@@ -58,40 +58,75 @@ export function NavRail({
     prevCountRef.current = notificationCount
   }, [notificationCount])
 
-  const [touchStartX, setTouchStartX] = useState<number | null>(null)
-  const [touchCurrentX, setTouchCurrentX] = useState<number | null>(null)
+  const [dragStartX, setDragStartX] = useState<number | null>(null)
+  const [dragCurrentX, setDragCurrentX] = useState<number | null>(null)
+  const asideRef = useRef<HTMLElement>(null)
 
-  function handleTouchStart(e: React.TouchEvent) {
-    setTouchStartX(e.targetTouches[0].clientX)
-    setTouchCurrentX(e.targetTouches[0].clientX)
+  function handlePointerDown(e: React.PointerEvent) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return; // Only left click
+    
+    // Capture pointer so we keep getting move events even if mouse leaves the element
+    if (asideRef.current) {
+      asideRef.current.setPointerCapture(e.pointerId)
+    }
+
+    setDragStartX(e.clientX)
+    setDragCurrentX(e.clientX)
   }
 
-  function handleTouchMove(e: React.TouchEvent) {
-    if (touchStartX !== null) {
-      setTouchCurrentX(e.targetTouches[0].clientX)
+  function handlePointerMove(e: React.PointerEvent) {
+    if (dragStartX !== null) {
+      const currentX = e.clientX
+      setDragCurrentX(currentX)
+      const diffX = currentX - dragStartX
+
+      // Provide visual feedback by dynamically adjusting --sidebar-width on the app-shell
+      const appShell = document.querySelector('.app-shell') as HTMLElement | null
+      if (appShell) {
+        if (isOpen && diffX < 0) {
+          appShell.style.setProperty('--sidebar-width', `${Math.max(76, 220 + diffX)}px`)
+          appShell.style.transition = 'none'
+        } else if (!isOpen && diffX > 0) {
+          appShell.style.setProperty('--sidebar-width', `${Math.min(220, 76 + diffX)}px`)
+          appShell.style.transition = 'none'
+        }
+      }
     }
   }
 
-  function handleTouchEnd() {
-    if (touchStartX !== null && touchCurrentX !== null) {
-      const diffX = touchCurrentX - touchStartX
-      if (isOpen && diffX < -50) {
+  function handlePointerUp(e: React.PointerEvent) {
+    if (dragStartX !== null && dragCurrentX !== null) {
+      const diffX = dragCurrentX - dragStartX
+      if (isOpen && diffX < -40) {
         onToggleOpen()
-      } else if (!isOpen && diffX > 50) {
+      } else if (!isOpen && diffX > 40) {
         onToggleOpen()
       }
     }
-    setTouchStartX(null)
-    setTouchCurrentX(null)
+    setDragStartX(null)
+    setDragCurrentX(null)
+    
+    if (asideRef.current) {
+      asideRef.current.releasePointerCapture(e.pointerId)
+    }
+
+    // Reset styles on app-shell so CSS classes take over
+    const appShell = document.querySelector('.app-shell') as HTMLElement | null
+    if (appShell) {
+      appShell.style.removeProperty('--sidebar-width')
+      appShell.style.removeProperty('transition')
+    }
   }
 
   return (
     <aside
+      ref={asideRef}
       className={isOpen ? 'nav-rail is-open' : 'nav-rail'}
       aria-label="Điều hướng chính"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
     >
       <button
         className="sidebar-toggle"

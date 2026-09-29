@@ -1168,6 +1168,7 @@ img {
   gap: 14px;
   height: 100%;
   padding: 16px 10px;
+  touch-action: pan-y;
   background:
     linear-gradient(180deg, rgba(20, 184, 166, 0.12), transparent 24%),
     rgba(16, 32, 39, 0.8);
