@@ -2113,127 +2113,6 @@ export function ChatPanel({
             </button>
           </div>
         ) : null}
-        <label className="icon-button attachment-picker" title="Gửi ảnh">
-          <Image size={20} />
-          <input
-            aria-label="Đính kèm file"
-            accept="image/*,audio/*,video/*"
-            disabled={isBlocked || isUploadingAttachment}
-            multiple
-            onChange={handleAttachmentChange}
-            type="file"
-          />
-        </label>
-        <label className="composer-input">
-          <input
-            aria-label="Nhập tin nhắn"
-            disabled={isBlocked}
-            onChange={handleDraftChange}
-            placeholder={isBlocked ? 'Bạn đã chặn người dùng này!' : `Nhắn tin với ${activeConversation.name}`}
-            value={draft}
-          />
-        </label>
-        <span className="composer-emoji-wrap">
-          <button
-            className={isComposerEmojiOpen ? 'icon-button composer-extra is-active' : 'icon-button composer-extra'}
-            disabled={isBlocked || isUploadingAttachment}
-            onClick={() => {
-              setIsGifPickerOpen(false)
-              setIsComposerEmojiOpen((current) => !current)
-            }}
-            title="Biểu cảm"
-            type="button"
-          >
-            <Smile size={20} />
-          </button>
-          {isComposerEmojiOpen ? (
-            <span className="composer-emoji-picker">
-              <Suspense fallback={<span className="composer-emoji-loading">Đang tải Emoji...</span>}>
-                <EmojiPicker
-                  emojiStyle={'native' as EmojiStyle}
-                  height={360}
-                  lazyLoadEmojis
-                  onEmojiClick={handleSendComposerEmoji}
-                  previewConfig={{ showPreview: false }}
-                  searchPlaceHolder="Tìm Emoji"
-                  skinTonesDisabled
-                  theme={'light' as Theme}
-                  width={320}
-                />
-              </Suspense>
-            </span>
-          ) : null}
-        </span>
-        <span className="composer-gif-wrap">
-          <button
-            className={isGifPickerOpen ? 'icon-button composer-extra is-active' : 'icon-button composer-extra'}
-            disabled={isBlocked || isUploadingAttachment}
-            onClick={() => {
-              setIsComposerEmojiOpen(false)
-              setIsGifPickerOpen((current) => !current)
-            }}
-            title="GIF"
-            type="button"
-          >
-            <Film size={20} />
-          </button>
-          {isGifPickerOpen ? (
-            <span className="composer-gif-picker">
-              <label className="gif-search-field">
-                <Search size={16} />
-                <input
-                  aria-label="Tìm GIF"
-                  onChange={(event) => setGifQuery(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault()
-                    }
-                  }}
-                  placeholder="Tìm GIF"
-                  type="search"
-                  value={gifQuery}
-                />
-              </label>
-              {gifError ? <span className="gif-picker-message">{gifError}</span> : null}
-              {isLoadingGifs ? (
-                <span className="gif-picker-message">
-                  <Loader2 size={16} />
-                  Đang tải GIF...
-                </span>
-              ) : null}
-              {!isLoadingGifs && !gifError && gifResults.length === 0 ? (
-                <span className="gif-picker-message">Không có GIF phù hợp!</span>
-              ) : null}
-              <span className="gif-result-grid">
-                {gifResults.map((gif) => (
-                  <button
-                    disabled={isUploadingAttachment}
-                    key={gif.id}
-                    onClick={() => void handleSendGif(gif)}
-                    title={gif.title}
-                    type="button"
-                  >
-                    <img alt={gif.title} loading="lazy" src={gif.previewUrl} />
-                  </button>
-                ))}
-              </span>
-            </span>
-          ) : null}
-        </span>
-        {mentionSuggestions.length > 0 ? (
-          <div className="mention-suggestions">
-            {mentionSuggestions.map((member) => (
-              <button
-                key={member.id}
-                onClick={() => insertMention(member.handle || member.nickname || member.fullName)}
-                type="button"
-              >
-                {member.avatarUrl ? <img alt="" src={member.avatarUrl} /> : <span />}
-                <strong>{member.handle ? `@${member.handle}` : member.nickname || member.fullName}</strong>
-              </button>
-            ))}
-          </div>
-        ) : null}
         {recordedMediaUrl ? (
           <div className="voice-preview">
             {recordedMediaKind === 'video' ? <Video size={16} /> : <Mic size={16} />}
@@ -2256,46 +2135,6 @@ export function ChatPanel({
           </div>
         ) : null}
         {recordingKind ? (
-          <button
-            className="icon-button composer-extra voice-record-button is-recording"
-            onClick={stopMediaRecording}
-            title="Dừng ghi âm"
-            type="button"
-          >
-            <Square size={18} />
-          </button>
-        ) : (
-          <>
-          <button
-            className={`icon-button composer-extra${isSharingLocation ? ' is-active' : ''}`}
-            disabled={isBlocked || isUploadingAttachment || isSharingLocation}
-            onClick={handleShareLocation}
-            title="Chia sẻ vị trí"
-            type="button"
-          >
-            {isSharingLocation ? <Loader2 size={20} className="spin" /> : <MapPin size={20} />}
-          </button>
-          <button
-            className="icon-button composer-extra voice-record-button"
-            disabled={isBlocked || isUploadingAttachment}
-            onClick={() => startMediaRecording('audio')}
-            title="Ghi âm"
-            type="button"
-          >
-            <Mic size={20} />
-          </button>
-          <button
-            className="icon-button composer-extra voice-record-button"
-            disabled={isBlocked || isUploadingAttachment}
-            onClick={() => startMediaRecording('video')}
-            title="Quay video"
-            type="button"
-          >
-            <Video size={20} />
-          </button>
-          </>
-        )}
-        {recordingKind ? (
           <div className="recording-status">
             <span />
             <strong>{recordingKind === 'video' ? 'Video' : 'Audio'} {formatRecordingDuration(recordingDuration)}</strong>
@@ -2311,14 +2150,178 @@ export function ChatPanel({
         ) : isBlocked ? (
           <span className="composer-error">Đã chặn người dùng!</span>
         ) : null}
-        <button
-          className="send-button"
-          disabled={isBlocked || !draft.trim() || isUploadingAttachment}
-          title="Gửi"
-          type="submit"
-        >
-          <Send size={19} />
-        </button>
+        {mentionSuggestions.length > 0 ? (
+          <div className="mention-suggestions">
+            {mentionSuggestions.map((member) => (
+              <button
+                key={member.id}
+                onClick={() => insertMention(member.handle || member.nickname || member.fullName)}
+                type="button"
+              >
+                {member.avatarUrl ? <img alt="" src={member.avatarUrl} /> : <span />}
+                <strong>{member.handle ? `@${member.handle}` : member.nickname || member.fullName}</strong>
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        <div className="composer-row">
+          <label className="icon-button attachment-picker" title="Gửi ảnh">
+            <Image size={20} />
+            <input
+              aria-label="Đính kèm file"
+              accept="image/*,audio/*,video/*"
+              disabled={isBlocked || isUploadingAttachment}
+              multiple
+              onChange={handleAttachmentChange}
+              type="file"
+            />
+          </label>
+          <label className="composer-input">
+            <input
+              aria-label="Nhập tin nhắn"
+              disabled={isBlocked}
+              onChange={handleDraftChange}
+              placeholder={isBlocked ? 'Bạn đã chặn người dùng này!' : `Nhắn tin với ${activeConversation.name}`}
+              value={draft}
+            />
+          </label>
+          <span className="composer-emoji-wrap">
+            <button
+              className={isComposerEmojiOpen ? 'icon-button composer-extra is-active' : 'icon-button composer-extra'}
+              disabled={isBlocked || isUploadingAttachment}
+              onClick={() => {
+                setIsGifPickerOpen(false)
+                setIsComposerEmojiOpen((current) => !current)
+              }}
+              title="Biểu cảm"
+              type="button"
+            >
+              <Smile size={20} />
+            </button>
+            {isComposerEmojiOpen ? (
+              <span className="composer-emoji-picker">
+                <Suspense fallback={<span className="composer-emoji-loading">Đang tải Emoji...</span>}>
+                  <EmojiPicker
+                    emojiStyle={'native' as EmojiStyle}
+                    height={360}
+                    lazyLoadEmojis
+                    onEmojiClick={handleSendComposerEmoji}
+                    previewConfig={{ showPreview: false }}
+                    searchPlaceHolder="Tìm Emoji"
+                    skinTonesDisabled
+                    theme={'light' as Theme}
+                    width={320}
+                  />
+                </Suspense>
+              </span>
+            ) : null}
+          </span>
+          <span className="composer-gif-wrap">
+            <button
+              className={isGifPickerOpen ? 'icon-button composer-extra is-active' : 'icon-button composer-extra'}
+              disabled={isBlocked || isUploadingAttachment}
+              onClick={() => {
+                setIsComposerEmojiOpen(false)
+                setIsGifPickerOpen((current) => !current)
+              }}
+              title="GIF"
+              type="button"
+            >
+              <Film size={20} />
+            </button>
+            {isGifPickerOpen ? (
+              <span className="composer-gif-picker">
+                <label className="gif-search-field">
+                  <Search size={16} />
+                  <input
+                    aria-label="Tìm GIF"
+                    onChange={(event) => setGifQuery(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault()
+                      }
+                    }}
+                    placeholder="Tìm GIF"
+                    type="search"
+                    value={gifQuery}
+                  />
+                </label>
+                {gifError ? <span className="gif-picker-message">{gifError}</span> : null}
+                {isLoadingGifs ? (
+                  <span className="gif-picker-message">
+                    <Loader2 size={16} />
+                    Đang tải GIF...
+                  </span>
+                ) : null}
+                {!isLoadingGifs && !gifError && gifResults.length === 0 ? (
+                  <span className="gif-picker-message">Không có GIF phù hợp!</span>
+                ) : null}
+                <span className="gif-result-grid">
+                  {gifResults.map((gif) => (
+                    <button
+                      disabled={isUploadingAttachment}
+                      key={gif.id}
+                      onClick={() => void handleSendGif(gif)}
+                      title={gif.title}
+                      type="button"
+                    >
+                      <img alt={gif.title} loading="lazy" src={gif.previewUrl} />
+                    </button>
+                  ))}
+                </span>
+              </span>
+            ) : null}
+          </span>
+          {recordingKind ? (
+            <button
+              className="icon-button composer-extra voice-record-button is-recording"
+              onClick={stopMediaRecording}
+              title="Dừng ghi âm"
+              type="button"
+            >
+              <Square size={18} />
+            </button>
+          ) : (
+            <>
+              <button
+                className={`icon-button composer-extra${isSharingLocation ? ' is-active' : ''}`}
+                disabled={isBlocked || isUploadingAttachment || isSharingLocation}
+                onClick={handleShareLocation}
+                title="Chia sẻ vị trí"
+                type="button"
+              >
+                {isSharingLocation ? <Loader2 size={20} className="spin" /> : <MapPin size={20} />}
+              </button>
+              <button
+                className="icon-button composer-extra voice-record-button"
+                disabled={isBlocked || isUploadingAttachment}
+                onClick={() => startMediaRecording('audio')}
+                title="Ghi âm"
+                type="button"
+              >
+                <Mic size={20} />
+              </button>
+              <button
+                className="icon-button composer-extra voice-record-button"
+                disabled={isBlocked || isUploadingAttachment}
+                onClick={() => startMediaRecording('video')}
+                title="Quay video"
+                type="button"
+              >
+                <Video size={20} />
+              </button>
+            </>
+          )}
+          <button
+            className="send-button"
+            disabled={isBlocked || !draft.trim() || isUploadingAttachment}
+            title="Gửi"
+            type="submit"
+          >
+            <Send size={19} />
+          </button>
+        </div>
       </form>
 
       {forwardingMessage ? (
