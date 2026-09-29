@@ -223,7 +223,7 @@ function DistributionChart({
           <Tooltip 
             contentStyle={{ backgroundColor: 'var(--surface)', borderColor: 'var(--line)', borderRadius: '12px', color: 'var(--text)', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
             itemStyle={{ fontWeight: 'bold' }}
-            formatter={(value: number) => [formatNumber(value), 'Số lượng']}
+            formatter={(value: any) => [formatNumber(Number(value)), 'Số lượng']}
           />
           <Legend 
             wrapperStyle={{ fontSize: '13px', color: 'var(--text-muted)' }} 
