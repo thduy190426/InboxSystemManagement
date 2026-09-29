@@ -1,5 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
+  Area,
+  AreaChart,
+  Cell,
+  Legend,
+  Pie,
+  PieChart as RechartsPieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
+import {
   Activity,
   AlertCircle,
   BarChart3,
@@ -125,24 +137,6 @@ function TrendLineChart({
   isLoading: boolean
   tone: 'primary' | 'blue'
 }) {
-  const width = 420
-  const height = 170
-  const paddingX = 22
-  const paddingY = 22
-  const maxValue = Math.max(1, ...data.map((point) => point.value))
-  const points = data.map((point, index) => {
-    const x = data.length <= 1
-      ? width / 2
-      : paddingX + (index * (width - paddingX * 2)) / (data.length - 1)
-    const y = height - paddingY - (point.value / maxValue) * (height - paddingY * 2)
-
-    return { ...point, x, y }
-  })
-  const linePath = points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ')
-  const areaPath = points.length
-    ? `${linePath} L ${points[points.length - 1].x} ${height - paddingY} L ${points[0].x} ${height - paddingY} Z`
-    : ''
-
   if (isLoading) {
     return <div className="admin-chart-placeholder">Đang tải biểu đồ...</div>
   }
@@ -151,25 +145,51 @@ function TrendLineChart({
     return <div className="admin-chart-placeholder">Chưa có dữ liệu!</div>
   }
 
+  const color = tone === 'primary' ? '#14b8a6' : '#3b82f6'
+
   return (
-    <div className="admin-trend-chart">
-      <svg aria-hidden="true" className={`admin-line-chart chart-${tone}`} viewBox={`0 0 ${width} ${height}`}>
-        <path className="line-area" d={areaPath} />
-        <path className="line-stroke" d={linePath} />
-        {points.map((point) => (
-          <circle cx={point.x} cy={point.y} key={point.label} r="4" />
-        ))}
-      </svg>
-      <div className="admin-chart-axis">
-        {data.map((point) => (
-          <span key={point.label}>{point.label}</span>
-        ))}
-      </div>
+    <div className="admin-trend-chart" style={{ height: '240px', width: '100%', marginTop: '24px' }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+          <defs>
+            <linearGradient id={`color${tone}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={color} stopOpacity={0.3}/>
+              <stop offset="95%" stopColor={color} stopOpacity={0}/>
+            </linearGradient>
+          </defs>
+          <XAxis 
+            dataKey="label" 
+            axisLine={false} 
+            tickLine={false} 
+            tick={{ fill: 'var(--text-muted)', fontSize: 12 }} 
+            dy={10}
+          />
+          <YAxis 
+            axisLine={false} 
+            tickLine={false} 
+            tick={{ fill: 'var(--text-muted)', fontSize: 12 }}
+          />
+          <Tooltip 
+            contentStyle={{ backgroundColor: 'var(--surface)', borderColor: 'var(--line)', borderRadius: '12px', color: 'var(--text)', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
+            itemStyle={{ color: color, fontWeight: 'bold' }}
+            cursor={{ stroke: 'var(--line)', strokeWidth: 1, strokeDasharray: '4 4' }}
+          />
+          <Area 
+            type="monotone" 
+            dataKey="value" 
+            stroke={color} 
+            strokeWidth={3}
+            fillOpacity={1} 
+            fill={`url(#color${tone})`} 
+            activeDot={{ r: 6, strokeWidth: 0, fill: color }}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
     </div>
   )
 }
 
-function DistributionBars({
+function DistributionChart({
   data,
   isLoading,
   tone,
@@ -188,24 +208,46 @@ function DistributionBars({
     return <div className="admin-chart-placeholder">Chưa có dữ liệu!</div>
   }
 
-  return (
-    <div className={`admin-distribution chart-${tone}`}>
-      {data.map((point) => {
-        const percent = Math.round((point.value / total) * 100)
+  const COLORS = tone === 'primary' 
+    ? ['#14b8a6', '#0f766e', '#042f2e', '#99f6e4', '#5eead4'] 
+    : tone === 'orange'
+    ? ['#f59e0b', '#b45309', '#78350f', '#fde68a', '#fcd34d']
+    : ['#3b82f6', '#1d4ed8', '#1e3a8a', '#bfdbfe', '#93c5fd']
 
-        return (
-          <div className="admin-distribution-row" key={point.label}>
-            <div className="admin-distribution-meta">
-              <span>{formatChartLabel(point.label)}</span>
-              <strong>{formatNumber(point.value)}</strong>
-            </div>
-            <div className="admin-distribution-track">
-              <span style={{ width: `${Math.max(percent, 3)}%` }} />
-            </div>
-            <small>{percent}%</small>
-          </div>
-        )
-      })}
+  const formattedData = data.map(d => ({ ...d, label: formatChartLabel(d.label) }))
+
+  return (
+    <div className="admin-distribution" style={{ height: '220px', width: '100%', marginTop: '16px' }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <RechartsPieChart>
+          <Tooltip 
+            contentStyle={{ backgroundColor: 'var(--surface)', borderColor: 'var(--line)', borderRadius: '12px', color: 'var(--text)', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
+            itemStyle={{ fontWeight: 'bold' }}
+            formatter={(value: number) => [formatNumber(value), 'Số lượng']}
+          />
+          <Legend 
+            wrapperStyle={{ fontSize: '13px', color: 'var(--text-muted)' }} 
+            layout="vertical" 
+            verticalAlign="middle" 
+            align="right"
+          />
+          <Pie
+            data={formattedData}
+            cx="40%"
+            cy="50%"
+            innerRadius={60}
+            outerRadius={85}
+            paddingAngle={4}
+            dataKey="value"
+            nameKey="label"
+            stroke="none"
+          >
+            {formattedData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            ))}
+          </Pie>
+        </RechartsPieChart>
+      </ResponsiveContainer>
     </div>
   )
 }
@@ -967,7 +1009,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
               <p>Phân bổ người dùng</p>
             </div>
           </div>
-          <DistributionBars data={stats.roleDistribution} isLoading={isStatsLoading} tone="primary" />
+          <DistributionChart data={stats.roleDistribution} isLoading={isStatsLoading} tone="primary" />
         </section>
 
         <section className="admin-chart-panel">
@@ -980,7 +1022,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
               <p>Toàn bộ báo cáo tin nhắn</p>
             </div>
           </div>
-          <DistributionBars data={stats.reportStatusDistribution} isLoading={isStatsLoading} tone="orange" />
+          <DistributionChart data={stats.reportStatusDistribution} isLoading={isStatsLoading} tone="orange" />
         </section>
 
         <section className="admin-chart-panel">
@@ -993,7 +1035,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
               <p>Trực tiếp, nhóm và hỗ trợ</p>
             </div>
           </div>
-          <DistributionBars data={stats.conversationDistribution} isLoading={isStatsLoading} tone="blue" />
+          <DistributionChart data={stats.conversationDistribution} isLoading={isStatsLoading} tone="blue" />
         </section>
       </div>
 
