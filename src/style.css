@@ -9561,6 +9561,7 @@ html.dark .message-search-button.is-active {
   font-family: "Outfit", "Inter", system-ui, sans-serif;
   background: linear-gradient(135deg, #34d399 0%, #3b82f6 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: 800;
   letter-spacing: -0.5px;
@@ -11959,8 +11960,6 @@ html.dark .outgoing .message-bubble {
   }
 }
 
-
-/* --- REDESIGN CUSTOM UI --- */
 .message-call-card {
   display: flex;
   flex-direction: column;
