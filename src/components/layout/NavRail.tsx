@@ -64,11 +64,6 @@ export function NavRail({
 
   function handlePointerDown(e: React.PointerEvent) {
     if (e.pointerType === 'mouse' && e.button !== 0) return; // Only left click
-    
-    // Capture pointer so we keep getting move events even if mouse leaves the element
-    if (asideRef.current) {
-      asideRef.current.setPointerCapture(e.pointerId)
-    }
 
     setDragStartX(e.clientX)
     setDragCurrentX(e.clientX)
@@ -79,6 +74,11 @@ export function NavRail({
       const currentX = e.clientX
       setDragCurrentX(currentX)
       const diffX = currentX - dragStartX
+
+      // Only capture pointer if the user has moved > 5px (prevents breaking simple clicks)
+      if (Math.abs(diffX) > 5 && asideRef.current && !asideRef.current.hasPointerCapture(e.pointerId)) {
+        asideRef.current.setPointerCapture(e.pointerId)
+      }
 
       // Provide visual feedback by dynamically adjusting --sidebar-width on the app-shell
       const appShell = document.querySelector('.app-shell') as HTMLElement | null
@@ -106,7 +106,7 @@ export function NavRail({
     setDragStartX(null)
     setDragCurrentX(null)
     
-    if (asideRef.current) {
+    if (asideRef.current && asideRef.current.hasPointerCapture(e.pointerId)) {
       asideRef.current.releasePointerCapture(e.pointerId)
     }
 
