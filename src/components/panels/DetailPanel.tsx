@@ -949,9 +949,9 @@ export function DetailPanel({
               </button>
             </div>
           </div>
-      , document.body) : null}
-
-      {isRestrictedModalOpen ? createPortal(
+        </div>,
+        document.body
+      ) : null}      {isRestrictedModalOpen ? createPortal(
         <div className={isRestrictedModalClosing ? 'modal-backdrop is-exiting' : 'modal-backdrop'} role="presentation" style={{ zIndex: 100 }}>
           <div className="group-modal" style={{ maxWidth: '440px', width: '100%' }}>
             <div className="group-modal-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 24px 16px', borderBottom: '1px solid var(--line)' }}>

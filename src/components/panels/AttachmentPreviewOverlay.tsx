@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react'
-import { X, Crop, RotateCw, Send, EyeOff, Play, Pause, Trash2 } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { X, Crop, RotateCw, Send, EyeOff, Play, Trash2 } from 'lucide-react'
 
 export type PendingAttachment = {
   id: string
