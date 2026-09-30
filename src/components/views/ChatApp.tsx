@@ -87,9 +87,10 @@ import { useOfflineQueue } from '../../hooks/chat/useOfflineQueue'
 import { useChatRealtime } from '../../hooks/chat/useChatRealtime'
 import { getQueuedMessagesForUser, removeQueuedMessage, upsertQueuedMessage, mergeQueuedMessages, mergeLatestMessages, type QueuedMessage, prependOlderMessages, getInitialSidebarState, getInitialInboxWidth, getInitialCompactLayoutState, MESSAGE_PAGE_LIMIT, CONVERSATION_FILTERS, SIDEBAR_STATE_KEY, INBOX_WIDTH_KEY } from '../../services/core/offlineQueue'
 const AdminPage = lazy(() => import('./AdminPage').then(m => ({ default: m.AdminPage })))
-import { CallOverlay } from '../media/CallOverlay'
+const CallOverlay = lazy(() => import('../media/CallOverlay').then(m => ({ default: m.CallOverlay })))
 import { ChatPanel } from '../panels/ChatPanel'
-import { ConfirmDialog, type ConfirmDialogState } from '../ui/ConfirmDialog'
+import type { ConfirmDialogState } from '../ui/ConfirmDialog'
+const ConfirmDialog = lazy(() => import('../ui/ConfirmDialog').then(m => ({ default: m.ConfirmDialog })))
 import { ContactsPanel, ContactProfile } from '../panels/ContactsPanel'
 import { DetailPanel } from '../panels/DetailPanel'
 import type { ConversationFilter } from '../panels/InboxPanel'
@@ -2861,12 +2862,14 @@ export function ChatApp({
 
   function renderCallOverlay() {
     return activeCall && currentUser ? (
-      <CallOverlay
-        call={activeCall}
-        currentUserId={currentUser.id}
-        onClear={() => setActiveCall(null)}
-        onError={(message) => pushToast(message)}
-      />
+      <Suspense fallback={null}>
+        <CallOverlay
+          call={activeCall}
+          currentUserId={currentUser.id}
+          onClear={() => setActiveCall(null)}
+          onError={(message) => pushToast(message)}
+        />
+      </Suspense>
     ) : null
   }
 

@@ -4,9 +4,7 @@ import type { EmojiClickData } from 'emoji-picker-react'
 
 import {
   ChevronDown,
-  ChevronUp,
   Download,
-  Filter,
   FileText,
   Info,
   Menu,
@@ -16,10 +14,7 @@ import {
   Pin,
   Play,
   Pause,
-  Search,
-  SendHorizontal,
   Video,
-  X,
 } from 'lucide-react'
 import type { Conversation, Message, MessageAttachment } from '../../types'
 import type { MessageSearchFilters, MessageSearchType } from '../../services/api/chatApi'
@@ -27,6 +22,11 @@ import { fetchGifs, type GifSearchResult } from '../../services/api/gifApi'
 import { AttachmentPreviewOverlay, type PendingAttachment } from './AttachmentPreviewOverlay'
 import { CreatePollModal } from './CreatePollModal'
 import { MessageInput } from './MessageInput'
+import { GalleryViewer } from './GalleryViewer'
+import { ForwardMessageModal } from './ForwardMessageModal'
+import { PinnedMessagesDrawer } from './PinnedMessagesDrawer'
+import { MessageSearchUi } from './MessageSearchUi'
+
 import { MessageItem } from './MessageItem'
 
 
@@ -1316,122 +1316,35 @@ export function ChatPanel({
           </button>
         </div>
 
-        <div className="message-search">
-          <label className="message-search-field">
-            <Search size={16} />
-            <input
-              aria-label="Tìm trong hội thoại đã nhắn"
-              onChange={(event) => setMessageSearch(event.target.value)}
-              placeholder="Tìm trong tin nhắn đã gửi"
-              type="search"
-              value={messageSearch}
-            />
-          </label>
-          <span className="message-search-filter-wrap">
-            <button
-              className={isSearchFilterOpen ? 'message-search-button is-active' : 'message-search-button'}
-              onClick={() => setIsSearchFilterOpen((current) => !current)}
-              title="Bo loc"
-              type="button"
-            >
-              <Filter size={16} />
-            </button>
-            {isSearchFilterOpen ? (
-              <span className="message-search-filter-popover">
-                <input
-                  aria-label="Từ ngày"
-                  className="message-search-date"
-                  onChange={(event) => setSearchDateFrom(event.target.value)}
-                  type="date"
-                  value={searchDateFrom}
-                />
-                <input
-                  aria-label="Đến ngày"
-                  className="message-search-date"
-                  onChange={(event) => setSearchDateTo(event.target.value)}
-                  type="date"
-                  value={searchDateTo}
-                />
-                <select
-                  aria-label="Người gửi"
-                  className="message-search-select"
-                  onChange={(event) => setSearchSenderId(event.target.value)}
-                  value={searchSenderId}
-                >
-                  <option value="">Mọi người</option>
-                  {members.map((member) => (
-                    <option key={member.id} value={String(member.userId)}>
-                      {member.nickname || member.fullName}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  aria-label="Loại tin"
-                  className="message-search-select"
-                  onChange={(event) => setSearchType(event.target.value as MessageSearchType)}
-                  value={searchType}
-                >
-                  <option value="all">Tất cả</option>
-                  <option value="text">Văn bản</option>
-                  <option value="image">Ảnh</option>
-                  <option value="audio">Âm thanh</option>
-                  <option value="attachment">Đính kèm</option>
-                </select>
-              </span>
-            ) : null}
-          </span>
-          <button
-            className="message-search-button"
-            disabled={!hasSearchFilters || isSearchingMessages}
-            onClick={() => runAdvancedSearch().catch(() => undefined)}
-            title="Tìm"
-            type="button"
-          >
-            <Search size={16} />
-          </button>
-          {hasSearchFilters ? (
-            <>
-              <span className="message-search-count">
-                {searchMatches.length
-                  ? `${activeSearchIndex + 1}/${searchMatches.length}`
-                  : '0 kết quả'}
-              </span>
-              <button
-                className="message-search-button"
-                disabled={searchMatches.length === 0 || isSearchingMessages}
-                onClick={() => moveSearchResult('previous').catch(() => undefined)}
-                title="Kết quả trước"
-                type="button"
-              >
-                <ChevronUp size={16} />
-              </button>
-              <button
-                className="message-search-button"
-                disabled={searchMatches.length === 0 || isSearchingMessages}
-                onClick={() => moveSearchResult('next').catch(() => undefined)}
-                title="Kết quả tiếp theo"
-                type="button"
-              >
-                <ChevronDown size={16} />
-              </button>
-              <button
-                className="message-search-button"
-                onClick={() => {
-                  setMessageSearch('')
-                  setSearchDateFrom('')
-                  setSearchDateTo('')
-                  setSearchSenderId('')
-                  setSearchType('all')
-                  setSearchResults([])
-                }}
-                title="Xóa tìm kiếm"
-                type="button"
-              >
-                <X size={16} />
-              </button>
-            </>
-          ) : null}
-        </div>
+        <MessageSearchUi
+          messageSearch={messageSearch}
+          setMessageSearch={setMessageSearch}
+          isSearchFilterOpen={isSearchFilterOpen}
+          setIsSearchFilterOpen={setIsSearchFilterOpen}
+          searchDateFrom={searchDateFrom}
+          setSearchDateFrom={setSearchDateFrom}
+          searchDateTo={searchDateTo}
+          setSearchDateTo={setSearchDateTo}
+          searchSenderId={searchSenderId}
+          setSearchSenderId={setSearchSenderId}
+          searchType={searchType}
+          setSearchType={setSearchType}
+          members={members as any}
+          hasSearchFilters={hasSearchFilters}
+          isSearchingMessages={isSearchingMessages}
+          runAdvancedSearch={runAdvancedSearch}
+          searchMatchesLength={searchMatches.length}
+          activeSearchIndex={activeSearchIndex}
+          moveSearchResult={moveSearchResult}
+          clearSearch={() => {
+            setMessageSearch('')
+            setSearchDateFrom('')
+            setSearchDateTo('')
+            setSearchSenderId('')
+            setSearchType('all')
+            setSearchResults([])
+          }}
+        />
 
         <div className="header-actions">
           <button
@@ -1651,145 +1564,32 @@ export function ChatPanel({
         onUploadAttachment={onUploadAttachment}
       />
 
-      {forwardingMessage ? (
-        <div className={isForwardDialogClosing ? 'forward-dialog-backdrop is-exiting' : 'forward-dialog-backdrop'} role="presentation">
-          <section aria-modal="true" className="forward-dialog" role="dialog">
-            <header>
-              <div>
-                <strong>Chuyển tiếp tin nhắn</strong>
-                <span>{getReplyText(forwardingMessage)}</span>
-              </div>
-              <button
-                onClick={closeForwardDialog}
-                title="Đóng"
-                type="button"
-              >
-                <X size={17} />
-              </button>
-            </header>
-            <label className="forward-search">
-              <Search size={16} />
-              <input
-                autoFocus
-                onChange={(event) => setForwardQuery(event.target.value)}
-                placeholder="Tìm hội thoại"
-                value={forwardQuery}
-              />
-            </label>
-            <div className="forward-targets">
-              {forwardTargets.map((conversation) => (
-                <button
-                  disabled={Boolean(busyMessageId)}
-                  key={conversation.id}
-                  onClick={() => handleForward(conversation.id)}
-                  type="button"
-                >
-                  <AvatarFallback name={conversation.name} src={conversation.avatar} />
-                  <span>
-                    <strong>{conversation.name}</strong>
-                    <small>{conversation.lastMessage}</small>
-                  </span>
-                  <SendHorizontal size={16} />
-                </button>
-              ))}
-              {forwardTargets.length === 0 ? (
-                <p>Không có hội thoại phù hợp!</p>
-              ) : null}
-            </div>
-          </section>
-        </div>
-      ) : null}
-      {galleryImage ? (
-        <div className="attachment-gallery-backdrop" role="presentation">
-          <section aria-modal="true" className="attachment-gallery" role="dialog">
-            <header>
-              <strong>{galleryImage.name}</strong>
-              <span>
-                {galleryImage.meta} · {galleryImage.mimeType}
-              </span>
-              <button onClick={() => setGalleryImage(null)} title="Dong" type="button">
-                <X size={18} />
-              </button>
-            </header>
-            <img alt={galleryImage.name} src={galleryImage.url} />
-            <footer>{renderDownloadLink(galleryImage)}</footer>
-          </section>
-        </div>
-      ) : null}
-      {isPinnedModalOpen ? (
-        <div className="forward-dialog-backdrop" role="presentation">
-          <section aria-modal="true" className="forward-dialog" role="dialog">
-            <header>
-              <div>
-                <strong>Danh sách tin nhắn đã ghim ({pinnedMessages.length})</strong>
-              </div>
-              <button
-                onClick={() => setIsPinnedModalOpen(false)}
-                title="Đóng"
-                type="button"
-              >
-                <X size={17} />
-              </button>
-            </header>
-            <label className="forward-search">
-              <Search size={16} />
-              <input
-                autoFocus
-                onChange={(event) => setPinnedSearchQuery(event.target.value)}
-                placeholder="Tìm tin nhắn đã ghim..."
-                value={pinnedSearchQuery}
-              />
-            </label>
-            <div className="forward-targets" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '16px' }}>
-              {pinnedMessages
-                .filter(msg => getReplyText(msg).toLowerCase().includes(pinnedSearchQuery.toLowerCase()) || getReplyAuthorLabel(msg).toLowerCase().includes(pinnedSearchQuery.toLowerCase()))
-                .map(message => (
-                <div key={message.id} style={{ padding: '12px', background: 'var(--panel-secondary, #f0f2f5)', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <strong style={{ fontSize: '13px' }}>{getReplyAuthorLabel(message)}</strong>
-                    <button 
-                      onClick={() => handleTogglePin(message.id)} 
-                      style={{ background: 'none', border: 'none', color: 'var(--danger, #ef4444)', cursor: 'pointer', fontSize: '12px' }}
-                    >
-                      Bỏ ghim
-                    </button>
-                  </div>
-                  {message.pinnedBy && message.pinnedAt && (
-                    <small style={{ color: 'var(--subtle, #65676B)', fontSize: '11px' }}>
-                      Ghim bởi {message.pinnedBy} lúc {new Date(message.pinnedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                    </small>
-                  )}
-                  <div style={{ fontSize: '14px', margin: '4px 0', wordBreak: 'break-word', color: 'var(--text-primary)' }}>
-                    {getReplyText(message)}
-                  </div>
-                  <button 
-                    onClick={() => {
-                      setIsPinnedModalOpen(false)
-                      onJumpToMessage(message.id)
-                    }} 
-                    style={{ 
-                      alignSelf: 'flex-start',
-                      background: 'none', 
-                      border: '1px solid var(--border-color, #ccd0d5)', 
-                      borderRadius: '4px', 
-                      padding: '4px 8px', 
-                      fontSize: '12px', 
-                      cursor: 'pointer',
-                      marginTop: '4px',
-                      color: 'var(--text-primary)'
-                    }}
-                  >
-                    Xem trong đoạn chat
-                  </button>
-                </div>
-              ))}
-              {pinnedMessages.length === 0 && (
-                <p style={{ textAlign: 'center', color: 'var(--subtle)', margin: '20px 0' }}>Không có tin nhắn nào được ghim.</p>
-              )}
-            </div>
-          </section>
-        </div>
-      ) : null}
+      <ForwardMessageModal
+        forwardingMessage={forwardingMessage}
+        isForwardDialogClosing={isForwardDialogClosing}
+        closeForwardDialog={closeForwardDialog}
+        getReplyText={getReplyText}
+        forwardQuery={forwardQuery}
+        setForwardQuery={setForwardQuery}
+        forwardTargets={forwardTargets}
+        handleForward={handleForward}
+      />
+      <GalleryViewer
+        galleryImage={galleryImage}
+        setGalleryImage={setGalleryImage}
+        renderDownloadLink={renderDownloadLink}
+      />
+      <PinnedMessagesDrawer
+        isPinnedModalOpen={isPinnedModalOpen}
+        setIsPinnedModalOpen={setIsPinnedModalOpen}
+        pinnedMessages={pinnedMessages}
+        pinnedSearchQuery={pinnedSearchQuery}
+        setPinnedSearchQuery={setPinnedSearchQuery}
+        getReplyText={getReplyText}
+        getReplyAuthorLabel={getReplyAuthorLabel}
+        handleTogglePin={handleTogglePin}
+        onJumpToMessage={onJumpToMessage}
+      />
       <ConfirmDialog
         dialog={confirmDialog}
         isWorking={isConfirming}
