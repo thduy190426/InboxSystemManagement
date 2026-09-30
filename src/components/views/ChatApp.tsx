@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { FormEvent } from 'react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
 import type { AuthUser } from '../../services/api/authApi'
 import { touchPresence } from '../../services/api/authApi'
 import { readAppRouteFromLocation, toAppPath } from '../../services/core/appRoutes'
@@ -63,14 +63,14 @@ import {
   unblockContact,
   updateContactNickname,
 } from '../../services/api/contactApi'
-import { startRealtimeCall, type CallSignalPayload } from '../../services/realtime/callRealtime'
+import { startRealtimeCall } from '../../services/realtime/callRealtime'
 import {
   fetchNotifications,
   markAllNotificationsRead,
   markConversationNotificationsRead,
   markNotificationRead,
 } from '../../services/api/notificationApi'
-import { disconnectRealtimeSocket, getRealtimeSocket } from '../../services/realtime/realtime'
+import { disconnectRealtimeSocket } from '../../services/realtime/realtime'
 import type { GifSearchResult } from '../../services/api/gifApi'
 import type {
   AppNotification,
@@ -84,8 +84,9 @@ import type {
   Message,
 } from '../../types'
 import { useOfflineQueue } from '../../hooks/chat/useOfflineQueue'
+import { useChatRealtime } from '../../hooks/chat/useChatRealtime'
 import { getQueuedMessagesForUser, removeQueuedMessage, upsertQueuedMessage, mergeQueuedMessages, mergeLatestMessages, type QueuedMessage, prependOlderMessages, getInitialSidebarState, getInitialInboxWidth, getInitialCompactLayoutState, MESSAGE_PAGE_LIMIT, CONVERSATION_FILTERS, SIDEBAR_STATE_KEY, INBOX_WIDTH_KEY } from '../../services/core/offlineQueue'
-import { AdminPage } from './AdminPage'
+const AdminPage = lazy(() => import('./AdminPage').then(m => ({ default: m.AdminPage })))
 import { CallOverlay } from '../media/CallOverlay'
 import { ChatPanel } from '../panels/ChatPanel'
 import { ConfirmDialog, type ConfirmDialogState } from '../ui/ConfirmDialog'
@@ -95,8 +96,8 @@ import type { ConversationFilter } from '../panels/InboxPanel'
 import { InboxPanel } from '../panels/InboxPanel'
 import { NavRail } from '../layout/NavRail'
 import { NotificationsPanel } from '../panels/NotificationsPanel'
-import { ProfilePage } from './ProfilePage'
-import { SettingsPage } from './SettingsPage'
+const ProfilePage = lazy(() => import('./ProfilePage').then(m => ({ default: m.ProfilePage })))
+const SettingsPage = lazy(() => import('./SettingsPage').then(m => ({ default: m.SettingsPage })))
 
 type ChatAppProps = {
   currentUser: AuthUser | null
@@ -549,259 +550,29 @@ export function ChatApp({
 
 
 
-  useEffect(() => {
-    const socket = getRealtimeSocket()
-
-    if (!socket) {
-      return
-    }
-
-    const realtimeSocket = socket
-
-    async function refreshActiveConversation(conversationId: string) {
-      const [nextConversations, nextMessagePage] = await Promise.all([
-        fetchConversations(),
-        fetchMessagesPage(conversationId, { limit: MESSAGE_PAGE_LIMIT }),
-      ])
-
-      setConversations(nextConversations)
-      notifyConversationUpdate(conversationId, nextConversations)
-      setMessagesByConversation((current) => ({
-        ...current,
-        [conversationId]: mergeLatestMessages(current[conversationId] ?? [], nextMessagePage.messages),
-      }))
-      setMessagePaginationByConversation((current) => ({
-        ...current,
-        [conversationId]: {
-          hasMore: current[conversationId]?.hasMore ?? nextMessagePage.hasMore,
-          isLoadingOlder: false,
-          nextCursor: current[conversationId]?.nextCursor ?? nextMessagePage.nextCursor,
-        },
-      }))
-
-      if (nextMessagePage.messages.some((message) => message.author === 'them')) {
-        syncDeliveredReceipts(conversationId).catch(() => undefined)
-      }
-
-      const nextActive = nextConversations.find((conversation) => conversation.id === conversationId)
-
-      if (nextActive?.type === 'group') {
-        const members = await fetchConversationMembers(conversationId)
-
-        setMembersByConversation((current) => ({
-          ...current,
-          [conversationId]: members,
-        }))
-      }
-    }
-
-    function removeConversationLocally(conversationId: string) {
-      setConversations((current: Conversation[] = []) => {
-        const nextConversations = current.filter((conversation) => conversation.id !== conversationId)
-        const nextConversationId =
-          activeIdRef.current === conversationId ? nextConversations[0]?.id || '' : activeIdRef.current
-
-        if (activeIdRef.current === conversationId) {
-          setActiveId(nextConversationId)
-          setIsDetailOpen(false)
-          window.history.replaceState(
-            null,
-            '',
-            nextConversationId
-              ? toAppPath({ view: 'chat', conversationId: nextConversationId })
-              : toAppPath({ view: 'chat' }),
-          )
-        }
-
-        return nextConversations
-      })
-      setMessagesByConversation((current) => {
-        const next = { ...current }
-        delete next[conversationId]
-        return next
-      })
-      setMessagePaginationByConversation((current) => {
-        const next = { ...current }
-        delete next[conversationId]
-        return next
-      })
-      setMembersByConversation((current) => {
-        const next = { ...current }
-        delete next[conversationId]
-        return next
-      })
-    }
-
-    function handleConversationChanged(payload: {
-      actorUserId?: string
-      conversationId?: string
-      eventType?: string
-    }) {
-      realtimeSocket.emit('realtime:refresh-conversations')
-      const conversationId = payload.conversationId || ''
-      const isFromCurrentUser =
-        payload.actorUserId && payload.actorUserId === currentUserIdRef.current
-
-      if (
-        conversationId &&
-        !isFromCurrentUser &&
-        (payload.eventType === 'message:created' || payload.eventType === 'message:forwarded')
-      ) {
-        syncDeliveredReceipts(conversationId).catch(() => undefined)
-      }
-
-      if (
-        conversationId === activeIdRef.current &&
-        (payload.eventType === 'message:created' || payload.eventType === 'message:forwarded')
-      ) {
-        setShouldAutoScrollToLatest(true)
-      }
-
-      if (conversationId && payload.eventType === 'group:disbanded') {
-        if (locallyDisbandedConversationIdsRef.current.has(conversationId)) {
-          locallyDisbandedConversationIdsRef.current.delete(conversationId)
-          removeConversationLocally(conversationId)
-          fetchConversations().then(setConversations).catch(() => undefined)
-          return
-        }
-
-        const disbandedConversation = conversationsRef.current.find(
-          (conversation) => conversation.id === conversationId,
-        )
-
-        pushToast(
-          disbandedConversation
-            ? `Nhóm "${disbandedConversation.name}" đã bị giải tán!`
-            : 'Nhóm đã bị giải tán!',
-        )
-        removeConversationLocally(conversationId)
-        fetchConversations().then(setConversations).catch(() => undefined)
-        return
-      }
-
-      if (conversationId && conversationId === activeIdRef.current) {
-        refreshActiveConversation(conversationId).catch(() => undefined)
-        return
-      }
-
-      fetchConversations()
-        .then((nextConversations) => {
-          setConversations(nextConversations)
-          notifyConversationUpdate(conversationId, nextConversations)
-        })
-        .catch(() => undefined)
-    }
-
-    function handleContactsChanged() {
-      realtimeSocket.emit('realtime:refresh-conversations')
-      Promise.all([fetchFriends(), fetchIncomingRequests(), fetchConversations()])
-        .then(([nextFriends, nextFriendRequests, nextConversations]) => {
-          setFriends(nextFriends)
-          setFriendRequests(nextFriendRequests)
-          setConversations(nextConversations)
-        })
-        .catch(() => undefined)
-    }
-
-    function handleNotificationsChanged() {
-      fetchNotifications()
-        .then((nextNotifications) => {
-          setNotifications(nextNotifications)
-          notifyAppNotifications(nextNotifications)
-        })
-        .catch(() => undefined)
-    }
-
-    function toCallSession(payload: Omit<CallSession, 'direction'>, direction: CallSession['direction']) {
-      return {
-        ...payload,
-        direction,
-      }
-    }
-
-    function handleIncomingCall(payload: Omit<CallSession, 'direction'>) {
-      if (payload.caller.id === currentUserIdRef.current) {
-        return
-      }
-
-      setActiveCall(toCallSession(payload, 'incoming'))
-      showDedupedBrowserNotification(`call:${payload.callId}`, `Cuộc gọi ${payload.type === 'video' ? 'video' : 'audio'} đến`, {
-        body: payload.caller.fullName,
-        url: toAppPath({ view: 'chat', conversationId: payload.conversationId }),
-      })
-    }
-
-    function handleRingingCall(payload: Omit<CallSession, 'direction'>) {
-      setActiveCall(toCallSession(payload, 'outgoing'))
-    }
-
-    function handleAcceptedCall(payload: Omit<CallSession, 'direction'>) {
-      setActiveCall((current) =>
-        current?.callId === payload.callId
-          ? {
-            ...current,
-            ...payload,
-            status: 'ongoing',
-          }
-          : current,
-      )
-    }
-
-    function handleFinishedCall(payload: Omit<CallSession, 'direction'>) {
-      setActiveCall((current) =>
-        current?.callId === payload.callId
-          ? {
-            ...current,
-            ...payload,
-          }
-          : current,
-      )
-      fetchNotifications().then(setNotifications).catch(() => undefined)
-      loadCallHistory(payload.conversationId).catch(() => undefined)
-    }
-
-    function handleCallSignal(payload: Partial<CallSignalPayload>) {
-      if (!payload.callId || !payload.data) {
-        return
-      }
-
-      window.dispatchEvent(
-        new CustomEvent(`call-signal:${payload.callId}`, {
-          detail: payload,
-        }),
-      )
-    }
-
-    realtimeSocket.on('conversation:changed', handleConversationChanged)
-    realtimeSocket.on('contacts:changed', handleContactsChanged)
-    realtimeSocket.on('presence:changed', handleContactsChanged)
-    realtimeSocket.on('notifications:changed', handleNotificationsChanged)
-    realtimeSocket.on('call:incoming', handleIncomingCall)
-    realtimeSocket.on('call:ringing', handleRingingCall)
-    realtimeSocket.on('call:accepted', handleAcceptedCall)
-    realtimeSocket.on('call:declined', handleFinishedCall)
-    realtimeSocket.on('call:missed', handleFinishedCall)
-    realtimeSocket.on('call:cancelled', handleFinishedCall)
-    realtimeSocket.on('call:completed', handleFinishedCall)
-    realtimeSocket.on('call:left', handleAcceptedCall)
-    realtimeSocket.on('call:signal', handleCallSignal)
-
-    return () => {
-      realtimeSocket.off('conversation:changed', handleConversationChanged)
-      realtimeSocket.off('contacts:changed', handleContactsChanged)
-      realtimeSocket.off('presence:changed', handleContactsChanged)
-      realtimeSocket.off('notifications:changed', handleNotificationsChanged)
-      realtimeSocket.off('call:incoming', handleIncomingCall)
-      realtimeSocket.off('call:ringing', handleRingingCall)
-      realtimeSocket.off('call:accepted', handleAcceptedCall)
-      realtimeSocket.off('call:declined', handleFinishedCall)
-      realtimeSocket.off('call:missed', handleFinishedCall)
-      realtimeSocket.off('call:cancelled', handleFinishedCall)
-      realtimeSocket.off('call:completed', handleFinishedCall)
-      realtimeSocket.off('call:left', handleAcceptedCall)
-      realtimeSocket.off('call:signal', handleCallSignal)
-    }
-  }, [])
+  useChatRealtime({
+    activeIdRef,
+    currentUserIdRef,
+    conversationsRef,
+    locallyDisbandedConversationIdsRef,
+    setConversations,
+    setMessagesByConversation,
+    setMessagePaginationByConversation,
+    setMembersByConversation,
+    setActiveId,
+    setIsDetailOpen,
+    setShouldAutoScrollToLatest,
+    pushToast,
+    setFriends,
+    setFriendRequests,
+    setNotifications,
+    setActiveCall,
+    loadCallHistory,
+    syncDeliveredReceipts,
+    notifyConversationUpdate,
+    notifyAppNotifications,
+    showDedupedBrowserNotification,
+  })
 
   useEffect(
     () => () => {
@@ -3156,11 +2927,13 @@ export function ChatApp({
     return (
       <main className={`${shellClassName} profile-shell`} style={shellStyle}>
         {renderNavRail()}
-        <ProfilePage
-          currentUser={currentUser}
-          onUserChange={onUserChange}
-          pushToast={pushToast}
-        />
+        <Suspense fallback={<div className="skeleton-loader" style={{ flex: 1, margin: '16px', borderRadius: '16px' }} />}>
+          <ProfilePage
+            currentUser={currentUser}
+            onUserChange={onUserChange}
+            pushToast={pushToast}
+          />
+        </Suspense>
         {renderCallOverlay()}
         {renderConfirmDialog()}
         {renderToasts()}
@@ -3172,13 +2945,15 @@ export function ChatApp({
     return (
       <main className={`${shellClassName} profile-shell settings-shell`} style={shellStyle}>
         {renderNavRail()}
-        <SettingsPage
-          currentUser={currentUser}
-          onAccountDeleted={onAccountDeleted}
-          onLogout={handleLogout}
-          onUserChange={onUserChange}
-          pushToast={pushToast}
-        />
+        <Suspense fallback={<div className="skeleton-loader" style={{ flex: 1, margin: '16px', borderRadius: '16px' }} />}>
+          <SettingsPage
+            currentUser={currentUser}
+            onAccountDeleted={onAccountDeleted}
+            onLogout={handleLogout}
+            onUserChange={onUserChange}
+            pushToast={pushToast}
+          />
+        </Suspense>
         {renderCallOverlay()}
         {renderConfirmDialog()}
         {renderToasts()}
@@ -3190,10 +2965,12 @@ export function ChatApp({
     return (
       <main className={`${shellClassName} admin-shell`} style={shellStyle}>
         {renderNavRail()}
-        <AdminPage
-          currentUser={currentUser}
-          pushToast={pushToast}
-        />
+        <Suspense fallback={<div className="skeleton-loader" style={{ flex: 1, margin: '16px', borderRadius: '16px' }} />}>
+          <AdminPage
+            currentUser={currentUser}
+            pushToast={pushToast}
+          />
+        </Suspense>
         {renderCallOverlay()}
         {renderConfirmDialog()}
         {renderToasts()}

@@ -4487,6 +4487,10 @@ html.dark .scroll-to-latest-button:focus-visible {
   align-items: center;
   gap: 8px;
   max-width: 780px;
+  
+  /* Performance Optimization */
+  content-visibility: auto;
+  contain-intrinsic-size: 0 60px;
 }
 
 .message-row.outgoing {
