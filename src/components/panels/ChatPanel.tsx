@@ -314,10 +314,17 @@ export function ChatPanel({
       message.author === sibling.author &&
       (message.author === 'me' || (message.senderName || '') === (sibling.senderName || ''))
 
-    return (
-      sameAuthor &&
-      isSameLocalDay(parseMessageDate(message), parseMessageDate(sibling))
-    )
+    if (!sameAuthor) return false
+
+    const date1 = parseMessageDate(message)
+    const date2 = parseMessageDate(sibling)
+
+    if (!date1 || !date2) return false
+
+    const timeDiffMs = Math.abs(date1.getTime() - date2.getTime())
+    const isWithinTimeWindow = timeDiffMs <= 5 * 60 * 1000 // 5 minutes
+
+    return isSameLocalDay(date1, date2) && isWithinTimeWindow
   }
 
   function getDateDividerLabel(message: Message, previousMessage?: Message) {
