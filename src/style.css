@@ -4487,17 +4487,13 @@ html.dark .scroll-to-latest-button:focus-visible {
   align-items: center;
   gap: 8px;
   max-width: 780px;
-  
-  /* Performance Optimization */
-  content-visibility: auto;
-  contain-intrinsic-size: 0 60px;
-}
+  }
 
 .message-row.outgoing {
   margin-left: auto;
   align-self: flex-end;
   flex-direction: row-reverse;
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 .system-message-row {
@@ -5080,6 +5076,12 @@ html.dark .chat-pinned-more:hover {
   left: calc(100% + 8px);
 }
 
+.reaction-picker.open-upwards {
+  top: auto;
+  bottom: 0;
+  transform: none;
+}
+
 .outgoing .reaction-picker {
   right: auto;
   left: calc(100% + 8px);
@@ -5115,6 +5117,11 @@ html.dark .chat-pinned-more:hover {
   border-radius: 12px;
   background: var(--surface);
   box-shadow: 0 16px 32px rgba(22, 35, 43, 0.2);
+}
+
+.message-action-menu.open-upwards {
+  top: auto;
+  bottom: calc(100% + 16px);
 }
 
 .outgoing .message-action-menu {

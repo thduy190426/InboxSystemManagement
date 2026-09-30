@@ -41,6 +41,7 @@ export function MessageItem(props: MessageItemProps) {
             const isGroupedWithNext = isSameMessageGroup(message, nextMessage)
             const shouldShowAvatar = message.author === 'them' && !isGroupedWithNext
             const shouldShowSenderName = message.author === 'them' && !isGroupedWithPrevious
+            const isNearBottom = index >= displayMessages.length - 4;
 
             const isSystem = message.author === 'system'
             let systemGroupCount = 1
@@ -273,11 +274,11 @@ export function MessageItem(props: MessageItemProps) {
                           </button>
                           {openReactionPickerId === message.id ? (
                             <span
-                              className={
-                                message.author === 'me'
-                                  ? 'reaction-picker'
-                                  : 'reaction-picker reaction-picker-incoming'
-                              }
+                              className={[
+                                'reaction-picker',
+                                message.author !== 'me' ? 'reaction-picker-incoming' : '',
+                                isNearBottom ? 'open-upwards' : ''
+                              ].filter(Boolean).join(' ')}
                             >
                               <Suspense fallback={<span className="reaction-picker-loading">...</span>}>
                                 <EmojiPicker
@@ -311,7 +312,7 @@ export function MessageItem(props: MessageItemProps) {
                             <MoreHorizontal size={18} />
                           </button>
                           {openActionMenuId === message.id ? (
-                            <span className="message-action-menu">
+                            <span className={`message-action-menu ${isNearBottom ? 'open-upwards' : ''}`}>
                               {message.attachments && message.attachments.some(a => a.type === 'image') && (
                                 <button
                                   disabled={Boolean(busyMessageId)}
