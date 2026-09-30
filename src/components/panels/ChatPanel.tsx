@@ -234,15 +234,10 @@ export function ChatPanel({
   const [isSearchFilterOpen, setIsSearchFilterOpen] = useState(false)
   const [activeSearchIndex, setActiveSearchIndex] = useState(0)
   const [optimisticHiddenMessageIds, setOptimisticHiddenMessageIds] = useState<Set<string>>(new Set())
-  const [recordingKind, setRecordingKind] = useState<'audio' | 'video' | null>(null)
-  const [recordingDuration, setRecordingDuration] = useState(0)
-  const [recordingError, setRecordingError] = useState('')
   const [isSharingLocation, setIsSharingLocation] = useState(false)
   const [locationError, setLocationError] = useState('')
-  const [recordedMediaUrl, setRecordedMediaUrl] = useState('')
-  const [recordedMediaFile, setRecordedMediaFile] = useState<File | null>(null)
-  const [recordedMediaKind, setRecordedMediaKind] = useState<'audio' | 'video' | null>(null)
   const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([])
+  const [attachmentError, setAttachmentError] = useState('')
   const [galleryImage, setGalleryImage] = useState<MessageAttachment | null>(null)
   const [isPollModalOpen, setIsPollModalOpen] = useState(false)
   const [isAtLatestMessage, setIsAtLatestMessage] = useState(true)
@@ -251,10 +246,6 @@ export function ChatPanel({
   const threadRef = useRef<HTMLDivElement | null>(null)
   const threadContentRef = useRef<HTMLDivElement | null>(null)
   const threadEndRef = useRef<HTMLDivElement | null>(null)
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const recordingChunksRef = useRef<BlobPart[]>([])
-  const recordingStreamRef = useRef<MediaStream | null>(null)
-  const recordingTimerRef = useRef<number | null>(null)
   const mentionQuery = useMemo(() => {
     const match = draft.match(/(?:^|\s)@([\p{L}\p{N}\s._-]{0,40})$/u)
 
@@ -449,20 +440,7 @@ export function ChatPanel({
     }
   }, [gifQuery, isGifPickerOpen])
 
-  useEffect(
-    () => () => {
-      if (recordingTimerRef.current) {
-        window.clearInterval(recordingTimerRef.current)
-      }
 
-      recordingStreamRef.current?.getTracks().forEach((track) => track.stop())
-
-      if (recordedMediaUrl) {
-        URL.revokeObjectURL(recordedMediaUrl)
-      }
-    },
-    [recordedMediaUrl],
-  )
 
   function handleDraftChange(event: ChangeEvent<HTMLInputElement>) {
     onDraftChange(event.target.value)
@@ -498,15 +476,15 @@ export function ChatPanel({
     }
 
     if (validFiles.length === 0) {
-      setRecordingError('Chỉ hỗ trợ gửi tệp hình ảnh tối đa 2MB!')
+      setAttachmentError('Chỉ hỗ trợ gửi tệp hình ảnh tối đa 2MB!')
       event.target.value = ''
       return
     }
 
     if (hasInvalidFiles) {
-      setRecordingError('Một số tệp bị loại bỏ do định dạng không hỗ trợ hoặc vượt quá 2MB!')
+      setAttachmentError('Một số tệp bị loại bỏ do định dạng không hỗ trợ hoặc vượt quá 2MB!')
     } else {
-      setRecordingError('')
+      setAttachmentError('')
     }
 
     const newAttachments = validFiles.map(file => {
@@ -595,110 +573,11 @@ export function ChatPanel({
     return ALLOWED_ATTACHMENT_TYPE_PREFIXES.some((typePrefix) => file.type.startsWith(typePrefix))
   }
 
-  function getSupportedAudioMimeType() {
-    const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus']
 
-    return candidates.find((candidate) => MediaRecorder.isTypeSupported(candidate)) || ''
-  }
 
-  function getSupportedVideoMimeType() {
-    const candidates = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4']
 
-    return candidates.find((candidate) => MediaRecorder.isTypeSupported(candidate)) || ''
-  }
 
-  function getMediaFileExtension(type: string, kind: 'audio' | 'video') {
-    if (type.includes('mp4')) {
-      return kind === 'audio' ? 'm4a' : 'mp4'
-    }
 
-    if (type.includes('ogg')) {
-      return 'ogg'
-    }
-
-    return 'webm'
-  }
-
-  function clearRecordedMedia() {
-    if (recordedMediaUrl) {
-      URL.revokeObjectURL(recordedMediaUrl)
-    }
-
-    setRecordedMediaUrl('')
-    setRecordedMediaFile(null)
-    setRecordedMediaKind(null)
-    setRecordingDuration(0)
-  }
-
-  async function startMediaRecording(kind: 'audio' | 'video') {
-    if (!navigator.mediaDevices?.getUserMedia || isBlocked) {
-      setRecordingError('Trình duyệt không hỗ trợ ghi âm!')
-      return
-    }
-
-    try {
-      clearRecordedMedia()
-      setRecordingError('')
-
-      const stream = await navigator.mediaDevices.getUserMedia(
-        kind === 'audio' ? { audio: true } : { audio: true, video: true },
-      )
-      const mimeType = kind === 'audio' ? getSupportedAudioMimeType() : getSupportedVideoMimeType()
-      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
-
-      recordingChunksRef.current = []
-      recordingStreamRef.current = stream
-      mediaRecorderRef.current = recorder
-
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          recordingChunksRef.current.push(event.data)
-        }
-      }
-
-      recorder.onstop = () => {
-        const type = recorder.mimeType || mimeType || (kind === 'audio' ? 'audio/webm' : 'video/webm')
-        const blob = new Blob(recordingChunksRef.current, { type })
-        const extension = getMediaFileExtension(type, kind)
-        const file = new File([blob], `${kind}-message-${Date.now()}.${extension}`, { type })
-        const url = URL.createObjectURL(blob)
-
-        setRecordedMediaFile(file)
-        setRecordedMediaUrl(url)
-        setRecordedMediaKind(kind)
-        recordingChunksRef.current = []
-        recordingStreamRef.current?.getTracks().forEach((track) => track.stop())
-        recordingStreamRef.current = null
-        mediaRecorderRef.current = null
-      }
-
-      recorder.start()
-      setRecordingKind(kind)
-      setRecordingDuration(0)
-      recordingTimerRef.current = window.setInterval(() => {
-        setRecordingDuration((current) => current + 1)
-      }, 1000)
-    } catch {
-      setRecordingError('Không thể truy cập micro!')
-    }
-  }
-
-  function stopMediaRecording() {
-    if (recordingTimerRef.current) {
-      window.clearInterval(recordingTimerRef.current)
-      recordingTimerRef.current = null
-    }
-
-    setRecordingKind(null)
-
-    if (mediaRecorderRef.current?.state === 'recording') {
-      mediaRecorderRef.current.stop()
-      return
-    }
-
-    recordingStreamRef.current?.getTracks().forEach((track) => track.stop())
-    recordingStreamRef.current = null
-  }
 
   const handleShareLocation = () => {
     if (!navigator.geolocation) {
@@ -769,46 +648,8 @@ export function ChatPanel({
     )
   }
 
-  function cancelMediaRecording() {
-    if (recordingTimerRef.current) {
-      window.clearInterval(recordingTimerRef.current)
-      recordingTimerRef.current = null
-    }
 
-    if (mediaRecorderRef.current?.state === 'recording') {
-      mediaRecorderRef.current.onstop = null
-      mediaRecorderRef.current.stop()
-    }
 
-    recordingStreamRef.current?.getTracks().forEach((track) => track.stop())
-    recordingStreamRef.current = null
-    mediaRecorderRef.current = null
-    recordingChunksRef.current = []
-    setRecordingKind(null)
-    clearRecordedMedia()
-  }
-
-  async function sendRecordedMedia() {
-    if (!recordedMediaFile) {
-      return
-    }
-
-    if (recordedMediaFile.size === 0 || recordingDuration === 0) {
-      setRecordingError('Không thể gửi ghi âm có thời lượng 0s hoặc 0MB!')
-      clearRecordedMedia()
-      return
-    }
-
-    await onUploadAttachment(recordedMediaFile)
-    clearRecordedMedia()
-  }
-
-  function formatRecordingDuration(seconds: number) {
-    const minutes = Math.floor(seconds / 60)
-    const remainingSeconds = seconds % 60
-
-    return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`
-  }
 
   function startEditing(message: Message) {
     setEditingMessageId(message.id)
@@ -1778,21 +1619,13 @@ export function ChatPanel({
       )}
 
       <MessageInput
+        attachmentError={attachmentError}
         onSubmit={onSubmit}
         replyingTo={replyingTo}
         getReplyAuthorLabel={getReplyAuthorLabel}
         getReplyText={getReplyText}
         onCancelReply={onCancelReply}
-        recordedMediaUrl={recordedMediaUrl}
-        recordedMediaKind={recordedMediaKind}
-        clearRecordedMedia={clearRecordedMedia}
         isUploadingAttachment={isUploadingAttachment}
-        sendRecordedMedia={sendRecordedMedia}
-        recordingKind={recordingKind}
-        formatRecordingDuration={formatRecordingDuration}
-        recordingDuration={recordingDuration}
-        cancelMediaRecording={cancelMediaRecording}
-        recordingError={recordingError}
         locationError={locationError}
         isBlocked={isBlocked}
         mentionSuggestions={mentionSuggestions}
@@ -1812,11 +1645,10 @@ export function ChatPanel({
         isLoadingGifs={isLoadingGifs}
         gifResults={gifResults}
         handleSendGif={handleSendGif}
-        stopMediaRecording={stopMediaRecording}
         isSharingLocation={isSharingLocation}
         handleShareLocation={handleShareLocation}
-        startMediaRecording={startMediaRecording}
         setIsPollModalOpen={setIsPollModalOpen}
+        onUploadAttachment={onUploadAttachment}
       />
 
       {forwardingMessage ? (

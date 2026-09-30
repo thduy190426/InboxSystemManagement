@@ -4,6 +4,7 @@ import { Reply, X, Mic, Video, Send, Loader2, MapPin, PieChart, Image, Smile, Se
 import type { Conversation, Message } from '../../types'
 import type { GifSearchResult } from '../../services/api/gifApi'
 import type { EmojiClickData, EmojiStyle, Theme } from 'emoji-picker-react'
+import { useMediaRecording } from '../../hooks/chat/useMediaRecording'
 
 const EmojiPicker = lazy(() => import('emoji-picker-react'))
 
@@ -13,16 +14,7 @@ export type MessageInputProps = {
   getReplyAuthorLabel: (m: Message) => string
   getReplyText: (m: Message) => string
   onCancelReply: () => void
-  recordedMediaUrl: string
-  recordedMediaKind: 'audio' | 'video' | null
-  clearRecordedMedia: () => void
   isUploadingAttachment: boolean
-  sendRecordedMedia: () => void
-  recordingKind: 'audio' | 'video' | null
-  formatRecordingDuration: (d: number) => string
-  recordingDuration: number
-  cancelMediaRecording: () => void
-  recordingError: string
   locationError: string
   isBlocked: boolean
   mentionSuggestions: {
@@ -49,23 +41,47 @@ export type MessageInputProps = {
   isLoadingGifs: boolean
   gifResults: GifSearchResult[]
   handleSendGif: (gif: GifSearchResult) => void
-  stopMediaRecording: () => void
   isSharingLocation: boolean
   handleShareLocation: () => void
-  startMediaRecording: (type: 'audio' | 'video') => void
   setIsPollModalOpen: React.Dispatch<React.SetStateAction<boolean>>
+  onUploadAttachment: (file: File) => Promise<void> | void
+  attachmentError?: string
 }
 
 export function MessageInput({
   onSubmit, replyingTo, getReplyAuthorLabel, getReplyText, onCancelReply,
-  recordedMediaUrl, recordedMediaKind, clearRecordedMedia, isUploadingAttachment,
-  sendRecordedMedia, recordingKind, formatRecordingDuration, recordingDuration,
-  cancelMediaRecording, recordingError, locationError, isBlocked, mentionSuggestions,
+  isUploadingAttachment, locationError, attachmentError, isBlocked, mentionSuggestions,
   insertMention, handleAttachmentChange, handleDraftChange, activeConversation, draft,
   isComposerEmojiOpen, setIsGifPickerOpen, setIsComposerEmojiOpen, handleSendComposerEmoji,
   isGifPickerOpen, gifQuery, setGifQuery, gifError, isLoadingGifs, gifResults, handleSendGif,
-  stopMediaRecording, isSharingLocation, handleShareLocation, startMediaRecording, setIsPollModalOpen
+  isSharingLocation, handleShareLocation, setIsPollModalOpen, onUploadAttachment
 }: MessageInputProps) {
+  const {
+    recordingKind,
+    recordingDuration,
+    recordingError,
+    recordedMediaUrl,
+    recordedMediaFile,
+    recordedMediaKind,
+    startMediaRecording,
+    stopMediaRecording,
+    cancelMediaRecording,
+    clearRecordedMedia,
+    formatRecordingDuration,
+    setRecordingError
+  } = useMediaRecording()
+
+  async function sendRecordedMedia() {
+    if (!recordedMediaFile) return
+    if (recordedMediaFile.size === 0 || recordingDuration === 0) {
+      setRecordingError('Không thể gửi ghi âm có thời lượng 0s hoặc 0MB!')
+      clearRecordedMedia()
+      return
+    }
+    await onUploadAttachment(recordedMediaFile)
+    clearRecordedMedia()
+  }
+
   return (
       <form className="composer" onSubmit={onSubmit}>
         {replyingTo ? (
@@ -114,6 +130,8 @@ export function MessageInput({
           <span className="composer-error">{recordingError}</span>
         ) : locationError ? (
           <span className="composer-error">{locationError}</span>
+        ) : attachmentError ? (
+          <span className="composer-error">{attachmentError}</span>
         ) : isBlocked ? (
           <span className="composer-error">Đã chặn người dùng!</span>
         ) : null}
