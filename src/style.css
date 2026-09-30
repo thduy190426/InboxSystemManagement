@@ -12311,10 +12311,19 @@ html.dark, [data-theme='dark'] {
   transform-origin: left bottom;
 }
 
+.message-row.is-grouped-with-previous .message-bubble {
+  border-top-left-radius: 4px !important;
+}
+
 .outgoing .message-bubble {
   border-bottom-left-radius: 20px !important;
   border-bottom-right-radius: 4px !important;
   transform-origin: right bottom;
+}
+
+.message-row.outgoing.is-grouped-with-previous .message-bubble {
+  border-top-right-radius: 4px !important;
+  border-top-left-radius: 20px !important;
 }
 
 /* --- HIDE INBOX CLOSE BUTTON ON DESKTOP --- */

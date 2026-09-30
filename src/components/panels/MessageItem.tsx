@@ -74,7 +74,7 @@ export function MessageItem(props: MessageItemProps) {
             }
 
             return (
-              <div key={message.id}>
+              <div key={message.id} style={{ marginTop: isGroupedWithPrevious ? '2px' : '16px' }}>
                 {dateDividerLabel ? (
                   <div className="day-divider message-time-divider">
                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
