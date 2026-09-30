@@ -73,8 +73,8 @@ export function MessageInput({
 
   async function sendRecordedMedia() {
     if (!recordedMediaFile) return
-    if (recordedMediaFile.size === 0 || recordingDuration === 0) {
-      setRecordingError('Không thể gửi ghi âm có thời lượng 0s hoặc 0MB!')
+    if (recordedMediaFile.size === 0) {
+      setRecordingError('Không thể gửi ghi âm có dung lượng 0MB!')
       clearRecordedMedia()
       return
     }
