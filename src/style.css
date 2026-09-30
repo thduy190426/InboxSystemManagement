@@ -7074,7 +7074,7 @@ html.dark .chat-pinned-more:hover {
     --content-columns: minmax(0, 1fr) 0fr;
   }
 
-  .app-shell.has-inbox-drawer .inbox-backdrop {
+  .app-shell.has-inbox-drawer.is-inbox-open .inbox-backdrop {
     position: fixed;
     inset: 0;
     z-index: 29;
@@ -7471,7 +7471,7 @@ html.dark .chat-pinned-more:hover {
     display: inline-grid;
   }
 
-  .app-shell.has-inbox-drawer .inbox-backdrop {
+  .app-shell.has-inbox-drawer.is-inbox-open .inbox-backdrop {
     inset: 0 0 72px 0;
     z-index: 39;
   }
