@@ -22,6 +22,7 @@ import { fetchGifs, type GifSearchResult } from '../../services/api/gifApi'
 import { AttachmentPreviewOverlay, type PendingAttachment } from './AttachmentPreviewOverlay'
 import { CreatePollModal } from './CreatePollModal'
 import { MessageInput } from './MessageInput'
+import { ChatStateContext, MessageActionContext, ChatUIContext } from './ChatContexts'
 import { GalleryViewer } from './GalleryViewer'
 import { ForwardMessageModal } from './ForwardMessageModal'
 import { PinnedMessagesDrawer } from './PinnedMessagesDrawer'
@@ -1278,6 +1279,22 @@ export function ChatPanel({
   }
 
   return (
+    <ChatStateContext.Provider value={{
+      activeConversation, currentUserId, members: members as any, searchMatches,
+      activeSearchMessageId, focusedMessageId, editingMessageId, busyMessageId,
+      editingText, openActionMenuId, openReactionPickerId
+    }}>
+      <MessageActionContext.Provider value={{
+        startReplying, startForwarding, handleDeleteForMe, handleRecall, handleReport,
+        handleTogglePin, onRetryMessage, handleToggleReaction, startEditing, cancelEditing,
+        setEditingText, handleEditSubmit, onVotePoll
+      }}>
+        <ChatUIContext.Provider value={{
+          getDateDividerLabel, isSameMessageGroup, messageRefs, renderCallMessage,
+          renderHighlightedText, shouldRenderMessageText, renderReplyPreview,
+          getMessageStateLabel, formatMessageTime, renderAttachments, renderReactions,
+          isSameLocalDay, parseMessageDate, setOpenActionMenuId, setOpenReactionPickerId
+        }}>
     <section className="chat-panel" aria-label={`Hội thoại với ${activeConversation.name}`} style={activeConversation.backgroundImage ? { backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("${activeConversation.backgroundImage}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' } : {}}>
       <header className="chat-header">
         <div className="chat-identity">
@@ -1462,50 +1479,7 @@ export function ChatPanel({
             )
           }}
           itemContent={(index, message) => (
-            <MessageItem
-              index={index}
-              message={message}
-              displayMessages={displayMessages}
-              getDateDividerLabel={getDateDividerLabel}
-              isSameMessageGroup={isSameMessageGroup}
-              messageRefs={messageRefs}
-              searchMatches={searchMatches}
-              activeSearchMessageId={activeSearchMessageId}
-              focusedMessageId={focusedMessageId}
-              renderCallMessage={renderCallMessage}
-              renderHighlightedText={renderHighlightedText}
-              shouldRenderMessageText={shouldRenderMessageText}
-              editingMessageId={editingMessageId}
-              handleEditSubmit={handleEditSubmit}
-              busyMessageId={busyMessageId}
-              setEditingText={setEditingText}
-              editingText={editingText}
-              cancelEditing={cancelEditing}
-              renderReplyPreview={renderReplyPreview}
-              onVotePoll={onVotePoll}
-              getMessageStateLabel={getMessageStateLabel}
-              onRetryMessage={onRetryMessage}
-              startReplying={startReplying}
-              startForwarding={startForwarding}
-              openActionMenuId={openActionMenuId}
-              setOpenActionMenuId={setOpenActionMenuId}
-              openReactionPickerId={openReactionPickerId}
-              setOpenReactionPickerId={setOpenReactionPickerId}
-              handleToggleReaction={handleToggleReaction}
-              handleDeleteForMe={handleDeleteForMe}
-              handleRecall={handleRecall}
-              handleReport={handleReport}
-              formatMessageTime={formatMessageTime}
-              activeConversation={activeConversation}
-              currentUserId={currentUserId}
-              members={members}
-              renderAttachments={renderAttachments}
-              renderReactions={renderReactions}
-              handleTogglePin={handleTogglePin}
-              isSameLocalDay={isSameLocalDay}
-              parseMessageDate={parseMessageDate}
-              startEditing={startEditing}
-            />
+            <MessageItem index={index} message={message} displayMessages={displayMessages} />
           )}
         />
       </div>
@@ -1608,6 +1582,9 @@ export function ChatPanel({
           }} 
         />
       )}
-    </section>
+          </section>
+        </ChatUIContext.Provider>
+      </MessageActionContext.Provider>
+    </ChatStateContext.Provider>
   )
 }

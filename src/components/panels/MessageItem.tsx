@@ -1,7 +1,8 @@
-import type { FormEvent } from 'react'
+import { useChatState, useMessageActions, useChatUI } from './ChatContexts'
+
 import { Suspense, lazy } from 'react'
 import { MoreHorizontal, Reply, Pencil, Copy, Pin, Trash2, Check, CheckCheck, PinOff, Calendar, X, SendHorizontal, Smile, Download, Flag } from 'lucide-react'
-import type { Conversation, Message, MessageReply } from '../../types'
+import type { Message } from '../../types'
 import { AvatarFallback } from '../ui/AvatarFallback'
 import type { EmojiStyle, Theme } from 'emoji-picker-react'
 import { PollMessage } from './PollMessage'
@@ -11,49 +12,28 @@ export type MessageItemProps = {
   index: number
   message: Message
   displayMessages: Message[]
-  getDateDividerLabel: (message: Message, previousMessage?: Message) => string | null
-  isSameMessageGroup: (message: Message, previousMessage?: Message) => boolean
-  messageRefs: React.MutableRefObject<Record<string, HTMLDivElement | null>>
-  searchMatches: any[]
-  activeSearchMessageId: string
-  focusedMessageId: string
-  renderCallMessage: (message: Message) => React.ReactNode
-  renderHighlightedText: (message: Message) => React.ReactNode
-  shouldRenderMessageText: (message: Message) => boolean
-  editingMessageId: string
-  handleEditSubmit: (event: FormEvent<HTMLFormElement>, message: Message) => void
-  busyMessageId: string
-  setEditingText: (text: string) => void
-  editingText: string
-  cancelEditing: () => void
-  renderReplyPreview: (message: MessageReply) => React.ReactNode
-  onVotePoll: ((messageId: string, optionIds: string[]) => void | Promise<void>) | undefined
-  getMessageStateLabel: (message: Message) => string
-  onRetryMessage: (message: Message) => void
-  startReplying: (message: Message) => void
-  startForwarding: (message: Message) => void
-  openActionMenuId: string
-  setOpenActionMenuId: React.Dispatch<React.SetStateAction<string>>
-  openReactionPickerId: string
-  setOpenReactionPickerId: React.Dispatch<React.SetStateAction<string>>
-  handleToggleReaction: (messageId: string, emoji: string) => void
-  handleDeleteForMe: (message: Message) => void
-  handleRecall: (message: Message) => void
-  handleReport: (message: Message) => void
-  formatMessageTime: (message: Message) => string
-  activeConversation: Conversation
-  currentUserId: string | undefined
-  members: any[]
-  renderAttachments: (message: Message) => React.ReactNode
-  renderReactions: (message: Message) => React.ReactNode
-  handleTogglePin: (messageId: string) => void
-  isSameLocalDay: (left: Date | null, right: Date | null) => boolean
-  parseMessageDate: (message?: Message) => Date | null
-  startEditing: (message: Message) => void
 }
 
 export function MessageItem(props: MessageItemProps) {
-  const { index, message, displayMessages, getDateDividerLabel, isSameMessageGroup, messageRefs, searchMatches, activeSearchMessageId, focusedMessageId, renderCallMessage, renderHighlightedText, shouldRenderMessageText, editingMessageId, handleEditSubmit, busyMessageId, setEditingText, editingText, cancelEditing, renderReplyPreview, onVotePoll, getMessageStateLabel, onRetryMessage, startReplying, startForwarding, openActionMenuId, setOpenActionMenuId, openReactionPickerId, setOpenReactionPickerId, handleToggleReaction, handleDeleteForMe, handleRecall, handleReport, formatMessageTime, activeConversation, currentUserId, members, renderAttachments, renderReactions, handleTogglePin, isSameLocalDay, parseMessageDate, startEditing } = props;
+  const { index, message, displayMessages } = props;
+  const { 
+    currentUserId, editingMessageId, busyMessageId, editingText, 
+    openActionMenuId, openReactionPickerId, searchMatches, 
+    activeSearchMessageId, focusedMessageId, activeConversation, members 
+  } = useChatState()
+  
+  const { 
+    startReplying, startForwarding, handleDeleteForMe, handleRecall, handleReport, 
+    handleTogglePin, onRetryMessage, handleToggleReaction, startEditing, cancelEditing, 
+    setEditingText, handleEditSubmit, onVotePoll 
+  } = useMessageActions()
+  
+  const { 
+    getDateDividerLabel, isSameMessageGroup, messageRefs, renderCallMessage, 
+    renderHighlightedText, shouldRenderMessageText, renderReplyPreview, 
+    getMessageStateLabel, formatMessageTime, renderAttachments, renderReactions, 
+    isSameLocalDay, parseMessageDate, setOpenActionMenuId, setOpenReactionPickerId 
+  } = useChatUI()
             const previousMessage = displayMessages[index - 1]
             const nextMessage = displayMessages[index + 1]
             const dateDividerLabel = getDateDividerLabel(message, previousMessage)
