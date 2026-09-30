@@ -4494,6 +4494,7 @@ html.dark .scroll-to-latest-button:focus-visible {
 }
 
 .message-row.outgoing {
+  margin-left: auto;
   align-self: flex-end;
   flex-direction: row-reverse;
   justify-content: flex-end;
@@ -12298,7 +12299,7 @@ html.dark, [data-theme='dark'] {
 /* --- PURE CSS OFF-CANVAS MOBILE MENU --- */
 @media (max-width: 1024px) {
   .app-shell {
-    grid-template-columns: 0 0 minmax(0, 1fr) 0fr !important;
+    grid-template-columns: 1fr !important;
   }
   
   .nav-rail {
