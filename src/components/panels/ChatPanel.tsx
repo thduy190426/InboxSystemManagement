@@ -1,5 +1,5 @@
 import type { ChangeEvent, FormEvent } from 'react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
 import type { EmojiClickData } from 'emoji-picker-react'
 
 import {
@@ -20,19 +20,20 @@ import type { Conversation, Message, MessageAttachment } from '../../types'
 import type { MessageSearchFilters, MessageSearchType } from '../../services/api/chatApi'
 import { fetchGifs, type GifSearchResult } from '../../services/api/gifApi'
 import { AttachmentPreviewOverlay, type PendingAttachment } from './AttachmentPreviewOverlay'
-import { CreatePollModal } from './CreatePollModal'
+const CreatePollModal = lazy(() => import('./CreatePollModal').then(m => ({ default: m.CreatePollModal })))
 import { MessageInput } from './MessageInput'
 import { ChatStateContext, MessageActionContext, ChatUIContext } from './ChatContexts'
-import { GalleryViewer } from './GalleryViewer'
-import { ForwardMessageModal } from './ForwardMessageModal'
-import { PinnedMessagesDrawer } from './PinnedMessagesDrawer'
+const GalleryViewer = lazy(() => import('./GalleryViewer').then(m => ({ default: m.GalleryViewer })))
+const ForwardMessageModal = lazy(() => import('./ForwardMessageModal').then(m => ({ default: m.ForwardMessageModal })))
+const PinnedMessagesDrawer = lazy(() => import('./PinnedMessagesDrawer').then(m => ({ default: m.PinnedMessagesDrawer })))
 import { MessageSearchUi } from './MessageSearchUi'
 
 import { MessageItem } from './MessageItem'
 
 
 import { AvatarFallback } from '../ui/AvatarFallback'
-import { ConfirmDialog, type ConfirmDialogState } from '../ui/ConfirmDialog'
+import type { ConfirmDialogState } from '../ui/ConfirmDialog'
+const ConfirmDialog = lazy(() => import('../ui/ConfirmDialog').then(m => ({ default: m.ConfirmDialog })))
 import { OnlineDurationBadge } from '../ui/OnlineDurationBadge'
 
 
@@ -1538,38 +1539,54 @@ export function ChatPanel({
         onUploadAttachment={onUploadAttachment}
       />
 
-      <ForwardMessageModal
-        forwardingMessage={forwardingMessage}
-        isForwardDialogClosing={isForwardDialogClosing}
-        closeForwardDialog={closeForwardDialog}
-        getReplyText={getReplyText}
-        forwardQuery={forwardQuery}
-        setForwardQuery={setForwardQuery}
-        forwardTargets={forwardTargets}
-        handleForward={handleForward}
-      />
-      <GalleryViewer
-        galleryImage={galleryImage}
-        setGalleryImage={setGalleryImage}
-        renderDownloadLink={renderDownloadLink}
-      />
-      <PinnedMessagesDrawer
-        isPinnedModalOpen={isPinnedModalOpen}
-        setIsPinnedModalOpen={setIsPinnedModalOpen}
-        pinnedMessages={pinnedMessages}
-        pinnedSearchQuery={pinnedSearchQuery}
-        setPinnedSearchQuery={setPinnedSearchQuery}
-        getReplyText={getReplyText}
-        getReplyAuthorLabel={getReplyAuthorLabel}
-        handleTogglePin={handleTogglePin}
-        onJumpToMessage={onJumpToMessage}
-      />
-      <ConfirmDialog
-        dialog={confirmDialog}
-        isWorking={isConfirming}
-        onCancel={() => setConfirmDialog(null)}
-        onConfirm={handleConfirmDialog}
-      />
+      {forwardingMessage && (
+        <Suspense fallback={null}>
+          <ForwardMessageModal
+            forwardingMessage={forwardingMessage}
+            isForwardDialogClosing={isForwardDialogClosing}
+            closeForwardDialog={closeForwardDialog}
+            getReplyText={getReplyText}
+            forwardQuery={forwardQuery}
+            setForwardQuery={setForwardQuery}
+            forwardTargets={forwardTargets}
+            handleForward={handleForward}
+          />
+        </Suspense>
+      )}
+      {galleryImage && (
+        <Suspense fallback={null}>
+          <GalleryViewer
+            galleryImage={galleryImage}
+            setGalleryImage={setGalleryImage}
+            renderDownloadLink={renderDownloadLink}
+          />
+        </Suspense>
+      )}
+      {isPinnedModalOpen && (
+        <Suspense fallback={null}>
+          <PinnedMessagesDrawer
+            isPinnedModalOpen={isPinnedModalOpen}
+            setIsPinnedModalOpen={setIsPinnedModalOpen}
+            pinnedMessages={pinnedMessages}
+            pinnedSearchQuery={pinnedSearchQuery}
+            setPinnedSearchQuery={setPinnedSearchQuery}
+            getReplyText={getReplyText}
+            getReplyAuthorLabel={getReplyAuthorLabel}
+            handleTogglePin={handleTogglePin}
+            onJumpToMessage={onJumpToMessage}
+          />
+        </Suspense>
+      )}
+      {confirmDialog && (
+        <Suspense fallback={null}>
+          <ConfirmDialog
+            dialog={confirmDialog}
+            isWorking={isConfirming}
+            onCancel={() => setConfirmDialog(null)}
+            onConfirm={handleConfirmDialog}
+          />
+        </Suspense>
+      )}
       
       {isPollModalOpen && (
         <CreatePollModal 
