@@ -12296,55 +12296,6 @@ html.dark, [data-theme='dark'] {
   }
 }
 
-/* --- PURE CSS OFF-CANVAS MOBILE MENU --- */
-@media (max-width: 1024px) {
-  .app-shell {
-    grid-template-columns: 1fr !important;
-  }
-  
-  .nav-rail {
-    position: fixed !important;
-    top: 0; left: 0; bottom: 0;
-    width: 220px;
-    z-index: 1000;
-    transform: translateX(-100%);
-    transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1);
-  }
-  
-  .app-shell.is-sidebar-open .nav-rail {
-    transform: translateX(0);
-  }
-  
-  .inbox-panel {
-    position: fixed !important;
-    top: 0; left: 0; bottom: 0;
-    width: 340px;
-    max-width: 85vw;
-    z-index: 999;
-    transform: translateX(-100%);
-    transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1);
-  }
-  
-  .app-shell.is-inbox-open .inbox-panel {
-    transform: translateX(0);
-  }
-  
-  .inbox-backdrop {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(4px);
-    z-index: 998;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-  
-  .inbox-backdrop.is-active {
-    display: block;
-    opacity: 1;
-  }
-}
 
 /* --- MESSAGE BUBBLE SMART BORDER & SPRING ANIMATION --- */
 @keyframes spring-pop {
