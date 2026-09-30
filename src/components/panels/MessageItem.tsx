@@ -1,12 +1,10 @@
-import type { FormEvent, ReactNode, RefObject, MutableRefObject } from 'react'
+import type { FormEvent } from 'react'
 import { Suspense, lazy } from 'react'
-import { MoreHorizontal, Reply, Pencil, Copy, Pin, Trash2, Check, CheckCheck, Play, Pause, PinOff, Calendar, X, SendHorizontal, Smile, Download, Flag } from 'lucide-react'
+import { MoreHorizontal, Reply, Pencil, Copy, Pin, Trash2, Check, CheckCheck, PinOff, Calendar, X, SendHorizontal, Smile, Download, Flag } from 'lucide-react'
 import type { Conversation, Message, MessageReply } from '../../types'
-import { OnlineDurationBadge } from '../ui/OnlineDurationBadge'
 import { AvatarFallback } from '../ui/AvatarFallback'
+import type { EmojiStyle, Theme } from 'emoji-picker-react'
 import { PollMessage } from './PollMessage'
-import type { EmojiClickData, EmojiStyle, Theme } from 'emoji-picker-react'
-
 const EmojiPicker = lazy(() => import('emoji-picker-react'))
 
 export type MessageItemProps = {

@@ -1,33 +1,23 @@
 import type { ChangeEvent, FormEvent } from 'react'
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { EmojiClickData, EmojiStyle, Theme } from 'emoji-picker-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { EmojiClickData } from 'emoji-picker-react'
+
 import {
-  Calendar,
-  Check,
-  CheckCheck,
   ChevronDown,
   ChevronUp,
-  Copy,
   Download,
   Filter,
   FileText,
-  Flag,
   Info,
   Menu,
   MessageSquare,
-  MoreHorizontal,
-  Pencil,
   Phone,
   PhoneMissed,
   Pin,
-  PinOff,
   Play,
   Pause,
-  Reply,
   Search,
   SendHorizontal,
-  Smile,
-  Trash2,
   Video,
   X,
 } from 'lucide-react'
@@ -39,12 +29,12 @@ import { CreatePollModal } from './CreatePollModal'
 import { MessageInput } from './MessageInput'
 import { MessageItem } from './MessageItem'
 
-import { PollMessage } from './PollMessage'
+
 import { AvatarFallback } from '../ui/AvatarFallback'
 import { ConfirmDialog, type ConfirmDialogState } from '../ui/ConfirmDialog'
 import { OnlineDurationBadge } from '../ui/OnlineDurationBadge'
 
-const EmojiPicker = lazy(() => import('emoji-picker-react'))
+
 const MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024
 const ALLOWED_ATTACHMENT_TYPE_PREFIXES = ['image/', 'audio/', 'video/']
 
