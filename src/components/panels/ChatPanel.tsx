@@ -1329,6 +1329,8 @@ export function ChatPanel({
                   <OnlineDurationBadge
                     compact
                     onlineSince={activeConversation.onlineSince}
+                    lastSeenAt={activeConversation.lastSeenAt}
+                    status={activeConversation.status}
                     presence={activeConversation.presence}
                   />
                 </>

@@ -370,6 +370,8 @@ export function InboxPanel({
         <OnlineDurationBadge
           compact
           onlineSince={conversation.onlineSince}
+          lastSeenAt={conversation.lastSeenAt}
+          status={conversation.status}
           presence={conversation.presence}
         />
       </>
@@ -648,6 +650,8 @@ export function InboxPanel({
               <OnlineDurationBadge
                 compact
                 onlineSince={conversation.onlineSince}
+                lastSeenAt={conversation.lastSeenAt}
+                status={conversation.status}
                 presence={conversation.presence}
               />
             </span>
