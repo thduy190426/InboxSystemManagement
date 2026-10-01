@@ -37,20 +37,37 @@ export function MessageItem(props: MessageItemProps) {
             const previousMessage = displayMessages[index - 1]
             const nextMessage = displayMessages[index + 1]
             const dateDividerLabel = getDateDividerLabel(message, previousMessage)
-            const isGroupedWithPrevious = isSameMessageGroup(message, previousMessage)
-            const isGroupedWithNext = isSameMessageGroup(message, nextMessage)
-            const shouldShowAvatar = message.author === 'them' && !isGroupedWithNext
-            const shouldShowSenderName = message.author === 'them' && !isGroupedWithPrevious
+            const isCallMsg = (msg: Message | undefined) => msg?.author === 'system' && Boolean(msg.text?.startsWith('Cuộc gọi') || msg.text?.includes('cuộc gọi'))
+            const getEffectiveAuthor = (msg: Message | undefined) => {
+              if (!msg) return undefined
+              if (isCallMsg(msg)) {
+                const text = msg.text || ''
+                const isMyCall = (msg as any).senderId 
+                  ? (msg as any).senderId === currentUserId 
+                  : (text.includes('hủy') || text.includes('Không bắt máy') || text.includes('gọi đi'))
+                return isMyCall ? 'me' : 'them'
+              }
+              return msg.author
+            }
+            
+            const effectiveAuthor = getEffectiveAuthor(message)
+            const prevEffectiveAuthor = getEffectiveAuthor(previousMessage)
+            const nextEffectiveAuthor = getEffectiveAuthor(nextMessage)
+
+            const isGroupedWithPrevious = isSameMessageGroup(message, previousMessage) && effectiveAuthor === prevEffectiveAuthor
+            const isGroupedWithNext = isSameMessageGroup(message, nextMessage) && effectiveAuthor === nextEffectiveAuthor
+            const shouldShowAvatar = effectiveAuthor === 'them' && !isGroupedWithNext
+            const shouldShowSenderName = effectiveAuthor === 'them' && !isGroupedWithPrevious
             const isNearBottom = index >= displayMessages.length - 4;
 
-            const isSystem = message.author === 'system'
+            const isSystem = effectiveAuthor === 'system'
             let systemGroupCount = 1
             let isHiddenSystemMessage = false
 
             if (isSystem) {
               const isSameAsPrev =
-                previousMessage?.author === 'system' &&
-                previousMessage.text === message.text &&
+                prevEffectiveAuthor === 'system' &&
+                previousMessage?.text === message.text &&
                 isSameLocalDay(parseMessageDate(message), parseMessageDate(previousMessage))
 
               if (isSameAsPrev) {
@@ -86,9 +103,9 @@ export function MessageItem(props: MessageItemProps) {
                 ) : null}
                 <div
                   className={[
-                    message.author === 'system'
+                    effectiveAuthor === 'system'
                       ? 'message-row system-message-row animate-in'
-                      : message.author === 'me'
+                      : effectiveAuthor === 'me'
                         ? 'message-row outgoing animate-in'
                         : 'message-row animate-in',
                     isGroupedWithPrevious ? 'is-grouped-with-previous' : 'is-group-start',
@@ -103,21 +120,7 @@ export function MessageItem(props: MessageItemProps) {
                     messageRefs.current[message.id] = node
                   }}
                 >
-                  {message.author === 'system' ? (
-                    message.text?.startsWith('Cuộc gọi') ? (
-                      <div className="system-call-wrapper" style={{ display: 'flex', gap: '8px', alignItems: 'flex-end', maxWidth: '70%', alignSelf: 'flex-start', margin: '8px 0' }}>
-                        <span className="avatar-wrap message-avatar-wrap">
-                          <AvatarFallback
-                            className="message-avatar"
-                            name={activeConversation.name}
-                            src={activeConversation.avatar}
-                          />
-                        </span>
-                        <div className="message-bubble media-only" style={{ padding: 0, background: 'transparent' }}>
-                          {renderCallMessage(message)}
-                        </div>
-                      </div>
-                    ) : (
+                  {effectiveAuthor === 'system' ? (
                       <div className="system-message">
                         <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           {renderHighlightedText(message)}
@@ -136,10 +139,9 @@ export function MessageItem(props: MessageItemProps) {
                           )}
                         </span>
                       </div>
-                    )
                   ) : (
                     <>
-                      {message.author === 'them' ? (
+                      {effectiveAuthor === 'them' ? (
                         <span className={shouldShowAvatar ? 'avatar-wrap message-avatar-wrap' : 'avatar-wrap message-avatar-wrap is-hidden'}>
                           <AvatarFallback
                             className="message-avatar"
@@ -158,7 +160,10 @@ export function MessageItem(props: MessageItemProps) {
                           )}
                         </span>
                       ) : null}
-                      <div className={`message-bubble ${(!shouldRenderMessageText(message) && message.attachments && message.attachments.length > 0) ? 'media-only' : ''}`}>
+                      <div 
+                        className={`message-bubble ${(!shouldRenderMessageText(message) && message.attachments && message.attachments.length > 0) || isCallMsg(message) ? 'media-only' : ''}`}
+                        style={isCallMsg(message) ? { padding: 0, background: 'transparent' } : undefined}
+                      >
                         {shouldShowSenderName ? (
                           <span className="message-sender-name">
                             {message.senderName || activeConversation.name}
@@ -210,6 +215,8 @@ export function MessageItem(props: MessageItemProps) {
                                 members={members || []}
                                 onVote={onVotePoll || (() => {})}
                               />
+                            ) : isCallMsg(message) ? (
+                              renderCallMessage(message)
                             ) : shouldRenderMessageText(message) ? (
                               <p>{renderHighlightedText(message)}</p>
                             ) : null}
@@ -219,7 +226,7 @@ export function MessageItem(props: MessageItemProps) {
                         <span className="message-time">
                           {formatMessageTime(message)}
                           {message.isEdited ? <span>Đã chỉnh sửa!</span> : null}
-                          {message.author === 'me' ? (
+                          {effectiveAuthor === 'me' ? (
                             <>
                               <CheckCheck aria-label={getMessageStateLabel(message)} size={15} />
                               <span>{getMessageStateLabel(message)}</span>
@@ -364,7 +371,7 @@ export function MessageItem(props: MessageItemProps) {
                                 <SendHorizontal size={14} />
                                 <span>Chuyển tiếp</span>
                               </button>
-                              {message.author === 'me' ? (
+                              {effectiveAuthor === 'me' ? (
                                 <>
                                   <button
                                     disabled={Boolean(busyMessageId)}
