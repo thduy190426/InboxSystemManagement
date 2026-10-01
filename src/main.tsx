@@ -5,6 +5,13 @@ import './style.css'
 import { App } from './App'
 import { ThemeProvider } from './components/providers/ThemeProvider'
 
+window.addEventListener('vite:preloadError', () => {
+  const isReloading = sessionStorage.getItem('vite-preload-error-reload')
+  if (!isReloading) {
+    sessionStorage.setItem('vite-preload-error-reload', 'true')
+    window.location.reload()
+  }
+})
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
