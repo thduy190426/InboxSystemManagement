@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { ModerationPanel } from '../panels/ModerationPanel'
 import {
   Area,
   AreaChart,
@@ -33,7 +34,10 @@ import {
   Users,
   X,
   XCircle,
+  Download,
+  Filter,
 } from 'lucide-react'
+import { exportToCSV } from '../../utils/exportUtils'
 import {
   createAdminUser,
   deleteUser,
@@ -366,6 +370,7 @@ function updateAdminQueryParams(params: {
 
 export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
   const initialQueryParams = readAdminQueryParams()
+  const [timeFilter, setTimeFilter] = useState('30days')
   const [searchQuery, setSearchQuery] = useState(initialQueryParams.search)
   const [debouncedSearch, setDebouncedSearch] = useState(initialQueryParams.search)
   const [stats, setStats] = useState<AdminStats>(emptyStats)
@@ -399,6 +404,20 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
   const suppressSearchEffectRef = useRef(false)
 
   const isLoading = isStatsLoading || isUsersLoading
+
+  const handleExportUsers = () => {
+    const headers = ['ID', 'Tên', 'Tên hiển thị', 'Email', 'Vai trò', 'Trạng thái', 'Lần cuối đăng nhập', 'Ngày tạo']
+    const data = users.map(u => [u.id, u.fullName, u.displayName, u.email, u.role, u.status, u.lastLogin, u.createdAt])
+    exportToCSV('users_export.csv', headers, data)
+    pushToast?.('Đã xuất danh sách người dùng thành công', 'info')
+  }
+
+  const handleExportReports = () => {
+    const headers = ['ID', 'Người báo cáo', 'Nội dung (Preview)', 'Lý do', 'Trạng thái', 'Ngày báo cáo']
+    const data = reports.map(r => [r.id, r.reporter.name, r.messageText.substring(0, 50), r.reason, r.status, r.createdAt])
+    exportToCSV('reports_export.csv', headers, data)
+    pushToast?.('Đã xuất danh sách báo cáo thành công', 'info')
+  }
 
   useEffect(() => {
     function handleLocationChange() {
@@ -472,7 +491,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
       setIsStatsLoading(true)
 
       try {
-        const nextStats = await fetchAdminStats()
+        const nextStats = await fetchAdminStats(timeFilter)
 
         if (isMounted) {
           setStats(nextStats)
@@ -496,7 +515,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
     return () => {
       isMounted = false
     }
-  }, [pushToast])
+  }, [pushToast, timeFilter])
 
   useEffect(() => {
     let isMounted = true
@@ -954,14 +973,28 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
           <h1>Quản trị hệ thống</h1>
           <p>Xin chào, {currentUser?.displayName || currentUser?.fullName || 'Admin'}!</p>
         </div>
-        <div className="admin-search">
-          <Search size={18} className="search-icon" />
-          <input
-            type="text"
-            placeholder="Tìm kiếm người dùng..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <div className="admin-search">
+            <Search size={18} className="search-icon" />
+            <input
+              type="text"
+              placeholder="Tìm kiếm người dùng..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="admin-filter" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface)', padding: '8px 12px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+            <Filter size={16} color="var(--muted)" />
+            <select 
+              value={timeFilter} 
+              onChange={(e) => setTimeFilter(e.target.value)}
+              style={{ background: 'transparent', border: 'none', color: 'var(--text)', outline: 'none' }}
+            >
+              <option value="7days">7 ngày qua</option>
+              <option value="30days">30 ngày qua</option>
+              <option value="all">Toàn thời gian</option>
+            </select>
+          </div>
         </div>
       </header>
 
@@ -1063,6 +1096,8 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
         </section>
       </div>
 
+      <ModerationPanel pushToast={pushToast} />
+
       <div className="admin-content-section message-report-section">
         <div className="section-header">
           <h2>
@@ -1079,6 +1114,10 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
               <option value="dismissed">Bỏ qua</option>
               <option value="all">Tất cả</option>
             </select>
+            <button className="btn-secondary" disabled={isReportsLoading} onClick={handleExportReports} type="button" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--surface-hover)', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', color: 'var(--text)', cursor: 'pointer' }}>
+              <Download size={15} />
+              Xuất CSV
+            </button>
             <button disabled={isReportsLoading} onClick={() => void refreshReports()} type="button">
               {isReportsLoading ? <Loader2 size={15} /> : <Flag size={15} />}
               Tải lại
@@ -1093,10 +1132,16 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
       <div className="admin-content-section">
         <div className="section-header">
           <h2>Danh sách người dùng</h2>
-          <button className="btn-primary" onClick={() => setCreateUser(emptyCreateUser)} type="button">
-            <Plus size={16} />
-            Thêm người dùng
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="btn-secondary" onClick={handleExportUsers} type="button" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--surface-hover)', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', color: 'var(--text)', cursor: 'pointer' }}>
+              <Download size={15} />
+              Xuất CSV
+            </button>
+            <button className="btn-primary" onClick={() => setCreateUser(emptyCreateUser)} type="button">
+              <Plus size={16} />
+              Thêm người dùng
+            </button>
+          </div>
         </div>
 
         <div className="admin-table-wrapper">

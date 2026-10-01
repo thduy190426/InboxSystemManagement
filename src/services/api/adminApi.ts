@@ -115,9 +115,14 @@ export type DeleteAdminUserResponse = {
   deletedUserId: string
 }
 
-export async function fetchAdminStats() {
+export async function fetchAdminStats(timeFilter?: string) {
+  const query = new URLSearchParams()
+  if (timeFilter) {
+    query.set('timeFilter', timeFilter)
+  }
+  const queryString = query.toString() ? '?' + query.toString() : ''
   const response = await requestJson<{ stats: AdminStats }>(
-    '/admin/stats',
+    '/admin/stats' + queryString,
     {},
     'Không thể tải thống kê quản trị!',
   )

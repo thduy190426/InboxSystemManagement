@@ -322,6 +322,9 @@ img {
   background: transparent;
   color: #ffffff;
   outline: 0;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
 }
 
 .auth-input-row select option {

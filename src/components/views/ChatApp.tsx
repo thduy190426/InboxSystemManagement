@@ -1,3 +1,4 @@
+import { useModerationSettings } from '../../hooks/useModerationSettings'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { FormEvent } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
@@ -184,6 +185,7 @@ export function ChatApp({
 }: ChatAppProps) {
   const initialRoute = readAppRouteFromLocation()
   const initialChatQueryParams = readChatQueryParams()
+  const { applyModerationToText, isFileBlocked } = useModerationSettings()
   const [activeView, setActiveView] = useState<AppView>(initialRoute.view)
   const [activeId, setActiveId] = useState(initialRoute.conversationId ?? '')
   const [query, setQuery] = useState(initialRoute.view === 'chat' ? initialChatQueryParams.query : '')
@@ -1352,11 +1354,18 @@ export function ChatApp({
       return
     }
 
-    const text = textValue.trim()
+    let text = textValue.trim()
 
     if (!text) {
       return
     }
+
+    const { modified: moderatedText, isBlocked } = applyModerationToText(text)
+    if (isBlocked) {
+      pushToast('Tin nhắn của bạn chứa từ khóa bị cấm và đã bị chặn!', 'error')
+      return
+    }
+    text = moderatedText
 
     const parentMessageId = retryMessage?.replyTo?.id ?? replyingTo?.id ?? undefined
     const temporaryMessage: Message =
@@ -1553,6 +1562,11 @@ export function ChatApp({
 
     if (activeConversation.blocked) {
       pushToast('Bạn đã chặn người dùng này!')
+      return
+    }
+
+    if (isFileBlocked(file.name)) {
+      pushToast('Định dạng tệp tin này không được phép gửi!', 'error')
       return
     }
 
