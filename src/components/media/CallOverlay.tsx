@@ -186,6 +186,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
   const finishedLocallyRef = useRef(false)
   const hasPlayedFinishToneRef = useRef(false)
   const hasPlayedConnectedToneRef = useRef(false)
+  const prevNetworkStatsRef = useRef<{ timestamp: number; packetsLost: number; packetsReceived: number } | null>(null)
   const localVideoRef = useRef<HTMLVideoElement | null>(null)
   const localStreamRef = useRef<MediaStream | null>(null)
   const peersRef = useRef(new Map<number, PeerEntry>())
@@ -475,8 +476,10 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
       return
     }
 
-    let roundTripTime = 0
-    let packetsLost = 0
+    let currentRoundTripTime = 0
+    let maxJitter = 0
+    let totalPacketsLost = 0
+    let totalPacketsReceived = 0
 
     await Promise.all(
       peers.map(async ({ peer }) => {
@@ -488,27 +491,55 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
             report.state === 'succeeded' &&
             typeof report.currentRoundTripTime === 'number'
           ) {
-            roundTripTime = Math.max(roundTripTime, report.currentRoundTripTime)
+            currentRoundTripTime = Math.max(currentRoundTripTime, report.currentRoundTripTime)
           }
 
-          if (report.type === 'inbound-rtp' && typeof report.packetsLost === 'number') {
-            packetsLost += Math.max(report.packetsLost, 0)
+          if (report.type === 'inbound-rtp') {
+            if (typeof report.packetsLost === 'number') {
+              totalPacketsLost += Math.max(report.packetsLost, 0)
+            }
+            if (typeof report.packetsReceived === 'number') {
+              totalPacketsReceived += Math.max(report.packetsReceived, 0)
+            }
+            if (typeof report.jitter === 'number') {
+              maxJitter = Math.max(maxJitter, report.jitter)
+            }
           }
         })
       }),
     )
 
-    if (!roundTripTime && !packetsLost) {
+    const now = performance.now()
+    const prevStats = prevNetworkStatsRef.current
+
+    prevNetworkStatsRef.current = {
+      timestamp: now,
+      packetsLost: totalPacketsLost,
+      packetsReceived: totalPacketsReceived,
+    }
+
+    if (!currentRoundTripTime && !totalPacketsLost && !totalPacketsReceived) {
       setNetworkQuality('unknown')
       return
     }
 
-    if (roundTripTime > 0.35 || packetsLost > 10) {
+    let packetLossRate = 0
+    if (prevStats) {
+      const lostDiff = Math.max(0, totalPacketsLost - prevStats.packetsLost)
+      const receivedDiff = Math.max(0, totalPacketsReceived - prevStats.packetsReceived)
+      const totalDiff = lostDiff + receivedDiff
+      
+      if (totalDiff > 0) {
+        packetLossRate = lostDiff / totalDiff
+      }
+    }
+
+    if (currentRoundTripTime > 0.35 || packetLossRate > 0.05 || maxJitter > 0.1) {
       setNetworkQuality('poor')
       return
     }
 
-    if (roundTripTime > 0.18 || packetsLost > 3) {
+    if (currentRoundTripTime > 0.18 || packetLossRate > 0.02 || maxJitter > 0.04) {
       setNetworkQuality('fair')
       return
     }
