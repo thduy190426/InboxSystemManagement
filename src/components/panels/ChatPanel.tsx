@@ -642,7 +642,7 @@ export function ChatPanel({
           setIsSharingLocation(false)
           const { latitude, longitude } = position.coords
           const mapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`
-          void onSendQuickMessage(`📍 Vị trí hiện tại: ${mapsUrl}`)
+          void onSendQuickMessage(`Vị trí hiện tại: ${mapsUrl}`)
         },
         (error) => {
           if (error.code === error.TIMEOUT || error.code === error.POSITION_UNAVAILABLE) {
@@ -663,7 +663,7 @@ export function ChatPanel({
         setIsSharingLocation(false)
         const { latitude, longitude } = position.coords
         const mapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`
-        void onSendQuickMessage(`📍 Vị trí chính xác: ${mapsUrl}`)
+        void onSendQuickMessage(`Vị trí chính xác: ${mapsUrl}`)
       },
       (error) => {
         if (error.code === error.TIMEOUT || error.code === error.POSITION_UNAVAILABLE) {
