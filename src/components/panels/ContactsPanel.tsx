@@ -207,7 +207,7 @@ function ContactCard({ user, busyId, onProfile, onMessage, action }: ContactCard
       </div>
       <div className="cp-card-info">
         <strong>{user.nickname || user.fullName}</strong>
-        <span className="cp-card-handle">Giới tính: {getGenderLabel(user.gender)}</span>
+        <span className="cp-card-handle">{getGenderLabel(user.gender)}</span>
         <small className="cp-card-bio">{user.address || 'Chưa cập nhật địa chỉ'}</small>
       </div>
       <div className="cp-card-actions">
@@ -618,7 +618,7 @@ export function ContactsPanel({
               </div>
               <div className="cp-card-info">
                 <strong>{request.fullName}</strong>
-                <span className="cp-card-handle">Giới tính: {getGenderLabel(request.gender)}</span>
+                <span className="cp-card-handle">{getGenderLabel(request.gender)}</span>
                 <small className="cp-card-bio">{request.address || 'Chưa cập nhật địa chỉ'}</small>
               </div>
               <div className="cp-card-actions">
