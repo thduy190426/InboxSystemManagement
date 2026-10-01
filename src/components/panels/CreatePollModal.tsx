@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { X, Plus, Trash2, Clock, Users, CheckSquare, EyeOff } from 'lucide-react'
+import { X, Plus, Trash2, Clock, Users, CheckSquare, EyeOff, ListPlus } from 'lucide-react'
 import type { MessagePoll } from '../../types'
 
 type CreatePollModalProps = {
@@ -15,6 +15,14 @@ export function CreatePollModal({ onClose, onSubmit }: CreatePollModalProps) {
   const [hideResultsUntilEnd, setHideResultsUntilEnd] = useState(false)
   const [endTimeValue, setEndTimeValue] = useState('')
   const [hasEndTime, setHasEndTime] = useState(false)
+  const [isExiting, setIsExiting] = useState(false)
+
+  const handleClose = () => {
+    setIsExiting(true)
+    setTimeout(() => {
+      onClose()
+    }, 140)
+  }
 
   const handleAddOption = () => {
     if (options.length >= 10) return
@@ -44,28 +52,31 @@ export function CreatePollModal({ onClose, onSubmit }: CreatePollModalProps) {
       endTime = new Date(endTimeValue).toISOString()
     }
 
-    onSubmit({
-      question: question.trim(),
-      options: validOptions.map(opt => ({
-        id: Math.random().toString(36).substring(7),
-        text: opt.text.trim(),
-        voterIds: []
-      })),
-      allowMultipleAnswers,
-      isAnonymous,
-      hideResultsUntilEnd,
-      endTime
-    })
+    setIsExiting(true)
+    setTimeout(() => {
+      onSubmit({
+        question: question.trim(),
+        options: validOptions.map(opt => ({
+          id: Math.random().toString(36).substring(7),
+          text: opt.text.trim(),
+          voterIds: []
+        })),
+        allowMultipleAnswers,
+        isAnonymous,
+        hideResultsUntilEnd,
+        endTime
+      })
+    }, 140)
   }
 
   return (
-    <div className="forward-dialog-backdrop" role="presentation">
-      <section aria-modal="true" className="forward-dialog create-poll-dialog" role="dialog" style={{ width: '400px', maxWidth: '90vw' }}>
+    <div className={`forward-dialog-backdrop ${isExiting ? 'is-exiting' : ''}`} role="presentation">
+      <section aria-modal="true" className={`forward-dialog create-poll-dialog ${isExiting ? 'is-exiting' : ''}`} role="dialog" style={{ width: '400px', maxWidth: '90vw' }}>
         <header>
           <div>
             <strong>Tạo bình chọn</strong>
           </div>
-          <button onClick={onClose} title="Đóng" type="button">
+          <button onClick={handleClose} title="Đóng" type="button">
             <X size={17} />
           </button>
         </header>
@@ -154,11 +165,13 @@ export function CreatePollModal({ onClose, onSubmit }: CreatePollModalProps) {
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
-            <button type="button" onClick={onClose} style={{ padding: '8px 16px', borderRadius: '8px', background: 'transparent', border: '1px solid var(--border-color)', cursor: 'pointer' }}>
-              Hủy
+            <button type="button" onClick={handleClose} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px', background: 'transparent', border: '1px solid var(--border-color)', cursor: 'pointer', color: 'var(--text-color)' }}>
+              <X size={16} />
+              <span>Hủy</span>
             </button>
-            <button type="submit" className="primary-button" style={{ padding: '8px 16px', borderRadius: '8px', background: 'var(--accent-color)', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 500 }}>
-              Tạo bình chọn
+            <button type="submit" className="primary-button" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px', background: 'var(--accent-color)', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 500 }}>
+              <ListPlus size={16} />
+              <span>Tạo bình chọn</span>
             </button>
           </div>
         </form>
