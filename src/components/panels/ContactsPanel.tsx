@@ -199,11 +199,6 @@ type ContactCardProps = {
 
 function ContactCard({ user, busyId, onProfile, onMessage, action }: ContactCardProps) {
   const safePresence = ['online', 'away', 'busy'].includes(user.presence) ? user.presence : 'offline'
-  const subline =
-    user.showStatusMessage !== false && user.statusMessage ? user.statusMessage
-    : user.showBio !== false && user.bio ? user.bio
-    : null
-
   return (
     <article className="cp-card">
       <div className="cp-card-avatar-wrap">
@@ -212,8 +207,8 @@ function ContactCard({ user, busyId, onProfile, onMessage, action }: ContactCard
       </div>
       <div className="cp-card-info">
         <strong>{user.nickname || user.fullName}</strong>
-        <span className="cp-card-handle">{user.handle ? `@${user.handle}` : 'Chưa có định danh'}</span>
-        {subline && <small className="cp-card-bio">{subline}</small>}
+        <span className="cp-card-handle">Giới tính: {getGenderLabel(user.gender)}</span>
+        <small className="cp-card-bio">{user.address || 'Chưa cập nhật địa chỉ'}</small>
       </div>
       <div className="cp-card-actions">
         <button className="cp-btn cp-btn--ghost cp-btn--sm" onClick={() => onProfile(user)} type="button">
@@ -623,8 +618,8 @@ export function ContactsPanel({
               </div>
               <div className="cp-card-info">
                 <strong>{request.fullName}</strong>
-                <span className="cp-card-handle">{request.handle ? `@${request.handle}` : 'Chưa có định danh'}</span>
-                <small className="cp-card-bio">Muốn kết bạn với bạn</small>
+                <span className="cp-card-handle">Giới tính: {getGenderLabel(request.gender)}</span>
+                <small className="cp-card-bio">{request.address || 'Chưa cập nhật địa chỉ'}</small>
               </div>
               <div className="cp-card-actions">
                 <button className="cp-btn cp-btn--ghost cp-btn--sm" onClick={() => openContactProfile(request)} type="button">
