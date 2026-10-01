@@ -84,6 +84,34 @@ Mục tiêu cốt lõi của dự án là mang lại một không gian trò chuy
 - Hỗ trợ Chế độ Tối/Sáng (Dark/Light Mode) toàn diện và cực kỳ mượt mà ở mọi thành phần.
 - Bảo mật xác thực: Đăng nhập, Đăng ký, Quên mật khẩu, Xác thực email OTP an toàn (qua hệ thống Resend hoặc Mailtrap).
 - Công cụ cắt ảnh đại diện trực tiếp (Avatar Cropper) ngay trên trình duyệt khi người dùng sử dụng ảnh tĩnh.
+- Tích hợp kho Nhãn dán (Stickers) tĩnh/động mang phong cách cá nhân hóa.
+- Hiệu ứng thả cảm xúc (Reaction Animations - "Bão Like") bay rợp màn hình khi người dùng liên tục bấm giữ thả Emoji nhanh.
+
+---
+
+## Tiến Độ Hiện Tại & Các Tính Năng Còn Thiếu (Messenger Clone Parity)
+
+Dự án hiện đã hoàn thiện phần lớn các tính năng cốt lõi của một hệ thống nhắn tin thời gian thực. Cấu trúc mã nguồn Front-end (đặc biệt là khung chat `MessageInput`) vừa được tái cấu trúc (Refactor) bằng Context API để giải quyết tình trạng "Prop Drilling", giúp mã nguồn gọn gàng và dễ mở rộng hơn. Hệ thống giao diện (UI) hiện tại đã khắc phục được lỗi gián đoạn do thiếu chunk (`vite:preloadError`).
+
+Tuy nhiên, để đạt được độ hoàn thiện như một bản sao hoàn chỉnh của Facebook Messenger (Messenger Clone), hệ thống vẫn còn thiếu các chức năng sau:
+
+1. **Trải Nghiệm Trò Chuyện Tùy Chỉnh Chuyên Sâu:**
+   - **Tùy chỉnh màu sắc (Gradient Themes):** Hiện tại hệ thống hỗ trợ Dark/Light mode, nhưng chưa có tính năng thay đổi màu sắc chủ đạo (Theme color/Gradient) riêng biệt cho từng cuộc trò chuyện (ví dụ: Chủ đề Tình yêu, Halloween...).
+   - **Tùy chỉnh âm thanh thông báo:** Chưa cho phép người dùng đặt âm thanh chuông báo tin nhắn hoặc cuộc gọi đến khác nhau cho từng người dùng/nhóm.
+   - **Thay đổi Emoji mặc định:** Tính năng thay đổi biểu tượng cảm xúc mặc định ở góc phải (hiện tại cố định là "👍") thành bất kỳ Emoji nào khác tùy thích cho từng cuộc hội thoại.
+
+2. **Giao Diện & Tương Tác Nâng Cao:**
+   - **Chat Bubbles (Bong bóng chat):** Tính năng thu nhỏ cuộc trò chuyện thành bong bóng trôi nổi trên màn hình (đặc biệt quan trọng nếu phát triển phiên bản PWA/Mobile).
+   - **Read Receipts với Avatar:** Thay vì chỉ hiện icon "Đã xem", hệ thống cần hiển thị avatar nhỏ của người/những người đã xem tin nhắn ở dưới cùng (như Messenger).
+   - **Link Preview (Xem trước liên kết):** Khi gửi một URL (ví dụ: YouTube, báo chí), hệ thống cần fetch và hiển thị ảnh thumbnail, tiêu đề và mô tả ngắn của thẻ Meta (Open Graph).
+
+3. **Tính Năng Xã Hội (Social Features):**
+   - **Stories (Tin 24h) / Notes (Ghi chú):** Tính năng đăng tải hình ảnh, video ngắn hoặc dòng trạng thái tự biến mất sau 24 giờ.
+   - **Bình chọn (Polls) nâng cao:** Mặc dù đã có nền tảng UI (`CreatePollModal`), nhưng cần tối ưu hóa logic thời gian thực và hiển thị tiến trình vote trực quan trong khung chat nhóm.
+   - **Hiệu ứng & Bộ lọc Cuộc gọi (Filters/AR):** Ứng dụng các bộ lọc khuôn mặt (AR) trong Video Call.
+
+4. **Bảo Mật Tiên Tiến:**
+   - **Mã hóa Đầu - Cuối (End-to-End Encryption - E2EE):** Hiện tại tin nhắn gửi qua WebSockets, nhưng cần mã hóa E2EE bằng thuật toán tín hiệu (Signal Protocol) để đảm bảo bảo mật tuyệt đối cho Secret Conversations.
 
 ---
 
