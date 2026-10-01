@@ -8936,8 +8936,8 @@ html.dark {
   --sp-accent-ring: rgba(99, 130, 255, 0.2);
   --sp-accent-border: rgba(99, 130, 255, 0.28);
   --sp-text: #e8eaf2;
-  --sp-text-muted: #7c8299;
-  --sp-text-dim: #4a5068;
+  --sp-text-muted: rgba(255, 255, 255, 0.7);
+  --sp-text-dim: rgba(255, 255, 255, 0.5);
   --sp-surface: #181c26;
   --sp-surface-2: #1e2333;
   --sp-border: rgba(255, 255, 255, 0.07);
