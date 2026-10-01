@@ -22,7 +22,7 @@ import { fetchGifs, type GifSearchResult } from '../../services/api/gifApi'
 import { AttachmentPreviewOverlay, type PendingAttachment } from './AttachmentPreviewOverlay'
 const CreatePollModal = lazy(() => import('./CreatePollModal').then(m => ({ default: m.CreatePollModal })))
 import { MessageInput } from './MessageInput'
-import { ChatStateContext, MessageActionContext, ChatUIContext } from './ChatContexts'
+import { ChatStateContext, MessageActionContext, ChatUIContext, ChatInputContext } from './ChatContexts'
 const GalleryViewer = lazy(() => import('./GalleryViewer').then(m => ({ default: m.GalleryViewer })))
 const ForwardMessageModal = lazy(() => import('./ForwardMessageModal').then(m => ({ default: m.ForwardMessageModal })))
 const PinnedMessagesDrawer = lazy(() => import('./PinnedMessagesDrawer').then(m => ({ default: m.PinnedMessagesDrawer })))
@@ -143,6 +143,7 @@ type ChatPanelProps = {
   onRemoveReaction: (messageId: string, emoji: string) => Promise<void> | void
   onRetryMessage: (message: Message) => Promise<void> | void
   onSendGif: (gif: GifSearchResult) => Promise<void> | void
+  onSendSticker?: (url: string) => Promise<void> | void
   onLoadOlderMessages: () => Promise<void> | void
   onSendQuickMessage: (text: string) => Promise<void> | void
   onAutoScrollComplete: () => void
@@ -207,6 +208,7 @@ export function ChatPanel({
   currentUserId,
   onSendPoll,
   onVotePoll,
+  onSendSticker,
 }: ChatPanelProps) {
   const [editingMessageId, setEditingMessageId] = useState('')
   const [editingText, setEditingText] = useState('')
@@ -243,6 +245,7 @@ export function ChatPanel({
   const [galleryImage, setGalleryImage] = useState<MessageAttachment | null>(null)
   const [isPollModalOpen, setIsPollModalOpen] = useState(false)
   const [isAtLatestMessage, setIsAtLatestMessage] = useState(true)
+  const [floatingReactions, setFloatingReactions] = useState<{ id: string; emoji: string; x: number; rotation: number }[]>([])
   const isAtLatestMessageRef = useRef(isAtLatestMessage)
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const threadRef = useRef<HTMLDivElement | null>(null)
@@ -322,7 +325,7 @@ export function ChatPanel({
     if (!date1 || !date2) return false
 
     const timeDiffMs = Math.abs(date1.getTime() - date2.getTime())
-    const isWithinTimeWindow = timeDiffMs <= 5 * 60 * 1000 // 5 minutes
+    const isWithinTimeWindow = timeDiffMs <= 5 * 60 * 1000 
 
     return isSameLocalDay(date1, date2) && isWithinTimeWindow
   }
@@ -581,6 +584,25 @@ export function ChatPanel({
 
     return ALLOWED_ATTACHMENT_TYPE_PREFIXES.some((typePrefix) => file.type.startsWith(typePrefix))
   }
+
+  const handleSpawnReaction = useCallback((emoji: string) => {
+    const newReaction = {
+      id: Math.random().toString(36).substring(7),
+      emoji,
+      x: (Math.random() - 0.5) * 100, // random offset
+      rotation: (Math.random() - 0.5) * 45 // random rotation
+    }
+    setFloatingReactions(current => [...current, newReaction])
+    
+    // Auto cleanup after animation
+    setTimeout(() => {
+      setFloatingReactions(current => current.filter(r => r.id !== newReaction.id))
+    }, 1500)
+  }, [])
+
+  const handleSendQuickEmoji = useCallback((emoji: string) => {
+    onSendQuickMessage(emoji)
+  }, [onSendQuickMessage])
 
 
 
@@ -1498,38 +1520,56 @@ export function ChatPanel({
         />
       )}
 
-      <MessageInput
-        attachmentError={attachmentError}
-        onSubmit={onSubmit}
-        replyingTo={replyingTo}
-        getReplyAuthorLabel={getReplyAuthorLabel}
-        getReplyText={getReplyText}
-        onCancelReply={onCancelReply}
-        isUploadingAttachment={isUploadingAttachment}
-        locationError={locationError}
-        isBlocked={isBlocked}
-        mentionSuggestions={mentionSuggestions}
-        insertMention={insertMention}
-        handleAttachmentChange={handleAttachmentChange}
-        handleDraftChange={handleDraftChange}
-        activeConversation={activeConversation}
-        draft={draft}
-        isComposerEmojiOpen={isComposerEmojiOpen}
-        setIsGifPickerOpen={setIsGifPickerOpen}
-        setIsComposerEmojiOpen={setIsComposerEmojiOpen}
-        handleSendComposerEmoji={handleSendComposerEmoji}
-        isGifPickerOpen={isGifPickerOpen}
-        gifQuery={gifQuery}
-        setGifQuery={setGifQuery}
-        gifError={gifError}
-        isLoadingGifs={isLoadingGifs}
-        gifResults={gifResults}
-        handleSendGif={handleSendGif}
-        isSharingLocation={isSharingLocation}
-        handleShareLocation={handleShareLocation}
-        setIsPollModalOpen={setIsPollModalOpen}
-        onUploadAttachment={onUploadAttachment}
-      />
+      <ChatInputContext.Provider value={{
+        onSubmit,
+        replyingTo,
+        getReplyAuthorLabel,
+        getReplyText,
+        onCancelReply,
+        isUploadingAttachment,
+        locationError,
+        attachmentError,
+        isBlocked,
+        mentionSuggestions,
+        insertMention,
+        handleAttachmentChange,
+        handleDraftChange,
+        activeConversation,
+        draft,
+        isComposerEmojiOpen,
+        setIsGifPickerOpen,
+        setIsComposerEmojiOpen,
+        handleSendComposerEmoji,
+        isGifPickerOpen,
+        gifQuery,
+        setGifQuery,
+        gifError,
+        isLoadingGifs,
+        gifResults,
+        handleSendGif,
+        isSharingLocation,
+        handleShareLocation,
+        setIsPollModalOpen,
+        onUploadAttachment,
+        onSpawnReaction: handleSpawnReaction,
+        onSendQuickEmoji: handleSendQuickEmoji,
+        onSendSticker
+      }}>
+        <MessageInput />
+      </ChatInputContext.Provider>
+
+      {floatingReactions.map(reaction => (
+        <span
+          key={reaction.id}
+          className="floating-reaction"
+          style={{
+            '--end-x': `${reaction.x}px`,
+            '--end-rot': `${reaction.rotation}deg`
+          } as React.CSSProperties}
+        >
+          {reaction.emoji}
+        </span>
+      ))}
 
       {forwardingMessage && (
         <Suspense fallback={null}>

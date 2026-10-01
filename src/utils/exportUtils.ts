@@ -2,7 +2,6 @@ export function exportToCSV(filename: string, headers: string[], data: (string |
   const processCell = (cell: string | number | boolean | null | undefined) => {
     if (cell === null || cell === undefined) return '""'
     const str = String(cell)
-    // Escape double quotes by doubling them
     return '"' + str.replace(/"/g, '""') + '"'
   }
 

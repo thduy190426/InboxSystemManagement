@@ -1,61 +1,35 @@
-import type { FormEvent, ChangeEvent } from 'react'
-import { Suspense, lazy } from 'react'
+import { Suspense, lazy, useRef, useState, useEffect } from 'react'
 import { Reply, X, Mic, Video, Send, Loader2, MapPin, PieChart, Image, Smile, Search, Film, Square } from 'lucide-react'
-import type { Conversation, Message } from '../../types'
-import type { GifSearchResult } from '../../services/api/gifApi'
-import type { EmojiClickData, EmojiStyle, Theme } from 'emoji-picker-react'
 import { useMediaRecording } from '../../hooks/chat/useMediaRecording'
+import type { EmojiStyle, Theme } from 'emoji-picker-react'
 
 const EmojiPicker = lazy(() => import('emoji-picker-react'))
 
+import { useChatInput } from './ChatContexts'
+
 export type MessageInputProps = {
-  onSubmit: (e: FormEvent<HTMLFormElement>) => void
-  replyingTo: Message | null
-  getReplyAuthorLabel: (m: Message) => string
-  getReplyText: (m: Message) => string
-  onCancelReply: () => void
-  isUploadingAttachment: boolean
-  locationError: string
-  isBlocked: boolean
-  mentionSuggestions: {
-    id: string
-    userId: number
-    fullName: string
-    handle?: string | null
-    nickname?: string | null
-    avatarUrl: string | null
-  }[]
-  insertMention: (handle: string) => void
-  handleAttachmentChange: (e: ChangeEvent<HTMLInputElement>) => void
-  handleDraftChange: (e: ChangeEvent<HTMLInputElement>) => void
-  activeConversation: Conversation
-  draft: string
-  isComposerEmojiOpen: boolean
-  setIsGifPickerOpen: React.Dispatch<React.SetStateAction<boolean>>
-  setIsComposerEmojiOpen: React.Dispatch<React.SetStateAction<boolean>>
-  handleSendComposerEmoji: (data: EmojiClickData) => void
-  isGifPickerOpen: boolean
-  gifQuery: string
-  setGifQuery: React.Dispatch<React.SetStateAction<string>>
-  gifError: string
-  isLoadingGifs: boolean
-  gifResults: GifSearchResult[]
-  handleSendGif: (gif: GifSearchResult) => void
-  isSharingLocation: boolean
-  handleShareLocation: () => void
-  setIsPollModalOpen: React.Dispatch<React.SetStateAction<boolean>>
-  onUploadAttachment: (file: File) => Promise<void> | void
-  attachmentError?: string
+  // Now decoupled using ChatInputContext!
 }
 
-export function MessageInput({
-  onSubmit, replyingTo, getReplyAuthorLabel, getReplyText, onCancelReply,
-  isUploadingAttachment, locationError, attachmentError, isBlocked, mentionSuggestions,
-  insertMention, handleAttachmentChange, handleDraftChange, activeConversation, draft,
-  isComposerEmojiOpen, setIsGifPickerOpen, setIsComposerEmojiOpen, handleSendComposerEmoji,
-  isGifPickerOpen, gifQuery, setGifQuery, gifError, isLoadingGifs, gifResults, handleSendGif,
-  isSharingLocation, handleShareLocation, setIsPollModalOpen, onUploadAttachment
-}: MessageInputProps) {
+export function MessageInput({}: MessageInputProps) {
+  const {
+    onSubmit, replyingTo, getReplyAuthorLabel, getReplyText, onCancelReply,
+    isUploadingAttachment, locationError, attachmentError, isBlocked, mentionSuggestions,
+    insertMention, handleAttachmentChange, handleDraftChange, activeConversation, draft,
+    isComposerEmojiOpen, setIsGifPickerOpen, setIsComposerEmojiOpen, handleSendComposerEmoji,
+    isGifPickerOpen, gifQuery, setGifQuery, gifError, isLoadingGifs, gifResults, handleSendGif,
+    isSharingLocation, handleShareLocation, setIsPollModalOpen, onUploadAttachment,
+    onSpawnReaction, onSendQuickEmoji, onSendSticker
+  } = useChatInput()
+  const [isStickerPickerOpen, setIsStickerPickerOpen] = useState(false)
+  const [stickerPacks, setStickerPacks] = useState<import('../../services/api/stickerApi').StickerPack[]>([])
+
+  // Use the normally imported useEffect
+  useEffect(() => {
+    import('../../services/api/stickerApi').then(api => {
+      api.fetchStickerPacks().then(setStickerPacks).catch(() => {})
+    })
+  }, [])
   const {
     recordingKind,
     recordingDuration,
@@ -70,6 +44,30 @@ export function MessageInput({
     formatRecordingDuration,
     setRecordingError
   } = useMediaRecording()
+
+  const quickEmoji = activeConversation.quickEmoji || '👍'
+  const holdIntervalRef = useRef<number | null>(null)
+  const [isHoldingEmoji, setIsHoldingEmoji] = useState(false)
+
+  function handleQuickEmojiPointerDown(e: React.PointerEvent) {
+    if (isBlocked || isUploadingAttachment) return
+    e.preventDefault()
+    setIsHoldingEmoji(true)
+    onSpawnReaction?.(quickEmoji)
+    holdIntervalRef.current = window.setInterval(() => {
+      onSpawnReaction?.(quickEmoji)
+    }, 150)
+  }
+
+  function handleQuickEmojiPointerUp(e: React.PointerEvent) {
+    e.preventDefault()
+    if (holdIntervalRef.current !== null) {
+      clearInterval(holdIntervalRef.current)
+      holdIntervalRef.current = null
+      setIsHoldingEmoji(false)
+      onSendQuickEmoji?.(quickEmoji)
+    }
+  }
 
   async function sendRecordedMedia() {
     if (!recordedMediaFile) return
@@ -258,6 +256,51 @@ export function MessageInput({
               </span>
             ) : null}
           </span>
+          <span className="composer-sticker-wrap">
+            <button
+              className={isStickerPickerOpen ? 'icon-button composer-extra is-active' : 'icon-button composer-extra'}
+              disabled={isBlocked || isUploadingAttachment}
+              onClick={() => {
+                setIsComposerEmojiOpen(false)
+                setIsGifPickerOpen(false)
+                setIsStickerPickerOpen((current) => !current)
+              }}
+              title="Nhãn dán"
+              type="button"
+            >
+              <Smile size={20} />
+            </button>
+            {isStickerPickerOpen ? (
+              <span className="composer-sticker-picker">
+                <div className="sticker-packs-header">
+                  {stickerPacks.map(pack => (
+                    <img key={pack.id} src={pack.icon} alt={pack.name} className="sticker-pack-icon" title={pack.name} />
+                  ))}
+                </div>
+                <div className="sticker-packs-body">
+                  {stickerPacks.map(pack => (
+                    <div key={pack.id} className="sticker-pack-group">
+                      <div className="sticker-pack-title">{pack.name}</div>
+                      <div className="sticker-grid">
+                        {pack.stickers.map(sticker => (
+                          <img 
+                            key={sticker.id} 
+                            src={sticker.url} 
+                            alt="" 
+                            className="sticker-item" 
+                            onClick={() => {
+                              if (onSendSticker) onSendSticker(sticker.url)
+                              setIsStickerPickerOpen(false)
+                            }} 
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </span>
+            ) : null}
+          </span>
           {recordingKind ? (
             <button
               className="icon-button composer-extra voice-record-button is-recording"
@@ -307,14 +350,29 @@ export function MessageInput({
               </button>
             </>
           )}
-          <button
-            className="send-button"
-            disabled={isBlocked || !draft.trim() || isUploadingAttachment}
-            title="Gửi"
-            type="submit"
-          >
-            <Send size={19} />
-          </button>
+          {!draft.trim() ? (
+            <button
+              className={`quick-emoji-button ${isHoldingEmoji ? 'is-holding' : ''}`}
+              disabled={isBlocked || isUploadingAttachment}
+              type="button"
+              title="Gửi nhanh"
+              onPointerDown={handleQuickEmojiPointerDown}
+              onPointerUp={handleQuickEmojiPointerUp}
+              onPointerLeave={handleQuickEmojiPointerUp}
+              onContextMenu={e => e.preventDefault()}
+            >
+              <span className="quick-emoji-icon">{quickEmoji}</span>
+            </button>
+          ) : (
+            <button
+              className="send-button"
+              disabled={isBlocked || isUploadingAttachment}
+              title="Gửi"
+              type="submit"
+            >
+              <Send size={19} />
+            </button>
+          )}
         </div>
       </form>
   )

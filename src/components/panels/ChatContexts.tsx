@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react'
-import type { FormEvent } from 'react'
+import type { FormEvent, ChangeEvent } from 'react'
 import type { Conversation, Message, MessageReply } from '../../types'
 
 export type MessageActionContextType = {
@@ -50,9 +50,59 @@ export type ChatUIContextType = {
   setOpenReactionPickerId: React.Dispatch<React.SetStateAction<string>>
 }
 
+export type ChatInputContextType = {
+  onSubmit: (e: FormEvent<HTMLFormElement>) => void
+  replyingTo: Message | null
+  getReplyAuthorLabel: (m: Message) => string
+  getReplyText: (m: Message) => string
+  onCancelReply: () => void
+  isUploadingAttachment: boolean
+  locationError: string
+  isBlocked: boolean
+  mentionSuggestions: {
+    id: string
+    userId: number
+    fullName: string
+    handle?: string | null
+    nickname?: string | null
+    avatarUrl: string | null
+  }[]
+  insertMention: (handle: string) => void
+  handleAttachmentChange: (e: ChangeEvent<HTMLInputElement>) => void
+  handleDraftChange: (e: ChangeEvent<HTMLInputElement>) => void
+  activeConversation: Conversation
+  draft: string
+  isComposerEmojiOpen: boolean
+  setIsGifPickerOpen: React.Dispatch<React.SetStateAction<boolean>>
+  setIsComposerEmojiOpen: React.Dispatch<React.SetStateAction<boolean>>
+  handleSendComposerEmoji: (data: any) => void
+  isGifPickerOpen: boolean
+  gifQuery: string
+  setGifQuery: React.Dispatch<React.SetStateAction<string>>
+  gifError: string
+  isLoadingGifs: boolean
+  gifResults: any[]
+  handleSendGif: (gif: any) => void
+  isSharingLocation: boolean
+  handleShareLocation: () => void
+  setIsPollModalOpen: React.Dispatch<React.SetStateAction<boolean>>
+  onUploadAttachment: (file: File) => Promise<void> | void
+  attachmentError?: string
+  onSpawnReaction?: (emoji: string) => void
+  onSendQuickEmoji?: (emoji: string) => void
+  onSendSticker?: (url: string) => void
+}
+
 export const MessageActionContext = createContext<MessageActionContextType | null>(null)
 export const ChatStateContext = createContext<ChatStateContextType | null>(null)
 export const ChatUIContext = createContext<ChatUIContextType | null>(null)
+export const ChatInputContext = createContext<ChatInputContextType | null>(null)
+
+export function useChatInput() {
+  const ctx = useContext(ChatInputContext)
+  if (!ctx) throw new Error('useChatInput must be used within ChatInputContext.Provider')
+  return ctx
+}
 
 export function useMessageActions() {
   const ctx = useContext(MessageActionContext)

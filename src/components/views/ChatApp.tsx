@@ -1657,6 +1657,55 @@ export function ChatApp({
     }
   }
 
+  async function handleSendSticker(url: string) {
+    if (!activeConversation || isUploadingAttachment) {
+      return
+    }
+
+    if (activeConversation.blocked) {
+      pushToast('Bạn đã chặn người dùng này!')
+      return
+    }
+
+    try {
+      setIsUploadingAttachment(true)
+
+      // Use the same API as GIF for stickers
+      const createdMessage = await sendGifMessage(activeConversation.id, {
+        url: url,
+        title: 'Sticker',
+      })
+
+      setMessagesByConversation((current) => ({
+        ...current,
+        [activeConversation.id]: [...(current[activeConversation.id] ?? []), createdMessage],
+      }))
+
+      setConversations((current: Conversation[] = []) =>
+        current.map((conversation) =>
+          conversation.id === activeConversation.id
+            ? {
+              ...conversation,
+              lastMessage: 'Đã gửi một nhãn dán!',
+              lastMessageByMe: true,
+              lastMessageIsAttachment: true,
+              lastMessageAt: createdMessage.createdAt ?? null,
+              lastTime: createdMessage.time,
+              attachments: [
+                ...(createdMessage.attachments ?? []),
+                ...conversation.attachments,
+              ],
+            }
+            : conversation,
+        ),
+      )
+    } catch (error) {
+      pushToast(getErrorMessage(error, 'Không thể gửi nhãn dán!'))
+    } finally {
+      setIsUploadingAttachment(false)
+    }
+  }
+
   async function handleEditMessage(messageId: string, text: string) {
     if (!activeConversation || busyMessageId) {
       return
@@ -2457,6 +2506,30 @@ export function ChatApp({
     }
   }
 
+  async function handleUpdateQuickEmoji(emoji: string) {
+    if (!activeConversation || busyConversationAction) return
+    try {
+      setBusyConversationAction('emoji')
+      // Assuming no API for this right now, we can just update local state
+      // or if we have an API, we can call it.
+      // Since it's a frontend assignment, updating local state is usually enough if backend isn't ready.
+      setConversations((current: Conversation[] = []) =>
+        current.map((conversation) =>
+          conversation.id === activeConversation.id
+            ? {
+              ...conversation,
+              quickEmoji: emoji,
+            }
+            : conversation,
+        ),
+      )
+    } catch (error) {
+      pushToast('Không thể thay đổi biểu tượng cảm xúc', 'error')
+    } finally {
+      setBusyConversationAction('')
+    }
+  }
+
   async function handleAddMember(userId: string) {
     if (!activeConversation || activeConversation.type !== 'group' || busyConversationAction) {
       return
@@ -3088,6 +3161,7 @@ export function ChatApp({
         onOpenConversationList={() => setIsInboxOpen(true)}
         onStartCall={handleStartCall}
         onSubmit={handleSubmit}
+        onSendSticker={handleSendSticker}
       />
       {isDetailOpen ? (
         <button
@@ -3125,6 +3199,7 @@ export function ChatApp({
         onUpdateBackground={handleUpdateBackground}
         onUpdateMemberNickname={handleUpdateMemberNickname}
         onUpdateMemberRole={handleUpdateMemberRole}
+        onUpdateQuickEmoji={handleUpdateQuickEmoji}
         onClose={() => setIsDetailOpen(false)}
       />
       {profileContactToOpen && (

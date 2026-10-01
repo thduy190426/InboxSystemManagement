@@ -177,6 +177,7 @@ export type Conversation = {
   blocked: boolean
   restricted?: boolean
   presence: 'online' | 'away' | 'busy' | 'offline'
+  quickEmoji?: string
   unreadSenders?: UnreadSender[]
   memberCount?: number
   members?: ConversationMember[]

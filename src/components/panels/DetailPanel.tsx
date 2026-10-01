@@ -1,6 +1,8 @@
 import type { ChangeEvent, FormEvent } from 'react'
 import { createPortal } from 'react-dom'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, lazy, Suspense } from 'react'
+
+const EmojiPicker = lazy(() => import('emoji-picker-react'))
 import {
   Archive,
   Bell,
@@ -16,6 +18,7 @@ import {
   Save,
   Shield,
   ShieldCheck,
+  Smile,
   Trash2,
   UserCog,
   UserCheck,
@@ -63,6 +66,7 @@ type DetailPanelProps = {
   onUpdateBackground?: (payload: { backgroundImage?: File | null; removeBackground?: boolean }) => Promise<void> | void
   onUpdateMemberNickname: (userId: string, nickname: string) => Promise<void> | void
   onUpdateMemberRole: (userId: string, role: 'admin' | 'member') => Promise<void> | void
+  onUpdateQuickEmoji?: (emoji: string) => Promise<void> | void
   onClose?: () => void
 }
 
@@ -96,6 +100,7 @@ export function DetailPanel({
   onUpdateBackground,
   onUpdateMemberNickname,
   onUpdateMemberRole,
+  onUpdateQuickEmoji,
   onClose,
 }: DetailPanelProps) {
   const [groupTitle, setGroupTitle] = useState(activeConversation.name)
@@ -149,6 +154,7 @@ export function DetailPanel({
 
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false)
   const [isAddMemberModalClosing, setIsAddMemberModalClosing] = useState(false)
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false)
 
   const MEMBER_PREVIEW_COUNT = 0
 
@@ -632,6 +638,32 @@ export function DetailPanel({
               }}
             />
           </label>
+          <div style={{ position: 'relative' }}>
+            <button
+              disabled={Boolean(busyAction)}
+              onClick={() => setIsEmojiPickerOpen(prev => !prev)}
+              type="button"
+              style={{ display: 'flex', width: '100%', justifyContent: 'flex-start', alignItems: 'center', gap: '8px', padding: '10px 14px', background: 'var(--surface-soft)', border: '1px solid var(--line)', borderRadius: '8px', cursor: Boolean(busyAction) ? 'not-allowed' : 'pointer', fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}
+            >
+              <Smile size={16} color="var(--primary-strong)" /> Thay đổi biểu tượng cảm xúc
+              <span style={{ marginLeft: 'auto', fontSize: '18px' }}>{activeConversation.quickEmoji || '👍'}</span>
+            </button>
+            {isEmojiPickerOpen && (
+              <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 100 }}>
+                <Suspense fallback={<div>Đang tải...</div>}>
+                  <EmojiPicker
+                    onEmojiClick={(data: any) => {
+                      if (onUpdateQuickEmoji) {
+                        onUpdateQuickEmoji(data.emoji)
+                      }
+                      setIsEmojiPickerOpen(false)
+                    }}
+                    lazyLoadEmojis
+                  />
+                </Suspense>
+              </div>
+            )}
+          </div>
           {activeConversation.backgroundImage && (
             <button
               disabled={Boolean(busyAction)}
