@@ -11136,7 +11136,7 @@ html.dark .message-search-button.is-active {
   background: var(--color-surface, #ffffff);
   border: 1px solid var(--color-border, #e5e5ea);
   border-radius: 24px;
-  overflow: hidden;
+  overflow: visible;
   height: 100%;
 }
 
@@ -11147,6 +11147,7 @@ html.dark .message-search-button.is-active {
   padding: 12px 16px 11px;
   border-bottom: 1px solid var(--color-border, #e5e5ea);
   background: var(--color-surface-subtle, #fafafa);
+  border-radius: 24px 24px 0 0;
 }
 
 .pp-section-icon {
