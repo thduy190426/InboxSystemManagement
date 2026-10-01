@@ -625,7 +625,7 @@ export function ChatPanel({
         const data = await response.json()
         if (data.latitude && data.longitude) {
           const mapsUrl = `https://www.google.com/maps?q=${data.latitude},${data.longitude}`
-          void onSendQuickMessage(`📍 Vị trí (ước tính qua IP): ${mapsUrl}`)
+          void onSendQuickMessage(`Vị trí (ước tính qua IP): ${mapsUrl}`)
           setIsSharingLocation(false)
         } else {
           throw new Error('No location data')
@@ -792,9 +792,9 @@ export function ChatPanel({
     await onToggleMessagePin(messageId)
     if (message) {
       if (message.isPinned) {
-        void onSendQuickMessage(`📌 Đã bỏ ghim một tin nhắn`)
+        void onSendQuickMessage(`Đã bỏ ghim một tin nhắn`)
       } else {
-        void onSendQuickMessage(`📌 Đã ghim một tin nhắn`)
+        void onSendQuickMessage(`Đã ghim một tin nhắn`)
       }
     }
   }
