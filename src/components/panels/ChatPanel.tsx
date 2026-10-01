@@ -731,52 +731,36 @@ export function ChatPanel({
   }
 
   function handleDeleteForMe(message: Message) {
-    setConfirmDialog({
-      title: 'Xoá tin nhắn?',
-      description: 'Tin nhắn này sẽ bị xoá khỏi cuộc trò chuyện của bạn.',
-      confirmLabel: 'Xoá tin nhắn',
-      tone: 'danger',
-      onConfirm: () => {
-        if (editingMessageId === message.id) {
-          cancelEditing()
-        }
+    if (editingMessageId === message.id) {
+      cancelEditing()
+    }
 
-        setOpenActionMenuId('')
-        setOptimisticHiddenMessageIds((prev) => new Set(prev).add(message.id))
+    setOpenActionMenuId('')
+    setOptimisticHiddenMessageIds((prev) => new Set(prev).add(message.id))
 
-        Promise.resolve(onDeleteMessage(message.id)).catch(() => {
-          setOptimisticHiddenMessageIds((prev) => {
-            const next = new Set(prev)
-            next.delete(message.id)
-            return next
-          })
-        })
-      },
+    Promise.resolve(onDeleteMessage(message.id)).catch(() => {
+      setOptimisticHiddenMessageIds((prev) => {
+        const next = new Set(prev)
+        next.delete(message.id)
+        return next
+      })
     })
   }
 
   function handleRecall(message: Message) {
-    setConfirmDialog({
-      title: 'Thu hồi tin nhắn?',
-      description: 'Tin nhắn này sẽ bị gỡ khỏi cuộc trò chuyện của tất cả mọi người.',
-      confirmLabel: 'Thu hồi',
-      tone: 'danger',
-      onConfirm: () => {
-        if (editingMessageId === message.id) {
-          cancelEditing()
-        }
+    if (editingMessageId === message.id) {
+      cancelEditing()
+    }
 
-        setOpenActionMenuId('')
-        setOptimisticHiddenMessageIds((prev) => new Set(prev).add(message.id))
+    setOpenActionMenuId('')
+    setOptimisticHiddenMessageIds((prev) => new Set(prev).add(message.id))
 
-        Promise.resolve(onRecallMessage(message.id)).catch(() => {
-          setOptimisticHiddenMessageIds((prev) => {
-            const next = new Set(prev)
-            next.delete(message.id)
-            return next
-          })
-        })
-      },
+    Promise.resolve(onRecallMessage(message.id)).catch(() => {
+      setOptimisticHiddenMessageIds((prev) => {
+        const next = new Set(prev)
+        next.delete(message.id)
+        return next
+      })
     })
   }
 
