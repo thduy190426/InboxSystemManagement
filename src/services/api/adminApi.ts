@@ -33,6 +33,7 @@ export type AdminUser = {
   isActive: boolean
   avatarUrl: string | null
   lastLogin: string | null
+  gender?: string | null
   createdAt: string
   updatedAt: string
 }

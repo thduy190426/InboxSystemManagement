@@ -304,14 +304,18 @@ function getReportStatusLabel(status: MessageReportStatus) {
 
 function getStatusLabel(status: AdminUserStatus) {
   if (status === 'suspended') {
-    return 'Đã khóa.'
+    return 'Bị khóa'
   }
 
-  if (status === 'active') {
-    return 'Đang online.'
-  }
+  return 'Bình thường'
+}
 
-  return 'Bình thường.'
+function getGenderLabel(gender?: string | null) {
+  if (gender === 'male') return 'Nam'
+  if (gender === 'female') return 'Nữ'
+  if (gender === 'other') return 'Khác'
+  if (gender === 'prefer_not_to_say') return 'Không muốn chia sẻ'
+  return 'Chưa cập nhật'
 }
 
 function createEditState(user: AdminUser): EditUserState {
@@ -677,6 +681,8 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
           </td>
           <td data-label="Vai trò"><div className="skeleton skeleton-text" style={{ width: '80px', height: '24px', borderRadius: '12px' }}></div></td>
           <td data-label="Tài khoản"><div className="skeleton skeleton-text" style={{ width: '100px', height: '24px', borderRadius: '12px' }}></div></td>
+          <td data-label="Giới tính"><div className="skeleton skeleton-text" style={{ width: '60px', height: '16px' }}></div></td>
+          <td data-label="Ngày tạo"><div className="skeleton skeleton-text" style={{ width: '120px', height: '16px' }}></div></td>
           <td data-label="Đăng nhập cuối"><div className="skeleton skeleton-text" style={{ width: '140px', height: '16px' }}></div></td>
           <td data-label="Thao tác">
             <div className="action-buttons">
@@ -692,7 +698,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
     if (users.length === 0) {
       return (
         <tr>
-          <td colSpan={5}>
+          <td colSpan={7}>
             <div className="admin-empty-row">
               {debouncedSearch ? 'Không tìm thấy người dùng phù hợp!' : 'Chưa có người dùng nào!'}
             </div>
@@ -723,10 +729,12 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
           </td>
           <td data-label="Tài khoản">
             <span className={`status-badge status-${user.status}`}>
-              {isLocked ? <Lock size={12} /> : user.status === 'active' ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
+              {isLocked ? <Lock size={12} /> : <CheckCircle2 size={12} />}
               {getStatusLabel(user.status)}
             </span>
           </td>
+          <td data-label="Giới tính">{getGenderLabel(user.gender)}</td>
+          <td className="text-muted" data-label="Ngày tạo">{user.createdAt ? formatLastLogin(user.createdAt) : 'N/A'}</td>
           <td className="text-muted" data-label="Đăng nhập cuối">{formatLastLogin(user.lastLogin)}</td>
           <td data-label="Thao tác">
             <div className="action-buttons">
@@ -1151,6 +1159,8 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
                 <th>Người dùng</th>
                 <th>Vai trò</th>
                 <th>Tài khoản</th>
+                <th>Giới tính</th>
+                <th>Ngày tạo</th>
                 <th>Đăng nhập cuối</th>
                 <th>Thao tác</th>
               </tr>
