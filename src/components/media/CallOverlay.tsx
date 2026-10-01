@@ -1,4 +1,4 @@
-import { Mic, MicOff, Phone, PhoneOff, Volume2, VolumeX, Video, VideoOff, X, MonitorUp, Signal, Minimize2, Maximize2 } from 'lucide-react'
+import { Mic, MicOff, Phone, Volume2, VolumeX, Video, VideoOff, X, MonitorUp, Signal, Minimize2, Maximize2 } from 'lucide-react'
 import { memo, useEffect, useRef, useState } from 'react'
 import {
   acceptRealtimeCall,
