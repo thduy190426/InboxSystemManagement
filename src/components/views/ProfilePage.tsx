@@ -1,5 +1,5 @@
 import type { ChangeEvent, FormEvent } from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, lazy, Suspense } from 'react'
 import {
   AlignLeft, AtSign, CalendarDays, Camera, IdCard, MapPin,
   MessageSquare, Phone, Save, Shield, User, Users,
@@ -13,6 +13,8 @@ import {
 } from '../../services/api/userApi'
 import { AvatarCropper } from '../ui/AvatarCropper'
 import { AvatarFallback } from '../ui/AvatarFallback'
+import type { EmojiClickData, EmojiStyle, Theme } from 'emoji-picker-react'
+const EmojiPicker = lazy(() => import('emoji-picker-react'))
 
 type ProfilePageProps = {
   currentUser: AuthUser | null
@@ -161,6 +163,12 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null)
   const [profileErrors, setProfileErrors] = useState<ProfileErrors>({})
   const [isBioExpanded, setIsBioExpanded] = useState(false)
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false)
+
+  const handleEmojiClick = (emojiData: EmojiClickData) => {
+    setForm(prev => ({ ...prev, statusEmoji: emojiData.emoji }))
+    setIsEmojiPickerOpen(false)
+  }
 
   const hasChanges = JSON.stringify(form) !== JSON.stringify(initialForm)
   const hasLongBio = form.bio.trim().length > 120
@@ -425,24 +433,26 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
               </ProfileField>
 
               <ProfileField label="Trạng thái cá nhân" icon={<MessageSquare size={14} />} error={profileErrors.statusMessage} wide>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <select
+                <div style={{ display: 'flex', gap: '8px', position: 'relative' }}>
+                  <button
                     className="pp-input pp-select"
-                    name="statusEmoji"
-                    onChange={handleChange}
-                    style={{ width: '60px', flexShrink: 0, padding: '0 4px', textAlign: 'center' }}
-                    value={form.statusEmoji}
+                    onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
+                    style={{ width: '60px', flexShrink: 0, padding: '0 4px', textAlign: 'center', cursor: 'pointer', background: 'var(--surface)' }}
+                    type="button"
                   >
-                    <option value="💬">💬</option>
-                    <option value="💼">💼</option>
-                    <option value="🏠">🏠</option>
-                    <option value="🤒">🤒</option>
-                    <option value="☕️">☕️</option>
-                    <option value="🚗">🚗</option>
-                    <option value="✈️">✈️</option>
-                    <option value="🌴">🌴</option>
-                    <option value="🎮">🎮</option>
-                  </select>
+                    {form.statusEmoji}
+                  </button>
+                  {isEmojiPickerOpen && (
+                    <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 50, marginTop: '4px' }}>
+                      <Suspense fallback={<div style={{ padding: '20px', background: 'var(--surface)', color: 'var(--text)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>Đang tải...</div>}>
+                        <EmojiPicker
+                          emojiStyle={'native' as EmojiStyle}
+                          onEmojiClick={handleEmojiClick}
+                          theme={'dark' as Theme}
+                        />
+                      </Suspense>
+                    </div>
+                  )}
                   <input
                     className="pp-input"
                     maxLength={120}
