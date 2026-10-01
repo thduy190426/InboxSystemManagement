@@ -10,20 +10,10 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const savedTheme = localStorage.getItem('theme') as Theme | null
-    if (savedTheme) {
-      return savedTheme
-    }
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark'
-    }
-    return 'light'
-  })
+  const [theme] = useState<Theme>('dark')
 
   useEffect(() => {
     const root = window.document.documentElement
-    
     if (theme === 'dark') {
       root.classList.add('dark')
     } else {
@@ -34,13 +24,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [theme])
 
   const toggleTheme = () => {
-    const root = window.document.documentElement
-    root.classList.add('theme-transition')
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'))
-    
-    setTimeout(() => {
-      root.classList.remove('theme-transition')
-    }, 400)
+    // Temporarily disabled: always keep dark theme
+    // const root = window.document.documentElement
+    // root.classList.add('theme-transition')
+    // setTheme((prev) => (prev === 'light' ? 'dark' : 'light'))
+    // 
+    // setTimeout(() => {
+    //   root.classList.remove('theme-transition')
+    // }, 400)
   }
 
   return (
