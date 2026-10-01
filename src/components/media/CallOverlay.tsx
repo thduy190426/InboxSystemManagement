@@ -816,8 +816,8 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
   function startRingbackTone() {
     if (call.direction === 'incoming') {
       const customRingtones: Record<string, string> = {
-        'Trần Hoàng Duy': '/audio/TDuy.mp3',
-        'Bảo Nghi': '/audio/BNghi.mp3',
+        // 'Trần Hoàng Duy': '/audio/TDuy.mp3',
+        // 'Bảo Nghi': '/audio/BNghi.mp3',
       }
       
       const ringtonePath = customRingtones[call.caller.fullName]
