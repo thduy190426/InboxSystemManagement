@@ -59,7 +59,7 @@ export function ModerationPanel({ pushToast }: { pushToast?: (text: string, tone
         </div>
       </div>
       
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+      <div className="moderation-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '24px' }}>
         <div className="moderation-card" style={{ background: 'var(--surface-hover)', padding: '16px', borderRadius: '12px' }}>
           <h3>Từ khóa cấm</h3>
           <p style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '16px' }}>Các từ ngữ không được phép sử dụng trong tin nhắn.</p>

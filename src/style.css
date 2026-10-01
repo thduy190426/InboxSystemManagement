@@ -8867,6 +8867,12 @@ html.dark .chat-pinned-more:hover {
   color: #fff;
 }
 
+@media (max-width: 768px) {
+  .moderation-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 @media (max-width: 640px) {
   .admin-edit-grid {
     grid-template-columns: 1fr;
