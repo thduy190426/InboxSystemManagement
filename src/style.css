@@ -6260,19 +6260,19 @@ html.dark .chat-pinned-more:hover {
 }
 
 .call-control.is-danger {
-  background: #dc2626;
+  background: #ef4444;
 }
 
 .call-control.is-danger:hover {
-  background: #b91c1c;
+  background: #dc2626;
 }
 
 .call-control.is-accept {
-  background: #16a34a;
+  background: #22c55e;
 }
 
 .call-control.is-accept:hover {
-  background: #15803d;
+  background: #16a34a;
 }
 
 .confirm-dialog-backdrop {

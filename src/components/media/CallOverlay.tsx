@@ -1358,10 +1358,10 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
                 </button>
               ) : null}
               <button className="call-control is-danger" onClick={rejectCall} title="Từ chối" type="button">
-                <PhoneOff size={20} />
+                <Phone size={20} fill="currentColor" style={{ transform: 'rotate(135deg)' }} />
               </button>
               <button className="call-control is-accept" onClick={handleAccept} title="Nhận" type="button">
-                <Phone size={20} />
+                <Phone size={20} fill="currentColor" />
               </button>
             </>
           ) : (
@@ -1392,7 +1392,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
                 </>
               ) : null}
               <button className="call-control is-danger" onClick={hangUp} title="Kết thúc" type="button">
-                <PhoneOff size={20} />
+                <Phone size={20} fill="currentColor" style={{ transform: 'rotate(135deg)' }} />
               </button>
             </>
           )}
