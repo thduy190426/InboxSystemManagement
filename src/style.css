@@ -314,13 +314,19 @@ img {
   transform: translateY(-1px);
 }
 
-.auth-input-row input {
+.auth-input-row input,
+.auth-input-row select {
   width: 100%;
   min-width: 0;
   border: 0;
   background: transparent;
   color: #ffffff;
   outline: 0;
+}
+
+.auth-input-row select option {
+  background: #2a2a2a;
+  color: #fff;
 }
 
 .auth-input-row input::placeholder {

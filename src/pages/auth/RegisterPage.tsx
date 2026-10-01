@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   User,
   UserPlus,
+  Users,
 } from 'lucide-react'
 import type { AuthPageProps } from '../../types'
 import registerBg from '../../bg-images/RegisterBG.jpg'
@@ -18,7 +19,7 @@ type RegisterPageProps = AuthPageProps & {
 }
 
 type RegisterErrors = Partial<
-  Record<'fullName' | 'email' | 'phone' | 'password' | 'confirmPassword', string>
+  Record<'fullName' | 'email' | 'phone' | 'gender' | 'password' | 'confirmPassword', string>
 >
 
 const emailPattern = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i
@@ -44,8 +45,15 @@ function validateRegisterForm(formData: FormData) {
   const email = normalizeEmail(formData.get('email'))
   const phone = normalizePhone(formData.get('phone'))
   const password = String(formData.get('password') ?? '')
+  const gender = String(formData.get('gender') ?? '')
   const confirmPassword = String(formData.get('confirmPassword') ?? '')
   const errors: RegisterErrors = {}
+
+  if (!gender) {
+    errors.gender = 'Vui lòng chọn giới tính!'
+  } else if (!['male', 'female', 'other'].includes(gender)) {
+    errors.gender = 'Giới tính không hợp lệ!'
+  }
 
   if (!fullName) {
     errors.fullName = 'Vui lòng nhập họ và tên!'
@@ -96,6 +104,7 @@ function validateRegisterForm(formData: FormData) {
       fullName,
       email,
       phone,
+      gender,
       password,
       confirmPassword,
     },
@@ -119,13 +128,15 @@ export function RegisterPage({
     const fullName = String(formData.get('fullName') ?? '').trim()
     const email = String(formData.get('email') ?? '').trim()
     const password = String(formData.get('password') ?? '').trim()
-    const confirmPassword = String(formData.get('confirmPassword') ?? '').trim()
+    const gender = String(formData.get('gender') ?? '')
+  const confirmPassword = String(formData.get('confirmPassword') ?? '').trim()
     const terms = formData.get('terms')
     
     setIsFormFilled(
       fullName.length > 0 &&
       email.length > 0 &&
       password.length > 0 &&
+      gender !== '' &&
       confirmPassword.length > 0 &&
       terms === 'on'
     )
@@ -219,6 +230,22 @@ export function RegisterPage({
               />
             </div>
             {fieldErrors.phone ? <span className="auth-field-error">{fieldErrors.phone}</span> : null}
+          </label>
+
+          <label className="auth-field">
+            <span>Giới tính</span>
+            <div className="auth-input-row">
+              <Users size={18} />
+              <select name="gender" required defaultValue="">
+                <option value="" disabled hidden>
+                  Chọn giới tính của bạn
+                </option>
+                <option value="male">Nam</option>
+                <option value="female">Nữ</option>
+                <option value="other">Khác</option>
+              </select>
+            </div>
+            {fieldErrors.gender ? <span className="auth-field-error">{fieldErrors.gender}</span> : null}
           </label>
 
           <label className="auth-field">
