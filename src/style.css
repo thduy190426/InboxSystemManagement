@@ -12080,6 +12080,7 @@ html.dark .outgoing .message-bubble {
   display: flex;
   flex-direction: column;
   background: var(--surface-soft);
+  color: var(--text-color) !important;
   border-radius: 12px;
   padding: 12px;
   min-width: 220px;
@@ -12121,18 +12122,18 @@ html.dark .outgoing .message-bubble {
 .call-action-btn {
   width: 100%;
   margin-top: 12px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--border-color);
   border: none;
   padding: 8px;
   border-radius: 8px;
   color: var(--text-color);
   cursor: pointer;
   font-weight: 500;
-  transition: background 0.2s;
+  transition: background 0.2s, opacity 0.2s;
 }
 
 .call-action-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
+  opacity: 0.8;
 }
 
 .custom-audio-player {
