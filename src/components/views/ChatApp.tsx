@@ -96,6 +96,7 @@ import { ContactsPanel, ContactProfile } from '../panels/ContactsPanel'
 import { DetailPanel } from '../panels/DetailPanel'
 import type { ConversationFilter } from '../panels/InboxPanel'
 import { InboxPanel } from '../panels/InboxPanel'
+import { InboxSkeleton, ChatSkeleton } from '../ui/AppSkeleton'
 import { NavRail } from '../layout/NavRail'
 import { NotificationsPanel } from '../panels/NotificationsPanel'
 const ProfilePage = lazy(() => import('./ProfilePage').then(m => ({ default: m.ProfilePage })))
@@ -3039,10 +3040,10 @@ export function ChatApp({
 
   if (isLoading) {
     return (
-      <main className={shellClassName}>
+      <main className={shellClassName} style={shellStyle}>
         {renderNavRail()}
-        <section className="loading-panel">Đang tải dữ liệu từ máy chủ...</section>
-        
+        <InboxSkeleton />
+        <ChatSkeleton />
       </main>
     )
   }

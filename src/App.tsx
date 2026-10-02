@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, lazy, Suspense } from 'react'
+import { GlobalLoader } from './components/ui/AppSkeleton'
 
 const ChatApp = lazy(() => import('./components/views/ChatApp').then(m => ({ default: m.ChatApp })))
 const LoginPage = lazy(() => import('./pages/auth/LoginPage').then(m => ({ default: m.LoginPage })))
@@ -429,11 +430,7 @@ export function App() {
 
   return (
     <>
-      <Suspense fallback={
-        <div className="flex items-center justify-center h-screen bg-[#F0F2F5] dark:bg-[#111B21]">
-          <div className="w-10 h-10 rounded-full border-4 border-[#00A884] border-t-transparent animate-spin"></div>
-        </div>
-      }>
+      <Suspense fallback={<GlobalLoader />}>
         {content}
       </Suspense>
       {isRouteLoaderDisabled ? null : <RouteTransitionLoader isVisible={isRouteTransitioning} />}
