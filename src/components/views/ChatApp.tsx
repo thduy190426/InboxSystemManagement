@@ -109,12 +109,7 @@ type ChatAppProps = {
   pushToast?: (text: string, tone?: 'info' | 'error') => void
 }
 
-type Toast = {
-  id: string
-  text: string
-  tone?: 'info' | 'error'
-  isHiding?: boolean
-}
+import { toast } from 'sonner'
 
 type MessagePaginationState = {
   hasMore: boolean
@@ -264,8 +259,6 @@ export function ChatApp({
   const [groupInviteTokensByConversation, setGroupInviteTokensByConversation] = useState<Record<string, string>>({})
   const [groupJoinRequestsByConversation, setGroupJoinRequestsByConversation] = useState<Record<string, GroupJoinRequest[]>>({})
   const [messagesByConversation, setMessagesByConversation] = useState<Record<string, Message[]>>({})
-
-  const [toasts, setToasts] = useState<Toast[]>([])
   const typingStopTimerRef = useRef<number | null>(null)
   const lastSentTypingRef = useRef<{ conversationId: string; isTyping: boolean } | null>(null)
   const lastAutoScrolledConversationIdRef = useRef('')
@@ -274,7 +267,6 @@ export function ChatApp({
   const conversationsRef = useRef<Conversation[]>([])
   const locallyDisbandedConversationIdsRef = useRef(new Set<string>())
   const deliveredSyncKeysRef = useRef(new Set<string>())
-  const toastTimersRef = useRef<Record<string, number>>({})
   const notifiedNotificationIdsRef = useRef(new Set<string>())
   const recentBrowserNotificationKeysRef = useRef(new Set<string>())
   const hasSyncedWebPushRef = useRef(false)
@@ -330,33 +322,15 @@ export function ChatApp({
     return calls
   }, [])
 
-  const dismissToast = useCallback((toastId: string) => {
-    const timerId = toastTimersRef.current[toastId]
-
-    if (timerId) {
-      window.clearTimeout(timerId)
-      delete toastTimersRef.current[toastId]
-    }
-
-    setToasts((current) =>
-      current.map((toast) => (toast.id === toastId ? { ...toast, isHiding: true } : toast))
-    )
-
-    window.setTimeout(() => {
-      setToasts((current) => current.filter((toast) => toast.id !== toastId))
-    }, 300)
-  }, [])
-
   const pushToast = useCallback(
-    (text: string, tone: Toast['tone'] = 'error') => {
-      const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`
-
-      setToasts((current) => [...current, { id, text, tone }])
-      toastTimersRef.current[id] = window.setTimeout(() => {
-        dismissToast(id)
-      }, 3200)
+    (text: string, tone: 'info' | 'error' = 'error') => {
+      if (tone === 'error') {
+        toast.error(text)
+      } else {
+        toast.success(text)
+      }
     },
-    [dismissToast],
+    [],
   )
   useOfflineQueue({
     currentUserId: currentUser?.id,
@@ -587,9 +561,7 @@ export function ChatApp({
         updateTypingStatus(lastSentTypingRef.current.conversationId, false).catch(() => undefined)
       }
 
-      Object.values(toastTimersRef.current).forEach((timerId) => {
-        window.clearTimeout(timerId)
-      })
+
     },
     [],
   )
@@ -1670,7 +1642,6 @@ export function ChatApp({
     try {
       setIsUploadingAttachment(true)
 
-      // Use the same API as GIF for stickers
       const createdMessage = await sendGifMessage(activeConversation.id, {
         url: url,
         title: 'Sticker',
@@ -2510,9 +2481,6 @@ export function ChatApp({
     if (!activeConversation || busyConversationAction) return
     try {
       setBusyConversationAction('emoji')
-      // Assuming no API for this right now, we can just update local state
-      // or if we have an API, we can call it.
-      // Since it's a frontend assignment, updating local state is usually enough if backend isn't ready.
       setConversations((current: Conversation[] = []) =>
         current.map((conversation) =>
           conversation.id === activeConversation.id
@@ -2960,27 +2928,7 @@ export function ChatApp({
     ) : null
   }
 
-  function renderToasts() {
-    if (toasts.length === 0) {
-      return null
-    }
 
-    return (
-      <div aria-live="polite" className="toast-stack" role="status">
-        {toasts.map((toast) => (
-          <button
-            className={`toast ${toast.tone === 'info' ? 'is-info' : 'is-error'} ${toast.isHiding ? 'is-hiding' : ''
-              }`}
-            key={toast.id}
-            onClick={() => dismissToast(toast.id)}
-            type="button"
-          >
-            {toast.text}
-          </button>
-        ))}
-      </div>
-    )
-  }
 
   const shellClassName = [
     'app-shell',
@@ -3008,7 +2956,7 @@ export function ChatApp({
         />
         {renderCallOverlay()}
         {renderConfirmDialog()}
-        {renderToasts()}
+        
       </main>
     )
   }
@@ -3026,7 +2974,7 @@ export function ChatApp({
         </Suspense>
         {renderCallOverlay()}
         {renderConfirmDialog()}
-        {renderToasts()}
+        
       </main>
     )
   }
@@ -3046,7 +2994,7 @@ export function ChatApp({
         </Suspense>
         {renderCallOverlay()}
         {renderConfirmDialog()}
-        {renderToasts()}
+        
       </main>
     )
   }
@@ -3063,7 +3011,7 @@ export function ChatApp({
         </Suspense>
         {renderCallOverlay()}
         {renderConfirmDialog()}
-        {renderToasts()}
+        
       </main>
     )
   }
@@ -3084,7 +3032,7 @@ export function ChatApp({
         />
         {renderCallOverlay()}
         {renderConfirmDialog()}
-        {renderToasts()}
+        
       </main>
     )
   }
@@ -3094,7 +3042,7 @@ export function ChatApp({
       <main className={shellClassName}>
         {renderNavRail()}
         <section className="loading-panel">Đang tải dữ liệu từ máy chủ...</section>
-        {renderToasts()}
+        
       </main>
     )
   }
@@ -3107,7 +3055,7 @@ export function ChatApp({
         <section className="loading-panel">
           {pageErrorMessage || 'Không có hội thoại nào trong tài khoản này!'}
         </section>
-        {renderToasts()}
+        
       </main>
     )
   }
@@ -3211,7 +3159,7 @@ export function ChatApp({
       )}
       {renderCallOverlay()}
       {renderConfirmDialog()}
-      {renderToasts()}
+      
     </main>
   )
 }

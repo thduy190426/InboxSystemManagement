@@ -186,11 +186,7 @@ function RouteTransitionLoader({ isVisible }: { isVisible: boolean }) {
   )
 }
 
-type AppToast = {
-  id: string
-  text: string
-  tone?: 'info' | 'error'
-}
+import { toast } from 'sonner'
 
 export function App() {
   const storedAuthSession = getStoredAuthSession()
@@ -202,8 +198,6 @@ export function App() {
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [authError, setAuthError] = useState<string>('')
-  const [toasts, setToasts] = useState<AppToast[]>([])
-  const toastTimersRef = useRef<Record<string, number>>({})
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(
     storedAuthSession?.user ?? null,
   )
@@ -252,27 +246,15 @@ export function App() {
     })
   }, [])
 
-  const dismissToast = useCallback((toastId: string) => {
-    const timerId = toastTimersRef.current[toastId]
-
-    if (timerId) {
-      window.clearTimeout(timerId)
-      delete toastTimersRef.current[toastId]
-    }
-
-    setToasts((current) => current.filter((toast) => toast.id !== toastId))
-  }, [])
-
   const pushToast = useCallback(
-    (text: string, tone: AppToast['tone'] = 'info') => {
-      const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`
-
-      setToasts((current) => [...current, { id, text, tone }])
-      toastTimersRef.current[id] = window.setTimeout(() => {
-        dismissToast(id)
-      }, 3200)
+    (text: string, tone: 'info' | 'error' = 'info') => {
+      if (tone === 'error') {
+        toast.error(text)
+      } else {
+        toast.success(text)
+      }
     },
-    [dismissToast],
+    [],
   )
 
   function navigateAuth(nextScreen: AuthScreen) {
@@ -444,27 +426,6 @@ export function App() {
     )
   })()
 
-  function renderToasts() {
-    if (toasts.length === 0) {
-      return null
-    }
-
-    return (
-      <div aria-live="polite" className="toast-stack" role="status">
-        {toasts.map((toast) => (
-          <button
-            className={`toast ${toast.tone === 'info' ? 'is-info' : 'is-error'}`}
-            key={toast.id}
-            onClick={() => dismissToast(toast.id)}
-            type="button"
-          >
-            {toast.text}
-          </button>
-        ))}
-      </div>
-    )
-  }
-
   return (
     <>
       <Suspense fallback={
@@ -475,7 +436,6 @@ export function App() {
         {content}
       </Suspense>
       {isRouteLoaderDisabled ? null : <RouteTransitionLoader isVisible={isRouteTransitioning} />}
-      {renderToasts()}
     </>
   )
 }

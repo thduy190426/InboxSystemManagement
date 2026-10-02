@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './style.css'
 import { App } from './App'
 import { ThemeProvider } from './components/providers/ThemeProvider'
+import { Toaster } from 'sonner'
 
 window.addEventListener('vite:preloadError', () => {
   const isReloading = sessionStorage.getItem('vite-preload-error-reload')
@@ -27,6 +28,7 @@ createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <App />
+        <Toaster richColors position="top-right" />
       </ThemeProvider>
     </QueryClientProvider>
   </StrictMode>,

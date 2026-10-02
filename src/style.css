@@ -5757,99 +5757,7 @@ html.dark .chat-pinned-more:hover {
   white-space: nowrap;
 }
 
-.toast-stack {
-  position: fixed;
-  right: 18px;
-  bottom: 18px;
-  z-index: 40;
-  display: grid;
-  gap: 10px;
-  max-width: min(360px, calc(100vw - 24px));
-}
 
-.toast {
-  border: 0;
-  border-radius: 16px;
-  padding: 12px 14px;
-  text-align: left;
-  color: #fff7ed;
-  background: rgba(24, 24, 27, 0.92);
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.28);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  cursor: pointer;
-  -webkit-animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.toast.is-hiding {
-  -webkit-animation: toastSlideOut 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  animation: toastSlideOut 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@-webkit-keyframes toastSlideIn {
-  from {
-    -webkit-transform: translateY(100%) scale(0.95);
-    transform: translateY(100%) scale(0.95);
-    opacity: 0;
-  }
-
-  to {
-    -webkit-transform: translateY(0) scale(1);
-    transform: translateY(0) scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes toastSlideIn {
-  from {
-    -webkit-transform: translateY(100%) scale(0.95);
-    transform: translateY(100%) scale(0.95);
-    opacity: 0;
-  }
-
-  to {
-    -webkit-transform: translateY(0) scale(1);
-    transform: translateY(0) scale(1);
-    opacity: 1;
-  }
-}
-
-@-webkit-keyframes toastSlideOut {
-  from {
-    -webkit-transform: translateY(0) scale(1);
-    transform: translateY(0) scale(1);
-    opacity: 1;
-  }
-
-  to {
-    -webkit-transform: translateY(100%) scale(0.95);
-    transform: translateY(100%) scale(0.95);
-    opacity: 0;
-  }
-}
-
-@keyframes toastSlideOut {
-  from {
-    -webkit-transform: translateY(0) scale(1);
-    transform: translateY(0) scale(1);
-    opacity: 1;
-  }
-
-  to {
-    -webkit-transform: translateY(100%) scale(0.95);
-    transform: translateY(100%) scale(0.95);
-    opacity: 0;
-  }
-}
-
-.toast.is-error {
-  background: rgba(153, 27, 27, 0.94);
-}
-
-.toast.is-info {
-  background: rgba(30, 64, 175, 0.94);
-}
 
 .call-overlay {
   position: fixed;
@@ -12271,7 +12179,6 @@ html.dark, [data-theme='dark'] {
   }
 }
 
-/* Quick Emoji & Floating Reaction */
 .quick-emoji-button {
   display: flex;
   align-items: center;

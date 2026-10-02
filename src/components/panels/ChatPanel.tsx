@@ -589,12 +589,11 @@ export function ChatPanel({
     const newReaction = {
       id: Math.random().toString(36).substring(7),
       emoji,
-      x: (Math.random() - 0.5) * 100, // random offset
-      rotation: (Math.random() - 0.5) * 45 // random rotation
+      x: (Math.random() - 0.5) * 100, 
+      rotation: (Math.random() - 0.5) * 45
     }
     setFloatingReactions(current => [...current, newReaction])
     
-    // Auto cleanup after animation
     setTimeout(() => {
       setFloatingReactions(current => current.filter(r => r.id !== newReaction.id))
     }, 1500)

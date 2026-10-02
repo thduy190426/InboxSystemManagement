@@ -8,7 +8,6 @@ const EmojiPicker = lazy(() => import('emoji-picker-react'))
 import { useChatInput } from './ChatContexts'
 
 export type MessageInputProps = {
-  // Now decoupled using ChatInputContext!
 }
 
 export function MessageInput({}: MessageInputProps) {
@@ -24,7 +23,6 @@ export function MessageInput({}: MessageInputProps) {
   const [isStickerPickerOpen, setIsStickerPickerOpen] = useState(false)
   const [stickerPacks, setStickerPacks] = useState<import('../../services/api/stickerApi').StickerPack[]>([])
 
-  // Use the normally imported useEffect
   useEffect(() => {
     import('../../services/api/stickerApi').then(api => {
       api.fetchStickerPacks().then(setStickerPacks).catch(() => {})
