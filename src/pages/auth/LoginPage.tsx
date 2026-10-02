@@ -1,6 +1,7 @@
 import type { FormEvent } from 'react'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { ArrowRight, Eye, EyeOff, Lock, LogIn, Mail } from 'lucide-react'
+import ReCAPTCHA from 'react-google-recaptcha'
 import type { AuthPageProps } from '../../types'
 import loginBg from '../../bg-images/LoginBG.jpg'
 
@@ -14,6 +15,8 @@ export function LoginPage({
 }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [isFormFilled, setIsFormFilled] = useState(false)
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null)
+  const recaptchaRef = useRef<ReCAPTCHA>(null)
 
   function handleFormChange(event: FormEvent<HTMLFormElement>) {
     const formData = new FormData(event.currentTarget)
@@ -23,8 +26,23 @@ export function LoginPage({
     setIsFormFilled(email.length > 0 && password.length > 0)
   }
 
+  useEffect(() => {
+    if (errorMessage && recaptchaRef.current) {
+      recaptchaRef.current.reset()
+      setRecaptchaToken(null)
+    }
+  }, [errorMessage])
+
+  function handleRecaptchaChange(token: string | null) {
+    setRecaptchaToken(token)
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    if (!recaptchaToken) {
+      return
+    }
 
     const formData = new FormData(event.currentTarget)
 
@@ -32,6 +50,7 @@ export function LoginPage({
       email: String(formData.get('email') ?? ''),
       password: String(formData.get('password') ?? ''),
       rememberLogin: String(formData.get('rememberLogin') === 'on'),
+      recaptchaToken,
     })
   }
 
@@ -112,9 +131,17 @@ export function LoginPage({
             </label>
           </div>
 
+          <div style={{ display: 'flex', justifyContent: 'center', margin: '16px 0' }}>
+            <ReCAPTCHA
+              ref={recaptchaRef}
+              sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"}
+              onChange={handleRecaptchaChange}
+            />
+          </div>
+
           <button
             className="auth-primary"
-            disabled={isSubmitting || !isFormFilled}
+            disabled={isSubmitting || !isFormFilled || !recaptchaToken}
             type="submit"
           >
             {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}

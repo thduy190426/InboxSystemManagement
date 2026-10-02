@@ -316,6 +316,7 @@ export function App() {
       const response = await login({
         email: payload.email,
         password: payload.password,
+        recaptchaToken: payload.recaptchaToken,
       })
 
       handleAuthSuccess(response, payload.rememberLogin === 'true')
