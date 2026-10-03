@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { X, Image as ImageIcon, Send } from 'lucide-react'
 import { storyApi } from '../../services/api/storyApi'
 
@@ -15,7 +16,13 @@ export function StoryCreatorModal({ onClose, onSuccess, pushToast, isClosing }: 
   const [privacy, setPrivacy] = useState('friends')
   const [textContent, setTextContent] = useState('')
   const [isUploading, setIsUploading] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    setMounted(true)
+    return () => setMounted(false)
+  }, [])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0]
@@ -39,7 +46,9 @@ export function StoryCreatorModal({ onClose, onSuccess, pushToast, isClosing }: 
     }
   }
 
-  return (
+  if (!mounted || typeof document === 'undefined') return null
+
+  return createPortal(
     <div className={`story-creator-overlay ${isClosing ? 'is-closing' : ''}`}>
       <div className={`story-creator-modal ${isClosing ? 'is-closing' : ''}`}>
         <header>
@@ -107,6 +116,7 @@ export function StoryCreatorModal({ onClose, onSuccess, pushToast, isClosing }: 
           )}
         </footer>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

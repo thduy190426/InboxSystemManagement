@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { X, ChevronLeft, ChevronRight, Heart } from 'lucide-react'
 import type { UserStoryGroup } from '../../types'
 import { AvatarFallback } from '../ui/AvatarFallback'
@@ -20,10 +21,16 @@ export function StoryViewerOverlay({ initialGroup, allGroups, onClose, onReply, 
   const [replyText, setReplyText] = useState('')
   const [showReactions, setShowReactions] = useState(false)
   const [reactions, setReactions] = useState<Record<string, string>>({})
+  const [mounted, setMounted] = useState(false)
 
   const currentGroup = allGroups[currentGroupIndex]
   const currentItem = currentGroup?.items[currentItemIndex]
   const currentReaction = currentItem ? reactions[currentItem.id] : null
+
+  useEffect(() => {
+    setMounted(true)
+    return () => setMounted(false)
+  }, [])
 
   useEffect(() => {
     if (!currentItem) return
@@ -88,9 +95,9 @@ export function StoryViewerOverlay({ initialGroup, allGroups, onClose, onReply, 
     pushToast(`Đã thả cảm xúc ${emoji}`)
   }
 
-  if (!currentItem) return null
+  if (!currentItem || !mounted || typeof document === 'undefined') return null
 
-  return (
+  return createPortal(
     <div className={`story-viewer-overlay ${isClosing ? 'is-closing' : ''}`}>
       <div className="story-viewer-backdrop" onClick={onClose} />
       
@@ -232,10 +239,12 @@ export function StoryViewerOverlay({ initialGroup, allGroups, onClose, onReply, 
       <button className="story-nav-btn next" onClick={handleNext}>
         <ChevronRight size={32} />
       </button>
-    </div>
+    </div>,
+    document.body
   )
 }
 
 function pushToast(text: string) {
   alert(text)
 }
+
