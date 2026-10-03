@@ -60,9 +60,11 @@ export function StoryCreatorModal({ onClose, onSuccess, pushToast, isClosing }: 
 
         <div className="story-creator-body">
           {!previewUrl ? (
-            <div className="upload-placeholder" onClick={() => fileInputRef.current?.click()}>
-              <ImageIcon size={48} />
-              <p>Nhấp để chọn ảnh hoặc video</p>
+            <>
+              <div className="upload-placeholder" onClick={() => fileInputRef.current?.click()}>
+                <ImageIcon size={48} />
+                <p>Nhấp để chọn ảnh hoặc video</p>
+              </div>
               <input 
                 type="file" 
                 ref={fileInputRef} 
@@ -70,7 +72,7 @@ export function StoryCreatorModal({ onClose, onSuccess, pushToast, isClosing }: 
                 accept="image/*,video/*" 
                 hidden 
               />
-            </div>
+            </>
           ) : (
             <div className="preview-container">
               {file?.type.startsWith('video/') ? (
