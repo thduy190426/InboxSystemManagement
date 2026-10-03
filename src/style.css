@@ -5212,7 +5212,7 @@ html.dark .chat-pinned-more:hover {
 .forward-dialog-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 30;
+  z-index: 40;
   display: grid;
   place-items: center;
   padding: 18px;
@@ -7016,7 +7016,7 @@ html.dark .chat-pinned-more:hover {
     top: 0;
     left: var(--sidebar-width);
     bottom: 0;
-    z-index: 30;
+    z-index: 40;
     width: min(450px, calc(100vw - var(--sidebar-width) - 20px));
     height: 100%; overflow: hidden;
     padding: 20px 16px;
