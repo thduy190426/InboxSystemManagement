@@ -72,6 +72,7 @@ import {
   markNotificationRead,
 } from '../../services/api/notificationApi'
 import { disconnectRealtimeSocket } from '../../services/realtime/realtime'
+import { playAlertSound, flashDocumentTitle, playCallRing } from '../../services/core/alertNotifier'
 import type { GifSearchResult } from '../../services/api/gifApi'
 import type {
   AppNotification,
@@ -425,6 +426,14 @@ export function ChatApp({
     window.setTimeout(() => {
       recentBrowserNotificationKeysRef.current.delete(key)
     }, 4500)
+
+    if (key.startsWith('call:')) {
+      playCallRing()
+      flashDocumentTitle(`(1) ${title}`)
+    } else {
+      playAlertSound()
+      flashDocumentTitle(`(1) ${title}`)
+    }
 
     showBrowserNotification(title, {
       ...payload,
