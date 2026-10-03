@@ -2982,6 +2982,7 @@ export function ChatApp({
             pushToast={pushToast}
           />
         </Suspense>
+        {renderMobileMenu()}
         {renderCallOverlay()}
         {renderConfirmDialog()}
         
