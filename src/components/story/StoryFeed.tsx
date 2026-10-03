@@ -56,8 +56,8 @@ export function StoryFeed({ onCreateClick, onStoryClick, pushToast }: StoryFeedP
     }
   }
 
-  const myStoryGroup = storyGroups.find(g => String(g.user_id) === String(user?.id))
-  const otherStoryGroups = storyGroups.filter(g => String(g.user_id) !== String(user?.id))
+  const myStoryGroup = storyGroups.find(g => String(g.user_id) === String(user?.id) && Array.isArray(g.items) && g.items.length > 0)
+  const otherStoryGroups = storyGroups.filter(g => String(g.user_id) !== String(user?.id) && Array.isArray(g.items) && g.items.length > 0)
 
   return (
     <div className="story-feed">
