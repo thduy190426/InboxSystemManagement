@@ -26,3 +26,31 @@ backend/uploads/*
 *.njsproj
 *.sln
 *.sw?
+
+# Environment Variables & Secrets
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*secret*
+
+# Platform & Deployment
+.netlify/
+.vercel/
+
+# Coverage & Temp files
+coverage/
+tmp/
+temp/
+build/
+.nyc_output/
+
+# Database dumps
+*.sqlite
+*.sqlite3
+*.db
+*.sql
+
+# OS Files
+Thumbs.db

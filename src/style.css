@@ -7558,12 +7558,20 @@ html.dark .chat-pinned-more:hover {
     width: 100%;
   }
 
-  .auth-form-row,
-  .auth-switch {
+  .auth-form-row {
     align-items: flex-start;
     flex-direction: column;
-  min-height: 0;
-  min-width: 0;
+    min-height: 0;
+    min-width: 0;
+  }
+  
+  .auth-switch {
+    align-items: center;
+    flex-direction: row;
+    justify-content: center;
+    flex-wrap: wrap;
+    min-height: 0;
+    min-width: 0;
   }
 
   .contacts-search {
