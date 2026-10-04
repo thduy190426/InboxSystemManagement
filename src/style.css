@@ -1163,7 +1163,7 @@ img {
 .app-shell {
   --sidebar-width: 76px;
   --content-columns: var(--inbox-width, minmax(420px, 490px)) minmax(0, 1fr) 0fr;
-  --detail-width: minmax(320px, 360px);
+  --detail-width: minmax(360px, 420px);
   --sidebar-motion: 360ms cubic-bezier(0.22, 1, 0.36, 1);
 
   display: grid;
@@ -6959,7 +6959,7 @@ html.dark .chat-pinned-more:hover {
     right: 0;
     bottom: 0;
     z-index: 40;
-    width: min(380px, 100vw);
+    width: min(420px, 100vw);
     background: var(--surface);
     border-left: 1px solid var(--line);
     box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1);
