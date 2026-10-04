@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { ArrowRight, Eye, EyeOff, Lock, LogIn, Mail } from 'lucide-react'
 import ReCAPTCHA from 'react-google-recaptcha'
 import { useGoogleLogin } from '@react-oauth/google'
+import FacebookLogin from '@greatsumini/react-facebook-login'
 import { toast } from 'sonner'
 import type { AuthPageProps } from '../../types'
 import loginBg from '../../bg-images/LoginBG.jpg'
@@ -15,6 +16,7 @@ export function LoginPage({
   onSubmit,
   onSwitchMode,
   onGoogleLogin,
+  onFacebookLogin,
 }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [isFormFilled, setIsFormFilled] = useState(false)
@@ -182,6 +184,32 @@ export function LoginPage({
           </svg>
           Đăng nhập bằng Google
         </button>
+
+        <FacebookLogin
+          appId={import.meta.env.VITE_FACEBOOK_APP_ID || "123456789"}
+          onSuccess={async (response) => {
+            if (onFacebookLogin && response.accessToken) {
+              await onFacebookLogin(response.accessToken)
+            }
+          }}
+          onFail={() => {
+            toast.error('Đăng nhập bằng Facebook thất bại. Vui lòng thử lại.')
+          }}
+          render={({ onClick }) => (
+            <button
+              className="auth-facebook-btn"
+              disabled={isSubmitting}
+              onClick={onClick}
+              type="button"
+            >
+              <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style={{ width: '20px', height: '20px' }}>
+                <path fill="#1877F2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                <path fill="#fff" d="M16.671 15.542l.532-3.469h-3.328v-2.25c0-.949.465-1.874 1.956-1.874h1.514V5.006s-1.374-.235-2.686-.235c-2.741 0-4.533 1.662-4.533 4.669v2.633H7.078v3.469h3.047v8.385a12.09 12.09 0 003.75 0v-8.385h2.796z"/>
+              </svg>
+              Đăng nhập bằng Facebook
+            </button>
+          )}
+        />
 
         <p className="auth-switch">
           Chưa có tài khoản?

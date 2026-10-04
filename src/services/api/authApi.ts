@@ -204,3 +204,7 @@ export function touchPresence() {
 export function loginWithGoogle(token: string) {
   return requestAuthJson<AuthResponse>('/auth/google', { token } as any)
 }
+
+export function loginWithFacebook(token: string) {
+  return requestAuthJson<AuthResponse>('/auth/facebook', { token } as any)
+}

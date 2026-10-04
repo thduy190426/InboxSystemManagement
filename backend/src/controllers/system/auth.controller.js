@@ -768,6 +768,7 @@ module.exports = {
   touchPresence,
   verifyAccount,
   googleLogin,
+  facebookLogin,
 }
 
 async function googleLogin(req, res, next) {
@@ -789,6 +790,52 @@ async function googleLogin(req, res, next) {
       const [result] = await pool.execute(
         'INSERT INTO users (public_id, email, full_name, display_name, handle, avatar_url, is_email_verified) VALUES (UUID(), ?, ?, ?, ?, ?, 1)',
         [payload.email, payload.name || 'Người dùng mới', payload.name || 'Người dùng mới', handle, payload.picture || null]
+      );
+      const [newUsers] = await pool.execute('SELECT * FROM users WHERE id = ?', [result.insertId]);
+      user = newUsers[0];
+      await ensureUserProfileColumns(pool, user.id);
+    }
+
+    const sessionToken = randomBytes(64).toString('hex');
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+    await pool.execute(
+      'INSERT INTO sessions (token, user_id, user_agent, ip_address, expires_at) VALUES (?, ?, ?, ?, ?)',
+      [sessionToken, user.id, req.headers['user-agent'] || '', req.ip || '', expiresAt]
+    );
+
+    res.status(200).json({
+      message: 'Đăng nhập thành công',
+      user: toPublicUser(user),
+      token: sessionToken,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function facebookLogin(req, res, next) {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ error: 'Missing token' });
+
+    const response = await fetch(`https://graph.facebook.com/me?fields=id,name,email,picture.type(large)&access_token=${token}`);
+    const payload = await response.json();
+
+    if (payload.error) return res.status(400).json({ error: 'Invalid Facebook token' });
+    
+    const email = payload.email || `${payload.id}@facebook.com`;
+
+    let [users] = await pool.execute('SELECT * FROM users WHERE email = ?', [email]);
+    let user = users[0];
+
+    if (!user) {
+      const handle = email.split('@')[0] + Math.floor(Math.random() * 1000);
+      const picture = payload.picture?.data?.url || null;
+      
+      const [result] = await pool.execute(
+        'INSERT INTO users (public_id, email, full_name, display_name, handle, avatar_url, is_email_verified) VALUES (UUID(), ?, ?, ?, ?, ?, 1)',
+        [email, payload.name || 'Người dùng mới', payload.name || 'Người dùng mới', handle, picture]
       );
       const [newUsers] = await pool.execute('SELECT * FROM users WHERE id = ?', [result.insertId]);
       user = newUsers[0];

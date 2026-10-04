@@ -12,6 +12,7 @@ import {
   ApiError,
   login,
   loginWithGoogle,
+  loginWithFacebook,
   logout,
   register,
   type AuthUser,
@@ -347,6 +348,22 @@ export function App() {
     }
   }
 
+  async function handleFacebookLoginAction(token: string) {
+    setIsSubmitting(true)
+    setAuthError('')
+
+    try {
+      const response = await loginWithFacebook(token)
+      handleAuthSuccess(response, true)
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : 'Không thể đăng nhập bằng Facebook!'
+      setAuthError(message)
+      pushToast(message, 'error')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   async function handleRegister(payload: Record<string, string>) {
     setIsSubmitting(true)
 
@@ -442,6 +459,7 @@ export function App() {
           navigateAuth('register')
         }}
         onGoogleLogin={handleGoogleLoginAction}
+        onFacebookLogin={handleFacebookLoginAction}
       />
     )
   })()
