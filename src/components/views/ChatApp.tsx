@@ -2490,7 +2490,7 @@ export function ChatApp({
   async function handleUpdateQuickEmoji(emoji: string) {
     if (!activeConversation || busyConversationAction) return
     try {
-      console.log([QuickEmoji] Bắt đầu cập nhật emoji thành:  cho conversationId: )
+      console.log(`[QuickEmoji] Bắt đầu cập nhật emoji thành: ${emoji} cho conversationId: ${activeConversation.id}`)
       setBusyConversationAction('emoji')
       
       const updatedConversation = await updateConversationSettings(activeConversation.id, {
