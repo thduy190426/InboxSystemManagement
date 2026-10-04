@@ -6404,6 +6404,7 @@ html.dark .chat-pinned-more:hover {
 
 .detail-panel>* {
   min-width: 0;
+  flex-shrink: 0;
 }
 
 .profile-block {
