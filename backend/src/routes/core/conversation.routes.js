@@ -34,6 +34,7 @@ const {
   toggleMessagePin,
   unarchiveConversation,
   updateConversationSettings,
+  updateConversationQuickEmoji,
   updateGroupConversation,
   updateGroupMemberNickname,
   updateGroupMemberRole,
@@ -80,6 +81,7 @@ router.post('/:conversationId/unarchive', unarchiveConversation)
 router.post('/:conversationId/leave', leaveGroupConversation)
 router.patch('/:conversationId/group', avatarUpload.single('avatar'), updateGroupConversation)
 router.patch('/:conversationId/settings', updateConversationSettings)
+router.patch('/:conversationId/quick-emoji', updateConversationQuickEmoji)
 router.patch('/:conversationId/background', backgroundUpload.single('backgroundImage'), updateConversationBackground)
 router.patch('/:conversationId/messages/:messageId', updateMessage)
 router.patch('/:conversationId/members/:userId/nickname', updateGroupMemberNickname)

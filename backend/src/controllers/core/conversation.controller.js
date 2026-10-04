@@ -287,6 +287,22 @@ async function ensureConversationParticipantHiddenAtColumn() {
   await conversationParticipantHiddenAtReady
 }
 
+const conversationQuickEmojiReady = pool
+  .execute(
+    `ALTER TABLE conversations
+      ADD COLUMN quick_emoji VARCHAR(20) NULL DEFAULT '👍'`
+  )
+  .catch((error) => {
+    if (error && error.code === 'ER_DUP_FIELDNAME') {
+      return
+    }
+    throw error
+  })
+
+async function ensureConversationQuickEmojiColumn() {
+  await conversationQuickEmojiReady
+}
+
 async function ensureConversationParticipantMessageRequestStatusColumn() {
   await conversationParticipantMessageRequestStatusReady
 }
@@ -1345,6 +1361,7 @@ async function loadConversationSummary(connection, conversationId, currentUserId
       conversations.type,
       conversations.title,
       conversations.avatar_url,
+          conversations.quick_emoji,
       conversations.backgroundImage,
       last_messages.created_at AS visible_last_message_at,
       conversations.is_archived,
@@ -1456,6 +1473,7 @@ async function loadConversationSummary(connection, conversationId, currentUserId
         ? 'Đang xử lý hỗ trợ'
         : `${memberCount} thành viên`,
     avatar: avatar || null,
+      quickEmoji: row.quick_emoji || '👍',
     backgroundImage: row.backgroundImage || null,
     accent: accentColors[0],
     lastMessage: lastMessagePreview.text,
@@ -1488,6 +1506,7 @@ async function listConversations(request, response, next) {
     await ensureMessageHiddenEntriesTable()
     await ensureConversationParticipantHiddenAtColumn()
     await ensureConversationParticipantMessageRequestStatusColumn()
+    await ensureConversationQuickEmojiColumn()
 
     const [conversationRows] = await pool.execute(
       `SELECT
@@ -1496,6 +1515,7 @@ async function listConversations(request, response, next) {
         conversations.type,
         conversations.title,
         conversations.avatar_url,
+          conversations.quick_emoji,
         last_messages.created_at AS visible_last_message_at,
         conversations.is_archived,
         participant_settings.is_pinned,
@@ -1720,6 +1740,7 @@ async function listConversations(request, response, next) {
             ? 'Đang xử lý hỗ trợ'
             : `${memberCount} thành viên`,
         avatar: avatar || null,
+      quickEmoji: row.quick_emoji || '👍',
         backgroundImage: row.backgroundImage || null,
         accent: accentColors[index % accentColors.length],
         lastMessage: lastMessagePreview.text,
@@ -3467,6 +3488,7 @@ async function createMessage(request, response, next) {
     try {
       await connection.beginTransaction()
       await ensureConversationParticipantMessageRequestStatusColumn()
+    await ensureConversationQuickEmojiColumn()
 
       if (await hasBlockedDirectContact(connection, conversationId, currentUserId)) {
         await connection.rollback()
@@ -5011,6 +5033,64 @@ async function updateConversationBackground(request, response, next) {
   }
 }
 
+async function updateConversationQuickEmoji(request, response, next) {
+  const connection = await pool.getConnection()
+
+  try {
+    const currentUserId = request.user.id
+    const conversationId = Number(request.params.conversationId)
+    const emoji = request.body.emoji
+
+    if (!Number.isInteger(conversationId)) {
+      return response.status(400).json({
+        message: 'Đường dẫn hội thoại không hợp lệ!',
+      })
+    }
+
+    if (!emoji || typeof emoji !== 'string') {
+      return response.status(422).json({
+        message: 'Thiếu emoji hợp lệ!',
+      })
+    }
+
+    await connection.beginTransaction()
+
+    const participant = await findActiveParticipant(connection, conversationId, currentUserId)
+
+    if (!participant) {
+      await connection.rollback()
+      return response.status(404).json({
+        message: 'Không tìm thấy hội thoại!',
+      })
+    }
+
+    await connection.execute(
+      `UPDATE conversations
+      SET quick_emoji = ?
+      WHERE id = ?`,
+      [emoji, conversationId],
+    )
+
+    const conversation = await loadConversationSummary(connection, conversationId, currentUserId)
+
+    await connection.commit()
+    await emitConversationChanged(connection, conversationId, currentUserId, 'conversation:updated', {
+      actorUserId: String(currentUserId),
+      eventType: 'quick_emoji:changed'
+    })
+
+    response.json({
+      message: 'Cập nhật emoji thành công!',
+      conversation
+    })
+  } catch (error) {
+    await connection.rollback()
+    next(error)
+  } finally {
+    connection.release()
+  }
+}
+
 module.exports = {
   addGroupMember,
   archiveConversation,
@@ -5046,6 +5126,7 @@ module.exports = {
   transferGroupOwner,
   unarchiveConversation,
   updateConversationSettings,
+    updateConversationQuickEmoji,
   updateGroupConversation,
   updateGroupMemberNickname,
   updateGroupMemberRole,
