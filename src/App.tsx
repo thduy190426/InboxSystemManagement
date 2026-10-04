@@ -11,6 +11,7 @@ const TermsPage = lazy(() => import('./pages/legal/TermsPage').then(m => ({ defa
 import {
   ApiError,
   login,
+  loginWithGoogle,
   logout,
   register,
   type AuthUser,
@@ -330,6 +331,22 @@ export function App() {
     }
   }
 
+  async function handleGoogleLoginAction(token: string) {
+    setIsSubmitting(true)
+    setAuthError('')
+
+    try {
+      const response = await loginWithGoogle(token)
+      handleAuthSuccess(response, true)
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : 'Không thể đăng nhập bằng Google!'
+      setAuthError(message)
+      pushToast(message, 'error')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   async function handleRegister(payload: Record<string, string>) {
     setIsSubmitting(true)
 
@@ -424,6 +441,7 @@ export function App() {
           setAuthError('')
           navigateAuth('register')
         }}
+        onGoogleLogin={handleGoogleLoginAction}
       />
     )
   })()

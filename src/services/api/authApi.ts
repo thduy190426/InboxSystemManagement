@@ -200,3 +200,7 @@ export function touchPresence() {
     method: 'POST',
   })
 }
+
+export function loginWithGoogle(token: string) {
+  return requestAuthJson<AuthResponse>('/auth/google', { token } as any)
+}

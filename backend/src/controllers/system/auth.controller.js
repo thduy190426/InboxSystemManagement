@@ -767,4 +767,48 @@ module.exports = {
   resetPassword,
   touchPresence,
   verifyAccount,
+  googleLogin,
+}
+
+async function googleLogin(req, res, next) {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ error: 'Missing token' });
+
+    // Get user info from Google using the access token
+    const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: `Bearer ${token}` } });
+    const payload = await response.json();
+
+    if (!payload.email) return res.status(400).json({ error: 'Invalid Google token' });
+
+    let [users] = await pool.execute('SELECT * FROM users WHERE email = ?', [payload.email]);
+    let user = users[0];
+
+    if (!user) {
+      const handle = payload.email.split('@')[0] + Math.floor(Math.random() * 1000);
+      const [result] = await pool.execute(
+        'INSERT INTO users (public_id, email, full_name, display_name, handle, avatar_url, is_email_verified) VALUES (UUID(), ?, ?, ?, ?, ?, 1)',
+        [payload.email, payload.name || 'Người dùng mới', payload.name || 'Người dùng mới', handle, payload.picture || null]
+      );
+      const [newUsers] = await pool.execute('SELECT * FROM users WHERE id = ?', [result.insertId]);
+      user = newUsers[0];
+      await ensureUserProfileColumns(pool, user.id);
+    }
+
+    const sessionToken = randomBytes(64).toString('hex');
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+    await pool.execute(
+      'INSERT INTO sessions (token, user_id, user_agent, ip_address, expires_at) VALUES (?, ?, ?, ?, ?)',
+      [sessionToken, user.id, req.headers['user-agent'] || '', req.ip || '', expiresAt]
+    );
+
+    res.status(200).json({
+      message: 'Đăng nhập thành công',
+      user: toPublicUser(user),
+      token: sessionToken,
+    });
+  } catch (error) {
+    next(error);
+  }
 }

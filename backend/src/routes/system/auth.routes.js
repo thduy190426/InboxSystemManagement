@@ -8,6 +8,7 @@ const {
   resetPassword,
   touchPresence,
   verifyAccount,
+  googleLogin,
 } = require('../../controllers/system/auth.controller')
 const { authenticate } = require('../../middleware/auth.middleware')
 const {
@@ -23,6 +24,7 @@ const router = express.Router()
 
 router.post('/register', registerRateLimit, register)
 router.post('/login', loginRateLimit, login)
+router.post('/google', googleLogin)
 router.post('/verify', verificationRateLimit, verifyAccount)
 router.post('/resend-verification', resendVerificationRateLimit, resendVerification)
 router.post('/forgot-password', forgotPasswordRateLimit, forgotPassword)

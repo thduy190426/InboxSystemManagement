@@ -258,6 +258,7 @@ export type AuthPageProps = {
   isSubmitting?: boolean
   onSubmit: (payload: Record<string, string>) => Promise<void> | void
   onSwitchMode: () => void
+  onGoogleLogin?: (token: string) => Promise<void> | void
 }
 
 export type Story = {
