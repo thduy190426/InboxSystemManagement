@@ -3,7 +3,8 @@ import { useState, useRef, useEffect } from 'react'
 import { ArrowRight, Eye, EyeOff, Lock, LogIn, Mail } from 'lucide-react'
 import ReCAPTCHA from 'react-google-recaptcha'
 import { useGoogleLogin } from '@react-oauth/google'
-import { FacebookLogin } from '@greatsumini/react-facebook-login'
+import FacebookLoginDefault from '@greatsumini/react-facebook-login'
+const FacebookLogin = (FacebookLoginDefault as any).default || FacebookLoginDefault
 import { toast } from 'sonner'
 import type { AuthPageProps } from '../../types'
 import loginBg from '../../bg-images/LoginBG.jpg'
@@ -187,7 +188,7 @@ export function LoginPage({
 
         <FacebookLogin
           appId={import.meta.env.VITE_FACEBOOK_APP_ID || "123456789"}
-          onSuccess={async (response) => {
+          onSuccess={async (response: any) => {
             if (onFacebookLogin && response.accessToken) {
               await onFacebookLogin(response.accessToken)
             }
@@ -195,7 +196,7 @@ export function LoginPage({
           onFail={() => {
             toast.error('Đăng nhập bằng Facebook thất bại. Vui lòng thử lại.')
           }}
-          render={({ onClick }) => (
+          render={({ onClick }: any) => (
             <button
               className="auth-facebook-btn"
               disabled={isSubmitting}
