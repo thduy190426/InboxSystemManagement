@@ -2961,7 +2961,7 @@ export function ChatApp({
     .join(' ')
 
   const shellStyle = {
-    '--inbox-width': `${inboxWidth}px`
+    '--inbox-width': inboxWidth === 100 ? '100px' : `clamp(320px, ${inboxWidth}px, 45vw)`
   } as React.CSSProperties
 
   if (activeView === 'contacts') {
