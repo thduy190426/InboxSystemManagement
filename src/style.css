@@ -4318,13 +4318,24 @@ html.dark .profile-field select {
   min-width: 0;
 }
 
-.chat-identity h2,
-.profile-block h2 {
+.chat-identity h2 {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   width: 100%;
   max-width: 100%;
+}
+
+.profile-block h2 {
+  width: 100%;
+  max-width: 100%;
+  white-space: normal;
+  word-break: break-word;
+  min-height: 20px;
+  display: block;
+  color: var(--text) !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .chat-identity p {
