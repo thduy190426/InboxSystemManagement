@@ -47,6 +47,7 @@ import {
   unarchiveConversation,
   uploadMessageAttachment,
   updateConversationSettings,
+  updateConversationQuickEmoji,
   updateGroupConversation,
   updateConversationBackground,
   updateGroupMemberNickname,
@@ -2493,9 +2494,7 @@ export function ChatApp({
       console.log(`[QuickEmoji] Bắt đầu cập nhật emoji thành: ${emoji} cho conversationId: ${activeConversation.id}`)
       setBusyConversationAction('emoji')
       
-      const updatedConversation = await updateConversationSettings(activeConversation.id, {
-        quickEmoji: emoji,
-      } as any)
+      const updatedConversation = await updateConversationQuickEmoji(activeConversation.id, emoji)
       
       console.log('[QuickEmoji] Phản hồi từ backend:', updatedConversation)
       

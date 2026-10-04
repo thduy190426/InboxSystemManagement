@@ -697,3 +697,15 @@ export async function disbandGroupConversation(conversationId: string) {
     method: 'DELETE',
   })
 }
+
+export async function updateConversationQuickEmoji(
+  conversationId: string,
+  emoji: string,
+) {
+  const response = await request<ConversationResponse>(`/conversations/${conversationId}/quick-emoji`, {
+    method: 'PATCH',
+    body: JSON.stringify({ emoji }),
+  })
+
+  return response.conversation
+}
