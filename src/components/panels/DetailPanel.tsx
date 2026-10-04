@@ -107,34 +107,54 @@ export function DetailPanel({
   const [groupAvatar, setGroupAvatar] = useState<File | null>(null)
 
   const [touchStartX, setTouchStartX] = useState<number | null>(null)
+  const [touchStartY, setTouchStartY] = useState<number | null>(null)
   const [touchCurrentX, setTouchCurrentX] = useState<number | null>(null)
+  const [isSwiping, setIsSwiping] = useState(false)
 
   function handleTouchStart(e: React.TouchEvent) {
     if (window.innerWidth <= 1180) {
       setTouchStartX(e.targetTouches[0].clientX)
+      setTouchStartY(e.targetTouches[0].clientY)
       setTouchCurrentX(e.targetTouches[0].clientX)
+      setIsSwiping(false)
     }
   }
 
   function handleTouchMove(e: React.TouchEvent) {
-    if (touchStartX !== null) {
-      setTouchCurrentX(e.targetTouches[0].clientX)
+    if (touchStartX !== null && touchStartY !== null) {
+      const currentX = e.targetTouches[0].clientX
+      const currentY = e.targetTouches[0].clientY
+      const diffX = currentX - touchStartX
+      const diffY = currentY - touchStartY
+
+      if (!isSwiping) {
+        if (Math.abs(diffX) > 10 && Math.abs(diffX) > Math.abs(diffY)) {
+          setIsSwiping(true)
+          setTouchCurrentX(currentX)
+        } else if (Math.abs(diffY) > 10) {
+          setTouchStartX(null)
+          setTouchStartY(null)
+        }
+      } else {
+        setTouchCurrentX(currentX)
+      }
     }
   }
 
   function handleTouchEnd() {
-    if (touchStartX !== null && touchCurrentX !== null) {
+    if (isSwiping && touchStartX !== null && touchCurrentX !== null) {
       const diffX = touchCurrentX - touchStartX
       if (diffX > 60) {
         onClose?.()
       }
     }
     setTouchStartX(null)
+    setTouchStartY(null)
     setTouchCurrentX(null)
+    setIsSwiping(false)
   }
 
-  const isSwiping = touchStartX !== null && touchCurrentX !== null
-  const swipeOffset = isSwiping ? Math.max(0, touchCurrentX - touchStartX) : 0
+  const swipeOffset = isSwiping && touchStartX !== null && touchCurrentX !== null ? Math.max(0, touchCurrentX - touchStartX) : 0
   const swipeStyle = isSwiping && window.innerWidth <= 1180
     ? { transform: `translateX(${swipeOffset}px)`, transition: 'none' }
     : undefined
