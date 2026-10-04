@@ -4323,6 +4323,8 @@ html.dark .profile-field select {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  width: 100%;
+  max-width: 100%;
 }
 
 .chat-identity p {
@@ -6400,7 +6402,7 @@ html.dark .chat-pinned-more:hover {
   min-width: 0;
   align-items: center;
   gap: 9px;
-  padding: 14px 0 2px;
+  padding: 14px 16px 2px;
   text-align: center;
 }
 
