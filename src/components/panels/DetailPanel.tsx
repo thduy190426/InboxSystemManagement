@@ -467,7 +467,7 @@ export function DetailPanel({
               placeholder="Đặt biệt danh"
               value={directNickname}
             />
-            <button disabled={Boolean(busyAction)} title="Lưu biệt danh" type="submit">
+            <button disabled={Boolean(busyAction) || !directNickname.trim() || directNickname.trim() === (activeConversation.nickname || '')} title="Lưu biệt danh" type="submit">
               <Save size={16} />
             </button>
             <button
@@ -814,7 +814,7 @@ export function DetailPanel({
                           autoFocus
                         />
                         <button
-                          disabled={Boolean(busyAction)}
+                          disabled={Boolean(busyAction) || !memberNicknames[member.id]?.trim() || memberNicknames[member.id]?.trim() === (member.nickname || '')}
                           title="Lưu biệt danh"
                           type="submit"
                           style={{ display: 'grid', placeItems: 'center', width: '28px', height: '28px', background: 'var(--primary)', color: '#fff', borderRadius: '4px', cursor: 'pointer', border: 'none' }}
