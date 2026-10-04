@@ -26,9 +26,20 @@ export function OnlineDurationBadge({
 
     if (!timeToUse) {
       if (status) {
-        const match = status.match(/(\d+)\s+phút/i)
-        if (match) {
-          setDiffMinutes(parseInt(match[1], 10))
+        const minMatch = status.match(/(\d+)\s+phút/i)
+        if (minMatch) {
+          setDiffMinutes(parseInt(minMatch[1], 10))
+          return
+        }
+        const hourMatch = status.match(/(\d+)\s+giờ/i)
+        if (hourMatch) {
+          setDiffMinutes(parseInt(hourMatch[1], 10) * 60)
+          return
+        }
+        const dayMatch = status.match(/(\d+)\s+ngày/i)
+        if (dayMatch) {
+          setDiffMinutes(parseInt(dayMatch[1], 10) * 60 * 24)
+          return
         }
       }
       return
@@ -44,13 +55,23 @@ export function OnlineDurationBadge({
     return () => clearInterval(interval)
   }, [onlineSince, lastSeenAt, status, presence])
 
-  if (presence === 'online' || diffMinutes < 1 || diffMinutes > 60) {
+  // Hide if online, or if less than 1 minute (usually just say 'online' or wait), or more than 7 days
+  if (presence === 'online' || diffMinutes < 1 || diffMinutes > 10080) {
     return null
+  }
+
+  let displayLabel = ''
+  if (diffMinutes < 60) {
+    displayLabel = `${diffMinutes}p`
+  } else if (diffMinutes < 1440) {
+    displayLabel = `${Math.floor(diffMinutes / 60)}g`
+  } else {
+    displayLabel = `${Math.floor(diffMinutes / 1440)}n`
   }
 
   return (
     <span className={`online-duration-badge ${compact ? 'compact' : ''}`}>
-      {diffMinutes} phút
+      {displayLabel}
     </span>
   )
 }
