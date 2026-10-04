@@ -64,7 +64,6 @@ export function ChatSkeleton() {
       </header>
       
       <div style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        {/* Remote message */}
         <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', alignSelf: 'flex-start', maxWidth: '70%' }}>
           <Skeleton variant="circular" width={32} height={32} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -72,14 +71,12 @@ export function ChatSkeleton() {
           </div>
         </div>
 
-        {/* Local message */}
         <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', alignSelf: 'flex-end', maxWidth: '70%' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' }}>
              <Skeleton variant="rectangular" width={240} height={80} style={{ borderTopLeftRadius: '16px', borderTopRightRadius: '16px', borderBottomLeftRadius: '16px', borderBottomRightRadius: '4px' }} />
           </div>
         </div>
 
-        {/* Remote message */}
         <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', alignSelf: 'flex-start', maxWidth: '70%' }}>
           <Skeleton variant="circular" width={32} height={32} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
