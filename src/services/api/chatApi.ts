@@ -419,7 +419,7 @@ export async function markConversationDelivered(conversationId: string) {
 
 export async function updateConversationSettings(
   conversationId: string,
-  settings: { pinned?: boolean; muted?: boolean },
+  settings: { pinned?: boolean; muted?: boolean; quickEmoji?: string },
 ) {
   const response = await request<ConversationResponse>(`/conversations/${conversationId}/settings`, {
     method: 'PATCH',

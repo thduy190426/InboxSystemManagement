@@ -2490,18 +2490,28 @@ export function ChatApp({
   async function handleUpdateQuickEmoji(emoji: string) {
     if (!activeConversation || busyConversationAction) return
     try {
+      console.log([QuickEmoji] Bắt đầu cập nhật emoji thành:  cho conversationId: )
       setBusyConversationAction('emoji')
+      
+      const updatedConversation = await updateConversationSettings(activeConversation.id, {
+        quickEmoji: emoji,
+      } as any)
+      
+      console.log('[QuickEmoji] Phản hồi từ backend:', updatedConversation)
+      
       setConversations((current: Conversation[] = []) =>
         current.map((conversation) =>
           conversation.id === activeConversation.id
             ? {
               ...conversation,
-              quickEmoji: emoji,
+              quickEmoji: updatedConversation?.quickEmoji || emoji,
             }
             : conversation,
         ),
       )
+      console.log('[QuickEmoji] Đã cập nhật thành công ở giao diện (frontend state)')
     } catch (error) {
+      console.error('[QuickEmoji] Lỗi khi gọi API cập nhật:', error)
       pushToast('Không thể thay đổi biểu tượng cảm xúc', 'error')
     } finally {
       setBusyConversationAction('')
