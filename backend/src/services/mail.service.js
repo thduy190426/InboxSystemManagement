@@ -7,6 +7,18 @@ let useNodemailer = false;
 
 function initMailClient() {
   console.log('[MAIL_SERVICE] Bắt đầu kiểm tra cấu hình Mail Client...');
+  
+  const apiKey = process.env.RESEND_API_KEY;
+  console.log(`[MAIL_SERVICE] RESEND_API_KEY: ${apiKey ? 'ĐÃ CẤU HÌNH' : 'THIẾU'}`);
+  
+  if (apiKey) {
+    if (!resendClient) {
+      resendClient = new Resend(apiKey);
+      console.log('[MAIL_SERVICE] Khởi tạo kết nối Resend API thành công. Sẽ sử dụng Resend làm phương thức gửi chính.');
+    }
+    return true;
+  }
+
   console.log(`[MAIL_SERVICE] SMTP_USER: ${process.env.SMTP_USER ? 'ĐÃ CẤU HÌNH' : 'THIẾU'}, SMTP_PASS: ${process.env.SMTP_PASS ? 'ĐÃ CẤU HÌNH' : 'THIẾU'}`);
   if (process.env.SMTP_USER && process.env.SMTP_PASS) {
     if (!nodemailerTransporter) {
@@ -26,16 +38,6 @@ function initMailClient() {
       });
       useNodemailer = true;
       console.log('[MAIL_SERVICE] Đã khởi tạo kết nối Nodemailer (Gmail) thành công.');
-    }
-    return true;
-  }
-
-  console.log(`[MAIL_SERVICE] RESEND_API_KEY: ${process.env.RESEND_API_KEY ? 'ĐÃ CẤU HÌNH' : 'THIẾU'}`);
-  const apiKey = process.env.RESEND_API_KEY;
-  if (apiKey) {
-    if (!resendClient) {
-      resendClient = new Resend(apiKey);
-      console.log('[MAIL_SERVICE] Khởi tạo kết nối Resend API thành công.');
     }
     return true;
   }
