@@ -182,6 +182,7 @@ export function NavRail({
         })}
       </nav>
       <div className="nav-bottom-actions">
+        {/* Nút chuyển đổi giao diện sáng/tối đang tạm ẩn
         <button
           className="nav-button nav-settings"
           onClick={toggleTheme}
@@ -195,6 +196,7 @@ export function NavRail({
           )}
           <span>{theme === 'dark' ? 'Giao diện sáng' : 'Giao diện tối'}</span>
         </button>
+        */}
         <button
           className="nav-button nav-settings"
           onClick={onLogout}
