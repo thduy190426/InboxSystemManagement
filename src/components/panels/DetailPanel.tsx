@@ -801,8 +801,24 @@ export function DetailPanel({
               rel="noreferrer"
               target={attachment.url ? '_blank' : undefined}
             >
-              <span className="attachment-icon">
-                {attachment.type === 'image' ? <Image size={18} /> : <FileText size={18} />}
+              <span className={attachment.type === 'image' ? 'attachment-icon attachment-thumb' : 'attachment-icon'}>
+                {attachment.type === 'image' ? (
+                  <>
+                    {attachment.url ? (
+                      <img
+                        alt={attachment.name}
+                        loading="lazy"
+                        onError={(event) => {
+                          event.currentTarget.style.display = 'none'
+                        }}
+                        src={attachment.url}
+                      />
+                    ) : null}
+                    <Image size={18} />
+                  </>
+                ) : (
+                  <FileText size={18} />
+                )}
               </span>
               <span>
                 <strong>{attachment.name}</strong>
