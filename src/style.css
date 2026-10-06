@@ -2622,13 +2622,7 @@ html.dark .conversation-context-menu button.is-danger:hover {
   text-align: center;
 }
 
-.empty-chat-shell {
-  --content-columns: minmax(0, 1fr);
-}
-
-.app-shell.is-sidebar-open.empty-chat-shell {
-  --content-columns: minmax(0, 1fr);
-}
+/* Removed empty-chat-shell overrides to fix grid layout */
 
 .empty-chat-shell .loading-panel {
   min-width: 0;
