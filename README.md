@@ -1,4 +1,4 @@
-# Hệ Thống Quản Lý Tin Nhắn (Inbox System Management)
+# Inbox System Management (Real-time Chat Platform)
 
 ![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![Vite](https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E)
@@ -8,192 +8,183 @@
 ![MySQL](https://img.shields.io/badge/MySQL-005C84?style=for-the-badge&logo=mysql&logoColor=white)
 ![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=for-the-badge&logo=socketdotio&logoColor=white)
 
-Dự án **Hệ Thống Quản Lý Tin Nhắn** là một nền tảng giao tiếp trực tuyến toàn diện, được thiết kế để kết nối người dùng thông qua việc nhắn tin và gọi điện theo thời gian thực (Real-time). Hệ thống cung cấp trải nghiệm mượt mà, bảo mật cao và giao diện người dùng (UI) cao cấp với hiệu ứng Glassmorphism hiện đại, tương tự như các nền tảng mạng xã hội phổ biến hiện nay.
+The **Inbox System Management** project is a comprehensive online communication platform designed to connect users through real-time messaging and calls. The system provides a seamless, highly secure experience with a premium User Interface (UI) featuring modern Glassmorphism effects, similar to popular social networking platforms today.
 
 ---
 
-## Mục Tiêu Của Dự Án
+## Project Objectives
 
-Mục tiêu cốt lõi của dự án là mang lại một không gian trò chuyện bảo mật, thân thiện và mạnh mẽ. Ứng dụng hỗ trợ cả trò chuyện cá nhân và trò chuyện nhóm, đồng thời cung cấp hệ thống quản lý danh bạ, cài đặt cá nhân, và một trang quản trị (Admin) dành riêng cho việc giám sát hoạt động toàn hệ thống.
-
----
-
-## Các Tính Năng Nổi Bật
-
-### 1. Trò Chuyện Thời Gian Thực (Real-time Chat)
-
-- Nhắn tin cá nhân (1-1) và nhắn tin nhóm với tốc độ phản hồi tức thì nhờ công nghệ WebSockets (`Socket.IO`).
-- Hỗ trợ đa dạng loại nội dung: Văn bản, hình ảnh, video, âm thanh (voice message), tệp đính kèm và **GIPHY (GIFs)**.
-- Các thao tác tin nhắn nâng cao (Menu ngữ cảnh):
-  - Trả lời tin nhắn (Reply)
-  - Chuyển tiếp tin nhắn (Forward)
-  - Ghim tin nhắn quan trọng (Pin)
-  - Thu hồi / Chỉnh sửa tin nhắn (Unsend / Edit)
-  - Báo cáo tin nhắn (Report) vi phạm cho quản trị viên.
-- Trạng thái tin nhắn chi tiết: Đang gửi, Đã gửi, Đã nhận, Đã xem (Read Receipts) với icon đánh dấu.
-- Tương tác tin nhắn: Thả biểu tượng cảm xúc (reactions) vào từng tin nhắn cụ thể.
-- Hiển thị trạng thái "đang nhập tin nhắn..." (typing indicator).
-- Tìm kiếm tin nhắn trong cuộc trò chuyện (Search within conversation).
-- Lưu trữ (Archive), Ẩn (Hide) và phân loại cuộc trò chuyện (Tất cả, Chưa đọc, Đã lưu trữ, Nhóm).
-- Phân tách thời gian theo ngày rành mạch.
-
-### 2. Quản Lý Nhóm & Cuộc Trò Chuyện (Group & Chat Management)
-
-- Tạo và quản lý nhóm trò chuyện chuyên sâu.
-- Phân quyền nhóm: Chủ nhóm (Owner) và Thành viên (Member).
-- Cài đặt nhóm: Đổi tên, thay đổi ảnh đại diện nhóm.
-- Duyệt thành viên qua Yêu cầu tham gia (Join Requests) hoặc Link mời tham gia nhóm (Invite Link).
-- Cài đặt biệt danh (Nickname) cho từng thành viên trong nhóm hoặc bạn bè.
-- Rời nhóm, giải tán nhóm (Disband) dễ dàng cho quản trị viên nhóm.
-- Bảng chi tiết trò chuyện (Detail Panel) bên phải:
-  - Xem tất cả hình ảnh, video, tệp tin (files) đã gửi trong nhóm một cách gọn gàng, chia theo tab.
-  - Tự động lọc bỏ các ảnh GIF/Emoji ra khỏi danh sách File đính kèm để tránh rác.
-
-### 3. Quản Lý Cuộc Gọi (Audio/Video Call)
-
-- Tích hợp tính năng gọi điện thoại và gọi video trực tuyến chất lượng cao.
-- Giao diện cuộc gọi hiện đại dạng Overlay, không làm gián đoạn trải nghiệm sử dụng khi thu nhỏ.
-- Lưu trữ và hiển thị chi tiết lịch sử cuộc gọi (Thời gian, thời lượng, cuộc gọi nhỡ).
-
-### 4. Quản Lý Danh Bạ & Bạn Bè
-
-- Tìm kiếm, gửi/nhận lời mời kết bạn dễ dàng với những người dùng khác trong hệ thống.
-- Cài đặt biệt danh (Nickname) riêng tư cho bạn bè.
-- Danh sách chặn người dùng (Block List) để hạn chế sự làm phiền và bảo vệ quyền riêng tư.
-- Hiển thị trạng thái hoạt động theo thời gian thực: Trực tuyến (Online), Ngoại tuyến (Offline), Bận (Busy), Vắng mặt (Away) cùng với huy hiệu thời gian online.
-
-### 5. Hệ Thống Thông Báo
-
-- Hệ thống thông báo đẩy (Web Push Notifications) giúp người dùng nhận thông báo ngay cả khi không mở tab ứng dụng.
-- Thông báo In-app sinh động về tin nhắn mới, lời mời kết bạn, cuộc gọi nhỡ và các tương tác khác.
-
-### 6. Quản Trị Hệ Thống (Admin Dashboard)
-
-- Giao diện quản trị hiện đại, tổng quan (Dashboard) dành riêng cho Ban Quản Trị.
-- Hệ thống huy hiệu quản trị rõ ràng: Owner, Admin, Moderator, User.
-- Biểu đồ thống kê trực quan: Lượt đăng ký và truy cập trong 7 ngày gần nhất, tổng số người dùng, người dùng đang hoạt động (active).
-- Quản lý báo cáo (Report Management): Xem xét và xử lý các tin nhắn bị báo cáo.
-- Quản lý người dùng: Xem danh sách, cấp quyền, tạm ngưng/khóa tài khoản (Suspend/Ban) hoặc can thiệp vào các hoạt động để đảm bảo an ninh hệ thống.
-
-### 7. Tùy Chỉnh & Trải Nghiệm Người Dùng (UI/UX)
-
-- **Hiệu ứng Glassmorphism:** Các bong bóng tin nhắn được thiết kế hiệu ứng kính mờ tinh tế (backdrop blur), đảm bảo văn bản luôn hiển thị sắc nét, nổi bật trên bất kỳ nền ảnh phức tạp nào.
-- Tuỳ chỉnh giao diện chat: Có thể cài đặt hình nền (Background) riêng biệt cho từng cuộc trò chuyện. Các thiết lập được lưu trữ ổn định cục bộ.
-- **Hỗ trợ Avatar Động (GIF Avatar):** Người dùng có thể sử dụng ảnh động (GIF) làm ảnh đại diện, hệ thống sẽ tự động giữ nguyên hoạt ảnh mà không bị cắt thành ảnh tĩnh.
-- Hỗ trợ đa ngôn ngữ (Internationalization/i18n) giúp người dùng linh hoạt đổi ngôn ngữ giao diện.
-- Hỗ trợ Chế độ Tối/Sáng (Dark/Light Mode) toàn diện và cực kỳ mượt mà ở mọi thành phần.
-- Bảo mật xác thực: Đăng nhập, Đăng ký, Quên mật khẩu, Xác thực email OTP an toàn (qua hệ thống Resend hoặc Mailtrap).
-- Công cụ cắt ảnh đại diện trực tiếp (Avatar Cropper) ngay trên trình duyệt khi người dùng sử dụng ảnh tĩnh.
-- Tích hợp kho Nhãn dán (Stickers) tĩnh/động mang phong cách cá nhân hóa.
-- Hiệu ứng thả cảm xúc (Reaction Animations - "Bão Like") bay rợp màn hình khi người dùng liên tục bấm giữ thả Emoji nhanh.
+The core objective of the project is to provide a secure, user-friendly, and robust chat environment. The application supports both one-on-one and group chats, while offering contact management, personal settings, and a dedicated Admin dashboard for monitoring overall system activity.
 
 ---
 
-## Tiến Độ Hiện Tại & Các Tính Năng Còn Thiếu (Messenger Clone Parity)
+## Key Features
 
-Dự án hiện đã hoàn thiện phần lớn các tính năng cốt lõi của một hệ thống nhắn tin thời gian thực. Cấu trúc mã nguồn Front-end (đặc biệt là khung chat `MessageInput`) vừa được tái cấu trúc (Refactor) bằng Context API để giải quyết tình trạng "Prop Drilling", giúp mã nguồn gọn gàng và dễ mở rộng hơn. Hệ thống giao diện (UI) hiện tại đã khắc phục được lỗi gián đoạn do thiếu chunk (`vite:preloadError`).
+### 1. Real-time Chat
+- One-on-one (1-1) and group messaging with instant response speeds powered by WebSockets (`Socket.IO`).
+- Support for diverse content types: Text, images, videos, audio (voice messages), file attachments, and **GIPHY (GIFs)**.
+- Advanced message actions (Context menu):
+  - Reply to messages
+  - Forward messages
+  - Pin important messages
+  - Unsend / Edit messages
+  - Report messages for violations to administrators.
+- Detailed message statuses: Sending, Sent, Delivered, Seen (Read Receipts) with indicator icons.
+- Message interaction: Drop emoji reactions on specific messages.
+- Real-time "typing..." indicators.
+- Search functionality within conversations.
+- Archive, hide, and categorize conversations (All, Unread, Archived, Groups).
+- Clear chronological date separation.
 
-Tuy nhiên, để đạt được độ hoàn thiện như một bản sao hoàn chỉnh của Facebook Messenger (Messenger Clone), hệ thống vẫn còn thiếu các chức năng sau:
+### 2. Group & Chat Management
+- Create and manage in-depth group chats with robust validation logic.
+- Group roles: Owner and Member.
+- Group settings: Rename and change group avatars.
+- Member approval via Join Requests or Invite Links.
+- Set nicknames for individual group members or friends.
+- Easy options for admins to leave or disband groups.
+- Right-side Detail Panel:
+  - Neatly view all images, videos, and files sent in the group, categorized by tabs.
+  - Automatically filter out GIF/Emoji images from the attachments list to prevent clutter.
 
-1. **Trải Nghiệm Trò Chuyện Tùy Chỉnh Chuyên Sâu:**
-   - **Tùy chỉnh màu sắc (Gradient Themes):** Hiện tại hệ thống hỗ trợ Dark/Light mode, nhưng chưa có tính năng thay đổi màu sắc chủ đạo (Theme color/Gradient) riêng biệt cho từng cuộc trò chuyện (ví dụ: Chủ đề Tình yêu, Halloween...).
-   - **Tùy chỉnh âm thanh thông báo:** Chưa cho phép người dùng đặt âm thanh chuông báo tin nhắn hoặc cuộc gọi đến khác nhau cho từng người dùng/nhóm.
-   - **Thay đổi Emoji mặc định:** Tính năng thay đổi biểu tượng cảm xúc mặc định ở góc phải (hiện tại cố định là "👍") thành bất kỳ Emoji nào khác tùy thích cho từng cuộc hội thoại.
+### 3. Audio & Video Calls
+- Integrated high-quality online audio and video calling.
+- Modern overlay call interface, ensuring uninterrupted user experience when minimized.
+- Store and display detailed call history (Time, duration, missed calls).
 
-2. **Giao Diện & Tương Tác Nâng Cao:**
-   - **Chat Bubbles (Bong bóng chat):** Tính năng thu nhỏ cuộc trò chuyện thành bong bóng trôi nổi trên màn hình (đặc biệt quan trọng nếu phát triển phiên bản PWA/Mobile).
-   - **Read Receipts với Avatar:** Thay vì chỉ hiện icon "Đã xem", hệ thống cần hiển thị avatar nhỏ của người/những người đã xem tin nhắn ở dưới cùng (như Messenger).
-   - **Link Preview (Xem trước liên kết):** Khi gửi một URL (ví dụ: YouTube, báo chí), hệ thống cần fetch và hiển thị ảnh thumbnail, tiêu đề và mô tả ngắn của thẻ Meta (Open Graph).
+### 4. Contact & Friend Management
+- Easily search for and send/receive friend requests with other users in the system.
+- Set private nicknames for friends.
+- Block list to limit disturbances and protect privacy.
+- Real-time activity status: Online, Offline, Busy, Away, complete with an online duration badge.
 
-3. **Tính Năng Xã Hội (Social Features):**
-   - **Stories (Tin 24h) / Notes (Ghi chú):** Tính năng đăng tải hình ảnh, video ngắn hoặc dòng trạng thái tự biến mất sau 24 giờ.
-   - **Bình chọn (Polls) nâng cao:** Mặc dù đã có nền tảng UI (`CreatePollModal`), nhưng cần tối ưu hóa logic thời gian thực và hiển thị tiến trình vote trực quan trong khung chat nhóm.
-   - **Hiệu ứng & Bộ lọc Cuộc gọi (Filters/AR):** Ứng dụng các bộ lọc khuôn mặt (AR) trong Video Call.
+### 5. Notification System
+- Web Push Notifications to keep users updated even when the app tab is closed.
+- Lively in-app notifications for new messages, friend requests, missed calls, and other interactions.
 
-4. **Bảo Mật Tiên Tiến:**
-   - **Mã hóa Đầu - Cuối (End-to-End Encryption - E2EE):** Hiện tại tin nhắn gửi qua WebSockets, nhưng cần mã hóa E2EE bằng thuật toán tín hiệu (Signal Protocol) để đảm bảo bảo mật tuyệt đối cho Secret Conversations.
+### 6. Admin Dashboard
+- Modern, comprehensive dashboard specifically for the Administration Team.
+- Clear administrative badge system: Owner, Admin, Moderator, User.
+- Visual statistical charts: Registrations and visits over the last 7 days, total users, active users.
+- Report Management: Review and handle reported messages.
+- User Management: View lists, grant permissions, suspend/ban accounts, or intervene to ensure system security.
+
+### 7. Customization & UX (UI/UX)
+- **Glassmorphism Effects:** Chat bubbles feature a subtle backdrop blur, ensuring text remains sharp and prominent against any complex background.
+- Chat interface customization: Set unique backgrounds for individual conversations. Settings are reliably stored locally.
+- **Dynamic Avatar Support (GIFs):** Users can upload animated GIFs as profile pictures; the system automatically retains the animation without cropping it into a static image.
+- **Social Logins:** Seamlessly authenticate using external providers like **Google** and **Facebook** via OAuth integration.
+- **Stories / Notes (24h):** Post short images, videos, or statuses that automatically disappear after 24 hours.
+- Internationalization (i18n) support, allowing users to flexibly switch interface languages.
+- Comprehensive and incredibly smooth Dark/Light Mode across all components.
+- Secure authentication: Login, Registration, Forgot Password, and secure OTP email verification (via Resend or Mailtrap).
+- Direct browser-based Avatar Cropper tool for static images.
+- Integrated Static/Animated Stickers library for personalized expression.
+- "Reaction Storm" animation effects that flood the screen when users rapidly tap and hold emoji reactions.
 
 ---
 
-## Công Nghệ Sử Dụng
+## Current Progress & Missing Features (Messenger Clone Parity)
 
-### Giao Diện Người Dùng (Frontend)
+The project has currently completed the vast majority of core features for a real-time messaging system. The Front-end source code (especially the `MessageInput` chat frame) was recently refactored using the Context API to solve "Prop Drilling", making the code cleaner and more scalable. The current UI has also overcome interruption issues caused by missing chunks (`vite:preloadError`).
 
+However, to achieve full parity with a complete Facebook Messenger clone, the system still lacks the following features:
+
+1. **In-depth Custom Chat Experience:**
+   - **Gradient Themes:** The system currently supports Dark/Light modes but lacks the ability to change the primary color theme (Gradient) for individual chats (e.g., Love Theme, Halloween...).
+   - **Custom Notification Sounds:** Users cannot yet set different message or ringtone sounds for specific users/groups.
+   - **Default Emoji Customization:** The ability to change the default quick-emoji in the bottom right corner (currently fixed as "👍") to any other emoji of choice per conversation.
+
+2. **Advanced Interface & Interactions:**
+   - **Chat Bubbles:** The ability to minimize chats into floating bubbles on the screen (especially important if developing a PWA/Mobile version).
+   - **Read Receipts with Avatars:** Instead of just a "Seen" icon, the system should display a small avatar of the person(s) who viewed the message at the bottom (like Messenger).
+   - **Link Previews:** When sending a URL (e.g., YouTube, news articles), the system needs to fetch and display the thumbnail, title, and short description from Meta tags (Open Graph).
+
+3. **Social & Video Features:**
+   - **Advanced Polls:** Although the UI foundation exists (`CreatePollModal`), the real-time logic and visual voting progress within group chats need optimization.
+   - **Call Filters (AR):** Applying facial filters (AR) during Video Calls.
+
+4. **Advanced Security:**
+   - **End-to-End Encryption (E2EE):** Messages currently send via WebSockets, but E2EE using the Signal Protocol is needed to ensure absolute security for Secret Conversations.
+
+---
+
+## Technologies Used
+
+### Frontend (User Interface)
 - **Framework:** ReactJS 19
-- **Ngôn ngữ:** TypeScript
-- **Công cụ xây dựng:** Vite (Siêu tốc, tối ưu hóa quá trình phát triển và đóng gói)
-- **Styling:** CSS thuần (Vanilla CSS) kết hợp linh hoạt với CSS Variables cho Dark Mode và hiệu ứng Glassmorphism.
-- **Thư viện hỗ trợ:**
-  - `lucide-react`: Bộ biểu tượng SVG sắc nét, nhẹ và hiện đại.
-  - `emoji-picker-react`: Tích hợp bộ chọn Emoji phong phú.
-  - `socket.io-client`: Quản lý kết nối thời gian thực phía máy khách.
-  - `i18next` & `react-i18next`: Hỗ trợ đa ngôn ngữ (i18n).
-  - `react-easy-crop`: Công cụ xử lý và cắt ảnh đại diện ngay trên trình duyệt.
+- **Language:** TypeScript
+- **Build Tool:** Vite (Ultra-fast, optimizes development and bundling)
+- **Styling:** Vanilla CSS flexibly combined with CSS Variables for Dark Mode and Glassmorphism.
+- **Supporting Libraries:**
+  - `lucide-react`: Crisp, lightweight, and modern SVG icons.
+  - `emoji-picker-react`: Rich emoji picker integration.
+  - `socket.io-client`: Client-side real-time connection management.
+  - `i18next` & `react-i18next`: Multi-language (i18n) support.
+  - `react-easy-crop`: In-browser avatar processing and cropping tool.
 
-### Máy Chủ & Dịch Vụ (Backend)
-
-- **Môi trường & Framework:** Node.js, ExpressJS
-- **Cơ sở dữ liệu:** MySQL (Sử dụng thư viện `mysql2`)
+### Backend (Server & Services)
+- **Environment & Framework:** Node.js, ExpressJS
+- **Database:** MySQL (Using the `mysql2` library)
 - **Real-time Engine:** Socket.IO
-- **Lưu trữ Đám mây:** Cloudinary (Tối ưu hóa, lưu trữ an toàn hình ảnh, video, tệp đính kèm).
-- **Dịch vụ & Bảo mật:**
-  - `web-push`: Triển khai thông báo đẩy (Push Notifications) an toàn.
-  - `resend` & `nodemailer`: Dịch vụ gửi email thông báo và mã OTP.
-  - `bcryptjs`: Mã hóa mật khẩu một chiều mạnh mẽ.
-  - `helmet`, `cors`, **Rate Limiting**: Tăng cường bảo mật máy chủ, chống các lỗ hổng web phổ biến và hạn chế request tần suất cao.
-  - `multer`: Xử lý tệp tải lên (upload file).
+- **Cloud Storage:** Cloudinary (Optimization, secure storage of images, videos, and attachments).
+- **Services & Security:**
+  - `web-push`: Secure Push Notifications implementation.
+  - `resend` & `nodemailer`: Email notifications and OTP delivery services.
+  - `bcryptjs`: Strong one-way password hashing.
+  - `helmet`, `cors`, **Rate Limiting**: Enhanced server security, protection against common web vulnerabilities, and high-frequency request limiting.
+  - `multer`: File upload handling.
 
 ---
 
-## Cấu Trúc Thư Mục Dự Án
+## Project Directory Structure
 
 ```plaintext
 InboxSystemManagement/
-├── backend/                # Mã nguồn Backend (Node.js & Express)
+├── backend/                # Backend Source Code (Node.js & Express)
 │   ├── src/
-│   │   ├── config/         # Cấu hình CSDL, Cloudinary, v.v.
-│   │   ├── controllers/    # Logic xử lý API (Auth, Chat, Admin, System, v.v.)
-│   │   ├── middleware/     # Các middleware (Auth JWT, Rate Limit, Error Handler)
-│   │   ├── realtime/       # Logic xử lý Socket.IO
-│   │   ├── routes/         # Định tuyến API
-│   │   ├── services/       # Dịch vụ bên ngoài (Resend, Mailtrap, Push Notification)
-│   │   └── utils/          # Các hàm tiện ích
+│   │   ├── config/         # Database, Cloudinary configurations, etc.
+│   │   ├── controllers/    # API Logic (Auth, Chat, Admin, System, etc.)
+│   │   ├── middleware/     # Middlewares (JWT Auth, Rate Limit, Error Handler)
+│   │   ├── realtime/       # Socket.IO Logic
+│   │   ├── routes/         # API Routing
+│   │   ├── services/       # External services (Resend, Mailtrap, Push Notification)
+│   │   └── utils/          # Utility functions
 │   └── package.json
-├── database/               # Các tập lệnh SQL để khởi tạo cơ sở dữ liệu
-├── public/                 # Các tệp tĩnh (Favicon, Logo...)
-├── src/                    # Mã nguồn Frontend (React & Vite)
-│   ├── components/         # Các UI Components (Layout, Panels, Views, UI elements)
-│   ├── pages/              # Các trang giao diện
-│   ├── services/           # Các hàm gọi API từ phía Client (Auth, Chat, Notifications)
-│   ├── types.ts            # Định nghĩa kiểu dữ liệu TypeScript
-│   ├── style.css           # File CSS toàn cục chứa Design System & Dark Mode
-│   └── main.tsx            # Điểm vào của ứng dụng React
-├── package.json            # Quản lý dependencies của Frontend
-└── README.md               # Tài liệu dự án
+├── database/               # SQL scripts for database initialization
+├── public/                 # Static files (Favicon, Logo...)
+├── src/                    # Frontend Source Code (React & Vite)
+│   ├── components/         # UI Components (Layout, Panels, Views, UI elements)
+│   ├── pages/              # Interface pages
+│   ├── services/           # Client-side API functions (Auth, Chat, Notifications)
+│   ├── types.ts            # TypeScript definitions
+│   ├── style.css           # Global CSS file containing Design System & Dark Mode
+│   └── main.tsx            # React application entry point
+├── package.json            # Frontend dependencies management
+└── README.md               # Project documentation
 ```
 
 ---
 
-## Hướng Dẫn Cài Đặt & Khởi Chạy
+## Installation & Launch Guide
 
-### Yêu Cầu Hệ Thống (Prerequisites)
+### Prerequisites
+Ensure you have installed and obtained the following:
+- **Node.js** (Version v18.0.0 or higher)
+- **MySQL Server** (Running locally or remote)
+- **Cloudinary** Account (Obtain API Key, Secret)
+- **Resend** or **Mailtrap** Account (For OTP email configuration)
+- **GIPHY API Key** (Used for GIF sending functionality)
+- **Facebook / Google App IDs** (For OAuth Login)
 
-Đảm bảo bạn đã cài đặt và sở hữu:
+### Installation Steps
 
-- **Node.js** (Phiên bản v18.0.0 trở lên)
-- **MySQL Server** (Đang chạy tại local hoặc remote)
-- Tài khoản **Cloudinary** (Lấy API Key, Secret)
-- Tài khoản **Resend** hoặc **Mailtrap** (Cấu hình gửi mail OTP)
-- **GIPHY API Key** (Sử dụng cho tính năng gửi GIF)
+1. **Initialize Database:**
+   - Create a new Database in MySQL.
+   - Run the `.sql` files located in the `database/` directory to initialize the table structures.
 
-### Các Bước Cài Đặt
-
-1. **Khởi tạo Cơ sở dữ liệu:**
-   - Tạo một Database mới trong MySQL.
-   - Chạy các file `.sql` có trong thư mục `database/` để khởi tạo cấu trúc bảng.
-
-2. **Thiết lập Biến môi trường (Environment Variables):**
-   - Di chuyển vào thư mục `backend/`, tạo một tệp có tên `.env` dựa trên `.env.example` (nếu có) hoặc khai báo các thông tin sau:
+2. **Set Environment Variables:**
+   - Navigate to the `backend/` directory, create a file named `.env` based on `.env.example` (if available), or declare the following information:
      ```env
      PORT=5000
      DB_HOST=localhost
@@ -210,47 +201,49 @@ InboxSystemManagement/
      VAPID_PUBLIC_KEY=your_vapid_public_key
      VAPID_PRIVATE_KEY=your_vapid_private_key
      ```
-   - Trở lại thư mục gốc (nơi chứa Frontend), tạo tệp `.env` với các biến (Vite yêu cầu biến bắt đầu bằng `VITE_`):
+   - Return to the root directory (where the Frontend is), and create a `.env` file with the variables (Vite requires variables to start with `VITE_`):
      ```env
      VITE_GIPHY_API_KEY=your_giphy_api_key
+     VITE_FACEBOOK_APP_ID=your_facebook_app_id
+     VITE_GOOGLE_CLIENT_ID=your_google_client_id
      ```
 
-3. **Cài đặt các gói phụ thuộc (Dependencies):**
-   - Tại **thư mục gốc**, mở terminal và chạy:
+3. **Install Dependencies:**
+   - In the **root directory**, open a terminal and run:
      ```bash
      npm install
      ```
-   - Di chuyển vào thư mục **backend**, và chạy:
+   - Navigate to the **backend** directory, and run:
      ```bash
      cd backend
      npm install
      ```
 
-4. **Khởi chạy Ứng dụng:**
-   - Trở lại thư mục gốc của dự án, sử dụng lệnh sau để khởi chạy ĐỒNG THỜI cả Frontend và Backend (Sử dụng thư viện `concurrently`):
+4. **Launch the Application:**
+   - Return to the project's root directory, use the following command to SIMULTANEOUSLY launch both Frontend and Backend (Using the `concurrently` library):
      ```bash
      npm run dev:all
      ```
-   - Hệ thống sẽ tự động khởi chạy:
-     - Frontend tại: `<http://localhost:5173>` (mặc định của Vite)
-     - Backend tại: `<http://localhost:5000>` (theo cấu hình `.env`)
+   - The system will automatically start:
+     - Frontend at: `http://localhost:5173` (Vite's default)
+     - Backend at: `http://localhost:5000` (based on `.env` configuration)
 
 ---
 
-## Hướng Dẫn Đóng Góp (Contributing)
+## Contributing
 
-Chúng tôi luôn hoan nghênh những đóng góp để hệ thống trở nên hoàn thiện và mạnh mẽ hơn. Nếu bạn tìm thấy lỗi (bug), có ý tưởng tối ưu hóa, hoặc muốn thêm tính năng mới:
+We always welcome contributions to make the system more complete and robust. If you find a bug, have optimization ideas, or want to add a new feature:
 
-1. **Fork** dự án này về tài khoản của bạn.
-2. Tạo một nhánh mới (branch) cho tính năng hoặc sửa lỗi của bạn (`git checkout -b feature/AmazingFeature`).
-3. Commit những thay đổi của bạn (`git commit -m 'Add some AmazingFeature'`).
-4. Đẩy (Push) lên nhánh đó (`git push origin feature/AmazingFeature`).
-5. Tạo một **Pull Request** để chúng tôi xem xét.
+1. **Fork** this project to your account.
+2. Create a new branch for your feature or bug fix (`git checkout -b feature/AmazingFeature`).
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+4. Push to the branch (`git push origin feature/AmazingFeature`).
+5. Open a **Pull Request** for us to review.
 
-Vui lòng tuân thủ các quy chuẩn lập trình, format code đang được sử dụng trong dự án.
+Please adhere to the programming and code formatting standards currently used in the project.
 
 ---
 
-## Giấy Phép (License)
+## License
 
-Dự án này được phát triển nội bộ. Mọi quyền liên quan đến sao chép, chỉnh sửa thương mại và phân phối đều được bảo lưu nghiêm ngặt.
+This project is developed internally. All rights related to copying, commercial modification, and distribution are strictly reserved.
