@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 type OnlineDurationBadgeProps = {
   onlineSince?: string | null
@@ -15,6 +16,7 @@ export function OnlineDurationBadge({
   presence,
   compact = false,
 }: OnlineDurationBadgeProps) {
+  const { t } = useTranslation()
   const [diffMinutes, setDiffMinutes] = useState(-1)
 
   useEffect(() => {
@@ -26,17 +28,17 @@ export function OnlineDurationBadge({
 
     if (!timeToUse) {
       if (status) {
-        const minMatch = status.match(/(\d+)\s+phút/i)
+        const minMatch = status.match(new RegExp(`(\\d+)\\s+${t('minutes', { defaultValue: 'phút' })}`, 'i'))
         if (minMatch) {
           setDiffMinutes(parseInt(minMatch[1], 10))
           return
         }
-        const hourMatch = status.match(/(\d+)\s+giờ/i)
+        const hourMatch = status.match(new RegExp(`(\\d+)\\s+${t('hours', { defaultValue: 'giờ' })}`, 'i'))
         if (hourMatch) {
           setDiffMinutes(parseInt(hourMatch[1], 10) * 60)
           return
         }
-        const dayMatch = status.match(/(\d+)\s+ngày/i)
+        const dayMatch = status.match(new RegExp(`(\\d+)\\s+${t('days', { defaultValue: 'ngày' })}`, 'i'))
         if (dayMatch) {
           setDiffMinutes(parseInt(dayMatch[1], 10) * 60 * 24)
           return

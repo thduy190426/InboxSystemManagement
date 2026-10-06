@@ -103,7 +103,7 @@ export function ContactProfile({ user, isClosing, onClose }: ContactProfileProps
     >
       <section aria-modal="true" className="cp-dialog" role="dialog">
         <div className="cp-hero">
-          <button className="cp-close-btn" onClick={onClose} title="Đóng" type="button">
+          <button className="cp-close-btn" onClick={onClose} title={t("close", { defaultValue: "Đóng" })} type="button">
             <X size={16} />
           </button>
           <div className="cp-avatar-wrap">
@@ -474,7 +474,7 @@ export function ContactsPanel({
   function confirmUnfriend(friend: ContactUser) {
     setConfirmDialog({
       title: t('unfriendConfirmTitle'),
-      description: `Bạn sẽ hủy kết bạn với ${friend.nickname || friend.fullName}. Hai bạn cần gửi lời mời lại nếu muốn kết bạn tiếp.`,
+      description: t('unfriendConfirm', { defaultValue: `Bạn sẽ hủy kết bạn với {{name}}. Hai bạn cần gửi lời mời lại nếu muốn kết bạn tiếp.`, name: friend.nickname || friend.fullName }),
       confirmLabel: t('unfriendConfirmBtn'),
       tone: 'danger',
       onConfirm: () => handleUnfriend(friend),
@@ -631,7 +631,7 @@ export function ContactsPanel({
                 </button>
                 <button className="cp-btn cp-btn--primary cp-btn--sm" disabled={busyId === request.id} onClick={() => handleAcceptRequest(request)} type="button">
                   <Check size={14} />
-                  {busyId === request.id ? 'Đang xử lý...' : t('statusAcceptReq')}
+                  {busyId === request.id ? t('processing', { defaultValue: 'Đang xử lý...' }) : t('statusAcceptReq')}
                 </button>
                 <button className="cp-btn cp-btn--danger cp-btn--sm" disabled={busyId === request.id} onClick={() => handleDeclineRequest(request)} type="button">
                   <X size={14} /> {t('rejectBtn')}

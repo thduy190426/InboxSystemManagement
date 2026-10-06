@@ -188,7 +188,7 @@ export function NavRail({
         <button
           className="nav-button nav-settings"
           onClick={toggleTheme}
-          title={theme === 'dark' ? 'Giao diện sáng' : 'Giao diện tối'}
+          title={theme === 'dark' ? t('lightTheme', { defaultValue: 'Giao diện sáng' }) : t('darkTheme', { defaultValue: 'Giao diện tối' })}
           type="button"
         >
           {theme === 'dark' ? (
@@ -196,7 +196,7 @@ export function NavRail({
           ) : (
             <Moon size={22} strokeWidth={2.1} />
           )}
-          <span>{theme === 'dark' ? 'Giao diện sáng' : 'Giao diện tối'}</span>
+          <span>{theme === 'dark' ? t('lightTheme', { defaultValue: 'Giao diện sáng' }) : t('darkTheme', { defaultValue: 'Giao diện tối' })}</span>
         </button>
         */}
         <button

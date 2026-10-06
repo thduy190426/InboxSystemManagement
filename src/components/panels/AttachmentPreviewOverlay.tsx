@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { X, Crop, RotateCw, Send, EyeOff, Play, Trash2 } from 'lucide-react'
 
 export type PendingAttachment = {
@@ -20,6 +21,7 @@ type Props = {
 }
 
 export function AttachmentPreviewOverlay({ attachments, onClose, onRemove, onUpdate, onSend }: Props) {
+  const { t } = useTranslation()
   const [activeIndex, setActiveIndex] = useState(0)
   const activeAttachment = attachments[activeIndex]
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -83,7 +85,7 @@ export function AttachmentPreviewOverlay({ attachments, onClose, onRemove, onUpd
           <X size={24} />
         </button>
         <div style={{ fontSize: '15px', fontWeight: 500 }}>
-          Đã chọn {attachments.length} tệp
+          {t('selectedFiles', { defaultValue: `Đã chọn {{count}} tệp`, count: attachments.length })}
         </div>
         <div style={{ width: 40 }} />
       </div>
@@ -128,7 +130,7 @@ export function AttachmentPreviewOverlay({ attachments, onClose, onRemove, onUpd
         {activeAttachment.type === 'file' || activeAttachment.type === 'audio' ? (
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '64px', marginBottom: '16px' }}>📄</div>
-            <h3 style={{ margin: 0, wordBreak: 'break-all', padding: '0 20px' }}>Tệp đính kèm</h3>
+            <h3 style={{ margin: 0, wordBreak: 'break-all', padding: '0 20px' }}>{t('attachment', { defaultValue: 'Tệp đính kèm' })}</h3>
           </div>
         ) : null}
 
@@ -146,10 +148,10 @@ export function AttachmentPreviewOverlay({ attachments, onClose, onRemove, onUpd
       }}>
         {activeAttachment.type === 'image' && (
           <>
-            <button onClick={handleRotate} title="Xoay ảnh" style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}>
+            <button onClick={handleRotate} title={t('rotateImage', { defaultValue: 'Xoay ảnh' })} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}>
               <RotateCw size={24} />
             </button>
-            <button title="Cắt ảnh (Đang phát triển)" style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'not-allowed' }}>
+            <button title={t('cropImageDev', { defaultValue: 'Cắt ảnh (Đang phát triển)' })} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'not-allowed' }}>
               <Crop size={24} />
             </button>
           </>
@@ -157,7 +159,7 @@ export function AttachmentPreviewOverlay({ attachments, onClose, onRemove, onUpd
         {(activeAttachment.type === 'image' || activeAttachment.type === 'video') && (
           <button
             onClick={toggleViewOnce}
-            title="Xem một lần"
+            title={t('viewOnce', { defaultValue: 'Xem một lần' })}
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
               color: activeAttachment.viewOnce ? 'var(--primary)' : 'white'
@@ -168,7 +170,7 @@ export function AttachmentPreviewOverlay({ attachments, onClose, onRemove, onUpd
         )}
         <button
           onClick={() => onRemove(activeAttachment.id)}
-          title="Xóa tệp này"
+          title={t('deleteFile', { defaultValue: 'Xóa tệp này' })}
           style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}
         >
           <Trash2 size={24} />
@@ -222,7 +224,7 @@ export function AttachmentPreviewOverlay({ attachments, onClose, onRemove, onUpd
               fontWeight: 500, cursor: 'pointer'
             }}
           >
-            <span>Gửi {attachments.length} tệp</span>
+            <span>{t('sendFiles', { defaultValue: `Gửi {{count}} tệp`, count: attachments.length })}</span>
             <Send size={18} />
           </button>
         </div>

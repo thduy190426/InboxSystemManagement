@@ -446,7 +446,7 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
                   </button>
                   {isEmojiPickerOpen && (
                     <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 50, marginTop: '4px' }}>
-                      <Suspense fallback={<div style={{ padding: '20px', background: 'var(--surface)', color: 'var(--text)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>Đang tải...</div>}>
+                      <Suspense fallback={<div style={{ padding: '20px', background: 'var(--surface)', color: 'var(--text)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>{t('loading', { defaultValue: 'Đang tải...' })}</div>}>
                         <EmojiPicker
                           emojiStyle={'native' as EmojiStyle}
                           onEmojiClick={handleEmojiClick}

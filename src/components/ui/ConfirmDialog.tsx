@@ -1,5 +1,6 @@
 import { AlertTriangle, Check, CheckCircle2, Loader2, Trash2, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 export type ConfirmDialogTone = 'default' | 'danger'
 
@@ -27,6 +28,7 @@ export function ConfirmDialog({
   onCancel,
   onConfirm,
 }: ConfirmDialogProps) {
+  const { t } = useTranslation()
   const [visibleDialog, setVisibleDialog] = useState(dialog)
   const [isExiting, setIsExiting] = useState(false)
 
@@ -70,7 +72,7 @@ export function ConfirmDialog({
           className="confirm-dialog-close"
           disabled={isWorking || isExiting}
           onClick={onCancel}
-          title="Đóng"
+          title={t('close', { defaultValue: 'Đóng' })}
           type="button"
         >
           <X size={18} />
@@ -90,7 +92,7 @@ export function ConfirmDialog({
             type="button"
           >
             <X size={16} />
-            {visibleDialog.cancelLabel || 'Huỷ'}
+            {visibleDialog.cancelLabel || t('cancel', { defaultValue: 'Huỷ' })}
           </button>
           <button
             className="confirm-dialog-primary"
@@ -99,7 +101,7 @@ export function ConfirmDialog({
             type="button"
           >
             {isWorking ? <Loader2 className="confirm-dialog-spinner" size={16} /> : <ActionIcon size={16} />}
-            {isWorking ? 'Đang xử lí...' : visibleDialog.confirmLabel || 'Xác nhận'}
+            {isWorking ? t('processing', { defaultValue: 'Đang xử lí...' }) : visibleDialog.confirmLabel || t('confirm', { defaultValue: 'Xác nhận' })}
           </button>
         </div>
       </section>

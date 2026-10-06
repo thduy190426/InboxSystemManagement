@@ -853,7 +853,7 @@ export function ChatPanel({
     }
 
     if (message.state === 'failed') {
-      return 'Gửi lỗi!'
+      return t('sendError', { defaultValue: 'Gửi lỗi!' })
     }
 
     if (message.state === 'seen') {
@@ -1141,7 +1141,7 @@ export function ChatPanel({
           onClick={() => onStartCall(isVideo ? 'video' : 'audio')}
           type="button"
         >
-          Gọi lại
+          {t('callAgain', { defaultValue: 'Gọi lại' })}
         </button>
       </div>
     )

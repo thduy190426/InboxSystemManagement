@@ -1,5 +1,6 @@
 import { Mic, MicOff, Phone, Volume2, VolumeX, Video, VideoOff, X, MonitorUp, Signal, Minimize2, Maximize2 } from 'lucide-react'
 import { memo, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   acceptRealtimeCall,
   cancelRealtimeCall,
@@ -112,6 +113,7 @@ type RemoteVideoTileProps = {
 }
 
 const RemoteVideoTile = memo(function RemoteVideoTile({ remotePeer }: RemoteVideoTileProps) {
+  const { t } = useTranslation()
   const videoRef = useRef<HTMLVideoElement | null>(null)
 
   useEffect(() => {
@@ -131,7 +133,7 @@ const RemoteVideoTile = memo(function RemoteVideoTile({ remotePeer }: RemoteVide
         <div className="call-video-avatar">
           <AvatarFallback name={remotePeer.participant.fullName} src={remotePeer.participant.avatarUrl || null} />
           <strong>{remotePeer.participant.fullName}</strong>
-          {remotePeer.isAudioMuted && <div style={{ marginTop: '8px', padding: '4px 8px', borderRadius: '12px', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#fff' }}><MicOff size={14} /> Đã tắt Mic</div>}
+          {remotePeer.isAudioMuted && <div style={{ marginTop: '8px', padding: '4px 8px', borderRadius: '12px', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#fff' }}><MicOff size={14} /> {t('micOff', { defaultValue: 'Đã tắt Mic' })}</div>}
         </div>
       ) : (
         <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -144,6 +146,7 @@ const RemoteVideoTile = memo(function RemoteVideoTile({ remotePeer }: RemoteVide
 })
 
 export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverlayProps) {
+  const { t } = useTranslation()
   const [callStatus, setCallStatus] = useState(call.status)
   const [isMinimized, setIsMinimized] = useState(false)
   const [isMicOn, setIsMicOn] = useState(true)
@@ -216,7 +219,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
     remoteName = isCaller ? call.conversationName : call.caller.fullName
     remoteAvatarUrl = isCaller ? (call.conversationAvatar || null) : (call.caller.avatarUrl || null)
   }
-  const localAvatarName = currentUser?.fullName || 'Bạn'
+  const localAvatarName = currentUser?.fullName || t('you', { defaultValue: 'Bạn' })
   const localAvatarUrl = currentUser?.avatarUrl || null
   const canSelectAudioOutput =
     typeof HTMLMediaElement !== 'undefined' &&
@@ -246,7 +249,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
 
     if (call.status === 'ringing' && isCaller && !localStreamRef.current) {
       ensureLocalStream().catch((error) => {
-        onError(error instanceof Error ? error.message : 'Không thể truy cập camera/micro!')
+        onError(error instanceof Error ? error.message : t('errNoCamMic', { defaultValue: 'Không thể truy cập camera/micro!' }))
         finishCall('failed')
       })
     }
@@ -268,7 +271,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
     joinedRemoteParticipants.forEach((participant) => {
       if (shouldCreateOfferTo(participant.userId)) {
         startPeer(participant, true).catch((error) => {
-          onError(error instanceof Error ? error.message : 'Không thể kết nối cuộc gọi!')
+          onError(error instanceof Error ? error.message : t('errCallConnect', { defaultValue: 'Không thể kết nối cuộc gọi!' }))
         })
       }
     })
@@ -399,7 +402,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
     }
 
     if (!navigator.mediaDevices?.getUserMedia) {
-      throw new Error('Trình duyệt không hỗ trợ gọi audio/video!')
+      throw new Error(t('errBrowserNotSupport', { defaultValue: 'Trình duyệt không hỗ trợ gọi audio/video!' }))
     }
 
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -691,7 +694,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
       await acceptRealtimeCall(call.callId)
       setCallStatus('ongoing')
     } catch (error) {
-      onError(error instanceof Error ? error.message : 'Không thể nhận cuộc gọi!')
+      onError(error instanceof Error ? error.message : t('errReceiveCall', { defaultValue: 'Không thể nhận cuộc gọi!' }))
       finishCall('failed')
     }
   }
@@ -773,7 +776,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
         entry.pendingCandidates.push(payload.data as RTCIceCandidateInit)
       }
     } catch (error) {
-      onError(error instanceof Error ? error.message : 'Không thể xử lý tín hiệu gọi!')
+      onError(error instanceof Error ? error.message : t('errCallSignal', { defaultValue: 'Không thể xử lý tín hiệu gọi!' }))
     }
   }
 
@@ -1166,7 +1169,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
       }
       setIsScreenSharing(true)
     } catch (error) {
-      onError('Không thể chia sẻ màn hình')
+      onError(t('errScreenShare', { defaultValue: 'Không thể chia sẻ màn hình' }))
     }
   }
 
@@ -1180,27 +1183,27 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
   const canShowVideo = call.type === 'video'
   const networkQualityLabel =
     networkQuality === 'good'
-      ? 'Mạng tốt'
+      ? t('netGood', { defaultValue: 'Mạng tốt' })
       : networkQuality === 'fair'
-        ? 'Mạng trung bình'
+        ? t('netMedium', { defaultValue: 'Mạng trung bình' })
         : networkQuality === 'poor'
-          ? 'Mạng kém'
+          ? t('netPoor', { defaultValue: 'Mạng kém' })
           : ''
   const statusLabel =
     callStatus === 'ringing'
       ? isCaller
-        ? 'Đang đổ chuông'
-        : 'Cuộc gọi đến'
+        ? t('ringing', { defaultValue: 'Đang đổ chuông' })
+        : t('incomingCall', { defaultValue: 'Cuộc gọi đến' })
       : callStatus === 'connecting'
-        ? 'Đang kết nối...'
+        ? t('connecting', { defaultValue: 'Đang kết nối...' })
         : callStatus === 'ongoing'
           ? formatElapsed()
           : callStatus === 'declined'
-            ? 'Đã từ chối!'
+            ? t('rejected', { defaultValue: 'Đã từ chối!' })
             : callStatus === 'missed'
-              ? 'Cuộc gọi nhỡ'
-              : 'Đã kết thúc!'
-  const displayStatusLabel = callStatus === 'missed' ? 'Không bắt máy' : statusLabel
+              ? t('missedCall', { defaultValue: 'Cuộc gọi nhỡ' })
+              : t('ended', { defaultValue: 'Đã kết thúc!' })
+  const displayStatusLabel = callStatus === 'missed' ? t('noAnswer', { defaultValue: 'Không bắt máy' }) : statusLabel
   const fullStatusLabel =
     networkQualityLabel && ['connecting', 'ongoing'].includes(callStatus)
       ? (
@@ -1257,10 +1260,10 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button onClick={() => setIsMinimized(!isMinimized)} title={isMinimized ? "Phóng to" : "Thu nhỏ"} type="button">
+            <button onClick={() => setIsMinimized(!isMinimized)} title={isMinimized ? t("maximize", { defaultValue: "Phóng to" }) : t("minimize", { defaultValue: "Thu nhỏ" })} type="button">
               {isMinimized ? <Maximize2 size={18} /> : <Minimize2 size={18} />}
             </button>
-            <button onClick={hangUp} title="Đóng" type="button">
+            <button onClick={hangUp} title={t("close", { defaultValue: "Đóng" })} type="button">
               <X size={18} />
             </button>
           </div>
@@ -1310,10 +1313,10 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
             <div className="audio-call-avatar">
               <AvatarFallback name={remoteName} src={remoteAvatarUrl} />
               <strong>{remoteName}</strong>
-              {remotePeerList.length > 1 ? <small>{remotePeerList.length} người đang tham gia</small> : null}
+              {remotePeerList.length > 1 ? <small>{t('participants', { defaultValue: '{{count}} người đang tham gia', count: remotePeerList.length })}</small> : null}
               {primaryRemote?.isAudioMuted && (
                 <div style={{ marginTop: '12px', padding: '6px 12px', borderRadius: '20px', backgroundColor: 'var(--border-color)', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
-                  <MicOff size={16} color="var(--danger-color)" /> Đã tắt Mic
+                  <MicOff size={16} color="var(--danger-color)" /> {t('micOff', { defaultValue: 'Đã tắt Mic' })}
                 </div>
               )}
             </div>
@@ -1334,7 +1337,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
                   </option>
                 ))
               ) : (
-                <option value="">Micro mặc định</option>
+                <option value="">{t('defaultMic', { defaultValue: 'Micro mặc định' })}</option>
               )}
             </select>
           </label>
@@ -1345,7 +1348,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
               onChange={(event) => setSelectedAudioOutputId(event.target.value)}
               value={selectedAudioOutputId}
             >
-              <option value="default">Loa mặc định</option>
+              <option value="default">{t('defaultSpeaker', { defaultValue: 'Loa mặc định' })}</option>
               {audioOutputs.map((device) => (
                 <option key={device.id} value={device.id}>
                   {device.label}
@@ -1367,7 +1370,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
                     </option>
                   ))
                 ) : (
-                  <option value="">Camera mặc định</option>
+                  <option value="">{t('defaultCamera', { defaultValue: 'Camera mặc định' })}</option>
                 )}
               </select>
             </label>
@@ -1377,52 +1380,52 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
           <footer className="call-controls">
           {callStatus === 'ringing' && !isCaller ? (
             <>
-              <button className="call-control" onClick={toggleMic} title={isMicOn ? 'Tắt mic' : 'Bật mic'} type="button">
+              <button className="call-control" onClick={toggleMic} title={isMicOn ? t('turnOffMic', { defaultValue: 'Tắt mic' }) : t('turnOnMic', { defaultValue: 'Bật mic' })} type="button">
                 {isMicOn ? <Mic size={20} /> : <MicOff size={20} />}
               </button>
-              <button className="call-control" onClick={toggleSpeaker} title={isSpeakerOn ? 'Tắt loa' : 'Bật loa'} type="button">
+              <button className="call-control" onClick={toggleSpeaker} title={isSpeakerOn ? t('turnOffSpeaker', { defaultValue: 'Tắt loa' }) : t('turnOnSpeaker', { defaultValue: 'Bật loa' })} type="button">
                 {isSpeakerOn ? <Volume2 size={20} /> : <VolumeX size={20} />}
               </button>
               {canShowVideo ? (
-                <button className="call-control" onClick={toggleCamera} title={isCameraOn ? 'Tắt camera' : 'Bật camera'} type="button">
+                <button className="call-control" onClick={toggleCamera} title={isCameraOn ? t('turnOffCam', { defaultValue: 'Tắt camera' }) : t('turnOnCam', { defaultValue: 'Bật camera' })} type="button">
                   {isCameraOn ? <Video size={20} /> : <VideoOff size={20} />}
                 </button>
               ) : null}
-              <button className="call-control is-danger" onClick={rejectCall} title="Từ chối" type="button">
+              <button className="call-control is-danger" onClick={rejectCall} title={t('decline', { defaultValue: 'Từ chối' })} type="button">
                 <Phone size={20} fill="currentColor" style={{ transform: 'rotate(135deg)' }} />
               </button>
-              <button className="call-control is-accept" onClick={handleAccept} title="Nhận" type="button">
+              <button className="call-control is-accept" onClick={handleAccept} title={t('accept', { defaultValue: 'Nhận' })} type="button">
                 <Phone size={20} fill="currentColor" />
               </button>
             </>
           ) : (
             <>
-              <button className="call-control" onClick={toggleMic} title={isMicOn ? 'Tắt mic' : 'Bật mic'} type="button">
+              <button className="call-control" onClick={toggleMic} title={isMicOn ? t('turnOffMic', { defaultValue: 'Tắt mic' }) : t('turnOnMic', { defaultValue: 'Bật mic' })} type="button">
                 {isMicOn ? <Mic size={20} /> : <MicOff size={20} />}
               </button>
-              <button className="call-control" onClick={toggleSpeaker} title={isSpeakerOn ? 'Tắt loa' : 'Bật loa'} type="button">
+              <button className="call-control" onClick={toggleSpeaker} title={isSpeakerOn ? t('turnOffSpeaker', { defaultValue: 'Tắt loa' }) : t('turnOnSpeaker', { defaultValue: 'Bật loa' })} type="button">
                 {isSpeakerOn ? <Volume2 size={20} /> : <VolumeX size={20} />}
               </button>
               {canShowVideo ? (
                 <>
-                  <button className="call-control" onClick={toggleCamera} title={isCameraOn ? 'Tắt camera' : 'Bật camera'} type="button">
+                  <button className="call-control" onClick={toggleCamera} title={isCameraOn ? t('turnOffCam', { defaultValue: 'Tắt camera' }) : t('turnOnCam', { defaultValue: 'Bật camera' })} type="button">
                     {isCameraOn ? <Video size={20} /> : <VideoOff size={20} />}
                   </button>
                   {callStatus === 'ongoing' ? (
                     isScreenSharing ? (
-                      <button className="call-control is-danger" onClick={toggleScreenShare} title="Dừng chia sẻ" type="button" style={{ borderRadius: '24px', padding: '0 16px', gap: '8px', width: 'auto' }}>
+                      <button className="call-control is-danger" onClick={toggleScreenShare} title={t('stopShare', { defaultValue: 'Dừng chia sẻ' })} type="button" style={{ borderRadius: '24px', padding: '0 16px', gap: '8px', width: 'auto' }}>
                         <MonitorUp size={20} />
-                        <span style={{ fontSize: '14px', fontWeight: 500 }}>Dừng chia sẻ</span>
+                        <span style={{ fontSize: '14px', fontWeight: 500 }}>{t('stopShare', { defaultValue: 'Dừng chia sẻ' })}</span>
                       </button>
                     ) : (
-                      <button className="call-control" onClick={toggleScreenShare} title="Chia sẻ màn hình" type="button">
+                      <button className="call-control" onClick={toggleScreenShare} title={t('shareScreen', { defaultValue: 'Chia sẻ màn hình' })} type="button">
                         <MonitorUp size={20} />
                       </button>
                     )
                   ) : null}
                 </>
               ) : null}
-              <button className="call-control is-danger" onClick={hangUp} title="Kết thúc" type="button">
+              <button className="call-control is-danger" onClick={hangUp} title={t('endCall', { defaultValue: 'Kết thúc' })} type="button">
                 <Phone size={20} fill="currentColor" style={{ transform: 'rotate(135deg)' }} />
               </button>
             </>
@@ -1436,7 +1439,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
             onPointerDown={startResizingOverlay}
             onPointerMove={resizeOverlay}
             onPointerUp={stopResizingOverlay}
-            title="Thay đổi kích thước"
+            title={t('resize', { defaultValue: 'Thay đổi kích thước' })}
             type="button"
           />
         </section>

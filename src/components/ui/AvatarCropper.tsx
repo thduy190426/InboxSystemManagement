@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import Cropper from 'react-easy-crop'
 import type { Area } from 'react-easy-crop'
 import { getCroppedImg } from '../../utils/cropImage'
@@ -11,6 +12,7 @@ type AvatarCropperProps = {
 }
 
 export function AvatarCropper({ imageSrc, onCancel, onCropped }: AvatarCropperProps) {
+  const { t } = useTranslation()
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null)
@@ -30,7 +32,7 @@ export function AvatarCropper({ imageSrc, onCancel, onCropped }: AvatarCropperPr
         onCropped(croppedBlob)
       }
     } catch (e) {
-      console.error('Lỗi khi cắt ảnh:', e)
+      console.error(t('errorCropping', { defaultValue: 'Lỗi khi cắt ảnh:' }), e)
     } finally {
       setIsProcessing(false)
     }
@@ -114,7 +116,7 @@ export function AvatarCropper({ imageSrc, onCancel, onCropped }: AvatarCropperPr
           }}
         >
           <X size={18} />
-          <span>Hủy bỏ</span>
+          <span>{t('cancel', { defaultValue: 'Hủy bỏ' })}</span>
         </button>
         <button
           onClick={handleCrop}
@@ -137,7 +139,7 @@ export function AvatarCropper({ imageSrc, onCancel, onCropped }: AvatarCropperPr
           }}
         >
           <Check size={18} />
-          <span>{isProcessing ? 'Đang xử lý...' : 'Áp dụng ảnh'}</span>
+          <span>{isProcessing ? t('processing', { defaultValue: 'Đang xử lý...' }) : t('applyAvatar', { defaultValue: 'Áp dụng ảnh' })}</span>
         </button>
       </div>
     </div>
