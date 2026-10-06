@@ -167,7 +167,7 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false)
   const { t } = useTranslation('profile')
 
-  const handleEmojiClick = (EmojiClickData: EmojiClickData) => {
+  const handleEmojiClick = (emojiData: EmojiClickData) => {
     setForm(prev => ({ ...prev, statusEmoji: emojiData.emoji }))
     setIsEmojiPickerOpen(false)
   }
