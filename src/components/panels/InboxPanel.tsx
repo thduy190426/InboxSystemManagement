@@ -281,7 +281,8 @@ export function InboxPanel({
   async function handleCreateGroup(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!groupTitle.trim() || selectedMemberIds.length === 0) {
+    if (groupTitle.trim().length < 2 || groupTitle.trim().length > 50 || selectedMemberIds.length < 2) {
+      pushToast?.('Vui lòng nhập tên nhóm (2-50 ký tự) và chọn ít nhất 2 thành viên!', 'error')
       return
     }
 
@@ -751,8 +752,9 @@ export function InboxPanel({
               </span>
               <input
                 autoFocus
+                maxLength={50}
                 onChange={(event) => setGroupTitle(event.target.value)}
-                placeholder="Nhập tên nhóm"
+                placeholder="Nhập tên nhóm (2-50 ký tự)"
                 value={groupTitle}
               />
             </label>
@@ -802,9 +804,21 @@ export function InboxPanel({
 
             <button
               className="group-primary-button"
-              disabled={!groupTitle.trim() || selectedMemberIds.length === 0 || isCreatingGroup}
+              disabled={
+                groupTitle.trim().length < 2 ||
+                groupTitle.trim().length > 50 ||
+                selectedMemberIds.length < 2 ||
+                isCreatingGroup
+              }
+              title={
+                groupTitle.trim().length < 2 
+                  ? 'Tên nhóm phải có ít nhất 2 ký tự'
+                  : selectedMemberIds.length < 2 
+                    ? 'Nhóm phải có ít nhất 2 thành viên khác'
+                    : ''
+              }
               type="submit"
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: (groupTitle.trim().length < 2 || selectedMemberIds.length < 2) ? 0.6 : 1 }}
             >
               {isCreatingGroup ? null : <Check size={18} />}
               {isCreatingGroup ? 'Đang tạo...' : 'Tạo nhóm'}
