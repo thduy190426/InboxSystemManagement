@@ -156,7 +156,7 @@ export function LoginPage({
               onClick={onForgotPassword}
               style={{ background: 'none', border: 'none', color: 'var(--sp-accent)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', padding: 0 }}
             >
-              Quên mật khẩu?
+              {t('login.forgotPasswordLink')}
             </button>
           </div>
 

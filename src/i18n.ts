@@ -35,7 +35,8 @@ const resources = {
         googleLoginFailed: "Google login failed. Please try again.",
         facebookLoginFailed: "Facebook login failed. Please try again.",
         noAccount: "Don't have an account?",
-        createNewAccount: "Create a new account"
+        createNewAccount: "Create a new account",
+        forgotPasswordLink: "Forgot password?"
       },
       register: {
         title: "Create a new account",
@@ -90,6 +91,30 @@ const resources = {
           confirmPasswordRequired: "Please re-enter your password!",
           confirmPasswordMismatch: "Passwords do not match!"
         }
+      },
+      forgotPassword: {
+        title: "Recover Password",
+        kicker: "Forgot Password",
+        step1Subtitle: "Enter your email and we'll send an OTP to recover your account.",
+        step2Subtitle: "OTP has been sent to {{email}}",
+        emailLabel: "Email",
+        emailPlaceholder: "Enter your Email here",
+        otpLabel: "Verification Code (OTP)",
+        otpPlaceholder: "Enter 6-digit code",
+        newPasswordLabel: "New Password",
+        newPasswordPlaceholder: "New password (min 6 characters)",
+        confirmPasswordLabel: "Confirm New Password",
+        confirmPasswordPlaceholder: "Re-enter new password",
+        sending: "Sending...",
+        resendAfter: "Resend in {{seconds}}s",
+        getOtp: "Get OTP",
+        processing: "Processing...",
+        submitBtn: "Reset Password",
+        backToLogin: "Back to Login",
+        errorEmptyEmail: "Please enter your email!",
+        errorInvalidEmail: "Invalid email format!",
+        errorMismatch: "Passwords do not match!",
+        errorGeneric: "An error occurred!"
       }
     },
     notifications: {
@@ -1073,7 +1098,8 @@ const resources = {
         googleLoginFailed: "Đăng nhập bằng Google thất bại. Vui lòng thử lại.",
         facebookLoginFailed: "Đăng nhập bằng Facebook thất bại. Vui lòng thử lại.",
         noAccount: "Chưa có tài khoản?",
-        createNewAccount: "Tạo tài khoản mới"
+        createNewAccount: "Tạo tài khoản mới",
+        forgotPasswordLink: "Quên mật khẩu?"
       },
       register: {
         title: "Tạo tài khoản mới",
@@ -1128,6 +1154,30 @@ const resources = {
           confirmPasswordRequired: "Vui lòng nhập lại mật khẩu!",
           confirmPasswordMismatch: "Mật khẩu xác nhận không khớp!"
         }
+      },
+      forgotPassword: {
+        title: "Lấy lại mật khẩu",
+        kicker: "Quên mật khẩu",
+        step1Subtitle: "Nhập email của bạn, chúng tôi sẽ gửi mã xác thực (OTP) để khôi phục tài khoản.",
+        step2Subtitle: "Mã xác thực đã được gửi đến {{email}}",
+        emailLabel: "Email",
+        emailPlaceholder: "Nhập Email của bạn tại đây",
+        otpLabel: "Mã xác thực (OTP)",
+        otpPlaceholder: "Nhập mã 6 số",
+        newPasswordLabel: "Mật khẩu mới",
+        newPasswordPlaceholder: "Mật khẩu mới (tối thiểu 6 ký tự)",
+        confirmPasswordLabel: "Xác nhận mật khẩu mới",
+        confirmPasswordPlaceholder: "Nhập lại mật khẩu mới",
+        sending: "Đang gửi...",
+        resendAfter: "Gửi lại sau {{seconds}}s",
+        getOtp: "Nhận mã xác thực",
+        processing: "Đang xử lý...",
+        submitBtn: "Xác nhận đổi mật khẩu",
+        backToLogin: "Quay lại đăng nhập",
+        errorEmptyEmail: "Vui lòng nhập email!",
+        errorInvalidEmail: "Email chưa đúng định dạng!",
+        errorMismatch: "Mật khẩu không khớp!",
+        errorGeneric: "Có lỗi xảy ra!"
       }
     },
     notifications: {

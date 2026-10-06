@@ -32,7 +32,10 @@ export function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
     e.preventDefault()
 
     if (step === 1) {
-      if (!email) return
+      if (!email) {
+        toast.error(t('forgotPassword.errorEmptyEmail'))
+        return
+      }
       setIsSubmitting(true)
       try {
         const res = await forgotPassword({ email })
@@ -43,7 +46,7 @@ export function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
         setStep(2)
         setCountdown(60)
       } catch (err: any) {
-        toast.error(err.message || 'Có lỗi xảy ra!')
+        toast.error(err.message || t('forgotPassword.errorGeneric'))
         if (err.status === 429) {
           setCountdown(err.retryAfterSeconds || 60)
         }
@@ -53,7 +56,7 @@ export function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
     } else {
       if (!resetCode || !newPassword || !confirmNewPassword) return
       if (newPassword !== confirmNewPassword) {
-        toast.error('Mật khẩu không khớp!')
+        toast.error(t('forgotPassword.errorMismatch'))
         return
       }
       setIsSubmitting(true)
@@ -66,7 +69,7 @@ export function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
           onBackToLogin()
         }, 1500)
       } catch (err: any) {
-        toast.error(err.message || 'Có lỗi xảy ra!')
+        toast.error(err.message || t('forgotPassword.errorGeneric'))
       } finally {
         setIsSubmitting(false)
       }
@@ -90,13 +93,13 @@ export function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
         <div className="auth-card-header">
           <span className="section-kicker" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <KeyRound size={14} />
-            Quên mật khẩu
+            {t('forgotPassword.kicker')}
           </span>
-          <h1 id="forgot-password-title">Lấy lại mật khẩu</h1>
+          <h1 id="forgot-password-title">{t('forgotPassword.title')}</h1>
           <p>
             {step === 1 
-              ? 'Nhập email của bạn, chúng tôi sẽ gửi mã xác thực (OTP) để khôi phục tài khoản.' 
-              : `Mã xác thực đã được gửi đến ${email}`}
+              ? t('forgotPassword.step1Subtitle')
+              : t('forgotPassword.step2Subtitle').replace('{{email}}', email)}
           </p>
         </div>
 
@@ -104,12 +107,12 @@ export function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
           {step === 1 ? (
             <>
               <label className="auth-field" htmlFor="email">
-                <span>{t('login.emailLabel')}</span>
+                <span>{t('forgotPassword.emailLabel')}</span>
                 <div className="auth-input-row">
                   <Mail size={18} />
                   <input
                     id="email"
-                    placeholder={t('login.emailPlaceholder')}
+                    placeholder={t('forgotPassword.emailPlaceholder')}
                     required
                     type="email"
                     value={email}
@@ -125,22 +128,22 @@ export function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
                 style={{ marginTop: '24px' }}
               >
                 {isSubmitting 
-                  ? 'Đang gửi...' 
+                  ? t('forgotPassword.sending')
                   : countdown > 0 
-                    ? `Gửi lại sau ${countdown}s` 
-                    : 'Nhận mã xác thực'}
+                    ? t('forgotPassword.resendAfter').replace('{{seconds}}', String(countdown))
+                    : t('forgotPassword.getOtp')}
                 <ArrowRight size={18} />
               </button>
             </>
           ) : (
             <>
               <label className="auth-field" htmlFor="reset-code">
-                <span>Mã xác thực (OTP)</span>
+                <span>{t('forgotPassword.otpLabel')}</span>
                 <div className="auth-input-row">
                   <Lock size={18} />
                   <input
                     id="reset-code"
-                    placeholder="Nhập mã 6 số"
+                    placeholder={t('forgotPassword.otpPlaceholder')}
                     required
                     type="text"
                     value={resetCode}
@@ -150,12 +153,12 @@ export function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
               </label>
 
               <label className="auth-field" htmlFor="new-password">
-                <span>Mật khẩu mới</span>
+                <span>{t('forgotPassword.newPasswordLabel')}</span>
                 <div className="auth-input-row">
                   <Lock size={18} />
                   <input
                     id="new-password"
-                    placeholder="Mật khẩu mới (tối thiểu 6 ký tự)"
+                    placeholder={t('forgotPassword.newPasswordPlaceholder')}
                     required
                     minLength={6}
                     type={showPassword ? 'text' : 'password'}
@@ -173,12 +176,12 @@ export function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
               </label>
 
               <label className="auth-field" htmlFor="confirm-new-password">
-                <span>Xác nhận mật khẩu mới</span>
+                <span>{t('forgotPassword.confirmPasswordLabel')}</span>
                 <div className="auth-input-row">
                   <Lock size={18} />
                   <input
                     id="confirm-new-password"
-                    placeholder="Nhập lại mật khẩu mới"
+                    placeholder={t('forgotPassword.confirmPasswordPlaceholder')}
                     required
                     minLength={6}
                     type={showPassword ? 'text' : 'password'}
@@ -194,7 +197,7 @@ export function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
                 type="submit" 
                 style={{ marginTop: '24px' }}
               >
-                {isSubmitting ? 'Đang xử lý...' : 'Xác nhận đổi mật khẩu'}
+                {isSubmitting ? t('forgotPassword.processing') : t('forgotPassword.submitBtn')}
                 <ArrowRight size={18} />
               </button>
             </>
@@ -217,7 +220,7 @@ export function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
               }}
             >
               <ArrowLeft size={16} />
-              Quay lại đăng nhập
+              {t('forgotPassword.backToLogin')}
             </button>
           </div>
         </form>
