@@ -776,7 +776,6 @@ async function googleLogin(req, res, next) {
     const { token } = req.body;
     if (!token) return res.status(400).json({ error: 'Missing token' });
 
-    // Get user info from Google using the access token
     const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: `Bearer ${token}` } });
     const payload = await response.json();
 

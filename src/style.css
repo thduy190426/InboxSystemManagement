@@ -2622,8 +2622,6 @@ html.dark .conversation-context-menu button.is-danger:hover {
   text-align: center;
 }
 
-/* Removed empty-chat-shell overrides to fix grid layout */
-
 .empty-chat-shell .loading-panel {
   min-width: 0;
   padding: 24px clamp(24px, 8vw, 96px);
@@ -12402,7 +12400,7 @@ html.dark, [data-theme='dark'] {
   min-width: 140px;
 }
 
-[data-theme='dark'] .sp-select {
+html.dark .sp-select {
   background: rgba(255, 255, 255, 0.05);
   color: #fff;
   border-color: rgba(255, 255, 255, 0.15);
@@ -12413,7 +12411,7 @@ html.dark, [data-theme='dark'] {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
-[data-theme='dark'] .sp-select option {
+html.dark .sp-select option {
   background: #2a2a2a;
   color: #fff;
 }
