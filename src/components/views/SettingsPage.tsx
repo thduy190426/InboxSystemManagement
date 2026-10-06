@@ -296,8 +296,8 @@ export function SettingsPage({
     .slice(0, currentSession ? RECENT_SESSION_DISPLAY_LIMIT - 1 : RECENT_SESSION_DISPLAY_LIMIT)
   const hiddenSessionCount = otherRecentSessions.length
   const sessionSummaryParts = [
-    `${activeSessions.length + (currentSession ? 1 : 0)} đang hoạt động`,
-    historySessions.length ? `${historySessions.length} đã thu hồi` : '',
+    t('activeSessionsSummary', { count: activeSessions.length + (currentSession ? 1 : 0) }),
+    historySessions.length ? t('revokedSessionsSummary', { count: historySessions.length }) : '',
   ].filter(Boolean)
   const sessionItems: SessionViewModel[] = [
     ...(currentSession ? [{ ...currentSession, viewGroup: 'current' as const }] : []),
@@ -555,7 +555,7 @@ export function SettingsPage({
       </header>
 
       <div className="sp-layout">
-        <nav className="sp-nav" aria-label={t('navSettings', { defaultValue: 'Cài đặt' })}>
+        <nav className="sp-nav" aria-label={t('navSettings')}>
           <button className={`sp-nav-item${activeSection === 'privacy-activity' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('privacy-activity')}>
             <Eye size={15} /> {t('navPrivacy')}
           </button>

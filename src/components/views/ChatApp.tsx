@@ -841,7 +841,7 @@ export function ChatApp({
           nextCursor: current[activeId]?.nextCursor ?? null,
         },
       }))
-      pushToast(getErrorMessage(error, 'Không thể tải thêm tin nhắn cũ!'))
+      pushToast(getErrorMessage(error, t('loadOlderErr')))
     }
   }
 
@@ -894,7 +894,7 @@ export function ChatApp({
         }
       } catch (error) {
         if (isMounted) {
-          setPageErrorMessage(error instanceof Error ? error.message : 'Không thể tải thành viên nhóm!')
+          setPageErrorMessage(error instanceof Error ? error.message : t('loadMembersErr'))
         }
       }
     }
@@ -960,7 +960,7 @@ export function ChatApp({
     }
 
     loadCallHistory(activeId).catch((error) => {
-      pushToast(getErrorMessage(error, 'Không thể tải lịch sử cuộc gọi!'))
+      pushToast(getErrorMessage(error, t('loadCallHistoryErr')))
     })
   }, [activeId, isDetailOpen, loadCallHistory, pushToast])
 
@@ -1112,7 +1112,7 @@ export function ChatApp({
         return next
       })
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể tải hội thoại mới!')
+      setErrorMessage(error instanceof Error ? error.message : t('loadNewConversationErr'))
     }
   }
 
@@ -1127,25 +1127,25 @@ export function ChatApp({
         reason: 'register-failed' as const,
       }))
 
-      showBrowserNotification('Đã bật thông báo trình duyệt', {
-        body: 'Bạn sẽ nhận cảnh báo khi có tin nhắn, mention, lời mời hoặc cuộc gọi mới!',
+      showBrowserNotification(t('browserNotificationTitle'), {
+        body: t('browserNotificationBody'),
         tag: 'browser-notifications-enabled',
         url: toAppPath({ view: 'notifications' }),
       })
 
       if (!pushResult.enabled && pushResult.reason === 'missing-vapid') {
-        pushToast('Đã bật thông báo khi App đang mở. Muốn nhận khi đóng tab, hãy cấu hình VAPID keys cho Backend!')
+        pushToast(t('pushMissingVapid'))
       }
 
       if (!pushResult.enabled && pushResult.reason === 'register-failed') {
-        pushToast('Không thể đăng ký Web Push lúc này. Thông báo trong tab vẫn hoạt động!')
+        pushToast(t('pushRegisterFailed'))
       }
 
       return
     }
 
     if (permission === 'denied') {
-      pushToast('Trình duyệt đang chặn thông báo. Hãy bật lại trong cài đặt trình duyệt!')
+      pushToast(t('browserNotificationDenied'))
     }
   }
 
@@ -1335,7 +1335,7 @@ export function ChatApp({
     }
 
     if (activeConversation.blocked) {
-      pushToast('Bạn đã chặn người dùng này!')
+      pushToast(t('blockedUser'))
       return
     }
 
@@ -1347,7 +1347,7 @@ export function ChatApp({
 
     const { modified: moderatedText, isBlocked } = applyModerationToText(text)
     if (isBlocked) {
-      pushToast('Tin nhắn của bạn chứa từ khóa bị cấm và đã bị chặn!', 'error')
+      pushToast(t('moderationBlocked'), 'error')
       return
     }
     text = moderatedText
@@ -1358,7 +1358,7 @@ export function ChatApp({
         id: `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`,
         author: 'me',
         text,
-        time: 'Bây giờ',
+        time: t('now'),
         createdAt: new Date().toISOString(),
         type: 'text',
         state: 'sending',
@@ -1394,7 +1394,7 @@ export function ChatApp({
         [activeConversation.id]: retryMessage
           ? (current[activeConversation.id] ?? []).map((message) =>
             message.id === retryMessage.id
-              ? { ...message, createdAt: message.createdAt || new Date().toISOString(), state: 'sending', time: 'Bây giờ' }
+              ? { ...message, createdAt: message.createdAt || new Date().toISOString(), state: 'sending', time: t('now') }
               : message,
           )
           : [...(current[activeConversation.id] ?? []), temporaryMessage],
@@ -1410,7 +1410,7 @@ export function ChatApp({
               lastMessageByMe: true,
               lastMessageIsAttachment: false,
               lastMessageAt: temporaryMessage.createdAt,
-              lastTime: 'Bây giờ',
+              lastTime: t('now'),
             }
             : conversation,
         ),
@@ -1457,8 +1457,8 @@ export function ChatApp({
               })
       pushToast(
         error instanceof Error
-          ? `${error.message} Tin nhắn đã được giữ lại, bạn có thể thử gửi lại!`
-          : 'Không thể gửi tin nhắn. Tin nhắn đã được giữ lại, bạn có thể thử gửi lại!',
+          ? `${error.message} ${t('sendRetainedSuffix')}`
+          : t('sendRetainedErr'),
       )
     } finally {
       setIsSending(false)
@@ -1482,7 +1482,7 @@ export function ChatApp({
           conversation.id === activeConversation.id
             ? {
               ...conversation,
-              lastMessage: 'Đã tạo một bình chọn',
+              lastMessage: t('pollCreated'),
               lastMessageByMe: true,
               lastMessageAt: createdMessage.createdAt ?? null,
               lastTime: createdMessage.time,
@@ -1492,7 +1492,7 @@ export function ChatApp({
       )
       setReplyingTo(null)
     } catch (error) {
-      pushToast(error instanceof Error ? error.message : 'Không thể tạo bình chọn')
+      pushToast(error instanceof Error ? error.message : t('createPollErr'))
     }
   }
 
@@ -1533,7 +1533,7 @@ export function ChatApp({
 
       await votePoll(activeConversation.id, messageId, optionIds)
     } catch (error) {
-      pushToast(error instanceof Error ? error.message : 'Không thể bình chọn')
+      pushToast(error instanceof Error ? error.message : t('votePollErr'))
     }
   }
 
@@ -1546,12 +1546,12 @@ export function ChatApp({
     }
 
     if (activeConversation.blocked) {
-      pushToast('Bạn đã chặn người dùng này!')
+      pushToast(t('blockedUser'))
       return
     }
 
     if (isFileBlocked(file.name)) {
-      pushToast('Định dạng tệp tin này không được phép gửi!', 'error')
+      pushToast(t('blockedFileErr'), 'error')
       return
     }
 
@@ -1584,7 +1584,7 @@ export function ChatApp({
         ),
       )
     } catch (error) {
-      pushToast(getErrorMessage(error, 'Không thể gửi file!'))
+      pushToast(getErrorMessage(error, t('sendFileErr')))
     } finally {
       setIsUploadingAttachment(false)
     }
@@ -1596,7 +1596,7 @@ export function ChatApp({
     }
 
     if (activeConversation.blocked) {
-      pushToast('Bạn đã chặn người dùng này!')
+      pushToast(t('blockedUser'))
       return
     }
 
@@ -1635,7 +1635,7 @@ export function ChatApp({
         ),
       )
     } catch (error) {
-      pushToast(getErrorMessage(error, 'Không thể gửi GIF!'))
+      pushToast(getErrorMessage(error, t('sendGifErr')))
       throw error
     } finally {
       setIsUploadingAttachment(false)
@@ -1648,7 +1648,7 @@ export function ChatApp({
     }
 
     if (activeConversation.blocked) {
-      pushToast('Bạn đã chặn người dùng này!')
+      pushToast(t('blockedUser'))
       return
     }
 
@@ -1670,7 +1670,7 @@ export function ChatApp({
           conversation.id === activeConversation.id
             ? {
               ...conversation,
-              lastMessage: 'Đã gửi một nhãn dán!',
+              lastMessage: t('stickerSent'),
               lastMessageByMe: true,
               lastMessageIsAttachment: true,
               lastMessageAt: createdMessage.createdAt ?? null,
@@ -1684,7 +1684,7 @@ export function ChatApp({
         ),
       )
     } catch (error) {
-      pushToast(getErrorMessage(error, 'Không thể gửi nhãn dán!'))
+      pushToast(getErrorMessage(error, t('sendStickerErr')))
     } finally {
       setIsUploadingAttachment(false)
     }
@@ -1724,7 +1724,7 @@ export function ChatApp({
         ),
       )
     } catch (error) {
-      pushToast(getErrorMessage(error, 'Không thể sửa tin nhắn!'))
+      pushToast(getErrorMessage(error, t('editMsgErr')))
       throw error
     } finally {
       setBusyMessageId('')
@@ -2155,7 +2155,7 @@ export function ChatApp({
 
     setConfirmDialog({
       title: t('deleteTitle'),
-      description: t('deleteDesc', { name: conversation?.name || 'này' }),
+      description: t('deleteDesc', { name: conversation?.name || t('thisConversation') }),
       confirmLabel: t('deleteBtn'),
       tone: 'danger',
       onConfirm: () => deleteConversationFromInbox(conversationId),
@@ -2229,7 +2229,7 @@ export function ChatApp({
 
     setConfirmDialog({
       title: t('unarchiveTitle'),
-      description: t('unarchiveDesc', { name: conversation?.name || 'này' }),
+      description: t('unarchiveDesc', { name: conversation?.name || t('thisConversation') }),
       confirmLabel: t('unarchiveBtn'),
       onConfirm: () => restoreArchivedConversation(conversationId),
     })
@@ -2382,8 +2382,8 @@ export function ChatApp({
     handleSelectConversation(conversation.id)
     pushToast(
       conversation.friendshipStatus === 'accepted'
-        ? 'Đã mở cuộc trò chuyện!'
-        : 'Đã mở cuộc trò chuyện. Tin nhắn đầu tiên sẽ vào mục Tin nhắn chờ của người nhận!',
+        ? t('dmOpened')
+        : t('dmOpenedHidden'),
       'info',
     )
   }
@@ -2491,12 +2491,12 @@ export function ChatApp({
   async function handleUpdateQuickEmoji(emoji: string) {
     if (!activeConversation || busyConversationAction) return
     try {
-      console.log(`[QuickEmoji] Bắt đầu cập nhật emoji thành: ${emoji} cho conversationId: ${activeConversation.id}`)
+      console.log(`[QuickEmoji] Updating emoji to: ${emoji} for conversationId: ${activeConversation.id}`)
       setBusyConversationAction('emoji')
       
       const updatedConversation = await updateConversationQuickEmoji(activeConversation.id, emoji)
       
-      console.log('[QuickEmoji] Phản hồi từ backend:', updatedConversation)
+      console.log('[QuickEmoji] Backend response:', updatedConversation)
       
       setConversations((current: Conversation[] = []) =>
         current.map((conversation) =>
@@ -2508,9 +2508,9 @@ export function ChatApp({
             : conversation,
         ),
       )
-      console.log('[QuickEmoji] Đã cập nhật thành công ở giao diện (frontend state)')
+      console.log('[QuickEmoji] Frontend state updated successfully')
     } catch (error) {
-      console.error('[QuickEmoji] Lỗi khi gọi API cập nhật:', error)
+      console.error('[QuickEmoji] Failed to call update API:', error)
       pushToast(t('emojiUpdateErr'), 'error')
     } finally {
       setBusyConversationAction('')
@@ -2670,9 +2670,9 @@ export function ChatApp({
         [activeConversation.id]: token,
       }))
       await navigator.clipboard.writeText(inviteUrl)
-      pushToast('Đã sao chép link mới!', 'info')
+      pushToast(t('copiedNewLink'), 'info')
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể sao chép link mới!')
+      setErrorMessage(error instanceof Error ? error.message : t('copyNewLinkErr'))
     } finally {
       setBusyConversationAction('')
     }

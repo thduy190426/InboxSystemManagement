@@ -166,6 +166,8 @@ function useRouteTransitionLoading() {
 }
 
 function RouteTransitionLoader({ isVisible }: { isVisible: boolean }) {
+  const { t } = useTranslation('app')
+
   return (
     <div
       aria-hidden={!isVisible}
@@ -180,8 +182,8 @@ function RouteTransitionLoader({ isVisible }: { isVisible: boolean }) {
           <span />
         </div>
         <div className="route-loader-copy">
-          <strong>Đang tải dữ liệu</strong>
-          <span>Chuẩn bị giao diện mới...</span>
+          <strong>{t('loadingTitle')}</strong>
+          <span>{t('loadingSubtitle')}</span>
         </div>
       </div>
       <div className="route-loader-bar" />
@@ -190,8 +192,10 @@ function RouteTransitionLoader({ isVisible }: { isVisible: boolean }) {
 }
 
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 
 export function App() {
+  const { t } = useTranslation('app')
   const storedAuthSession = getStoredAuthSession()
   const isRouteTransitioning = useRouteTransitionLoading()
   const isRouteLoaderDisabled = isLoaderDisabledRoute(window.location.pathname, window.location.hash)
@@ -244,7 +248,7 @@ export function App() {
       setIsAuthenticated(false)
       setCurrentUser(null)
       setAuthScreen('login')
-      pushToast('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!', 'error')
+      pushToast(t('sessionExpired'), 'error')
       setIsSubmitting(false)
     })
   }, [])
@@ -269,7 +273,7 @@ export function App() {
   function handleAuthSuccess(
     response: Awaited<ReturnType<typeof login>>,
     rememberLogin: boolean,
-    successMessage: string = 'Đăng nhập thành công!',
+    successMessage: string = t('loginSuccess'),
   ) {
     storeAuthSession(response, rememberLogin)
     setCurrentUser(response.user)
@@ -293,7 +297,7 @@ export function App() {
     setIsAuthenticated(false)
     setCurrentUser(null)
     setAuthScreen('login')
-    pushToast('Đăng xuất thành công!', 'info')
+    pushToast(t('logoutSuccess'), 'info')
   }
 
   function handleAccountDeleted() {
@@ -303,7 +307,7 @@ export function App() {
     setIsAuthenticated(false)
     setCurrentUser(null)
     setAuthScreen('login')
-    pushToast('Tài khoản của bạn đã được xoá!', 'error')
+    pushToast(t('accountDeleted'), 'error')
   }
 
   function handleUserChange(user: AuthUser) {
@@ -324,7 +328,7 @@ export function App() {
 
       handleAuthSuccess(response, payload.rememberLogin === 'true')
     } catch (error) {
-      const message = error instanceof ApiError ? error.message : 'Không thể đăng nhập!'
+      const message = error instanceof ApiError ? error.message : t('loginErr')
       setAuthError(message)
       pushToast(message, 'error')
     } finally {
@@ -340,7 +344,7 @@ export function App() {
       const response = await loginWithGoogle(token)
       handleAuthSuccess(response, true)
     } catch (error) {
-      const message = error instanceof ApiError ? error.message : 'Không thể đăng nhập bằng Google!'
+      const message = error instanceof ApiError ? error.message : t('googleLoginErr')
       setAuthError(message)
       pushToast(message, 'error')
     } finally {
@@ -356,7 +360,7 @@ export function App() {
       const response = await loginWithFacebook(token)
       handleAuthSuccess(response, true)
     } catch (error) {
-      const message = error instanceof ApiError ? error.message : 'Không thể đăng nhập bằng Facebook!'
+      const message = error instanceof ApiError ? error.message : t('facebookLoginErr')
       setAuthError(message)
       pushToast(message, 'error')
     } finally {
@@ -383,7 +387,7 @@ export function App() {
       pushToast(response.message, 'info')
 
     } catch (error) {
-      pushToast(error instanceof ApiError ? error.message : 'Không thể đăng ký!', 'error')
+      pushToast(error instanceof ApiError ? error.message : t('registerErr'), 'error')
     } finally {
       setIsSubmitting(false)
     }

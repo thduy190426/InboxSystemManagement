@@ -1,6 +1,7 @@
 import type { ConversationMember } from '../../types'
 import type { MessageSearchType } from '../../services/api/chatApi'
 import { Search, Filter, ChevronUp, ChevronDown, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 export type MessageSearchUiProps = {
   messageSearch: string
@@ -47,14 +48,16 @@ export function MessageSearchUi({
   moveSearchResult,
   clearSearch
 }: MessageSearchUiProps) {
+  const { t } = useTranslation('panels')
+
   return (
     <div className="message-search">
       <label className="message-search-field">
         <Search size={16} />
         <input
-          aria-label="Tìm trong hội thoại đã nhắn"
+          aria-label={t('messageSearchAria')}
           onChange={(event) => setMessageSearch(event.target.value)}
-          placeholder="Tìm trong tin nhắn đã gửi"
+          placeholder={t('messageSearchPlaceholder')}
           type="search"
           value={messageSearch}
         />
@@ -63,7 +66,7 @@ export function MessageSearchUi({
         <button
           className={isSearchFilterOpen ? 'message-search-button is-active' : 'message-search-button'}
           onClick={() => setIsSearchFilterOpen((current) => !current)}
-          title="Bo loc"
+          title={t('filterTitle')}
           type="button"
         >
           <Filter size={16} />
@@ -71,26 +74,26 @@ export function MessageSearchUi({
         {isSearchFilterOpen ? (
           <span className="message-search-filter-popover">
             <input
-              aria-label="Từ ngày"
+              aria-label={t('dateFromAria')}
               className="message-search-date"
               onChange={(event) => setSearchDateFrom(event.target.value)}
               type="date"
               value={searchDateFrom}
             />
             <input
-              aria-label="Đến ngày"
+              aria-label={t('dateToAria')}
               className="message-search-date"
               onChange={(event) => setSearchDateTo(event.target.value)}
               type="date"
               value={searchDateTo}
             />
             <select
-              aria-label="Người gửi"
+              aria-label={t('senderAria')}
               className="message-search-select"
               onChange={(event) => setSearchSenderId(event.target.value)}
               value={searchSenderId}
             >
-              <option value="">Mọi người</option>
+              <option value="">{t('everyoneOption')}</option>
               {members.map((member) => (
                 <option key={member.id} value={String(member.userId)}>
                   {member.nickname || member.fullName}
@@ -98,16 +101,16 @@ export function MessageSearchUi({
               ))}
             </select>
             <select
-              aria-label="Loại tin"
+              aria-label={t('messageTypeAria')}
               className="message-search-select"
               onChange={(event) => setSearchType(event.target.value as MessageSearchType)}
               value={searchType}
             >
-              <option value="all">Tất cả</option>
-              <option value="text">Văn bản</option>
-              <option value="image">Ảnh</option>
-              <option value="audio">Âm thanh</option>
-              <option value="attachment">Đính kèm</option>
+              <option value="all">{t('typeAll')}</option>
+              <option value="text">{t('typeText')}</option>
+              <option value="image">{t('typeImage')}</option>
+              <option value="audio">{t('typeAudio')}</option>
+              <option value="attachment">{t('typeAttachment')}</option>
             </select>
           </span>
         ) : null}
@@ -116,7 +119,7 @@ export function MessageSearchUi({
         className="message-search-button"
         disabled={!hasSearchFilters || isSearchingMessages}
         onClick={() => runAdvancedSearch().catch(() => undefined)}
-        title="Tìm"
+        title={t('searchTitle')}
         type="button"
       >
         <Search size={16} />
@@ -126,13 +129,13 @@ export function MessageSearchUi({
           <span className="message-search-count">
             {searchMatchesLength
               ? `${activeSearchIndex + 1}/${searchMatchesLength}`
-              : '0 kết quả'}
+              : t('noSearchResultCount')}
           </span>
           <button
             className="message-search-button"
             disabled={searchMatchesLength === 0 || isSearchingMessages}
             onClick={() => moveSearchResult('previous').catch(() => undefined)}
-            title="Kết quả trước"
+            title={t('prevResultTitle')}
             type="button"
           >
             <ChevronUp size={16} />
@@ -141,7 +144,7 @@ export function MessageSearchUi({
             className="message-search-button"
             disabled={searchMatchesLength === 0 || isSearchingMessages}
             onClick={() => moveSearchResult('next').catch(() => undefined)}
-            title="Kết quả tiếp theo"
+            title={t('nextResultTitle')}
             type="button"
           >
             <ChevronDown size={16} />
@@ -149,7 +152,7 @@ export function MessageSearchUi({
           <button
             className="message-search-button"
             onClick={clearSearch}
-            title="Xóa tìm kiếm"
+            title={t('clearSearchTitle')}
             type="button"
           >
             <X size={16} />

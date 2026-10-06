@@ -323,27 +323,27 @@ export function DetailPanel({
     }
 
     if (message.type === 'image') {
-      return 'Hình ảnh'
+      return t('typeImage')
     }
 
     if (message.type === 'audio') {
-      return 'Tin nhắn thoại'
+      return t('typeVoice')
     }
 
     if (message.type === 'file') {
-      return 'Tệp đính kèm'
+      return t('typeAttachment')
     }
 
-    return 'Tin nhắn'
+    return t('typeMessage')
   }
 
   function getPinnedMessageAuthor(message: Message) {
     if (message.author === 'me') {
-      return 'Bạn'
+      return t('senderYou')
     }
 
     if (message.author === 'system') {
-      return 'Hệ thống'
+      return t('callTitle')
     }
 
     return message.senderName || activeConversation.name
@@ -362,14 +362,14 @@ export function DetailPanel({
       return 'Moderator'
     }
 
-    return 'Người dùng'
+    return t('labelUser', { defaultValue: 'User' })
   }
 
   return (
     <aside
       className={isOpen ? 'detail-panel is-open' : 'detail-panel'}
       aria-hidden={!isOpen}
-      aria-label="Thông tin hội thoại"
+      aria-label={t('detailHeader')}
       style={swipeStyle}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
@@ -393,30 +393,30 @@ export function DetailPanel({
           disabled={Boolean(busyAction)}
           onClick={onTogglePinned}
           type="button"
-          title={activeConversation.pinned ? 'Bỏ ghim' : 'Ghim'}
+          title={activeConversation.pinned ? t('unpinBtn') : t('pinBtn')}
         >
           {activeConversation.pinned ? <PinOff size={18} /> : <Pin size={18} />}
-          <span>{activeConversation.pinned ? 'Bỏ ghim' : 'Ghim'}</span>
+          <span>{activeConversation.pinned ? t('unpinBtn') : t('pinBtn')}</span>
         </button>
         <button
           className={activeConversation.muted ? 'is-active' : ''}
           disabled={Boolean(busyAction)}
           onClick={onToggleMuted}
           type="button"
-          title={activeConversation.muted ? 'Bật thông báo' : 'Tắt thông báo'}
+          title={activeConversation.muted ? t('unmuteBtn') : t('muteBtn')}
         >
           {activeConversation.muted ? <BellOff size={18} /> : <Bell size={18} />}
-          <span>{activeConversation.muted ? 'Đã tắt tiếng' : 'Tắt tiếng'}</span>
+          <span>{activeConversation.muted ? t('mutedBtn') : t('muteBtn')}</span>
         </button>
         <button
           className="is-danger"
           disabled={Boolean(busyAction)}
           onClick={onArchive}
           type="button"
-          title="Lưu trữ"
+          title={t('archiveBtn')}
         >
           <Archive size={18} />
-          <span>Lưu trữ</span>
+          <span>{t('archiveBtn')}</span>
         </button>
         {activeConversation.type === 'direct' && activeConversation.contactId ? (
           <>
@@ -425,29 +425,29 @@ export function DetailPanel({
               disabled={Boolean(busyAction)}
               onClick={() => onToggleRestricted?.()}
               type="button"
-              title={activeConversation.restricted ? 'Bỏ hạn chế' : 'Hạn chế'}
+              title={activeConversation.restricted ? t('unrestrictActionBtn') : t('restrictBtn')}
             >
               <EyeOff size={18} />
-              <span>{activeConversation.restricted ? 'Bỏ hạn chế' : 'Hạn chế'}</span>
+              <span>{activeConversation.restricted ? t('unrestrictActionBtn') : t('restrictBtn')}</span>
             </button>
             <button
               className={activeConversation.blocked ? 'is-active' : 'is-danger'}
               disabled={Boolean(busyAction)}
               onClick={onToggleBlocked}
               type="button"
-              title={activeConversation.blocked ? 'Bỏ chặn' : 'Chặn'}
+              title={activeConversation.blocked ? t('unblockBtn') : t('blockBtn')}
             >
               {activeConversation.blocked ? <UserCheck size={18} /> : <UserX size={18} />}
-              <span>{activeConversation.blocked ? 'Bỏ chặn' : 'Chặn'}</span>
+              <span>{activeConversation.blocked ? t('unblockBtn') : t('blockBtn')}</span>
             </button>
             <button
               disabled={Boolean(busyAction)}
               onClick={openRestrictedModal}
               type="button"
-              title="Danh sách hạn chế"
+              title={t('restrictedListBtn')}
             >
               <Shield size={18} />
-              <span>Danh sách hạn chế</span>
+              <span>{t('restrictedListBtn')}</span>
             </button>
           </>
         ) : null}
@@ -457,19 +457,19 @@ export function DetailPanel({
         <section className="detail-section nickname-section">
           <div className="detail-section-title">
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Tag size={16} /> Biệt danh
+              <Tag size={16} /> {t('aliasTitle')}
             </h3>
-            <span>Riêng tư</span>
+            <span>{t('privateLabel')}</span>
           </div>
           <form className="nickname-form" onSubmit={handleDirectNicknameSubmit}>
             <input
-              aria-label="Biệt danh"
+              aria-label={t('aliasTitle')}
               maxLength={80}
               onChange={(event) => setDirectNickname(event.target.value)}
-              placeholder="Đặt biệt danh"
+              placeholder={t('aliasPlaceholder')}
               value={directNickname}
             />
-            <button disabled={Boolean(busyAction) || !directNickname.trim() || directNickname.trim() === (activeConversation.nickname || '')} title="Lưu biệt danh" type="submit">
+            <button disabled={Boolean(busyAction) || !directNickname.trim() || directNickname.trim() === (activeConversation.nickname || '')} title={t('saveAliasTitle')} type="submit">
               <Save size={16} />
             </button>
             <button
@@ -491,9 +491,9 @@ export function DetailPanel({
         <section className="detail-section group-management">
           <div className="detail-section-title">
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Users size={16} /> Nhóm chat
+              <Users size={16} /> {t('groupChatTitle')}
             </h3>
-            <span>{members.length} thành viên</span>
+            <span>{t('membersCount', { count: members.length })}</span>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
@@ -502,14 +502,14 @@ export function DetailPanel({
               type="button"
               style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', background: 'var(--surface-soft)', border: '1px solid var(--line)', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}
             >
-              <Settings2 size={16} color="var(--primary-strong)" /> Cập nhật thông tin nhóm
+              <Settings2 size={16} color="var(--primary-strong)" /> {t('updateGroupInfoBtn')}
             </button>
             <button
               onClick={openAddMemberModal}
               type="button"
               style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', background: 'var(--surface-soft)', border: '1px solid var(--line)', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}
             >
-              <UserPlus size={16} color="var(--primary-strong)" /> Thêm thành viên
+              <UserPlus size={16} color="var(--primary-strong)" /> {t('addMemberTitle')}
             </button>
           </div>
 
@@ -517,19 +517,19 @@ export function DetailPanel({
             <div className="group-advanced-management">
               <div className="detail-section-title">
                 <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Settings2 size={16} /> Quản trị nâng cao
+                  <Settings2 size={16} /> {t('advancedAdminTitle')}
                 </h3>
-                <span>{joinRequests.length} yêu cầu</span>
+                <span>{t('requestsCount', { count: joinRequests.length })}</span>
               </div>
 
               <div className="group-invite-row">
                 <input
-                  aria-label="Link mời nhóm"
+                  aria-label={t('groupInviteLinkLabel')}
                   readOnly
                   value={
                     groupInviteToken
                       ? `${window.location.origin}/chat?join=${groupInviteToken}`
-                      : 'Chưa tạo link mới!'
+                      : t('noNewLink')
                   }
                 />
                 <button
@@ -543,7 +543,7 @@ export function DetailPanel({
                 <button
                   disabled={Boolean(busyAction)}
                   onClick={onResetGroupInviteLink}
-                  title="Tạo link mới"
+                  title={t('createNewLinkTitle')}
                   type="button"
                 >
                   <ShieldCheck size={15} />
@@ -565,7 +565,7 @@ export function DetailPanel({
                       <button
                         disabled={Boolean(busyAction)}
                         onClick={() => onReviewGroupJoinRequest(joinRequest.id, 'approve')}
-                        title="Duyệt"
+                        title={t('approveTitle')}
                         type="button"
                       >
                         <Check size={14} />
@@ -573,7 +573,7 @@ export function DetailPanel({
                       <button
                         disabled={Boolean(busyAction)}
                         onClick={() => onReviewGroupJoinRequest(joinRequest.id, 'decline')}
-                        title="Từ chối"
+                        title={t('declineTitle')}
                         type="button"
                       >
                         <X size={14} />
@@ -608,7 +608,7 @@ export function DetailPanel({
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', background: 'var(--surface-soft)', border: '1px solid var(--line)', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, color: 'var(--text)' }}
             >
               <Users size={16} color="var(--primary-strong)" />
-              <span>{`Xem tất cả ${members.length} thành viên`}</span>
+              <span>{t('viewAllMembers', { count: members.length })}</span>
             </button>
           </div>
 
@@ -619,7 +619,7 @@ export function DetailPanel({
             type="button"
           >
             <LogOut size={17} />
-            <span>Rời nhóm</span>
+            <span>{t('leaveGroupBtn')}</span>
           </button>
           {isGroupOwner ? (
             <button
@@ -629,7 +629,7 @@ export function DetailPanel({
               type="button"
             >
               <Trash2 size={17} />
-              <span>Giải tán nhóm</span>
+              <span>{t('disbandGroupBtn')}</span>
             </button>
           ) : null}
         </section>
@@ -638,14 +638,14 @@ export function DetailPanel({
       <section className="detail-section background-section">
         <div className="detail-section-title">
           <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <ImagePlus size={16} /> Tùy chỉnh đoạn chat
+            <ImagePlus size={16} /> {t('customizeChatTitle')}
           </h3>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '0 16px', marginBottom: '16px' }}>
           <label
             style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', background: 'var(--surface-soft)', border: '1px solid var(--line)', borderRadius: '8px', cursor: Boolean(busyAction) ? 'not-allowed' : 'pointer', fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}
           >
-            <ImagePlus size={16} color="var(--primary-strong)" /> Thay đổi ảnh nền
+            <ImagePlus size={16} color="var(--primary-strong)" /> {t('changeBackgroundBtn')}
             <input
               type="file"
               accept="image/*"
@@ -667,12 +667,12 @@ export function DetailPanel({
               type="button"
               style={{ display: 'flex', width: '100%', justifyContent: 'flex-start', alignItems: 'center', gap: '8px', padding: '10px 14px', background: 'var(--surface-soft)', border: '1px solid var(--line)', borderRadius: '8px', cursor: Boolean(busyAction) ? 'not-allowed' : 'pointer', fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}
             >
-              <Smile size={16} color="var(--primary-strong)" /> Thay đổi biểu tượng cảm xúc
+              <Smile size={16} color="var(--primary-strong)" /> {t('changeEmojiBtn')}
               <span style={{ marginLeft: 'auto', fontSize: '18px' }}>{activeConversation.quickEmoji || '👍'}</span>
             </button>
             {isEmojiPickerOpen && (
               <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 100 }}>
-                <Suspense fallback={<div>Đang tải...</div>}>
+                <Suspense fallback={<div>{t('loadingTxtShort')}</div>}>
                   <EmojiPicker
                     onEmojiClick={(data: any) => {
                       if (onUpdateQuickEmoji) {
@@ -697,7 +697,7 @@ export function DetailPanel({
               type="button"
               style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: '8px', padding: '10px 14px', background: 'var(--surface-soft)', border: '1px solid var(--line)', borderRadius: '8px', cursor: Boolean(busyAction) ? 'not-allowed' : 'pointer', fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}
             >
-              <Trash2 size={16} color="#ef4444" /> Gỡ ảnh nền
+              <Trash2 size={16} color="#ef4444" /> {t('removeBackgroundBtn')}
             </button>
           )}
         </div>
@@ -706,7 +706,7 @@ export function DetailPanel({
       <section className="detail-section pinned-messages-section">
         <div className="detail-section-title">
           <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Pin size={16} /> Tin đã ghim
+            <Pin size={16} /> {t('pinnedSectionTitle')}
           </h3>
           <span>{pinnedMessages.length}</span>
         </div>
@@ -732,7 +732,7 @@ export function DetailPanel({
             <div className="detail-empty-state">
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                 <PinOff size={24} strokeWidth={1.5} style={{ opacity: 0.5 }} />
-                <span>Chưa có tin nhắn nào được ghim!</span>
+                <span>{t('noPinnedMessages')}</span>
               </div>
             </div>
           ) : null}
@@ -743,7 +743,7 @@ export function DetailPanel({
       <section className="detail-section">
         <div className="detail-section-title">
           <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <FolderOpen size={16} /> Tệp gần đây
+            <FolderOpen size={16} /> {t('recentFilesTitle')}
           </h3>
           <span>{validAttachments.length}</span>
         </div>
@@ -778,8 +778,8 @@ export function DetailPanel({
                   <Users size={22} />
                 </div>
                 <div>
-                  <h2 style={{ margin: 0, fontSize: '18px' }}>Thành viên nhóm</h2>
-                  <p style={{ margin: 0, marginTop: '4px', color: 'var(--muted)', fontSize: '14px' }}>{members.length} thành viên</p>
+                  <h2 style={{ margin: 0, fontSize: '18px' }}>{t('groupMembersTitle')}</h2>
+                  <p style={{ margin: 0, marginTop: '4px', color: 'var(--muted)', fontSize: '14px' }}>{t('membersCount', { count: members.length })}</p>
                 </div>
               </div>
               <button className="icon-button" onClick={closeMembersModal} type="button" title={t('closeModal')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--subtle)' }}>
@@ -802,7 +802,7 @@ export function DetailPanel({
                         style={{ display: 'flex', gap: '4px', width: '100%', alignItems: 'center' }}
                       >
                         <input
-                          aria-label={`Biệt danh của ${member.fullName}`}
+                          aria-label={t('memberAliasAria', { name: member.fullName })}
                           maxLength={80}
                           onChange={(event) =>
                             setMemberNicknames((current) => ({
@@ -810,14 +810,14 @@ export function DetailPanel({
                               [member.id]: event.target.value,
                             }))
                           }
-                          placeholder="Biệt danh"
+                          placeholder={t('aliasInputPlaceholder')}
                           value={memberNicknames[member.id] || ''}
                           style={{ flex: 1, minWidth: 0, padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--line-strong)', outline: 'none' }}
                           autoFocus
                         />
                         <button
                           disabled={Boolean(busyAction) || !memberNicknames[member.id]?.trim() || memberNicknames[member.id]?.trim() === (member.nickname || '')}
-                          title="Lưu biệt danh"
+                          title={t('saveAliasTitle')}
                           type="submit"
                           style={{ display: 'grid', placeItems: 'center', width: '28px', height: '28px', background: 'var(--primary)', color: '#fff', borderRadius: '4px', cursor: 'pointer', border: 'none' }}
                         >

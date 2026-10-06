@@ -6,6 +6,7 @@ import type { Message } from '../../types'
 import { AvatarFallback } from '../ui/AvatarFallback'
 import type { EmojiStyle, Theme } from 'emoji-picker-react'
 import { PollMessage } from './PollMessage'
+import { useTranslation } from 'react-i18next'
 const EmojiPicker = lazy(() => import('emoji-picker-react'))
 
 export type MessageItemProps = {
@@ -15,6 +16,7 @@ export type MessageItemProps = {
 }
 
 export function MessageItem(props: MessageItemProps) {
+  const { t } = useTranslation('panels')
   const { index, message, displayMessages } = props;
   const { 
     currentUserId, editingMessageId, busyMessageId, editingText, 
@@ -175,7 +177,7 @@ export function MessageItem(props: MessageItemProps) {
                             onSubmit={(event) => handleEditSubmit(event, message)}
                           >
                             <input
-                              aria-label="Sửa tin nhắn"
+                              aria-label={t('editMessageAria')}
                               autoFocus
                               disabled={busyMessageId === message.id}
                               onChange={(event) => setEditingText(event.target.value)}
@@ -184,7 +186,7 @@ export function MessageItem(props: MessageItemProps) {
                             <button
                               className="message-action-button"
                               disabled={!editingText.trim() || busyMessageId === message.id}
-                              title="Lưu"
+                              title={t('saveMessageAria')}
                               type="submit"
                             >
                               <Check size={15} />
@@ -193,7 +195,7 @@ export function MessageItem(props: MessageItemProps) {
                               className="message-action-button"
                               disabled={busyMessageId === message.id}
                               onClick={cancelEditing}
-                              title="Hủy"
+                              title={t('cancelTitle')}
                               type="button"
                             >
                               <X size={15} />
@@ -204,7 +206,7 @@ export function MessageItem(props: MessageItemProps) {
                             {message.isPinned ? (
                               <span className="message-pin-badge">
                                 <Pin size={12} />
-                                <span>Đã ghim</span>
+                                <span>{t('pinnedLabel')}</span>
                               </span>
                             ) : null}
                             {message.replyTo ? renderReplyPreview(message.replyTo) : null}
@@ -225,7 +227,7 @@ export function MessageItem(props: MessageItemProps) {
                         )}
                         <span className="message-time">
                           {formatMessageTime(message)}
-                          {message.isEdited ? <span>Đã chỉnh sửa!</span> : null}
+                          {message.isEdited ? <span>{t('editedLabel')}</span> : null}
                           {effectiveAuthor === 'me' ? (
                             <>
                               <CheckCheck aria-label={getMessageStateLabel(message)} size={15} />
@@ -234,10 +236,10 @@ export function MessageItem(props: MessageItemProps) {
                                 <button
                                   className="message-retry-button"
                                   onClick={() => onRetryMessage(message)}
-                                  title="Thử gửi lại"
+                                  title={t('retryTitle')}
                                   type="button"
                                 >
-                                  Thử lại
+                                  {t('retryBtn')}
                                 </button>
                               ) : null}
                             </>
@@ -251,7 +253,7 @@ export function MessageItem(props: MessageItemProps) {
                             className="message-more-button"
                             disabled={Boolean(busyMessageId)}
                             onClick={() => startReplying(message)}
-                            title="Trả lời"
+                            title={t('replyTitle')}
                             type="button"
                           >
                             <Reply size={17} />
@@ -260,7 +262,7 @@ export function MessageItem(props: MessageItemProps) {
                             className="message-more-button"
                             disabled={Boolean(busyMessageId)}
                             onClick={() => startForwarding(message)}
-                            title="Chuyển tiếp"
+                            title={t('forwardTitle')}
                             type="button"
                           >
                             <SendHorizontal size={17} />
@@ -296,7 +298,7 @@ export function MessageItem(props: MessageItemProps) {
                                     handleToggleReaction(message.id, emojiData.emoji)
                                   }
                                   previewConfig={{ showPreview: false }}
-                                  searchPlaceHolder="Tìm Emoji"
+                                  searchPlaceHolder={t('emojiSearchPlaceholder')}
                                   skinTonesDisabled
                                   theme={'light' as Theme}
                                   width={292}
@@ -313,7 +315,7 @@ export function MessageItem(props: MessageItemProps) {
                                 current === message.id ? '' : message.id,
                               )
                             }}
-                            title="Tùy chọn tin nhắn"
+                            title={t('messageOptionsTitle')}
                             type="button"
                           >
                             <MoreHorizontal size={18} />
@@ -339,7 +341,7 @@ export function MessageItem(props: MessageItemProps) {
                                   type="button"
                                 >
                                   <Download size={14} />
-                                  <span>Tải xuống</span>
+                                  <span>{t('downloadBtn')}</span>
                                 </button>
                               )}
                               {message.text && (
@@ -352,7 +354,7 @@ export function MessageItem(props: MessageItemProps) {
                                   type="button"
                                 >
                                   <Copy size={14} />
-                                  <span>Sao chép</span>
+                                  <span>{t('copyBtn')}</span>
                                 </button>
                               )}
                               <button
@@ -361,7 +363,7 @@ export function MessageItem(props: MessageItemProps) {
                                 type="button"
                               >
                                 {message.isPinned ? <PinOff size={14} /> : <Pin size={14} />}
-                                <span>{message.isPinned ? 'Bỏ ghim' : 'Ghim'}</span>
+                                <span>{message.isPinned ? t('unpinBtn') : t('pinBtn')}</span>
                               </button>
                               <button
                                 disabled={Boolean(busyMessageId)}
@@ -369,7 +371,7 @@ export function MessageItem(props: MessageItemProps) {
                                 type="button"
                               >
                                 <SendHorizontal size={14} />
-                                <span>Chuyển tiếp</span>
+                                <span>{t('forwardTitle')}</span>
                               </button>
                               {effectiveAuthor === 'me' ? (
                                 <>
@@ -379,7 +381,7 @@ export function MessageItem(props: MessageItemProps) {
                                     type="button"
                                   >
                                     <Pencil size={14} />
-                                    <span>Sửa</span>
+                                    <span>{t('editBtn')}</span>
                                   </button>
                                   <button
                                     className="is-danger"
@@ -388,7 +390,7 @@ export function MessageItem(props: MessageItemProps) {
                                     type="button"
                                   >
                                     <Trash2 size={14} />
-                                    <span>Xoá phía tôi</span>
+                                    <span>{t('deleteForMeBtn')}</span>
                                   </button>
                                   <button
                                     className="is-danger"
@@ -397,7 +399,7 @@ export function MessageItem(props: MessageItemProps) {
                                     type="button"
                                   >
                                     <Trash2 size={14} />
-                                    <span>Thu hồi</span>
+                                    <span>{t('recallBtn')}</span>
                                   </button>
                                 </>
                               ) : (
@@ -408,7 +410,7 @@ export function MessageItem(props: MessageItemProps) {
                                     type="button"
                                   >
                                     <Flag size={14} />
-                                    <span>Báo cáo</span>
+                                    <span>{t('reportBtn')}</span>
                                   </button>
                                 <button
                                   className="is-danger"
@@ -417,7 +419,7 @@ export function MessageItem(props: MessageItemProps) {
                                   type="button"
                                 >
                                   <Trash2 size={14} />
-                                  <span>Xoá phía tôi</span>
+                                  <span>{t('deleteForMeBtn')}</span>
                                 </button>
                                 </>
                               )}

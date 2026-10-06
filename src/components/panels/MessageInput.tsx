@@ -2,6 +2,7 @@ import { Suspense, lazy, useRef, useState, useEffect } from 'react'
 import { Reply, X, Mic, Video, Send, Loader2, MapPin, PieChart, Image, Smile, Search, Film, Square } from 'lucide-react'
 import { useMediaRecording } from '../../hooks/chat/useMediaRecording'
 import type { EmojiStyle, Theme } from 'emoji-picker-react'
+import { useTranslation } from 'react-i18next'
 
 const EmojiPicker = lazy(() => import('emoji-picker-react'))
 
@@ -11,6 +12,7 @@ export type MessageInputProps = {
 }
 
 export function MessageInput({}: MessageInputProps) {
+  const { t } = useTranslation('panels')
   const {
     onSubmit, replyingTo, getReplyAuthorLabel, getReplyText, onCancelReply,
     isUploadingAttachment, locationError, attachmentError, isBlocked, mentionSuggestions,
@@ -70,7 +72,7 @@ export function MessageInput({}: MessageInputProps) {
   async function sendRecordedMedia() {
     if (!recordedMediaFile) return
     if (recordedMediaFile.size === 0) {
-      setRecordingError('Không thể gửi ghi âm có dung lượng 0MB!')
+      setRecordingError(t('zeroByteRecordingErr'))
       clearRecordedMedia()
       return
     }
@@ -84,10 +86,10 @@ export function MessageInput({}: MessageInputProps) {
           <div className="composer-reply-preview">
             <Reply size={16} />
             <span>
-              <strong>Đang trả lời {getReplyAuthorLabel(replyingTo)}</strong>
+              <strong>{t('replyingTo', { name: getReplyAuthorLabel(replyingTo) })}</strong>
               <small>{getReplyText(replyingTo)}</small>
             </span>
-            <button onClick={onCancelReply} title="Hủy trả lời" type="button">
+            <button onClick={onCancelReply} title={t('cancelReplyTitle')} type="button">
               <X size={16} />
             </button>
           </div>
@@ -100,13 +102,13 @@ export function MessageInput({}: MessageInputProps) {
             ) : (
               <audio controls src={recordedMediaUrl} />
             )}
-            <button onClick={clearRecordedMedia} title="Huỷ bản ghi" type="button">
+            <button onClick={clearRecordedMedia} title={t('cancelRecordingTitle')} type="button">
               <X size={16} />
             </button>
             <button
               disabled={isUploadingAttachment}
               onClick={sendRecordedMedia}
-              title="Gửi tin nhắn thoại"
+              title={t('sendVoiceTitle')}
               type="button"
             >
               <Send size={16} />
@@ -117,7 +119,7 @@ export function MessageInput({}: MessageInputProps) {
           <div className="recording-status">
             <span />
             <strong>{recordingKind === 'video' ? 'Video' : 'Audio'} {formatRecordingDuration(recordingDuration)}</strong>
-            <button onClick={cancelMediaRecording} title="Huy ghi" type="button">
+            <button onClick={cancelMediaRecording} title={t('recordingCancelTitle')} type="button">
               <X size={14} />
             </button>
           </div>
@@ -129,7 +131,7 @@ export function MessageInput({}: MessageInputProps) {
         ) : attachmentError ? (
           <span className="composer-error">{attachmentError}</span>
         ) : isBlocked ? (
-          <span className="composer-error">Đã chặn người dùng!</span>
+          <span className="composer-error">{t('blockedUser')}</span>
         ) : null}
         {mentionSuggestions.length > 0 ? (
           <div className="mention-suggestions">
@@ -147,10 +149,10 @@ export function MessageInput({}: MessageInputProps) {
         ) : null}
 
         <div className="composer-row">
-          <label className="icon-button attachment-picker" title="Gửi ảnh">
+          <label className="icon-button attachment-picker" title={t('sendImageTitle')}>
             <Image size={20} />
             <input
-              aria-label="Đính kèm file"
+              aria-label={t('attachFileAria')}
               accept="image/*,audio/*,video/*"
               disabled={isBlocked || isUploadingAttachment}
               multiple
@@ -160,10 +162,10 @@ export function MessageInput({}: MessageInputProps) {
           </label>
           <label className="composer-input">
             <input
-              aria-label="Nhập tin nhắn"
+              aria-label={t('messageInputAria')}
               disabled={isBlocked}
               onChange={handleDraftChange}
-              placeholder={isBlocked ? 'Bạn đã chặn người dùng này!' : `Nhắn tin với ${activeConversation.name}`}
+              placeholder={isBlocked ? t('blockedPlaceholder') : t('messagePlaceholder', { name: activeConversation.name })}
               value={draft}
             />
           </label>
@@ -175,21 +177,21 @@ export function MessageInput({}: MessageInputProps) {
                 setIsGifPickerOpen(false)
                 setIsComposerEmojiOpen((current) => !current)
               }}
-              title="Biểu cảm"
+              title={t('emojiTitle')}
               type="button"
             >
               <Smile size={20} />
             </button>
             {isComposerEmojiOpen ? (
               <span className="composer-emoji-picker">
-                <Suspense fallback={<span className="composer-emoji-loading">Đang tải Emoji...</span>}>
+                <Suspense fallback={<span className="composer-emoji-loading">{t('loadingTxtShort')}</span>}>
                   <EmojiPicker
                     emojiStyle={'native' as EmojiStyle}
                     height={360}
                     lazyLoadEmojis
                     onEmojiClick={handleSendComposerEmoji}
                     previewConfig={{ showPreview: false }}
-                    searchPlaceHolder="Tìm Emoji"
+                    searchPlaceHolder={t('emojiSearchPlaceholder')}
                     skinTonesDisabled
                     theme={'light' as Theme}
                     width={320}
@@ -216,14 +218,14 @@ export function MessageInput({}: MessageInputProps) {
                 <label className="gif-search-field">
                   <Search size={16} />
                   <input
-                    aria-label="Tìm GIF"
+                    aria-label={t('gifSearchAria')}
                     onChange={(event) => setGifQuery(event.target.value)}
                     onKeyDown={(event) => {
                       if (event.key === 'Enter') {
                         event.preventDefault()
                       }
                     }}
-                    placeholder="Tìm GIF"
+                    placeholder={t('gifSearchPlaceholder')}
                     type="search"
                     value={gifQuery}
                   />
@@ -232,11 +234,11 @@ export function MessageInput({}: MessageInputProps) {
                 {isLoadingGifs ? (
                   <span className="gif-picker-message">
                     <Loader2 size={16} />
-                    Đang tải GIF...
+                    {t('gifLoading')}
                   </span>
                 ) : null}
                 {!isLoadingGifs && !gifError && gifResults.length === 0 ? (
-                  <span className="gif-picker-message">Không có GIF phù hợp!</span>
+                  <span className="gif-picker-message">{t('gifNoResults')}</span>
                 ) : null}
                 <span className="gif-result-grid">
                   {gifResults.map((gif) => (
@@ -263,7 +265,7 @@ export function MessageInput({}: MessageInputProps) {
                 setIsGifPickerOpen(false)
                 setIsStickerPickerOpen((current) => !current)
               }}
-              title="Nhãn dán"
+              title={t('stickerTitle')}
               type="button"
             >
               <Smile size={20} />
@@ -303,7 +305,7 @@ export function MessageInput({}: MessageInputProps) {
             <button
               className="icon-button composer-extra voice-record-button is-recording"
               onClick={stopMediaRecording}
-              title="Dừng ghi âm"
+              title={t('stopRecordingTitle')}
               type="button"
             >
               <Square size={18} />
@@ -314,7 +316,7 @@ export function MessageInput({}: MessageInputProps) {
                 className={`icon-button composer-extra${isSharingLocation ? ' is-active' : ''}`}
                 disabled={isBlocked || isUploadingAttachment || isSharingLocation}
                 onClick={handleShareLocation}
-                title="Chia sẻ vị trí"
+                title={t('shareLocationTitle')}
                 type="button"
               >
                 {isSharingLocation ? <Loader2 size={20} className="spin" /> : <MapPin size={20} />}
@@ -323,7 +325,7 @@ export function MessageInput({}: MessageInputProps) {
                 className="icon-button composer-extra voice-record-button"
                 disabled={isBlocked || isUploadingAttachment}
                 onClick={() => startMediaRecording('audio')}
-                title="Ghi âm"
+                title={t('recordAudioTitle')}
                 type="button"
               >
                 <Mic size={20} />
@@ -332,7 +334,7 @@ export function MessageInput({}: MessageInputProps) {
                 className="icon-button composer-extra voice-record-button"
                 disabled={isBlocked || isUploadingAttachment}
                 onClick={() => startMediaRecording('video')}
-                title="Quay video"
+                title={t('recordVideoTitle')}
                 type="button"
               >
                 <Video size={20} />
@@ -341,7 +343,7 @@ export function MessageInput({}: MessageInputProps) {
                 className="icon-button composer-extra"
                 disabled={isBlocked || isUploadingAttachment}
                 onClick={() => setIsPollModalOpen(true)}
-                title="Tạo bình chọn"
+                title={t('createPollTitle')}
                 type="button"
               >
                 <PieChart size={20} />
@@ -353,7 +355,7 @@ export function MessageInput({}: MessageInputProps) {
               className={`quick-emoji-button ${isHoldingEmoji ? 'is-holding' : ''}`}
               disabled={isBlocked || isUploadingAttachment}
               type="button"
-              title="Gửi nhanh"
+              title={t('quickSendTitle')}
               onPointerDown={handleQuickEmojiPointerDown}
               onPointerUp={handleQuickEmojiPointerUp}
               onPointerLeave={handleQuickEmojiPointerUp}
@@ -365,7 +367,7 @@ export function MessageInput({}: MessageInputProps) {
             <button
               className="send-button"
               disabled={isBlocked || isUploadingAttachment}
-              title="Gửi"
+              title={t('sendTitle')}
               type="submit"
             >
               <Send size={19} />

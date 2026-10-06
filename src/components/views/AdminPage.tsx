@@ -137,17 +137,19 @@ function TrendLineChart({
   data,
   isLoading,
   tone,
+  t,
 }: {
   data: AdminChartPoint[]
   isLoading: boolean
   tone: 'primary' | 'blue'
+  t: any
 }) {
   if (isLoading) {
-    return <div className="admin-chart-placeholder">Đang tải biểu đồ...</div>
+    return <div className="admin-chart-placeholder">{t('chartLoading')}</div>
   }
 
   if (data.length === 0) {
-    return <div className="admin-chart-placeholder">Chưa có dữ liệu!</div>
+    return <div className="admin-chart-placeholder">{t('chartNoData')}</div>
   }
 
   const color = tone === 'primary' ? '#14b8a6' : '#3b82f6'
@@ -208,11 +210,11 @@ function DistributionChart({
   const total = data.reduce((sum, point) => sum + point.value, 0)
 
   if (isLoading) {
-    return <div className="admin-chart-placeholder">Đang tải dữ liệu...</div>
+    return <div className="admin-chart-placeholder">{t('dataLoading')}</div>
   }
 
   if (total === 0) {
-    return <div className="admin-chart-placeholder">Chưa có dữ liệu!</div>
+    return <div className="admin-chart-placeholder">{t('chartNoData')}</div>
   }
 
   const COLORS = tone === 'primary' 
@@ -414,14 +416,14 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
   const isLoading = isStatsLoading || isUsersLoading
 
   const handleExportUsers = () => {
-    const headers = ['ID', 'Tên', 'Tên hiển thị', 'Email', 'Vai trò', 'Trạng thái', 'Lần cuối đăng nhập', 'Ngày tạo']
+    const headers = ['ID', t('colUser'), t('displayNameLabel'), t('emailLabel'), t('colRole'), t('colAccount'), t('colLastLogin'), t('colCreatedAt')]
     const data = users.map(u => [u.id, u.fullName, u.displayName, u.email, u.role, u.status, u.lastLogin, u.createdAt])
     exportToCSV('users_export.csv', headers, data)
     pushToast?.(t('exportUsersSuccess'), 'info')
   }
 
   const handleExportReports = () => {
-    const headers = ['ID', 'Người báo cáo', 'Nội dung (Preview)', 'Lý do', 'Trạng thái', 'Ngày báo cáo']
+    const headers = ['ID', t('reporterCol'), t('contentPreviewCol'), t('reasonCol'), t('colAccount'), t('reportedAtCol')]
     const data = reports.map(r => [r.id, r.reporter.name, r.messageText.substring(0, 50), r.reason, r.status, r.createdAt])
     exportToCSV('reports_export.csv', headers, data)
     pushToast?.(t('exportReportsSuccess'), 'info')
@@ -807,7 +809,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
       setReports((currentReports) =>
         currentReports.map((item) => (item.id === response.report.id ? response.report : item)),
       )
-      pushToast?.(status === 'reviewed' ? 'Đã đánh dấu báo cáo đã xử lý!' : 'Đã bỏ qua báo cáo!', 'info')
+      pushToast?.(status === 'reviewed' ? t('reportReviewedSuccess') : t('reportDismissedSuccess'), 'info')
       void refreshStats()
     } catch (error) {
       pushToast?.(getErrorMessage(error, t('reportUpdateErr')), 'error')
@@ -843,7 +845,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
     }
 
     if (password.length < 8) {
-      pushToast?.('Mật khẩu phải có ít nhất 8 ký tự!', 'error')
+      pushToast?.(t('passwordMinErr'), 'error')
       return
     }
 
@@ -865,7 +867,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
         totalPages: Math.max(1, Math.ceil((currentPagination.total + 1) / currentPagination.limit)),
       }))
       setCreateUser(null)
-      pushToast?.('Tạo người dùng mới thành công!')
+      pushToast?.(t('createUserSuccess'))
       void refreshStats()
     } catch (error) {
       pushToast?.(getErrorMessage(error, t('createUserErr')), 'error')
@@ -1049,7 +1051,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
             </div>
             <strong>{formatNumber(stats.userGrowth.reduce((sum, point) => sum + point.value, 0))}</strong>
           </div>
-          <TrendLineChart data={stats.userGrowth} isLoading={isStatsLoading} tone="primary" />
+          <TrendLineChart t={t} data={stats.userGrowth} isLoading={isStatsLoading} tone="primary" />
         </section>
 
         <section className="admin-chart-panel admin-chart-panel-wide">
@@ -1063,7 +1065,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
             </div>
             <strong>{formatNumber(stats.messageVolume.reduce((sum, point) => sum + point.value, 0))}</strong>
           </div>
-          <TrendLineChart data={stats.messageVolume} isLoading={isStatsLoading} tone="blue" />
+          <TrendLineChart t={t} data={stats.messageVolume} isLoading={isStatsLoading} tone="blue" />
         </section>
 
         <section className="admin-chart-panel">
@@ -1073,7 +1075,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
                 <PieChart size={18} />
                 {t('roleDistributionTitle')}
               </h2>
-              <p>Phân bổ người dùng</p>
+              <p>{t('userDistributionLabel')}</p>
             </div>
           </div>
           <DistributionChart t={t} data={stats.roleDistribution} isLoading={isStatsLoading} tone="primary" />
@@ -1184,7 +1186,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
               {t('prevBtn')}
             </button>
             <span>
-              Trang {pagination.page}/{pagination.totalPages}
+              {t('pageIndicator', { page: pagination.page, totalPages: pagination.totalPages })}
             </span>
             <button
               disabled={isUsersLoading || page >= pagination.totalPages}
@@ -1303,7 +1305,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
             <div className="admin-edit-actions">
               <button disabled={isCreatingUser} type="button" onClick={() => setCreateUser(null)}>
                 <X size={16} />
-                Hủy
+                {t('cancelBtn')}
               </button>
               <button disabled={isCreatingUser} type="button" onClick={() => void handleCreateUser()}>
                 {isCreatingUser ? <Loader2 size={16} /> : <CheckCircle2 size={16} />}
@@ -1406,7 +1408,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
             <div className="admin-edit-actions">
               <button disabled={isSavingUser || isEditExiting} type="button" onClick={() => setEditUser(null)}>
                 <X size={16} />
-                Hủy
+                {t('cancelBtn')}
               </button>
               <button disabled={isSavingUser || isEditExiting} type="button" onClick={() => void handleSaveUser()}>
                 {isSavingUser ? <Loader2 size={16} /> : <CheckCircle2 size={16} />}

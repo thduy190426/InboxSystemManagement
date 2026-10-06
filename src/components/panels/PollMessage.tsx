@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { Check, Clock, Users, PieChart, CheckCircle2, AlertCircle } from 'lucide-react'
 import type { Message } from '../../types'
 import { AvatarFallback } from '../ui/AvatarFallback'
+import { useTranslation } from 'react-i18next'
 
 type PollMessageProps = {
   message: Message
@@ -11,6 +12,7 @@ type PollMessageProps = {
 }
 
 export function PollMessage({ message, currentUserId, members, onVote }: PollMessageProps) {
+  const { t, i18n } = useTranslation('panels')
   const poll = message.poll
   if (!poll) return null
 
@@ -110,12 +112,12 @@ export function PollMessage({ message, currentUserId, members, onVote }: PollMes
       <div className="poll-header" style={{ marginBottom: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
           <PieChart size={18} style={{ color: 'var(--accent-color)' }} />
-          <strong style={{ fontSize: '15px' }}>Bình chọn</strong>
+          <strong style={{ fontSize: '15px' }}>{t('pollTitle')}</strong>
         </div>
         <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600, lineHeight: 1.4 }}>{poll.question}</h3>
         <div style={{ display: 'flex', gap: '12px', marginTop: '8px', fontSize: '12px', color: 'var(--subtle)' }}>
-          {poll.allowMultipleAnswers && <span>Chọn nhiều</span>}
-          {poll.isAnonymous && <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Users size={12} /> Ẩn danh</span>}
+          {poll.allowMultipleAnswers && <span>{t('multipleChoiceLabel')}</span>}
+          {poll.isAnonymous && <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Users size={12} /> {t('anonymousLabel')}</span>}
         </div>
       </div>
 
@@ -182,7 +184,7 @@ export function PollMessage({ message, currentUserId, members, onVote }: PollMes
                   {canViewResults && (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                       <span style={{ fontSize: '13px', fontWeight: 600 }}>{percentage}%</span>
-                      <span style={{ fontSize: '11px', color: 'var(--subtle)' }}>{voteCount} phiếu</span>
+                      <span style={{ fontSize: '11px', color: 'var(--subtle)' }}>{t('pollVotes', { count: voteCount })}</span>
                     </div>
                   )}
                 </div>
@@ -213,7 +215,7 @@ export function PollMessage({ message, currentUserId, members, onVote }: PollMes
                 opacity: (selectedOptionIds.length === 0 || JSON.stringify(selectedOptionIds.sort()) === JSON.stringify(userPreviousVotes.sort())) ? 0.5 : 1
               }}
             >
-              {hasVoted ? 'Đổi phiếu bầu' : 'Bình chọn'}
+              {hasVoted ? t('changeVoteBtn') : t('voteBtn')}
             </button>
             {hasVoted && (
               <button
@@ -229,30 +231,30 @@ export function PollMessage({ message, currentUserId, members, onVote }: PollMes
                   cursor: 'pointer'
                 }}
               >
-                Hủy bầu
+                {t('cancelVoteBtn')}
               </button>
             )}
           </div>
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', color: 'var(--subtle)', fontSize: '13px', fontWeight: 500 }}>
             <AlertCircle size={16} />
-            Bình chọn đã kết thúc
+            {t('pollEnded')}
           </div>
         )}
         
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '12px', fontSize: '12px', color: 'var(--subtle)' }}>
-          <span>Tổng số: {totalVotes} người</span>
+          <span>{t('totalVoters', { count: totalVotes })}</span>
           {poll.endTime && !isPollEnded && (
             <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <Clock size={12} />
-              Kết thúc lúc {new Date(poll.endTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+              {t('pollEndsAt', { time: new Date(poll.endTime).toLocaleTimeString(i18n.language === 'vi' ? 'vi-VN' : 'en-US', { hour: '2-digit', minute: '2-digit' }) })}
             </span>
           )}
         </div>
         {poll.hideResultsUntilEnd && !isPollEnded && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '8px', fontSize: '11px', color: 'var(--subtle)', justifyContent: 'center' }}>
             <CheckCircle2 size={12} />
-            Kết quả sẽ hiển thị khi kết thúc
+            {t('pollResultsHidden')}
           </div>
         )}
       </div>

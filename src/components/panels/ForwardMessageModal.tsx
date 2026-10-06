@@ -2,6 +2,7 @@ import type { Conversation, Message } from '../../types'
 import { X, Search } from 'lucide-react'
 import { AvatarFallback } from '../ui/AvatarFallback'
 import { OnlineDurationBadge } from '../ui/OnlineDurationBadge'
+import { useTranslation } from 'react-i18next'
 
 export type ForwardMessageModalProps = {
   forwardingMessage: Message | null
@@ -24,6 +25,7 @@ export function ForwardMessageModal({
   forwardTargets,
   handleForward,
 }: ForwardMessageModalProps) {
+  const { t } = useTranslation('panels')
   if (!forwardingMessage) return null
 
   return (
@@ -31,10 +33,10 @@ export function ForwardMessageModal({
       <section aria-modal="true" className="forward-dialog" role="dialog">
         <header>
           <div>
-            <strong>Chuyển tiếp tin nhắn</strong>
+            <strong>{t('forwardMessageTitle')}</strong>
             <span>{getReplyText(forwardingMessage)}</span>
           </div>
-          <button onClick={closeForwardDialog} title="Đóng" type="button">
+          <button onClick={closeForwardDialog} title={t('closeBtn')} type="button">
             <X size={20} />
           </button>
         </header>
@@ -44,7 +46,7 @@ export function ForwardMessageModal({
           <input
             autoFocus
             onChange={(event) => setForwardQuery(event.target.value)}
-            placeholder="Tìm kiếm cuộc trò chuyện..."
+            placeholder={t('forwardSearchPlaceholder')}
             value={forwardQuery}
           />
         </label>
@@ -67,13 +69,13 @@ export function ForwardMessageModal({
               </div>
               <div className="forward-target-info">
                 <strong>{conversation.name}</strong>
-                <span>{conversation.type === 'group' ? 'Nhóm' : 'Cá nhân'}</span>
+                <span>{conversation.type === 'group' ? t('groupConversationType') : t('directConversationType')}</span>
               </div>
             </button>
           ))}
 
           {forwardTargets.length === 0 ? (
-            <div className="forward-target-empty">Không tìm thấy cuộc trò chuyện nào phù hợp.</div>
+            <div className="forward-target-empty">{t('noForwardTargets')}</div>
           ) : null}
         </div>
       </section>

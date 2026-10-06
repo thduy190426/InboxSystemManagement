@@ -1,5 +1,6 @@
 import type { Message } from '../../types'
 import { Search, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 export type PinnedMessagesDrawerProps = {
   isPinnedModalOpen: boolean
@@ -24,6 +25,7 @@ export function PinnedMessagesDrawer({
   handleTogglePin,
   onJumpToMessage,
 }: PinnedMessagesDrawerProps) {
+  const { t, i18n } = useTranslation('panels')
   if (!isPinnedModalOpen) return null
 
   return (
@@ -31,11 +33,11 @@ export function PinnedMessagesDrawer({
       <section aria-modal="true" className="forward-dialog" role="dialog">
         <header>
           <div>
-            <strong>Danh sách tin nhắn đã ghim ({pinnedMessages.length})</strong>
+            <strong>{t('pinnedListTitle', { count: pinnedMessages.length })}</strong>
           </div>
           <button
             onClick={() => setIsPinnedModalOpen(false)}
-            title="Đóng"
+            title={t('closeBtn')}
             type="button"
           >
             <X size={17} />
@@ -46,7 +48,7 @@ export function PinnedMessagesDrawer({
           <input
             autoFocus
             onChange={(event) => setPinnedSearchQuery(event.target.value)}
-            placeholder="Tìm tin nhắn đã ghim..."
+            placeholder={t('pinnedSearchPlaceholder')}
             value={pinnedSearchQuery}
           />
         </label>
@@ -61,12 +63,12 @@ export function PinnedMessagesDrawer({
                   onClick={() => handleTogglePin(message.id)} 
                   style={{ background: 'none', border: 'none', color: 'var(--danger, #ef4444)', cursor: 'pointer', fontSize: '12px' }}
                 >
-                  Bỏ ghim
+                  {t('unpinBtn')}
                 </button>
               </div>
               {message.pinnedBy && message.pinnedAt && (
                 <small style={{ color: 'var(--subtle, #65676B)', fontSize: '11px' }}>
-                  Ghim bởi {message.pinnedBy} lúc {new Date(message.pinnedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                  {t('pinnedBy', { name: message.pinnedBy, time: new Date(message.pinnedAt).toLocaleTimeString(i18n.language === 'vi' ? 'vi-VN' : 'en-US', { hour: '2-digit', minute: '2-digit' }) })}
                 </small>
               )}
               <div style={{ fontSize: '14px', margin: '4px 0', wordBreak: 'break-word', color: 'var(--text-primary)' }}>
@@ -89,12 +91,12 @@ export function PinnedMessagesDrawer({
                   color: 'var(--text-primary)'
                 }}
               >
-                Xem trong đoạn chat
+                {t('viewInChatBtn')}
               </button>
             </div>
           ))}
           {pinnedMessages.length === 0 && (
-            <p style={{ textAlign: 'center', color: 'var(--subtle)', margin: '20px 0' }}>Không có tin nhắn nào được ghim.</p>
+            <p style={{ textAlign: 'center', color: 'var(--subtle)', margin: '20px 0' }}>{t('noPinnedMessages')}</p>
           )}
         </div>
       </section>
