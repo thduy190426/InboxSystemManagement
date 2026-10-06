@@ -11,11 +11,16 @@ function initMailClient() {
   if (process.env.SMTP_USER && process.env.SMTP_PASS) {
     if (!nodemailerTransporter) {
       nodemailerTransporter = nodemailer.createTransport({
-        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS,
         },
+        connectionTimeout: 10000, // 10 giây để kết nối
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
       });
       useNodemailer = true;
       console.log('[MAIL_SERVICE] Đã khởi tạo kết nối Nodemailer (Gmail) thành công.');
