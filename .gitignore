@@ -57,3 +57,8 @@ Thumbs.db
 
 # Python
 *.py
+
+# PowerShell
+*.ps1
+*.psm1
+*.psd1
