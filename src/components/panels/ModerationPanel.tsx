@@ -1,8 +1,10 @@
+import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
 import { ShieldCheck, X } from 'lucide-react'
 import { useModerationSettings } from '../../hooks/useModerationSettings'
 
 export function ModerationPanel({ pushToast }: { pushToast?: (text: string, tone?: 'info' | 'error') => void }) {
+  const { t } = useTranslation('panels')
   const { settings, updateSettings } = useModerationSettings()
   const [bannedWordsInput, setBannedWordsInput] = useState('')
   const [blockedFileInput, setBlockedFileInput] = useState('')
@@ -11,12 +13,12 @@ export function ModerationPanel({ pushToast }: { pushToast?: (text: string, tone
     const word = bannedWordsInput.trim().toLowerCase()
     if (!word) return
     if (settings.bannedWords.includes(word)) {
-      pushToast?.('Từ khóa đã tồn tại', 'error')
+      pushToast?.(t('keywordExistsErr'), 'error')
       return
     }
     updateSettings({ bannedWords: [...settings.bannedWords, word] })
     setBannedWordsInput('')
-    pushToast?.('Đã thêm từ khóa', 'info')
+    pushToast?.(t('keywordAdded'), 'info')
   }
 
   const handleRemoveBannedWord = (word: string) => {
@@ -28,12 +30,12 @@ export function ModerationPanel({ pushToast }: { pushToast?: (text: string, tone
     if (!ext) return
     if (!ext.startsWith('.')) ext = '.' + ext
     if (settings.blockedFileTypes.includes(ext)) {
-      pushToast?.('Định dạng đã tồn tại', 'error')
+      pushToast?.(t('formatExistsErr'), 'error')
       return
     }
     updateSettings({ blockedFileTypes: [...settings.blockedFileTypes, ext] })
     setBlockedFileInput('')
-    pushToast?.('Đã thêm định dạng', 'info')
+    pushToast?.(t('formatAdded'), 'info')
   }
 
   const handleRemoveBlockedFile = (ext: string) => {
@@ -45,7 +47,7 @@ export function ModerationPanel({ pushToast }: { pushToast?: (text: string, tone
       <div className="section-header">
         <h2>
           <ShieldCheck size={18} />
-          Kiểm duyệt Nội dung
+          {t('modPanelTitle')}
         </h2>
         <div className="section-actions">
           <select 
@@ -53,16 +55,16 @@ export function ModerationPanel({ pushToast }: { pushToast?: (text: string, tone
             onChange={(e) => updateSettings({ bannedWordAction: e.target.value as 'mask' | 'block' })}
             style={{ padding: '8px', borderRadius: '8px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-color)' }}
           >
-            <option value="mask">Bíp (***) từ khóa cấm</option>
-            <option value="block">Chặn gửi tin nhắn</option>
+            <option value="mask">{t('actionMask')}</option>
+            <option value="block">{t('actionBlock')}</option>
           </select>
         </div>
       </div>
       
       <div className="moderation-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '24px' }}>
         <div className="moderation-card" style={{ background: 'var(--surface-hover)', padding: '16px', borderRadius: '12px' }}>
-          <h3>Từ khóa cấm</h3>
-          <p style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '16px' }}>Các từ ngữ không được phép sử dụng trong tin nhắn.</p>
+          <h3>{t('bannedWordsTitle')}</h3>
+          <p style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '16px' }}>{t('bannedWordsDesc')}</p>
           
           <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
             <input 
@@ -70,11 +72,11 @@ export function ModerationPanel({ pushToast }: { pushToast?: (text: string, tone
               value={bannedWordsInput}
               onChange={(e) => setBannedWordsInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAddBannedWord()}
-              placeholder="Nhập từ khóa (vd: fuck)"
+              placeholder={t('keywordPlaceholder')}
               style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--background)', color: 'var(--text)' }}
             />
             <button onClick={handleAddBannedWord} className="primary-button" style={{ padding: '8px 12px', borderRadius: '8px', background: 'var(--accent-color)', color: 'white', border: 'none', cursor: 'pointer' }}>
-              Thêm
+              {t('addBtn')}
             </button>
           </div>
           
@@ -85,13 +87,13 @@ export function ModerationPanel({ pushToast }: { pushToast?: (text: string, tone
                 <X size={14} style={{ cursor: 'pointer', color: 'var(--error-color)' }} onClick={() => handleRemoveBannedWord(word)} />
               </span>
             ))}
-            {settings.bannedWords.length === 0 && <span style={{ color: 'var(--muted)', fontSize: '14px' }}>Chưa có từ khóa nào.</span>}
+            {settings.bannedWords.length === 0 && <span style={{ color: 'var(--muted)', fontSize: '14px' }}>{t('noKeywords')}</span>}
           </div>
         </div>
 
         <div className="moderation-card" style={{ background: 'var(--surface-hover)', padding: '16px', borderRadius: '12px' }}>
-          <h3>Định dạng tệp bị cấm</h3>
-          <p style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '16px' }}>Các định dạng không được phép gửi lên hệ thống.</p>
+          <h3>{t('blockedFilesTitle')}</h3>
+          <p style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '16px' }}>{t('blockedFilesDesc')}</p>
           
           <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
             <input 
@@ -99,11 +101,11 @@ export function ModerationPanel({ pushToast }: { pushToast?: (text: string, tone
               value={blockedFileInput}
               onChange={(e) => setBlockedFileInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAddBlockedFile()}
-              placeholder="Nhập đuôi file (vd: .exe)"
+              placeholder={t('formatPlaceholder')}
               style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--background)', color: 'var(--text)' }}
             />
             <button onClick={handleAddBlockedFile} className="primary-button" style={{ padding: '8px 12px', borderRadius: '8px', background: 'var(--accent-color)', color: 'white', border: 'none', cursor: 'pointer' }}>
-              Thêm
+              {t('addBtn')}
             </button>
           </div>
           
@@ -114,7 +116,7 @@ export function ModerationPanel({ pushToast }: { pushToast?: (text: string, tone
                 <X size={14} style={{ cursor: 'pointer', color: 'var(--error-color)' }} onClick={() => handleRemoveBlockedFile(ext)} />
               </span>
             ))}
-            {settings.blockedFileTypes.length === 0 && <span style={{ color: 'var(--muted)', fontSize: '14px' }}>Chưa có định dạng nào.</span>}
+            {settings.blockedFileTypes.length === 0 && <span style={{ color: 'var(--muted)', fontSize: '14px' }}>{t('noFormats')}</span>}
           </div>
         </div>
       </div>

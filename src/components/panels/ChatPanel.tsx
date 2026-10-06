@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { ChangeEvent, FormEvent } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
 import type { EmojiClickData } from 'emoji-picker-react'
@@ -66,7 +67,7 @@ export function isSameLocalDay(left: Date | null, right: Date | null) {
   )
 }
 
-function formatDateHeader(date: Date | null, now = new Date()) {
+function formatDateHeader(date: Date | null, t: any, now = new Date()) {
   if (!date) {
     return ''
   }
@@ -76,11 +77,11 @@ function formatDateHeader(date: Date | null, now = new Date()) {
   const dayDistance = Math.round((today.getTime() - targetDay.getTime()) / 86400000)
 
   if (dayDistance === 0) {
-    return 'Hôm nay'
+    return t('today')
   }
 
   if (dayDistance === 1) {
-    return 'Hôm qua'
+    return t('yesterday')
   }
 
   return new Intl.DateTimeFormat('vi-VN', {
@@ -90,8 +91,8 @@ function formatDateHeader(date: Date | null, now = new Date()) {
   }).format(date)
 }
 
-function formatMessageTime(message: Message) {
-  if (message.time === 'Bây giờ' || message.time === 'Đang gửi...') {
+function formatMessageTime(message: Message, t: any) {
+  if (message.time === t('now') || message.time === t('sending')) {
     return message.time
   }
 
@@ -210,6 +211,7 @@ export function ChatPanel({
   onVotePoll,
   onSendSticker,
 }: ChatPanelProps) {
+  const { t } = useTranslation('panels')
   const [editingMessageId, setEditingMessageId] = useState('')
   const [editingText, setEditingText] = useState('')
   const [openActionMenuId, setOpenActionMenuId] = useState('')
@@ -338,7 +340,7 @@ export function ChatPanel({
       return ''
     }
 
-    return formatDateHeader(messageDate)
+    return formatDateHeader(messageDate, t)
   }
 
   useEffect(() => {
@@ -436,7 +438,7 @@ export function ChatPanel({
         .catch((error) => {
           if (isMounted) {
             setGifResults([])
-            setGifError(error instanceof Error ? error.message : 'Không thể tải GIF!')
+            setGifError(error instanceof Error ? error.message : t('gifLoadErr'))
           }
         })
         .finally(() => {
@@ -488,13 +490,13 @@ export function ChatPanel({
     }
 
     if (validFiles.length === 0) {
-      setAttachmentError('Chỉ hỗ trợ gửi tệp hình ảnh tối đa 2MB!')
+      setAttachmentError(t('fileSizeErr'))
       event.target.value = ''
       return
     }
 
     if (hasInvalidFiles) {
-      setAttachmentError('Một số tệp bị loại bỏ do định dạng không hỗ trợ hoặc vượt quá 2MB!')
+      setAttachmentError(t('fileTypeErr'))
     } else {
       setAttachmentError('')
     }
@@ -611,7 +613,7 @@ export function ChatPanel({
 
   const handleShareLocation = () => {
     if (!navigator.geolocation) {
-      setLocationError('Trình duyệt không hỗ trợ vị trí!')
+      setLocationError(t('geoNotSupported'))
       return
     }
 
@@ -624,14 +626,14 @@ export function ChatPanel({
         const data = await response.json()
         if (data.latitude && data.longitude) {
           const mapsUrl = `https://www.google.com/maps?q=${data.latitude},${data.longitude}`
-          void onSendQuickMessage(`Vị trí (ước tính qua IP): ${mapsUrl}`)
+          void onSendQuickMessage(t('geoIpLocation', { url: mapsUrl }))
           setIsSharingLocation(false)
         } else {
           throw new Error('No location data')
         }
       } catch (err) {
         setIsSharingLocation(false)
-        setLocationError('Không thể lấy vị trí thiết bị!')
+        setLocationError(t('geoDeviceErr'))
       }
     }
 
@@ -641,15 +643,15 @@ export function ChatPanel({
           setIsSharingLocation(false)
           const { latitude, longitude } = position.coords
           const mapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`
-          void onSendQuickMessage(`Vị trí hiện tại: ${mapsUrl}`)
+          void onSendQuickMessage(t('geoCurrentLocation', { url: mapsUrl }))
         },
         (error) => {
           if (error.code === error.TIMEOUT || error.code === error.POSITION_UNAVAILABLE) {
             void fetchIpLocation()
           } else {
             setIsSharingLocation(false)
-            let errMsg = 'Không thể lấy vị trí!'
-            if (error.code === error.PERMISSION_DENIED) errMsg = 'Bạn đã từ chối quyền truy cập vị trí!'
+            let errMsg = t('geoFetchErr')
+            if (error.code === error.PERMISSION_DENIED) errMsg = t('geoDeniedErr')
             setLocationError(errMsg)
           }
         },
@@ -662,15 +664,15 @@ export function ChatPanel({
         setIsSharingLocation(false)
         const { latitude, longitude } = position.coords
         const mapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`
-        void onSendQuickMessage(`Vị trí chính xác: ${mapsUrl}`)
+        void onSendQuickMessage(t('geoExactLocation', { url: mapsUrl }))
       },
       (error) => {
         if (error.code === error.TIMEOUT || error.code === error.POSITION_UNAVAILABLE) {
           tryLowAccuracy()
         } else {
           setIsSharingLocation(false)
-          let errMsg = 'Không thể lấy vị trí!'
-          if (error.code === error.PERMISSION_DENIED) errMsg = 'Bạn đã từ chối quyền truy cập vị trí!'
+          let errMsg = t('geoFetchErr')
+          if (error.code === error.PERMISSION_DENIED) errMsg = t('geoDeniedErr')
           setLocationError(errMsg)
         }
       },
@@ -741,9 +743,9 @@ export function ChatPanel({
     }
 
     setConfirmDialog({
-      title: 'Cập nhật tin nhắn?',
-      description: 'Nội dung tin nhắn sẽ được thay đổi và hiển thị trạng thái đã chỉnh sửa.',
-      confirmLabel: 'Lưu thay đổi',
+      title: t('editMsgConfirmTitle'),
+      description: t('editMsgConfirmDesc'),
+      confirmLabel: t('editMsgConfirmBtn'),
       onConfirm: () => {
         Promise.resolve(onEditMessage(message.id, text)).catch(console.error)
         cancelEditing()
@@ -791,18 +793,18 @@ export function ChatPanel({
     await onToggleMessagePin(messageId)
     if (message) {
       if (message.isPinned) {
-        void onSendQuickMessage(`Đã bỏ ghim một tin nhắn`)
+        void onSendQuickMessage(t('msgUnpinned'))
       } else {
-        void onSendQuickMessage(`Đã ghim một tin nhắn`)
+        void onSendQuickMessage(t('msgPinned'))
       }
     }
   }
 
   function handleReport(message: Message) {
     setConfirmDialog({
-      title: 'Báo cáo tin nhắn?',
-      description: 'Báo cáo sẽ được gửi đến admin để xem xét nội dung vi phạm!',
-      confirmLabel: 'Gửi báo cáo',
+      title: t('reportMsgConfirmTitle'),
+      description: t('reportMsgConfirmDesc'),
+      confirmLabel: t('reportMsgConfirmBtn'),
       tone: 'danger',
       onConfirm: () => {
         setOpenActionMenuId('')
@@ -847,7 +849,7 @@ export function ChatPanel({
 
   function getMessageStateLabel(message: Message) {
     if (message.state === 'sending') {
-      return 'Đang gửi...'
+      return t('sending')
     }
 
     if (message.state === 'failed') {
@@ -856,7 +858,7 @@ export function ChatPanel({
 
     if (message.state === 'seen') {
       if (!showReadReceipts || activeConversation.restricted) {
-        return 'Đã nhận!'
+        return t('statusReceived')
       }
       
       const timeToParse = message.readAt || message.seenAt
@@ -864,18 +866,18 @@ export function ChatPanel({
         const readDate = new Date(timeToParse)
         if (!Number.isNaN(readDate.getTime())) {
           const formattedTime = readDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
-          return `Đã xem lúc ${formattedTime}!`
+          return t('statusSeenTime', { time: formattedTime })
         }
       }
       
-      return message.seenAt ? `Đã xem lúc ${message.seenAt}!` : 'Đã xem!'
+      return message.seenAt ? t('statusSeenTime', { time: message.seenAt }) : t('statusSeen')
     }
 
     if (message.state === 'delivered') {
-      return 'Đã nhận!'
+      return t('statusReceived')
     }
 
-    return 'Đã gửi!'
+    return t('statusSent')
   }
 
   async function moveSearchResult(direction: 'next' | 'previous') {
@@ -1004,7 +1006,7 @@ export function ChatPanel({
 
   function getReplyAuthorLabel(message: Message | NonNullable<Message['replyTo']>) {
     if (message.author === 'me') {
-      return 'Bạn'
+      return t('senderYou')
     }
 
     return message.senderName || activeConversation.name
@@ -1016,18 +1018,18 @@ export function ChatPanel({
     }
 
     if (message.type === 'image') {
-      return 'Hình ảnh'
+      return t('typeImage')
     }
 
     if (message.type === 'audio') {
-      return 'Tin nhắn thoại'
+      return t('typeVoice')
     }
 
     if (message.type === 'file') {
-      return 'Tệp đính kèm'
+      return t('typeAttachment')
     }
 
-    return 'Tin nhắn'
+    return t('typeMessage')
   }
 
   function scrollToMessage(messageId: string) {
@@ -1042,7 +1044,7 @@ export function ChatPanel({
       <button
         className="message-reply-preview"
         onClick={() => scrollToMessage(message.id)}
-        title="Mở tin nhắn gốc"
+        title={t('openOriginal')}
         type="button"
       >
         <strong>{getReplyAuthorLabel(message)}</strong>
@@ -1067,10 +1069,10 @@ export function ChatPanel({
         href={attachment.url}
         rel="noreferrer"
         target="_blank"
-        title="Tải xuống"
+        title={t('downloadBtn')}
       >
         <Download size={15} />
-        <span>Tải xuống</span>
+        <span>{t('downloadBtn')}</span>
       </a>
     )
   }
@@ -1079,7 +1081,7 @@ export function ChatPanel({
     if (!message.text) return null
     const text = message.text
     
-    let title = 'Cuộc gọi'
+    let title = t('callTitle')
     let subtitle = ''
     let isMissed = false
     let isVideo = false
@@ -1087,16 +1089,16 @@ export function ChatPanel({
     if (text.includes('video')) isVideo = true
     
     if (text.includes('Không bắt máy') || text.includes('nhỡ')) {
-      title = `Đã nhỡ cuộc gọi ${isVideo ? 'video' : 'thoại'}`
-      subtitle = formatMessageTime(message)
+      title = t('missedCall', { type: isVideo ? t('callTypeVideo') : t('callTypeVoice') })
+      subtitle = formatMessageTime(message, t)
       isMissed = true
     } else if (text.includes('Thời lượng')) {
-      title = `Cuộc gọi ${isVideo ? 'video' : 'thoại'}`
+      title = t('callDurationTitle', { type: isVideo ? t('callTypeVideo') : t('callTypeVoice') })
       const match = text.match(/Thời lượng:\s*(.+)/) || text.match(/Thời lượng\s*(.+)/)
-      subtitle = match ? match[1] : formatMessageTime(message)
+      subtitle = match ? match[1] : formatMessageTime(message, t)
     } else if (text.includes('Đã hủy')) {
-      title = `Đã hủy cuộc gọi ${isVideo ? 'video' : 'thoại'}`
-      subtitle = formatMessageTime(message)
+      title = t('canceledCall', { type: isVideo ? t('callTypeVideo') : t('callTypeVoice') })
+      subtitle = formatMessageTime(message, t)
     }
     
     return (
@@ -1280,7 +1282,7 @@ export function ChatPanel({
             onClick={() =>
               handleReactionBadgeClick(message, reaction.emoji, reaction.reactedByMe)
             }
-            title={reaction.reactedByMe ? 'Thu hồi reaction' : 'reaction'}
+            title={reaction.reactedByMe ? t('revokeReaction') : t('reactionTitle')}
             type="button"
           >
             <span>{reaction.emoji}</span>
@@ -1305,16 +1307,16 @@ export function ChatPanel({
         <ChatUIContext.Provider value={{
           getDateDividerLabel, isSameMessageGroup, messageRefs, renderCallMessage,
           renderHighlightedText, shouldRenderMessageText, renderReplyPreview,
-          getMessageStateLabel, formatMessageTime, renderAttachments, renderReactions,
+          getMessageStateLabel, formatMessageTime: (msg) => formatMessageTime(msg, t), renderAttachments, renderReactions,
           isSameLocalDay, parseMessageDate, setOpenActionMenuId, setOpenReactionPickerId
         }}>
-    <section className="chat-panel" aria-label={`Hội thoại với ${activeConversation.name}`} style={activeConversation.backgroundImage ? { backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("${activeConversation.backgroundImage}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' } : {}}>
+    <section className="chat-panel" aria-label={t('chatAriaLabel', { name: activeConversation.name })} style={activeConversation.backgroundImage ? { backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("${activeConversation.backgroundImage}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' } : {}}>
       <header className="chat-header">
         <div className="chat-identity">
           <button
             className="mobile-menu icon-button"
             onClick={onOpenConversationList}
-            title="Mở danh sách"
+            title={t('openListTitle')}
             type="button"
           >
             <Menu size={20} />
@@ -1323,7 +1325,7 @@ export function ChatPanel({
             className="chat-profile-trigger"
             disabled={activeConversation.type !== 'direct'}
             onClick={onOpenContactProfile}
-            title="Xem hồ sơ liên hệ"
+            title={t('viewProfileTitle')}
             type="button"
           >
             <span className="avatar-wrap compact">
@@ -1342,7 +1344,7 @@ export function ChatPanel({
             </span>
             <span className="chat-profile-copy">
               <h2>{activeConversation.name}</h2>
-              <p>{activeConversation.restricted ? 'Ngoại tuyến' : activeConversation.status}</p>
+              <p>{activeConversation.restricted ? t('statusOffline') : activeConversation.status}</p>
             </span>
           </button>
         </div>
@@ -1382,7 +1384,7 @@ export function ChatPanel({
             className="icon-button"
             disabled={isBlocked || activeConversation.restricted}
             onClick={() => onStartCall('video')}
-            title="Gọi video"
+            title={t('callVideoBtn')}
             type="button"
           >
             <Video size={20} />
@@ -1391,7 +1393,7 @@ export function ChatPanel({
             className="icon-button"
             disabled={isBlocked || activeConversation.restricted}
             onClick={() => onStartCall('audio')}
-            title="Gọi audio"
+            title={t('callAudioBtn')}
             type="button"
           >
             <Phone size={20} />
@@ -1400,7 +1402,7 @@ export function ChatPanel({
           <button
             className={isDetailOpen ? 'icon-button is-active' : 'icon-button'}
             onClick={onToggleDetails}
-            title="Thông tin hội thoại"
+            title={t('chatInfoBtn')}
             type="button"
           >
             <Info size={20} />
@@ -1409,14 +1411,14 @@ export function ChatPanel({
       </header>
 
       {pinnedMessages.length > 0 ? (
-        <div className="chat-pinned-messages" aria-label="Tin nhắn đã ghim">
+        <div className="chat-pinned-messages" aria-label={t('pinnedMessagesAria')}>
           {pinnedMessages.slice(0, 3).map((message) => (
             <button
               className="chat-pinned-message"
               disabled={Boolean(busyMessageId)}
               key={message.id}
               onClick={() => onJumpToMessage(message.id)}
-              title="Mở tin nhắn đã ghim"
+              title={t('openPinnedMsg')}
               type="button"
             >
               <Pin size={14} />
@@ -1426,7 +1428,7 @@ export function ChatPanel({
                   {getReplyText(message)}
                   {message.pinnedBy && message.pinnedAt && (
                     <span style={{ display: 'block', color: 'var(--subtle)', fontSize: '0.85em', marginTop: '2px' }}>
-                      Ghim bởi {message.pinnedBy} lúc {new Date(message.pinnedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                      {t('pinnedBy', { name: message.pinnedBy, time: new Date(message.pinnedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) })}
                     </span>
                   )}
                 </small>
@@ -1437,7 +1439,7 @@ export function ChatPanel({
             <button
               className="chat-pinned-more"
               onClick={() => setIsPinnedModalOpen(true)}
-              title="Xem tất cả tin nhắn đã ghim"
+              title={t('viewAllPinned')}
               type="button"
             >
               +{pinnedMessages.length - 3}
@@ -1465,7 +1467,7 @@ export function ChatPanel({
                     onClick={onLoadOlderMessages}
                     type="button"
                   >
-                    {isLoadingOlderMessages ? 'Đang tải tin cũ...' : 'Tải tin nhắn cũ hơn'}
+                    {isLoadingOlderMessages ? t('loadingOlderMsgs') : t('loadOlderMsgs')}
                   </button>
                 ) : null}
 
@@ -1473,7 +1475,7 @@ export function ChatPanel({
                   <div className="thread-empty-state" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', padding: '40px 0' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                       <MessageSquare size={48} strokeWidth={1.5} style={{ opacity: 0.2 }} />
-                      <span style={{ color: 'var(--subtle)' }}>Hãy bắt đầu cuộc trò chuyện cùng với {activeConversation.name} nào!</span>
+                      <span style={{ color: 'var(--subtle)' }}>{t('startChatSuggest', { name: activeConversation.name })}</span>
                     </div>
                   </div>
                 ) : null}
@@ -1486,7 +1488,7 @@ export function ChatPanel({
                     <span className="typing-dot" />
                     <span className="typing-dot" />
                     <span className="typing-dot" />
-                    <strong>{activeConversation.name} đang nhập...</strong>
+                    <strong>{t('typingIndicator', { name: activeConversation.name })}</strong>
                   </div>
                 ) : null}
               </div>
@@ -1502,7 +1504,7 @@ export function ChatPanel({
         <button
           className="scroll-to-latest-button"
           onClick={() => scrollToLatestMessage('smooth')}
-          title="Cuộn xuống tin nhắn mới nhất"
+          title={t('scrollToLatest')}
           type="button"
         >
           <ChevronDown size={20} />

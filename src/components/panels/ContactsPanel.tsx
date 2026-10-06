@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { FormEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import {
@@ -43,19 +44,19 @@ type ContactsPanelProps = {
   pushToast: (text: string, tone?: 'info' | 'error') => void
 }
 
-function getActionLabel(user: ContactUser) {
-  if (user.friendshipStatus === 'accepted') return 'Bạn bè'
-  if (user.friendshipStatus === 'pending' && user.requestDirection === 'outgoing') return 'Hủy lời mời'
-  if (user.friendshipStatus === 'pending' && user.requestDirection === 'incoming') return 'Chấp nhận'
-  return 'Kết bạn'
+function getActionLabel(user: ContactUser, t: any) {
+  if (user.friendshipStatus === 'accepted') return t('statusFriend')
+  if (user.friendshipStatus === 'pending' && user.requestDirection === 'outgoing') return t('statusCancelReq')
+  if (user.friendshipStatus === 'pending' && user.requestDirection === 'incoming') return t('statusAcceptReq')
+  return t('statusAddFriend')
 }
 
-function getGenderLabel(gender?: string | null) {
+function getGenderLabel(gender: string | null | undefined, t: any) {
   if (gender === 'male') return 'Nam'
-  if (gender === 'female') return 'Nữ'
-  if (gender === 'other') return 'Khác'
-  if (gender === 'prefer_not_to_say') return 'Không muốn chia sẻ'
-  return 'Chưa cập nhật'
+  if (gender === 'female') return t('genderF')
+  if (gender === 'other') return t('genderO')
+  if (gender === 'prefer_not_to_say') return t('genderHidden')
+  return t('genderUnset')
 }
 
 function formatProfileDate(value?: string | null) {
@@ -85,12 +86,13 @@ type ContactProfileProps = {
 }
 
 export function ContactProfile({ user, isClosing, onClose }: ContactProfileProps) {
+  const { t } = useTranslation('panels')
   const safePresence = ['online', 'away', 'busy'].includes(user.presence) ? user.presence : 'offline'
   const presenceLabel =
-    safePresence === 'online' ? 'Đang trực tuyến'
-    : safePresence === 'away' ? 'Tạm vắng'
-    : safePresence === 'busy' ? 'Đang bận'
-    : 'Ngoại tuyến'
+    safePresence === 'online' ? t('presenceOnline')
+    : safePresence === 'away' ? t('presenceAway')
+    : safePresence === 'busy' ? t('presenceBusy')
+    : t('presenceOffline')
   const presenceClass = `cp-presence--${safePresence}`
 
   return (
@@ -121,8 +123,8 @@ export function ContactProfile({ user, isClosing, onClose }: ContactProfileProps
             <div className="cp-info-row">
               <span className="cp-info-icon"><Phone size={14} /></span>
               <div className="cp-info-text">
-                <small>Số điện thoại</small>
-                <span>{user.phone || 'Chưa cập nhật'}</span>
+                <small>{t('phoneLabel')}</small>
+                <span>{user.phone || t('genderUnset')}</span>
               </div>
             </div>
           )}
@@ -130,8 +132,8 @@ export function ContactProfile({ user, isClosing, onClose }: ContactProfileProps
             <div className="cp-info-row">
               <span className="cp-info-icon"><User size={14} /></span>
               <div className="cp-info-text">
-                <small>Trạng thái</small>
-                <span>{user.statusMessage || 'Chưa có trạng thái'}</span>
+                <small>{t('statusMsgLabel')}</small>
+                <span>{user.statusMessage || t('statusMsgUnset')}</span>
               </div>
             </div>
           )}
@@ -139,8 +141,8 @@ export function ContactProfile({ user, isClosing, onClose }: ContactProfileProps
             <div className="cp-info-row">
               <span className="cp-info-icon"><MapPin size={14} /></span>
               <div className="cp-info-text">
-                <small>Địa chỉ</small>
-                <span>{user.address || 'Chưa cập nhật'}</span>
+                <small>{t('addressLabel')}</small>
+                <span>{user.address || t('genderUnset')}</span>
               </div>
             </div>
           )}
@@ -148,8 +150,8 @@ export function ContactProfile({ user, isClosing, onClose }: ContactProfileProps
             <div className="cp-info-row">
               <span className="cp-info-icon"><User size={14} /></span>
               <div className="cp-info-text">
-                <small>Giới tính</small>
-                <span>{getGenderLabel(user.gender)}</span>
+                <small>{t('genderLabel')}</small>
+                <span>{getGenderLabel(user.gender, t)}</span>
               </div>
             </div>
           )}
@@ -157,8 +159,8 @@ export function ContactProfile({ user, isClosing, onClose }: ContactProfileProps
             <div className="cp-info-row">
               <span className="cp-info-icon"><CalendarDays size={14} /></span>
               <div className="cp-info-text">
-                <small>Ngày sinh</small>
-                <span>{formatProfileDate(user.birthDate) || 'Chưa cập nhật'}</span>
+                <small>{t('birthDateLabel')}</small>
+                <span>{formatProfileDate(user.birthDate) || t('genderUnset')}</span>
               </div>
             </div>
           )}
@@ -172,16 +174,16 @@ export function ContactProfile({ user, isClosing, onClose }: ContactProfileProps
           <div className="cp-info-row">
             <span className="cp-info-icon"><Clock size={14} /></span>
             <div className="cp-info-text">
-              <small>Kết bạn từ</small>
-              <span>{formatProfileDate(user.contactCreatedAt) || 'Chưa kết bạn'}</span>
+              <small>{t('friendSinceLabel')}</small>
+              <span>{formatProfileDate(user.contactCreatedAt) || t('notFriendsYet')}</span>
             </div>
           </div>
         </div>
 
         {user.showBio !== false && (
           <div className="cp-bio">
-            <small>Giới thiệu</small>
-            <p>{user.bio || 'Người dùng này chưa thêm phần giới thiệu.'}</p>
+            <small>{t('bioLabel')}</small>
+            <p>{user.bio || t('bioEmpty')}</p>
           </div>
         )}
       </section>
@@ -198,6 +200,7 @@ type ContactCardProps = {
 }
 
 function ContactCard({ user, busyId, onProfile, onMessage, action }: ContactCardProps) {
+  const { t } = useTranslation('panels')
   const safePresence = ['online', 'away', 'busy'].includes(user.presence) ? user.presence : 'offline'
   return (
     <article className="cp-card">
@@ -207,12 +210,12 @@ function ContactCard({ user, busyId, onProfile, onMessage, action }: ContactCard
       </div>
       <div className="cp-card-info">
         <strong>{user.nickname || user.fullName}</strong>
-        <span className="cp-card-handle">{getGenderLabel(user.gender)}</span>
-        <small className="cp-card-bio">{user.address || 'Chưa cập nhật địa chỉ'}</small>
+        <span className="cp-card-handle">{getGenderLabel(user.gender, t)}</span>
+        <small className="cp-card-bio">{user.address || t('addressEmptyCompact')}</small>
       </div>
       <div className="cp-card-actions">
         <button className="cp-btn cp-btn--ghost cp-btn--sm" onClick={() => onProfile(user)} type="button">
-          <IdCard size={14} /> Hồ sơ
+          <IdCard size={14} /> {t('profileBtn')}
         </button>
         <button
           className="cp-btn cp-btn--ghost cp-btn--sm"
@@ -221,7 +224,7 @@ function ContactCard({ user, busyId, onProfile, onMessage, action }: ContactCard
           type="button"
         >
           <MessageCircle size={14} />
-          {busyId === `message:${user.id}` ? 'Đang mở...' : 'Nhắn tin'}
+          {busyId === `message:${user.id}` ? t('messageBusy') : t('messageBtn')}
         </button>
         {action}
       </div>
@@ -265,6 +268,7 @@ export function ContactsPanel({
   onProfileOpened,
   pushToast,
 }: ContactsPanelProps) {
+  const { t } = useTranslation('panels')
   const [query, setQuery] = useState(readContactsQuery)
   const [results, setResults] = useState<ContactUser[]>([])
   const [friends, setFriends] = useState<ContactUser[]>([])
@@ -302,7 +306,7 @@ export function ContactsPanel({
 
   useEffect(() => {
     loadDirectoryAndCurrentSearch().catch((err) => {
-      pushToast(err instanceof Error ? err.message : 'Không thể tải danh bạ!', 'error')
+      pushToast(err instanceof Error ? err.message : t('contactsLoadErr'), 'error')
     })
   }, [])
 
@@ -316,7 +320,7 @@ export function ContactsPanel({
         setMessage('')
         searchUsers(nextQuery)
           .then(setResults)
-          .catch((err) => pushToast(err instanceof Error ? err.message : 'Không thể tìm kiếm!', 'error'))
+          .catch((err) => pushToast(err instanceof Error ? err.message : t('searchErr'), 'error'))
           .finally(() => setIsLoading(false))
         return
       }
@@ -355,14 +359,14 @@ export function ContactsPanel({
   async function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const keyword = query.trim()
-    if (keyword.length < 2) { setResults([]); setMessage('Nhập ít nhất 2 ký tự để tìm kiếm!'); return }
+    if (keyword.length < 2) { setResults([]); setMessage(t('minSearchLen')); return }
     try {
       setIsLoading(true)
       setMessage('')
       updateContactsQuery(keyword)
       setResults(await searchUsers(keyword))
     } catch (err) {
-      pushToast(err instanceof Error ? err.message : 'Không thể tìm kiếm người dùng!', 'error')
+      pushToast(err instanceof Error ? err.message : t('searchUserErr'), 'error')
     } finally {
       setIsLoading(false)
     }
@@ -378,7 +382,7 @@ export function ContactsPanel({
     const isAccepting = user.friendshipStatus === 'pending' && user.requestDirection === 'incoming' && Boolean(user.contactId)
     
     if (user.friendshipStatus === 'pending' && !user.contactId) {
-      pushToast('Dữ liệu liên hệ không đồng bộ. Đang tải lại...', 'error')
+      pushToast(t('syncErr'), 'error')
       await loadDirectoryAndCurrentSearch()
       return
     }
@@ -392,7 +396,7 @@ export function ContactsPanel({
       if (isCancelling && user.contactId) {
         await cancelFriendRequest(user.contactId)
         await loadDirectoryAndCurrentSearch()
-        pushToast('Đã hủy lời mời kết bạn!', 'info')
+        pushToast(t('reqCanceled'), 'info')
         return
       }
       if (isAccepting && user.contactId) {
@@ -403,9 +407,9 @@ export function ContactsPanel({
       }
       await sendFriendRequest(user.id)
       await loadDirectoryAndCurrentSearch()
-      pushToast('Đã gửi lời mời kết bạn!', 'info')
+      pushToast(t('reqSent'), 'info')
     } catch (err) {
-      pushToast(err instanceof Error ? err.message : 'Không thể xử lý lời mời!', 'error')
+      pushToast(err instanceof Error ? err.message : t('reqHandleErr'), 'error')
     } finally {
       pendingContactActionsRef.current.delete(actionKey)
       setBusyId('')
@@ -420,7 +424,7 @@ export function ContactsPanel({
       await loadDirectoryAndCurrentSearch()
       onAccepted(res.conversationId)
     } catch (err) {
-      pushToast(err instanceof Error ? err.message : 'Không thể chấp nhận lời mời!', 'error')
+      pushToast(err instanceof Error ? err.message : t('reqAcceptErr'), 'error')
     } finally { setBusyId('') }
   }
 
@@ -430,9 +434,9 @@ export function ContactsPanel({
       setBusyId(request.id)
       await declineFriendRequest(request.contactId)
       await loadDirectoryAndCurrentSearch()
-      pushToast('Đã từ chối lời mời kết bạn.', 'info')
+      pushToast(t('reqRejected'), 'info')
     } catch (err) {
-      pushToast(err instanceof Error ? err.message : 'Không thể từ chối lời mời!', 'error')
+      pushToast(err instanceof Error ? err.message : t('reqRejectErr'), 'error')
     } finally { setBusyId('') }
   }
 
@@ -442,9 +446,9 @@ export function ContactsPanel({
       setBusyId(friend.id)
       await unfriend(friend.contactId)
       await loadDirectoryAndCurrentSearch()
-      pushToast('Đã hủy kết bạn!', 'info')
+      pushToast(t('unfriended'), 'info')
     } catch (err) {
-      pushToast(err instanceof Error ? err.message : 'Không thể hủy kết bạn!', 'error')
+      pushToast(err instanceof Error ? err.message : t('unfriendErr'), 'error')
     } finally { setBusyId('') }
   }
 
@@ -454,7 +458,7 @@ export function ContactsPanel({
       await onMessage(user)
       closeContactProfile()
     } catch (err) {
-      pushToast(err instanceof Error ? err.message : 'Không thể mở cuộc trò chuyện!', 'error')
+      pushToast(err instanceof Error ? err.message : t('openChatErr'), 'error')
     } finally { setBusyId('') }
   }
 
@@ -469,9 +473,9 @@ export function ContactsPanel({
 
   function confirmUnfriend(friend: ContactUser) {
     setConfirmDialog({
-      title: 'Hủy bạn bè?',
+      title: t('unfriendConfirmTitle'),
       description: `Bạn sẽ hủy kết bạn với ${friend.nickname || friend.fullName}. Hai bạn cần gửi lời mời lại nếu muốn kết bạn tiếp.`,
-      confirmLabel: 'Hủy bạn bè',
+      confirmLabel: t('unfriendConfirmBtn'),
       tone: 'danger',
       onConfirm: () => handleUnfriend(friend),
     })
@@ -492,9 +496,9 @@ export function ContactsPanel({
       <header className="cp-page-header">
         <div className="cp-page-kicker">
           <BookUser size={12} />
-          Danh bạ
+          {t('contactsTitle')}
         </div>
-        <h1 id="contacts-title">Bạn bè &amp; Gợi ý kết bạn</h1>
+        <h1 id="contacts-title">{t('contactsHeader')}</h1>
       </header>
 
       <form className="cp-search" onSubmit={handleSearch}>
@@ -502,7 +506,7 @@ export function ContactsPanel({
         <input
           className="cp-search-input"
           onChange={(e) => handleQueryChange(e.target.value)}
-          placeholder="Tìm theo tên hoặc số điện thoại..."
+          placeholder={t('searchPlaceholderContact')}
           value={query}
         />
         <button
@@ -510,7 +514,7 @@ export function ContactsPanel({
           disabled={isLoading || query.trim().length < 2}
           type="submit"
         >
-          {isLoading ? 'Đang tìm...' : 'Tìm kiếm'}
+          {isLoading ? t('searchingBtn') : t('searchBtn')}
         </button>
       </form>
 
@@ -519,10 +523,10 @@ export function ContactsPanel({
       <div className="cp-grid">
         <ContactSection
           icon={<Users size={15} />}
-          title="Bạn bè"
+          title={t('friendsSection')}
           count={friends.length}
           emptyIcon={<Users size={28} strokeWidth={1.5} />}
-          emptyText="Chưa có người bạn nào!"
+          emptyText={t('noFriends')}
         >
           {friends.map((friend) => (
             <ContactCard
@@ -539,7 +543,7 @@ export function ContactsPanel({
                   type="button"
                 >
                   <UserMinus size={14} />
-                  {busyId === friend.id ? 'Đang xử lý...' : 'Hủy bạn'}
+                  {busyId === friend.id ? t('processingBtn') : t('unfriendAction')}
                 </button>
               }
             />
@@ -548,10 +552,10 @@ export function ContactsPanel({
 
         <ContactSection
           icon={<UserPlus size={15} />}
-          title="Gợi ý kết bạn"
+          title={t('suggestionsSection')}
           count={suggestions.length}
           emptyIcon={<UserPlus size={28} strokeWidth={1.5} />}
-          emptyText="Chưa có gợi ý kết bạn mới!"
+          emptyText={t('noSuggestions')}
         >
           {suggestions.map((user) => (
             <ContactCard
@@ -568,7 +572,7 @@ export function ContactsPanel({
                   type="button"
                 >
                   {user.friendshipStatus === 'pending' && user.requestDirection === 'outgoing' ? <X size={14} /> : <UserPlus size={14} />}
-                  {busyId === user.id ? 'Đang xử lý...' : getActionLabel(user)}
+                  {busyId === user.id ? t('processingBtn') : getActionLabel(user, t)}
                 </button>
               }
             />
@@ -577,10 +581,10 @@ export function ContactsPanel({
 
         <ContactSection
           icon={<Search size={15} />}
-          title="Kết quả tìm kiếm"
+          title={t('searchResultsSection')}
           count={results.length}
           emptyIcon={<SearchX size={28} strokeWidth={1.5} />}
-          emptyText="Chưa có kết quả tìm kiếm!"
+          emptyText={t('noSearchResults')}
         >
           {results.map((user) => (
             <ContactCard
@@ -597,7 +601,7 @@ export function ContactsPanel({
                   type="button"
                 >
                   {user.friendshipStatus === 'pending' && user.requestDirection === 'outgoing' ? <X size={14} /> : <UserPlus size={14} />}
-                  {busyId === user.id ? 'Đang xử lý...' : getActionLabel(user)}
+                  {busyId === user.id ? t('processingBtn') : getActionLabel(user, t)}
                 </button>
               }
             />
@@ -606,10 +610,10 @@ export function ContactsPanel({
 
         <ContactSection
           icon={<Inbox size={15} />}
-          title="Lời mời kết bạn"
+          title={t('friendRequestsSection')}
           count={requests.length}
           emptyIcon={<Ghost size={28} strokeWidth={1.5} />}
-          emptyText="Không có lời mời kết bạn mới!"
+          emptyText={t('noFriendRequests')}
         >
           {requests.map((request) => (
             <article className="cp-card" key={request.id}>
@@ -618,19 +622,19 @@ export function ContactsPanel({
               </div>
               <div className="cp-card-info">
                 <strong>{request.fullName}</strong>
-                <span className="cp-card-handle">{getGenderLabel(request.gender)}</span>
-                <small className="cp-card-bio">{request.address || 'Chưa cập nhật địa chỉ'}</small>
+                <span className="cp-card-handle">{getGenderLabel(request.gender, t)}</span>
+                <small className="cp-card-bio">{request.address || t('addressEmptyCompact')}</small>
               </div>
               <div className="cp-card-actions">
                 <button className="cp-btn cp-btn--ghost cp-btn--sm" onClick={() => openContactProfile(request)} type="button">
-                  <IdCard size={14} /> Hồ sơ
+                  <IdCard size={14} /> {t('profileBtn')}
                 </button>
                 <button className="cp-btn cp-btn--primary cp-btn--sm" disabled={busyId === request.id} onClick={() => handleAcceptRequest(request)} type="button">
                   <Check size={14} />
-                  {busyId === request.id ? 'Đang xử lý...' : 'Chấp nhận'}
+                  {busyId === request.id ? 'Đang xử lý...' : t('statusAcceptReq')}
                 </button>
                 <button className="cp-btn cp-btn--danger cp-btn--sm" disabled={busyId === request.id} onClick={() => handleDeclineRequest(request)} type="button">
-                  <X size={14} /> Từ chối
+                  <X size={14} /> {t('rejectBtn')}
                 </button>
               </div>
             </article>

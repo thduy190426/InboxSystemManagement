@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { CSSProperties, ChangeEvent, FormEvent } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Archive, ArchiveRestore, BellOff, Check, ImagePlus, Inbox, MessageCircle, MessageSquare, MessageSquareOff, Pin, Plus, Search, SearchX, Trash2, Type, UserRound, Users, X } from 'lucide-react'
@@ -109,6 +110,7 @@ export function InboxPanel({
   onTogglePinConversation,
   pushToast,
 }: InboxPanelProps) {
+  const { t } = useTranslation('panels')
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false)
   const [isCreateGroupClosing, setIsCreateGroupClosing] = useState(false)
   const [groupTitle, setGroupTitle] = useState('')
@@ -209,7 +211,7 @@ export function InboxPanel({
             return
           }
 
-          setGlobalSearchError(error instanceof Error ? error.message : 'Không thể tìm kiếm!')
+          setGlobalSearchError(error instanceof Error ? error.message : t('searchGlobalErr'))
           setGlobalResults(null)
           setIsGlobalSearchOpen(true)
         })
@@ -282,7 +284,7 @@ export function InboxPanel({
     event.preventDefault()
 
     if (groupTitle.trim().length < 2 || groupTitle.trim().length > 50 || selectedMemberIds.length < 2) {
-      pushToast?.('Vui lòng nhập tên nhóm (2-50 ký tự) và chọn ít nhất 2 thành viên!', 'error')
+      pushToast?.(t('groupNameReqErr'), 'error')
       return
     }
 
@@ -307,7 +309,7 @@ export function InboxPanel({
           : conversations
   function getResolvedConversationName(conversation: { type?: string; name: string }) {
     if (conversation.type !== 'group' && conversation.name === 'Hội thoại') {
-      return 'Người dùng không xác định'
+      return t('unknownUser')
     }
     return conversation.name
   }
@@ -322,12 +324,12 @@ export function InboxPanel({
     if (activeFilter === 'unread' && conversation.unreadSenders?.length) {
       return conversation.unreadSenders.length === 1
         ? getLastNameWord(conversation.unreadSenders[0].fullName)
-        : `${conversation.unreadSenders.length} người gửi`
+        : t('nSenders', { count: conversation.unreadSenders.length })
     }
 
     const resolvedName = getResolvedConversationName(conversation)
-    if (resolvedName === 'Người dùng không xác định') {
-      return 'Ẩn danh'
+    if (resolvedName === t('unknownUser')) {
+      return t('anonymous')
     }
 
     return getLastNameWord(resolvedName)
@@ -339,10 +341,10 @@ export function InboxPanel({
     }
 
     if (conversation.lastMessageIsAttachment) {
-      return conversation.lastMessage.replace(/^Đã gửi/, 'Bạn đã gửi')
+      return conversation.lastMessage.replace(/^Đã gửi/, t('youSent'))
     }
 
-    return `Bạn: ${conversation.lastMessage}`
+    return `${t('youSent')} ${conversation.lastMessage}`
   }
 
   function renderStripAvatar(conversation: Conversation) {
@@ -379,7 +381,7 @@ export function InboxPanel({
   }
 
   return (
-    <section className={`inbox-panel ${isCollapsed ? 'is-collapsed' : ''}`} aria-label="Danh sách hội thoại">
+    <section className={`inbox-panel ${isCollapsed ? 'is-collapsed' : ''}`} aria-label={t('inboxLabel')}>
       <header className="panel-header">
         <div>
           <span className="section-kicker" >
@@ -397,13 +399,13 @@ export function InboxPanel({
               setIsCreateGroupClosing(false)
               setIsCreateGroupOpen(true)
             }}
-            title="Tạo nhóm"
+            title={t('createGroupTitle')}
             type="button"
           >
             <Plus size={20} />
           </button>
           {onClosePanel ? (
-            <button className="icon-button inbox-close-btn" onClick={onClosePanel} title="Đóng danh sách" type="button">
+            <button className="icon-button inbox-close-btn" onClick={onClosePanel} title={t('closeList')} type="button">
               <X size={18} />
             </button>
           ) : null}
@@ -413,14 +415,14 @@ export function InboxPanel({
       <label className="search-field">
         <Search size={18} />
         <input
-          aria-label="Tìm kiếm hội thoại"
+          aria-label={t('searchConvLabel')}
           onChange={handleQueryChange}
           onFocus={() => {
             if (query.trim().length >= 2) {
               setIsGlobalSearchOpen(true)
             }
           }}
-          placeholder="Tìm kiếm người, nhóm, nội dung..."
+          placeholder={t('searchPlaceholder')}
           type="search"
           value={query}
         />
@@ -436,15 +438,15 @@ export function InboxPanel({
       />
 
       {isGlobalSearchOpen ? (
-        <section className="global-search-panel" aria-label="Kết quả tìm kiếm">
+        <section className="global-search-panel" aria-label={t('globalSearchTitle')}>
           <header>
-            <strong>Tìm kiếm toàn hệ thống</strong>
-            <button onClick={() => setIsGlobalSearchOpen(false)} title="Đóng" type="button">
+            <strong>{t('globalSearchHeader')}</strong>
+            <button onClick={() => setIsGlobalSearchOpen(false)} title={t('closeBtn')} type="button">
               <X size={16} />
             </button>
           </header>
 
-          {isSearchingGlobally ? <div className="global-search-state">Đang tìm...</div> : null}
+          {isSearchingGlobally ? <div className="global-search-state">{t('searchingTxt')}</div> : null}
           {globalSearchError ? (
             <div className="global-search-state is-error">{globalSearchError}</div>
           ) : null}
@@ -452,14 +454,14 @@ export function InboxPanel({
             <div className="global-search-state">
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                 <SearchX size={24} strokeWidth={1.5} style={{ opacity: 0.5 }} />
-                <span>Không có kết quả phù hợp.</span>
+                <span>{t('noResults')}</span>
               </div>
             </div>
           ) : null}
 
           {globalResults?.conversations.length ? (
             <div className="global-search-section">
-              <span>Hội thoại</span>
+              <span>{t('tabConversations')}</span>
               {globalResults.conversations.map((conversation) => (
                 <button
                   key={conversation.id}
@@ -479,7 +481,7 @@ export function InboxPanel({
 
           {globalResults?.messages.length ? (
             <div className="global-search-section">
-              <span>Tin nhắn</span>
+              <span>{t('tabMessages')}</span>
               {globalResults.messages.map((message) => (
                 <button
                   key={message.id}
@@ -488,7 +490,7 @@ export function InboxPanel({
                 >
                   <MessageSquare size={18} />
                   <span>
-                    <strong>{message.text || 'Tin nhắn đính kèm'}</strong>
+                    <strong>{message.text || t('attachmentMsg')}</strong>
                     <small>
                       {message.conversationName} - {message.senderName}
                       {message.time ? ` - ${message.time}` : ''}
@@ -501,7 +503,7 @@ export function InboxPanel({
 
           {globalResults?.users.length ? (
             <div className="global-search-section">
-              <span>Người dùng</span>
+              <span>{t('tabUsers')}</span>
               {globalResults.users.map((user) => (
                 <button
                   disabled={user.friendshipStatus === 'blocked'}
@@ -536,7 +538,7 @@ export function InboxPanel({
       ) : null}
 
       {stripConversations.length > 0 ? (
-        <div className="friend-status-strip" aria-label="Trạng thái bạn bè">
+        <div className="friend-status-strip" aria-label={t('friendStatusLabel')}>
           {stripConversations.map((conversation) => (
             <button
               className={
@@ -557,13 +559,13 @@ export function InboxPanel({
         </div>
       ) : null}
 
-      <div className="quick-filters" aria-label="Bộ lọc hội thoại">
+      <div className="quick-filters" aria-label={t('quickFiltersLabel')}>
         <button
           className={activeFilter === 'all' ? 'is-active' : ''}
           onClick={() => onFilterChange('all')}
           type="button"
-          title="Tất cả"
-          aria-label="Tất cả"
+          title={t('filterAll')}
+          aria-label={t('filterAll')}
         >
           <Inbox size={18} />
         </button>
@@ -571,8 +573,8 @@ export function InboxPanel({
           className={activeFilter === 'unread' ? 'is-active' : ''}
           onClick={() => onFilterChange('unread')}
           type="button"
-          title="Chưa đọc"
-          aria-label="Chưa đọc"
+          title={t('filterUnread')}
+          aria-label={t('filterUnread')}
         >
           <MessageCircle size={18} />
         </button>
@@ -580,8 +582,8 @@ export function InboxPanel({
           className={activeFilter === 'requests' ? 'is-active' : ''}
           onClick={() => onFilterChange('requests')}
           type="button"
-          title="Tin nhắn chờ"
-          aria-label="Tin nhắn chờ"
+          title={t('filterWait')}
+          aria-label={t('filterWait')}
         >
           <MessageSquare size={18} />
         </button>
@@ -589,8 +591,8 @@ export function InboxPanel({
           className={activeFilter === 'group' ? 'is-active' : ''}
           onClick={() => onFilterChange('group')}
           type="button"
-          title="Nhóm"
-          aria-label="Nhóm"
+          title={t('filterGroup')}
+          aria-label={t('filterGroup')}
         >
           <Users size={18} />
         </button>
@@ -598,8 +600,8 @@ export function InboxPanel({
           className={activeFilter === 'archived' ? 'is-active' : ''}
           onClick={() => onFilterChange('archived')}
           type="button"
-          title="Lưu trữ"
-          aria-label="Lưu trữ"
+          title={t('filterArchived')}
+          aria-label={t('filterArchived')}
         >
           <Archive size={18} />
         </button>
@@ -658,7 +660,7 @@ export function InboxPanel({
               <span className="conversation-topline">
                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0, flex: '1 1 auto', fontSize: 'inherit', color: 'inherit' }}>
                   <strong>{getResolvedConversationName(conversation)}</strong>
-                  {conversation.muted ? <BellOff size={14} aria-label="Đã tắt tiếng" style={{ flexShrink: 0, color: 'var(--subtle)' }} /> : null}
+                  {conversation.muted ? <BellOff size={14} aria-label={t('mutedAria')} style={{ flexShrink: 0, color: 'var(--subtle)' }} /> : null}
                 </span>
               </span>
               <span className="conversation-preview">{getConversationPreview(conversation)}</span>
@@ -670,10 +672,10 @@ export function InboxPanel({
               {activeFilter === 'archived' ? (
                 <span className="restore-chip">
                   <ArchiveRestore size={14} />
-                  <span>Khôi phục</span>
+                  <span>{t('restoreBtn')}</span>
                 </span>
               ) : null}
-              {conversation.pinned ? <Pin size={14} aria-label="Đã ghim" /> : null}
+              {conversation.pinned ? <Pin size={14} aria-label={t('pinnedAria')} /> : null}
               {conversation.lastMessageByMe ? (
                 messagesByConversation?.[conversation.id]?.at(-1)?.state === 'seen' || !messagesByConversation?.[conversation.id] ? (
                   <AvatarFallback
@@ -692,7 +694,7 @@ export function InboxPanel({
           <div className="empty-state">
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
               <MessageSquareOff size={32} strokeWidth={1.5} />
-              <span>Không tìm thấy hội thoại phù hợp!</span>
+              <span>{t('noMatchingConv')}</span>
             </div>
           </div>
         ) : null}
@@ -715,7 +717,7 @@ export function InboxPanel({
             type="button"
           >
             <Pin size={16} />
-            <span>{conversations.find(c => c.id === conversationMenu.conversationId)?.pinned ? 'Bỏ ghim' : 'Ghim'}</span>
+            <span>{conversations.find(c => c.id === conversationMenu.conversationId)?.pinned ? t('unpinBtn') : t('pinBtn')}</span>
           </button>
           <button
             className="is-danger"
@@ -723,7 +725,7 @@ export function InboxPanel({
             type="button"
           >
             <Trash2 size={16} />
-            <span>Xóa</span>
+            <span>{t('deleteBtn')}</span>
           </button>
         </div>
       ) : null}
@@ -737,31 +739,31 @@ export function InboxPanel({
                   <Users size={22} />
                 </div>
                 <div>
-                  <h2 style={{ margin: 0, fontSize: '18px' }}>Tạo nhóm</h2>
-                  <p style={{ margin: 0, marginTop: '4px' }}>Đặt tên, avatar và chọn thành viên.</p>
+                  <h2 style={{ margin: 0, fontSize: '18px' }}>{t('createGroupTitle')}</h2>
+                  <p style={{ margin: 0, marginTop: '4px' }}>{t('createGroupDesc')}</p>
                 </div>
               </div>
-              <button className="icon-button" onClick={closeCreateGroup} type="button" title="Đóng">
+              <button className="icon-button" onClick={closeCreateGroup} type="button" title={t('closeBtn')}>
                 <X size={18} />
               </button>
             </div>
 
             <label className="group-field">
               <span >
-                <Type size={16} /> Tên nhóm
+                <Type size={16} /> {t('groupNameInput')}
               </span>
               <input
                 autoFocus
                 maxLength={50}
                 onChange={(event) => setGroupTitle(event.target.value)}
-                placeholder="Nhập tên nhóm (2-50 ký tự)"
+                placeholder={t('groupNamePlaceholder')}
                 value={groupTitle}
               />
             </label>
 
             <label className="group-avatar-picker">
               <ImagePlus size={18} />
-              <span>{groupAvatar ? groupAvatar.name : 'Chọn avatar nhóm'}</span>
+              <span>{groupAvatar ? groupAvatar.name : t('groupAvatarPlaceholder')}</span>
               <input
                 accept="image/*"
                 onChange={(event) => setGroupAvatar(event.target.files?.[0] ?? null)}
@@ -772,9 +774,9 @@ export function InboxPanel({
             <div className="group-member-picker">
               <div className="group-member-title">
                 <strong >
-                  <Users size={16} /> Thành viên
+                  <Users size={16} /> {t('membersLabel')}
                 </strong>
-                <span>{selectedMemberIds.length} đã chọn</span>
+                <span>{t('nSelected', { count: selectedMemberIds.length })}</span>
               </div>
               <div className="group-member-list">
                 {friends.map((friend) => (
@@ -795,7 +797,7 @@ export function InboxPanel({
                   <div className="empty-state">
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                       <Users size={32} strokeWidth={1.5} />
-                      <span>Chưa có bạn bè để tạo nhóm!</span>
+                      <span>{t('noFriendsForGroup')}</span>
                     </div>
                   </div>
                 ) : null}
@@ -812,16 +814,16 @@ export function InboxPanel({
               }
               title={
                 groupTitle.trim().length < 2 
-                  ? 'Tên nhóm phải có ít nhất 2 ký tự'
+                  ? t('groupNameMinLen')
                   : selectedMemberIds.length < 2 
-                    ? 'Nhóm phải có ít nhất 2 thành viên khác'
+                    ? t('groupMinMembers')
                     : ''
               }
               type="submit"
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: (groupTitle.trim().length < 2 || selectedMemberIds.length < 2) ? 0.6 : 1 }}
             >
               {isCreatingGroup ? null : <Check size={18} />}
-              {isCreatingGroup ? 'Đang tạo...' : 'Tạo nhóm'}
+              {isCreatingGroup ? t('creatingGroupTxt') : t('createGroupBtn')}
             </button>
           </form>
         </div>

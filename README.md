@@ -1,4 +1,4 @@
-# Inbox System Management (Real-time Chat Platform)
+﻿# Inbox System Management (Real-time Chat Platform)
 
 ![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![Vite](https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E)
@@ -21,7 +21,7 @@ The core objective of the project is to provide a secure, user-friendly, and rob
 ## Key Features
 
 ### 1. Real-time Chat
-- One-on-one (1-1) and group messaging with instant response speeds powered by WebSockets (`Socket.IO`).
+- One-on-one (1-1) and group messaging with instant response speeds powered by WebSockets (Socket.IO).
 - Support for diverse content types: Text, images, videos, audio (voice messages), file attachments, and **GIPHY (GIFs)**.
 - Advanced message actions (Context menu):
   - Reply to messages
@@ -37,7 +37,7 @@ The core objective of the project is to provide a secure, user-friendly, and rob
 - Clear chronological date separation.
 
 ### 2. Group & Chat Management
-- Create and manage in-depth group chats with robust validation logic.
+- Create and manage in-depth group chats with robust validation logic (strict requirements for minimum members and group name inputs).
 - Group roles: Owner and Member.
 - Group settings: Rename and change group avatars.
 - Member approval via Join Requests or Invite Links.
@@ -59,14 +59,15 @@ The core objective of the project is to provide a secure, user-friendly, and rob
 - Real-time activity status: Online, Offline, Busy, Away, complete with an online duration badge.
 
 ### 5. Notification System
-- Web Push Notifications to keep users updated even when the app tab is closed.
-- Lively in-app notifications for new messages, friend requests, missed calls, and other interactions.
+- Web Push Notifications to keep updates flowing even when the tab is closed.
+- Lively in-app notifications (Toasts) for new messages, friend requests, missed calls, and other interactions.
 
 ### 6. Admin Dashboard
 - Modern, comprehensive dashboard specifically for the Administration Team.
 - Clear administrative badge system: Owner, Admin, Moderator, User.
 - Visual statistical charts: Registrations and visits over the last 7 days, total users, active users.
 - Report Management: Review and handle reported messages.
+- Content Moderation: Manage system-wide banned words and blocked file extensions.
 - User Management: View lists, grant permissions, suspend/ban accounts, or intervene to ensure system security.
 
 ### 7. Customization & UX (UI/UX)
@@ -75,7 +76,7 @@ The core objective of the project is to provide a secure, user-friendly, and rob
 - **Dynamic Avatar Support (GIFs):** Users can upload animated GIFs as profile pictures; the system automatically retains the animation without cropping it into a static image.
 - **Social Logins:** Seamlessly authenticate using external providers like **Google** and **Facebook** via OAuth integration.
 - **Stories / Notes (24h):** Post short images, videos, or statuses that automatically disappear after 24 hours.
-- Internationalization (i18n) support, allowing users to flexibly switch interface languages.
+- **Comprehensive Internationalization (i18n):** Full bilingual support (English/Vietnamese) perfectly integrated across all components, from authentication, chat, and settings panels to the admin dashboard.
 - Comprehensive and incredibly smooth Dark/Light Mode across all components.
 - Secure authentication: Login, Registration, Forgot Password, and secure OTP email verification (via Resend or Mailtrap).
 - Direct browser-based Avatar Cropper tool for static images.
@@ -86,22 +87,22 @@ The core objective of the project is to provide a secure, user-friendly, and rob
 
 ## Current Progress & Missing Features (Messenger Clone Parity)
 
-The project has currently completed the vast majority of core features for a real-time messaging system. The Front-end source code (especially the `MessageInput` chat frame) was recently refactored using the Context API to solve "Prop Drilling", making the code cleaner and more scalable. The current UI has also overcome interruption issues caused by missing chunks (`vite:preloadError`).
+The project has currently completed the vast majority of core features for a real-time messaging system. The Front-end source code (especially the \MessageInput\ chat frame) was recently refactored using the Context API to solve "Prop Drilling", making the code cleaner and more scalable. Complete multi-language support (i18n) and advanced group creation logic have also been finalized.
 
 However, to achieve full parity with a complete Facebook Messenger clone, the system still lacks the following features:
 
 1. **In-depth Custom Chat Experience:**
-   - **Gradient Themes:** The system currently supports Dark/Light modes but lacks the ability to change the primary color theme (Gradient) for individual chats (e.g., Love Theme, Halloween...).
+   - **Gradient Themes:** The system currently supports Dark/Light modes but lacks the ability to change the primary color theme (Gradient) for individual chats (e.g., Love Theme, Halloween).
    - **Custom Notification Sounds:** Users cannot yet set different message or ringtone sounds for specific users/groups.
    - **Default Emoji Customization:** The ability to change the default quick-emoji in the bottom right corner (currently fixed as "👍") to any other emoji of choice per conversation.
 
 2. **Advanced Interface & Interactions:**
    - **Chat Bubbles:** The ability to minimize chats into floating bubbles on the screen (especially important if developing a PWA/Mobile version).
-   - **Read Receipts with Avatars:** Instead of just a "Seen" icon, the system should display a small avatar of the person(s) who viewed the message at the bottom (like Messenger).
-   - **Link Previews:** When sending a URL (e.g., YouTube, news articles), the system needs to fetch and display the thumbnail, title, and short description from Meta tags (Open Graph).
+   - **Read Receipts with Avatars:** Instead of just a "Seen" icon, the system should display a small avatar of the person(s) who viewed the message at the bottom.
+   - **Link Previews:** When sending a URL, the system needs to fetch and display the thumbnail, title, and short description from Meta tags (Open Graph).
 
 3. **Social & Video Features:**
-   - **Advanced Polls:** Although the UI foundation exists (`CreatePollModal`), the real-time logic and visual voting progress within group chats need optimization.
+   - **Advanced Polls:** Although the UI foundation exists (\CreatePollModal\), the real-time logic and visual voting progress within group chats need optimization.
    - **Call Filters (AR):** Applying facial filters (AR) during Video Calls.
 
 4. **Advanced Security:**
@@ -117,29 +118,30 @@ However, to achieve full parity with a complete Facebook Messenger clone, the sy
 - **Build Tool:** Vite (Ultra-fast, optimizes development and bundling)
 - **Styling:** Vanilla CSS flexibly combined with CSS Variables for Dark Mode and Glassmorphism.
 - **Supporting Libraries:**
-  - `lucide-react`: Crisp, lightweight, and modern SVG icons.
-  - `emoji-picker-react`: Rich emoji picker integration.
-  - `socket.io-client`: Client-side real-time connection management.
-  - `i18next` & `react-i18next`: Multi-language (i18n) support.
-  - `react-easy-crop`: In-browser avatar processing and cropping tool.
+  - \lucide-react\: Crisp, lightweight, and modern SVG icons.
+  - \emoji-picker-react\: Rich emoji picker integration.
+  - \socket.io-client\: Client-side real-time connection management.
+  - \i18next\ & \eact-i18next\: Full-scale multi-language (i18n) localization.
+  - \eact-easy-crop\: In-browser avatar processing and cropping tool.
 
 ### Backend (Server & Services)
 - **Environment & Framework:** Node.js, ExpressJS
-- **Database:** MySQL (Using the `mysql2` library)
+- **Database:** MySQL (Using the \mysql2\ library)
 - **Real-time Engine:** Socket.IO
 - **Cloud Storage:** Cloudinary (Optimization, secure storage of images, videos, and attachments).
 - **Services & Security:**
-  - `web-push`: Secure Push Notifications implementation.
-  - `resend` & `nodemailer`: Email notifications and OTP delivery services.
-  - `bcryptjs`: Strong one-way password hashing.
-  - `helmet`, `cors`, **Rate Limiting**: Enhanced server security, protection against common web vulnerabilities, and high-frequency request limiting.
-  - `multer`: File upload handling.
+  - \web-push\: Secure Push Notifications implementation.
+  - \esend\ & \
+odemailer\: Email notifications and OTP delivery services.
+  - \cryptjs\: Strong one-way password hashing.
+  - \helmet\, \cors\, **Rate Limiting**: Enhanced server security, protection against common web vulnerabilities, and high-frequency request limiting.
+  - \multer\: File upload handling.
 
 ---
 
 ## Project Directory Structure
 
-```plaintext
+\\\plaintext
 InboxSystemManagement/
 ├── backend/                # Backend Source Code (Node.js & Express)
 │   ├── src/
@@ -162,7 +164,7 @@ InboxSystemManagement/
 │   └── main.tsx            # React application entry point
 ├── package.json            # Frontend dependencies management
 └── README.md               # Project documentation
-```
+\\\
 
 ---
 
@@ -181,11 +183,11 @@ Ensure you have installed and obtained the following:
 
 1. **Initialize Database:**
    - Create a new Database in MySQL.
-   - Run the `.sql` files located in the `database/` directory to initialize the table structures.
+   - Run the \.sql\ files located in the \database/\ directory to initialize the table structures.
 
 2. **Set Environment Variables:**
-   - Navigate to the `backend/` directory, create a file named `.env` based on `.env.example` (if available), or declare the following information:
-     ```env
+   - Navigate to the \ackend/\ directory, create a file named \.env\ based on \.env.example\ (if available), or declare the following information:
+     \\\env
      PORT=5000
      DB_HOST=localhost
      DB_USER=root
@@ -200,33 +202,33 @@ Ensure you have installed and obtained the following:
      MAILTRAP_PASS=your_mailtrap_pass
      VAPID_PUBLIC_KEY=your_vapid_public_key
      VAPID_PRIVATE_KEY=your_vapid_private_key
-     ```
-   - Return to the root directory (where the Frontend is), and create a `.env` file with the variables (Vite requires variables to start with `VITE_`):
-     ```env
+     \\\
+   - Return to the root directory (where the Frontend is), and create a \.env\ file with the variables (Vite requires variables to start with \VITE_\):
+     \\\env
      VITE_GIPHY_API_KEY=your_giphy_api_key
      VITE_FACEBOOK_APP_ID=your_facebook_app_id
      VITE_GOOGLE_CLIENT_ID=your_google_client_id
-     ```
+     \\\
 
 3. **Install Dependencies:**
    - In the **root directory**, open a terminal and run:
-     ```bash
+     \\\ash
      npm install
-     ```
+     \\\
    - Navigate to the **backend** directory, and run:
-     ```bash
+     \\\ash
      cd backend
      npm install
-     ```
+     \\\
 
 4. **Launch the Application:**
-   - Return to the project's root directory, use the following command to SIMULTANEOUSLY launch both Frontend and Backend (Using the `concurrently` library):
-     ```bash
+   - Return to the project's root directory, use the following command to SIMULTANEOUSLY launch both Frontend and Backend (Using the \concurrently\ library):
+     \\\ash
      npm run dev:all
-     ```
+     \\\
    - The system will automatically start:
-     - Frontend at: `http://localhost:5173` (Vite's default)
-     - Backend at: `http://localhost:5000` (based on `.env` configuration)
+     - Frontend at: \http://localhost:5173\ (Vite's default)
+     - Backend at: \http://localhost:5000\ (based on \.env\ configuration)
 
 ---
 
@@ -235,9 +237,9 @@ Ensure you have installed and obtained the following:
 We always welcome contributions to make the system more complete and robust. If you find a bug, have optimization ideas, or want to add a new feature:
 
 1. **Fork** this project to your account.
-2. Create a new branch for your feature or bug fix (`git checkout -b feature/AmazingFeature`).
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
-4. Push to the branch (`git push origin feature/AmazingFeature`).
+2. Create a new branch for your feature or bug fix (\git checkout -b feature/AmazingFeature\).
+3. Commit your changes (\git commit -m 'Add some AmazingFeature'\).
+4. Push to the branch (\git push origin feature/AmazingFeature\).
 5. Open a **Pull Request** for us to review.
 
 Please adhere to the programming and code formatting standards currently used in the project.

@@ -59,6 +59,7 @@ import {
 } from '../../services/api/adminApi'
 import type { AuthUser } from '../../services/api/authApi'
 import { AvatarFallback } from '../ui/AvatarFallback'
+import { useTranslation } from 'react-i18next'
 import { ConfirmDialog, type ConfirmDialogState } from '../ui/ConfirmDialog'
 
 type AdminPageProps = {
@@ -116,17 +117,17 @@ function formatNumber(value: number) {
   return new Intl.NumberFormat('vi-VN').format(value)
 }
 
-function formatChartLabel(label: string) {
+function formatChartLabel(label: string, t: any) {
   const labels: Record<string, string> = {
-    agent: 'Agent',
-    direct: 'Trực tiếp',
-    dismissed: 'Bỏ qua',
-    group: 'Nhóm',
-    owner: 'Owner',
-    pending: 'Chờ xử lý...',
-    reviewed: 'Đã xử lý!',
-    support: 'Hỗ trợ',
-    user: 'Người dùng',
+    agent: t('labelAgent'),
+    direct: t('labelDirect'),
+    dismissed: t('labelDismissed'),
+    group: t('labelGroup'),
+    owner: t('labelOwner'),
+    pending: t('labelPending'),
+    reviewed: t('labelReviewed'),
+    support: t('labelSupport'),
+    user: t('labelUser'),
   }
 
   return labels[label] || label
@@ -197,10 +198,12 @@ function DistributionChart({
   data,
   isLoading,
   tone,
+  t,
 }: {
   data: AdminChartPoint[]
   isLoading: boolean
   tone: 'primary' | 'orange' | 'blue'
+  t: any
 }) {
   const total = data.reduce((sum, point) => sum + point.value, 0)
 
@@ -218,7 +221,7 @@ function DistributionChart({
     ? ['#f59e0b', '#b45309', '#78350f', '#fde68a', '#fcd34d']
     : ['#3b82f6', '#1d4ed8', '#1e3a8a', '#bfdbfe', '#93c5fd']
 
-  const formattedData = data.map(d => ({ ...d, label: formatChartLabel(d.label) }))
+  const formattedData = data.map(d => ({ ...d, label: formatChartLabel(d.label, t) }))
 
   return (
     <div className="admin-distribution" style={{ height: '220px', width: '100%', marginTop: '16px' }}>
@@ -227,7 +230,7 @@ function DistributionChart({
           <Tooltip 
             contentStyle={{ backgroundColor: 'var(--surface)', borderColor: 'var(--line)', borderRadius: '12px', color: 'var(--text)', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
             itemStyle={{ fontWeight: 'bold' }}
-            formatter={(value: any) => [formatNumber(Number(value)), 'Số lượng']}
+            formatter={(value: any) => [formatNumber(Number(value)), t('countLabel')]}
           />
           <Legend 
             wrapperStyle={{ fontSize: '13px', color: 'var(--muted)' }} 
@@ -256,15 +259,15 @@ function DistributionChart({
   )
 }
 
-function formatLastLogin(value: string | null) {
+function formatLastLogin(value: string | null, t: any) {
   if (!value) {
-    return 'Chưa đăng nhập!'
+    return t('notLoggedIn')
   }
 
   const date = new Date(value)
 
   if (Number.isNaN(date.getTime())) {
-    return 'Không rõ!'
+    return t('unknownTime')
   }
 
   const hh = date.getHours().toString().padStart(2, '0')
@@ -277,11 +280,11 @@ function formatLastLogin(value: string | null) {
   return `${hh}:${mm}:${ss} | ${dd}/${MM}/${yyyy}`
 }
 
-function formatReportTime(value: string) {
+function formatReportTime(value: string, t: any) {
   const date = new Date(value)
 
   if (Number.isNaN(date.getTime())) {
-    return 'Không rõ!'
+    return t('unknownTime')
   }
 
   return new Intl.DateTimeFormat('vi-VN', {
@@ -290,32 +293,32 @@ function formatReportTime(value: string) {
   }).format(date)
 }
 
-function getReportStatusLabel(status: MessageReportStatus) {
+function getReportStatusLabel(status: MessageReportStatus, t: any) {
   if (status === 'reviewed') {
-    return 'Đã xử lý!'
+    return t('statusReviewed')
   }
 
   if (status === 'dismissed') {
-    return 'Bỏ qua!'
+    return t('statusDismissed')
   }
 
-  return 'Chờ xử lý...'
+  return t('statusPending')
 }
 
-function getStatusLabel(status: AdminUserStatus) {
+function getStatusLabel(status: AdminUserStatus, t: any) {
   if (status === 'suspended') {
-    return 'Bị khóa'
+    return t('statusSuspended')
   }
 
-  return 'Bình thường'
+  return t('statusNormal')
 }
 
-function getGenderLabel(gender?: string | null) {
-  if (gender === 'male') return 'Nam'
-  if (gender === 'female') return 'Nữ'
-  if (gender === 'other') return 'Khác'
-  if (gender === 'prefer_not_to_say') return 'Không muốn chia sẻ'
-  return 'Chưa cập nhật'
+function getGenderLabel(gender: string | null | undefined, t: any) {
+  if (gender === 'male') return t('genderMale')
+  if (gender === 'female') return t('genderFemale')
+  if (gender === 'other') return t('genderOther')
+  if (gender === 'prefer_not_to_say') return t('genderHidden')
+  return t('genderUnknown')
 }
 
 function createEditState(user: AdminUser): EditUserState {
@@ -373,6 +376,7 @@ function updateAdminQueryParams(params: {
 }
 
 export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
+  const { t } = useTranslation('admin')
   const initialQueryParams = readAdminQueryParams()
   const [timeFilter, setTimeFilter] = useState('30days')
   const [searchQuery, setSearchQuery] = useState(initialQueryParams.search)
@@ -413,14 +417,14 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
     const headers = ['ID', 'Tên', 'Tên hiển thị', 'Email', 'Vai trò', 'Trạng thái', 'Lần cuối đăng nhập', 'Ngày tạo']
     const data = users.map(u => [u.id, u.fullName, u.displayName, u.email, u.role, u.status, u.lastLogin, u.createdAt])
     exportToCSV('users_export.csv', headers, data)
-    pushToast?.('Đã xuất danh sách người dùng thành công', 'info')
+    pushToast?.(t('exportUsersSuccess'), 'info')
   }
 
   const handleExportReports = () => {
     const headers = ['ID', 'Người báo cáo', 'Nội dung (Preview)', 'Lý do', 'Trạng thái', 'Ngày báo cáo']
     const data = reports.map(r => [r.id, r.reporter.name, r.messageText.substring(0, 50), r.reason, r.status, r.createdAt])
     exportToCSV('reports_export.csv', headers, data)
-    pushToast?.('Đã xuất danh sách báo cáo thành công', 'info')
+    pushToast?.(t('exportReportsSuccess'), 'info')
   }
 
   useEffect(() => {
@@ -501,7 +505,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
           setStats(nextStats)
         }
       } catch (error) {
-        const message = getErrorMessage(error, 'Không thể tải thống kê quản trị!')
+        const message = getErrorMessage(error, t('statsLoadErr'))
 
         if (isMounted) {
           setPageError(message)
@@ -540,7 +544,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
           setPageError(null)
         }
       } catch (error) {
-        const message = getErrorMessage(error, 'Không thể tải danh sách người dùng!')
+        const message = getErrorMessage(error, t('usersLoadErr'))
 
         if (isMounted) {
           setUsers([])
@@ -579,7 +583,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
           setPageError(null)
         }
       } catch (error) {
-        const message = getErrorMessage(error, 'Không thể tải danh sách báo cáo!')
+        const message = getErrorMessage(error, t('reportsLoadErr'))
 
         if (isMounted) {
           setReports([])
@@ -624,7 +628,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
     if (reports.length === 0) {
       return (
         <div className="admin-empty-row">
-          {reportStatus === 'pending' ? 'Chưa có báo cáo đang chờ xử lý!' : 'Không có báo cáo phù hợp!'}
+          {reportStatus === 'pending' ? t('noPendingReports') : t('noMatchingReports')}
         </div>
       )
     }
@@ -634,14 +638,14 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
         <div className="message-report-main">
           <div className="message-report-topline">
             <span className={`report-status-badge status-${report.status}`}>
-              {getReportStatusLabel(report.status)}
+              {getReportStatusLabel(report.status, t)}
             </span>
-            <small>{formatReportTime(report.createdAt)}</small>
+            <small>{formatReportTime(report.createdAt, t)}</small>
           </div>
           <strong>{report.reportedUser.name}</strong>
           <p>{report.messageText || `[${report.messageType}]`}</p>
           <small>
-            Báo cáo bởi {report.reporter.name} trong {report.conversationName}
+            {t('reportedBy', { reporter: report.reporter.name, conversation: report.conversationName })}
           </small>
         </div>
         <div className="message-report-actions">
@@ -651,7 +655,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
             type="button"
           >
             {busyReportId === report.id ? <Loader2 size={15} /> : <CheckCircle2 size={15} />}
-            Xử lý
+            {t('actionReview')}
           </button>
           <button
             disabled={busyReportId === report.id || report.status === 'dismissed'}
@@ -659,7 +663,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
             type="button"
           >
             <XCircle size={15} />
-            Bỏ qua
+            {t('actionDismiss')}
           </button>
         </div>
       </article>
@@ -670,7 +674,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
     if (isUsersLoading) {
       return Array.from({ length: 5 }).map((_, i) => (
         <tr key={i} className="skeleton-row">
-          <td data-label="Người dùng">
+          <td data-label={t('colUser')}>
             <div className="user-cell">
               <div className="skeleton skeleton-avatar"></div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -679,12 +683,12 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
               </div>
             </div>
           </td>
-          <td data-label="Vai trò"><div className="skeleton skeleton-text" style={{ width: '80px', height: '24px', borderRadius: '12px' }}></div></td>
-          <td data-label="Tài khoản"><div className="skeleton skeleton-text" style={{ width: '100px', height: '24px', borderRadius: '12px' }}></div></td>
-          <td data-label="Giới tính"><div className="skeleton skeleton-text" style={{ width: '60px', height: '16px' }}></div></td>
-          <td data-label="Ngày tạo"><div className="skeleton skeleton-text" style={{ width: '120px', height: '16px' }}></div></td>
-          <td data-label="Đăng nhập cuối"><div className="skeleton skeleton-text" style={{ width: '140px', height: '16px' }}></div></td>
-          <td data-label="Thao tác">
+          <td data-label={t('colRole')}><div className="skeleton skeleton-text" style={{ width: '80px', height: '24px', borderRadius: '12px' }}></div></td>
+          <td data-label={t('colAccount')}><div className="skeleton skeleton-text" style={{ width: '100px', height: '24px', borderRadius: '12px' }}></div></td>
+          <td data-label={t('colGender')}><div className="skeleton skeleton-text" style={{ width: '60px', height: '16px' }}></div></td>
+          <td data-label={t('colCreatedAt')}><div className="skeleton skeleton-text" style={{ width: '120px', height: '16px' }}></div></td>
+          <td data-label={t('colLastLogin')}><div className="skeleton skeleton-text" style={{ width: '140px', height: '16px' }}></div></td>
+          <td data-label={t('colActions')}>
             <div className="action-buttons">
               <div className="skeleton skeleton-icon"></div>
               <div className="skeleton skeleton-icon"></div>
@@ -700,7 +704,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
         <tr>
           <td colSpan={7}>
             <div className="admin-empty-row">
-              {debouncedSearch ? 'Không tìm thấy người dùng phù hợp!' : 'Chưa có người dùng nào!'}
+              {debouncedSearch ? t('noMatchingUsers') : t('noUsers')}
             </div>
           </td>
         </tr>
@@ -713,7 +717,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
 
       return (
         <tr key={user.id}>
-          <td data-label="Người dùng">
+          <td data-label={t('colUser')}>
             <div className="user-cell">
               <AvatarFallback className="user-avatar" name={user.fullName} src={user.avatarUrl} />
               <div>
@@ -722,24 +726,24 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
               </div>
             </div>
           </td>
-          <td data-label="Vai trò">
+          <td data-label={t('colRole')}>
             <span className={`role-badge role-${user.role}`}>
               {user.role}
             </span>
           </td>
-          <td data-label="Tài khoản">
+          <td data-label={t('colAccount')}>
             <span className={`status-badge status-${user.status}`}>
               {isLocked ? <Lock size={12} /> : <CheckCircle2 size={12} />}
-              {getStatusLabel(user.status)}
+              {getStatusLabel(user.status, t)}
             </span>
           </td>
-          <td data-label="Giới tính">{getGenderLabel(user.gender)}</td>
-          <td className="text-muted" data-label="Ngày tạo">{user.createdAt ? formatLastLogin(user.createdAt) : 'N/A'}</td>
-          <td className="text-muted" data-label="Đăng nhập cuối">{formatLastLogin(user.lastLogin)}</td>
-          <td data-label="Thao tác">
+          <td data-label={t('colGender')}>{getGenderLabel(user.gender, t)}</td>
+          <td className="text-muted" data-label={t('colCreatedAt')}>{user.createdAt ? formatLastLogin(user.createdAt, t) : t('na')}</td>
+          <td className="text-muted" data-label={t('colLastLogin')}>{formatLastLogin(user.lastLogin, t)}</td>
+          <td data-label={t('colActions')}>
             <div className="action-buttons">
               <button
-                title="Chỉnh sửa"
+                title={t('editTitle')}
                 type="button"
                 onClick={() => setEditUser(createEditState(user))}
               >
@@ -748,14 +752,14 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
               <button
                 className={isLocked ? 'text-success' : 'text-warning'}
                 disabled={isLockBusy}
-                title={isLocked ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}
+                title={isLocked ? t('unlockAccountTitle') : t('lockAccountTitle')}
                 type="button"
                 onClick={() => openLockDialog(user)}
               >
                 {isLockBusy ? <Loader2 size={16} /> : isLocked ? <Unlock size={16} /> : <Lock size={16} />}
               </button>
               <button
-                title="Xóa"
+                title={t('deleteTitle')}
                 className="text-danger"
                 type="button"
                 onClick={() => openDeleteDialog(user)}
@@ -773,7 +777,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
     try {
       setStats(await fetchAdminStats())
     } catch (error) {
-      pushToast?.(getErrorMessage(error, 'Không thể tải lại thống kê quản trị!'), 'error')
+      pushToast?.(getErrorMessage(error, t('statsRefreshErr')), 'error')
     }
   }
 
@@ -787,7 +791,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
 
       setReports(response.reports)
     } catch (error) {
-      pushToast?.(getErrorMessage(error, 'Không thể tải lại báo cáo!'), 'error')
+      pushToast?.(getErrorMessage(error, t('reportsRefreshErr')), 'error')
     }
   }
 
@@ -806,7 +810,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
       pushToast?.(status === 'reviewed' ? 'Đã đánh dấu báo cáo đã xử lý!' : 'Đã bỏ qua báo cáo!', 'info')
       void refreshStats()
     } catch (error) {
-      pushToast?.(getErrorMessage(error, 'Không thể cập nhật báo cáo!'), 'error')
+      pushToast?.(getErrorMessage(error, t('reportUpdateErr')), 'error')
     } finally {
       setBusyReportId(null)
     }
@@ -829,12 +833,12 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
     const password = createUser.password
 
     if (fullName.length < 2) {
-      pushToast?.('Họ tên phải có ít nhất 2 ký tự!', 'error')
+      pushToast?.(t('nameMinLenErr'), 'error')
       return
     }
 
     if (!email) {
-      pushToast?.('Email không được để trống!', 'error')
+      pushToast?.(t('emailEmptyErr'), 'error')
       return
     }
 
@@ -864,7 +868,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
       pushToast?.('Tạo người dùng mới thành công!')
       void refreshStats()
     } catch (error) {
-      pushToast?.(getErrorMessage(error, 'Không thể tạo người dùng!'), 'error')
+      pushToast?.(getErrorMessage(error, t('createUserErr')), 'error')
     } finally {
       setIsCreatingUser(false)
     }
@@ -880,12 +884,12 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
     const email = visibleEditUser.email.trim()
 
     if (fullName.length < 2) {
-      pushToast?.('Họ tên phải có ít nhất 2 ký tự!', 'error')
+      pushToast?.(t('nameMinLenErr'), 'error')
       return
     }
 
     if (!email) {
-      pushToast?.('Email không được để trống!', 'error')
+      pushToast?.(t('emailEmptyErr'), 'error')
       return
     }
 
@@ -901,10 +905,10 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
 
       updateUserInList(response.user)
       setEditUser(null)
-      pushToast?.('Cập nhật người dùng thành công!')
+      pushToast?.(t('updateUserSuccess'))
       void refreshStats()
     } catch (error) {
-      pushToast?.(getErrorMessage(error, 'Không thể cập nhật người dùng!'), 'error')
+      pushToast?.(getErrorMessage(error, t('updateUserErr')), 'error')
     } finally {
       setIsSavingUser(false)
     }
@@ -914,12 +918,10 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
     const isLocked = !user.isActive
 
     setConfirmDialog({
-      title: isLocked ? 'Mở khóa tài khoản' : 'Khóa tài khoản',
-      description: isLocked
-        ? `Tài khoản ${user.name} sẽ có thể đăng nhập và sử dụng hệ thống trở lại!`
-        : `Tài khoản ${user.name} sẽ bị đăng xuất khỏi các phiên hiện tại và không thể đăng nhập cho đến khi được mở khóa!`,
-      confirmLabel: isLocked ? 'Mở khóa' : 'Khóa tài khoản',
-      cancelLabel: 'Hủy',
+      title: isLocked ? t('unlockAccountConfirmTitle') : t('lockAccountConfirmTitle'),
+      description: isLocked ? t('unlockAccountConfirmDesc', { name: user.name }) : t('lockAccountConfirmDesc', { name: user.name }),
+      confirmLabel: isLocked ? t('unlockBtn') : t('lockBtn'),
+      cancelLabel: t('cancelBtn'),
       tone: isLocked ? 'default' : 'danger',
       onConfirm: async () => {
         setBusyLockUserId(user.id)
@@ -928,7 +930,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
           const response = isLocked ? await unlockAdminUser(user.id) : await lockAdminUser(user.id)
 
           updateUserInList(response.user)
-          pushToast?.(isLocked ? 'Đã mở khóa tài khoản!' : 'Đã khóa tài khoản!')
+          pushToast?.(isLocked ? t('unlockedSuccess') : t('lockedSuccess'))
           void refreshStats()
         } finally {
           setBusyLockUserId(null)
@@ -939,10 +941,10 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
 
   function openDeleteDialog(user: AdminUser) {
     setConfirmDialog({
-      title: 'Xóa người dùng',
-      description: `Bạn có chắc muốn xóa ${user.name} khỏi hệ thống?`,
-      confirmLabel: 'Xóa',
-      cancelLabel: 'Hủy',
+      title: t('deleteAccountConfirmTitle'),
+      description: t('deleteAccountConfirmDesc', { name: user.name }),
+      confirmLabel: t('deleteBtn'),
+      cancelLabel: t('cancelBtn'),
       tone: 'danger',
       onConfirm: async () => {
         await deleteUser(user.id)
@@ -951,7 +953,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
           ...currentPagination,
           total: Math.max(0, currentPagination.total - 1),
         }))
-        pushToast?.('Đã xóa người dùng thành công!')
+        pushToast?.(t('deleteAccountSuccess'))
         void refreshStats()
       },
     })
@@ -968,7 +970,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
       await confirmDialog.onConfirm()
       setConfirmDialog(null)
     } catch (error) {
-      pushToast?.(getErrorMessage(error, 'Không thể thực hiện thao tác!'), 'error')
+      pushToast?.(getErrorMessage(error, t('actionErr')), 'error')
     } finally {
       setIsConfirmWorking(false)
     }
@@ -978,15 +980,15 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
     <div className="admin-page-container">
       <header className="admin-header">
         <div className="admin-header-title">
-          <h1>Quản trị hệ thống</h1>
-          <p>Xin chào, {currentUser?.displayName || currentUser?.fullName || 'Admin'}!</p>
+          <h1>{t('pageTitle')}</h1>
+          <p>{t('welcomeMsg', { name: currentUser?.displayName || currentUser?.fullName || 'Admin' })}</p>
         </div>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           <div className="admin-search">
             <Search size={18} className="search-icon" />
             <input
               type="text"
-              placeholder="Tìm kiếm người dùng..."
+              placeholder={t('searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -998,9 +1000,9 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
               onChange={(e) => setTimeFilter(e.target.value)}
               style={{ background: 'transparent', border: 'none', color: 'var(--text)', outline: 'none' }}
             >
-              <option value="7days">7 ngày qua</option>
-              <option value="30days">30 ngày qua</option>
-              <option value="all">Toàn thời gian</option>
+              <option value="7days">{t('filter7Days')}</option>
+              <option value="30days">{t('filter30Days')}</option>
+              <option value="all">{t('filterAllTime')}</option>
             </select>
           </div>
         </div>
@@ -1012,25 +1014,25 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
         <div className="stat-card">
           <div className="stat-icon users-icon"><Users size={24} /></div>
           <div className="stat-info">
-            <h3>Tổng người dùng</h3>
+            <h3>{t('totalUsersTitle')}</h3>
             <p className="stat-value">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '80px', height: '28px', marginTop: '4px' }}></div> : formatNumber(stats.totalUsers)}</p>
-            <span className="stat-trend positive">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '120px', height: '14px', marginTop: '4px' }}></div> : `${formatNumber(stats.suspendedUsers)} tài khoản bị khóa`}</span>
+            <span className="stat-trend positive">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '120px', height: '14px', marginTop: '4px' }}></div> : t('suspendedCount', { count: formatNumber(stats.suspendedUsers) })}</span>
           </div>
         </div>
         <div className="stat-card">
           <div className="stat-icon active-icon"><Activity size={24} /></div>
           <div className="stat-info">
-            <h3>Tài khoản mở khóa</h3>
+            <h3>{t('unlockedUsersTitle')}</h3>
             <p className="stat-value">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '80px', height: '28px', marginTop: '4px' }}></div> : formatNumber(stats.activeUsers)}</p>
-            <span className="stat-trend">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '100px', height: '14px', marginTop: '4px' }}></div> : `${formatNumber(stats.onlineUsers)} đang online`}</span>
+            <span className="stat-trend">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '100px', height: '14px', marginTop: '4px' }}></div> : t('onlineCount', { count: formatNumber(stats.onlineUsers) })}</span>
           </div>
         </div>
         <div className="stat-card">
           <div className="stat-icon alert-icon"><AlertCircle size={24} /></div>
           <div className="stat-info">
-            <h3>Cảnh báo hệ thống</h3>
+            <h3>{t('systemAlertsTitle')}</h3>
             <p className="stat-value">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '80px', height: '28px', marginTop: '4px' }}></div> : formatNumber(stats.alertCount)}</p>
-            <span className="stat-trend negative">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '60px', height: '14px', marginTop: '4px' }}></div> : 'cần xử lý'}</span>
+            <span className="stat-trend negative">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '60px', height: '14px', marginTop: '4px' }}></div> : t('needsAction')}</span>
           </div>
         </div>
       </div>
@@ -1041,9 +1043,9 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
             <div>
               <h2>
                 <BarChart3 size={18} />
-                Người dùng mới
+                {t('newUsersLabel')}
               </h2>
-              <p>7 ngày gần nhất</p>
+              <p>{t('last7DaysLabel')}</p>
             </div>
             <strong>{formatNumber(stats.userGrowth.reduce((sum, point) => sum + point.value, 0))}</strong>
           </div>
@@ -1055,9 +1057,9 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
             <div>
               <h2>
                 <MessageSquare size={18} />
-                Lưu lượng tin nhắn
+                {t('messageVolumeLabel')}
               </h2>
-              <p>7 ngày gần nhất</p>
+              <p>{t('last7DaysLabel')}</p>
             </div>
             <strong>{formatNumber(stats.messageVolume.reduce((sum, point) => sum + point.value, 0))}</strong>
           </div>
@@ -1069,12 +1071,12 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
             <div>
               <h2>
                 <PieChart size={18} />
-                Vai trò tài khoản
+                {t('roleDistributionTitle')}
               </h2>
               <p>Phân bổ người dùng</p>
             </div>
           </div>
-          <DistributionChart data={stats.roleDistribution} isLoading={isStatsLoading} tone="primary" />
+          <DistributionChart t={t} data={stats.roleDistribution} isLoading={isStatsLoading} tone="primary" />
         </section>
 
         <section className="admin-chart-panel">
@@ -1082,12 +1084,12 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
             <div>
               <h2>
                 <AlertCircle size={18} />
-                Trạng thái báo cáo
+                {t('reportStatusTitle')}
               </h2>
-              <p>Toàn bộ báo cáo tin nhắn</p>
+              <p>{t('allReportsLabel')}</p>
             </div>
           </div>
-          <DistributionChart data={stats.reportStatusDistribution} isLoading={isStatsLoading} tone="orange" />
+          <DistributionChart t={t} data={stats.reportStatusDistribution} isLoading={isStatsLoading} tone="orange" />
         </section>
 
         <section className="admin-chart-panel">
@@ -1095,12 +1097,12 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
             <div>
               <h2>
                 <Users size={18} />
-                Kiểu hội thoại
+                {t('conversationTypesTitle')}
               </h2>
-              <p>Trực tiếp, nhóm và hỗ trợ</p>
+              <p>{t('conversationTypesLabel')}</p>
             </div>
           </div>
-          <DistributionChart data={stats.conversationDistribution} isLoading={isStatsLoading} tone="blue" />
+          <DistributionChart t={t} data={stats.conversationDistribution} isLoading={isStatsLoading} tone="blue" />
         </section>
       </div>
 
@@ -1110,25 +1112,25 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
         <div className="section-header">
           <h2>
             <Flag size={18} />
-            Báo cáo tin nhắn
+            {t('messageReportsSection')}
           </h2>
           <div className="report-toolbar">
             <select
               value={reportStatus}
               onChange={(event) => setReportStatus(event.target.value as MessageReportStatus | 'all')}
             >
-              <option value="pending">Chờ xử lý...</option>
-              <option value="reviewed">Đã xử lý!</option>
-              <option value="dismissed">Bỏ qua</option>
-              <option value="all">Tất cả</option>
+              <option value="pending">{t('filterPending')}</option>
+              <option value="reviewed">{t('filterReviewed')}</option>
+              <option value="dismissed">{t('filterDismissed')}</option>
+              <option value="all">{t('filterAll')}</option>
             </select>
             <button className="btn-secondary" disabled={isReportsLoading} onClick={handleExportReports} type="button" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--surface-hover)', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', color: 'var(--text)', cursor: 'pointer' }}>
               <Download size={15} />
-              Xuất CSV
+              {t('exportCSVBtn')}
             </button>
             <button disabled={isReportsLoading} onClick={() => void refreshReports()} type="button">
               {isReportsLoading ? <Loader2 size={15} /> : <Flag size={15} />}
-              Tải lại
+              {t('refreshBtn')}
             </button>
           </div>
         </div>
@@ -1139,15 +1141,15 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
 
       <div className="admin-content-section">
         <div className="section-header">
-          <h2>Danh sách người dùng</h2>
+          <h2>{t('userListSection')}</h2>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button className="btn-secondary" onClick={handleExportUsers} type="button" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--surface-hover)', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', color: 'var(--text)', cursor: 'pointer' }}>
               <Download size={15} />
-              Xuất CSV
+              {t('exportCSVBtn')}
             </button>
             <button className="btn-primary" onClick={() => setCreateUser(emptyCreateUser)} type="button">
               <Plus size={16} />
-              Thêm người dùng
+              {t('addUserBtn')}
             </button>
           </div>
         </div>
@@ -1156,13 +1158,13 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>Người dùng</th>
-                <th>Vai trò</th>
-                <th>Tài khoản</th>
-                <th>Giới tính</th>
-                <th>Ngày tạo</th>
-                <th>Đăng nhập cuối</th>
-                <th>Thao tác</th>
+                <th>{t('colUser')}</th>
+                <th>{t('colRole')}</th>
+                <th>{t('colAccount')}</th>
+                <th>{t('colGender')}</th>
+                <th>{t('colCreatedAt')}</th>
+                <th>{t('colLastLogin')}</th>
+                <th>{t('colActions')}</th>
               </tr>
             </thead>
             <tbody>{tableContent}</tbody>
@@ -1171,7 +1173,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
 
         <div className="admin-pagination">
           <span>
-            {isLoading ? 'Đang tải...' : `${formatNumber(pagination.total)} người dùng`}
+            {isLoading ? t('loadingTxt') : t('usersCount', { count: formatNumber(pagination.total) })}
           </span>
           <div>
             <button
@@ -1179,7 +1181,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
               type="button"
               onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
             >
-              Trước
+              {t('prevBtn')}
             </button>
             <span>
               Trang {pagination.page}/{pagination.totalPages}
@@ -1189,7 +1191,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
               type="button"
               onClick={() => setPage((currentPage) => currentPage + 1)}
             >
-              Sau
+              {t('nextBtn')}
             </button>
           </div>
         </div>
@@ -1201,7 +1203,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
             <button
               className="admin-edit-close"
               disabled={isCreatingUser}
-              title="Đóng"
+              title={t('closeBtnTitle')}
               type="button"
               onClick={() => setCreateUser(null)}
             >
@@ -1212,16 +1214,16 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
               <div>
                 <span className="admin-lock-pill is-open">
                   <Unlock size={13} />
-                  Tài khoản mới
+                  {t('newAccountBadge')}
                 </span>
-                <h2 id="admin-create-title">Thêm người dùng mới</h2>
-                <p>Tài khoản sẽ được kích hoạt ngay sau khi tạo.</p>
+                <h2 id="admin-create-title">{t('createAccountTitle')}</h2>
+                <p>{t('createAccountDesc')}</p>
               </div>
             </div>
 
             <div className="admin-edit-grid">
               <label>
-                Họ tên
+                {t('fullNameLabel')}
                 <input
                   value={createUser.fullName}
                   onChange={(event) =>
@@ -1232,9 +1234,9 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
                 />
               </label>
               <label>
-                Tên hiển thị
+                {t('displayNameLabel')}
                 <input
-                  placeholder="Để trống để dùng họ tên"
+                  placeholder={t('displayNamePlaceholder')}
                   value={createUser.displayName}
                   onChange={(event) =>
                     setCreateUser((current) =>
@@ -1244,7 +1246,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
                 />
               </label>
               <label>
-                Email
+                {t('emailLabel')}
                 <span className="admin-input-with-icon">
                   <Mail size={16} />
                   <input
@@ -1259,7 +1261,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
                 </span>
               </label>
               <label>
-                Mật khẩu
+                {t('passwordLabel')}
                 <span className="admin-input-with-icon">
                   <KeyRound size={16} />
                   <input
@@ -1275,7 +1277,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
                 </span>
               </label>
               <label>
-                Vai trò
+                {t('roleLabel')}
                 <span className="admin-input-with-icon">
                   <ShieldCheck size={16} />
                   <select
@@ -1295,7 +1297,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
             </div>
 
             <div className="admin-edit-note">
-              Mật khẩu cần đáp ứng chính sách bảo mật giống màn hình đăng ký. Email được xác thực sẵn để người dùng có thể đăng nhập ngay.
+              {t('passwordPolicyDesc')}
             </div>
 
             <div className="admin-edit-actions">
@@ -1305,7 +1307,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
               </button>
               <button disabled={isCreatingUser} type="button" onClick={() => void handleCreateUser()}>
                 {isCreatingUser ? <Loader2 size={16} /> : <CheckCircle2 size={16} />}
-                {isCreatingUser ? 'Đang tạo...' : 'Tạo người dùng'}
+                {isCreatingUser ? t('creatingBtn') : t('createBtn')}
               </button>
             </div>
           </section>
@@ -1318,7 +1320,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
             <button
               className="admin-edit-close"
               disabled={isSavingUser || isEditExiting}
-              title="Đóng"
+              title={t('closeBtnTitle')}
               type="button"
               onClick={() => setEditUser(null)}
             >
@@ -1329,16 +1331,16 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
               <div>
                 <span className={`admin-lock-pill ${visibleEditUser.user.isActive ? 'is-open' : 'is-locked'}`}>
                   {visibleEditUser.user.isActive ? <Unlock size={13} /> : <Lock size={13} />}
-                  {visibleEditUser.user.isActive ? 'Bình thường' : 'Đã khóa'}
+                  {visibleEditUser.user.isActive ? t('statusNormalBadge') : t('statusLockedBadge')}
                 </span>
-                <h2 id="admin-edit-title">Chỉnh sửa người dùng</h2>
+                <h2 id="admin-edit-title">{t('editAccountTitle')}</h2>
                 <p>{visibleEditUser.user.id}</p>
               </div>
             </div>
 
             <div className="admin-edit-grid">
               <label>
-                Họ tên
+                {t('fullNameLabel')}
                 <input
                   value={visibleEditUser.fullName}
                   onChange={(event) =>
@@ -1349,9 +1351,9 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
                 />
               </label>
               <label>
-                Tên hiển thị
+                {t('displayNameLabel')}
                 <input
-                  placeholder="Để trống để dùng họ tên"
+                  placeholder={t('displayNamePlaceholder')}
                   value={visibleEditUser.displayName}
                   onChange={(event) =>
                     setVisibleEditUser((current) =>
@@ -1361,7 +1363,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
                 />
               </label>
               <label>
-                Email
+                {t('emailLabel')}
                 <span className="admin-input-with-icon">
                   <Mail size={16} />
                   <input
@@ -1376,7 +1378,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
                 </span>
               </label>
               <label>
-                Vai trò
+                {t('roleLabel')}
                 <span className="admin-input-with-icon">
                   <ShieldCheck size={16} />
                   <select
@@ -1397,8 +1399,8 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
 
             <div className="admin-edit-note">
               {visibleEditUser.user.isActive
-                ? 'Thao tác khóa/mở khóa được thực hiện riêng để đảm bảo revoke phiên đăng nhập đúng nghiệp vụ.'
-                : 'Tài khoản đang bị khóa. Mở khóa tài khoản từ nút khóa/mở khóa trong bảng danh sách.'}
+                ? t('editAccountDescNormal')
+                : t('editAccountDescLocked')}
             </div>
 
             <div className="admin-edit-actions">
@@ -1408,7 +1410,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
               </button>
               <button disabled={isSavingUser || isEditExiting} type="button" onClick={() => void handleSaveUser()}>
                 {isSavingUser ? <Loader2 size={16} /> : <CheckCircle2 size={16} />}
-                {isSavingUser ? 'Đang lưu...' : 'Lưu thay đổi'}
+                {isSavingUser ? t('savingBtn') : t('saveBtn')}
               </button>
             </div>
           </section>

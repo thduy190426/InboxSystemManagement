@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { ChangeEvent, FormEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { useEffect, useMemo, useState, lazy, Suspense } from 'react'
@@ -103,6 +104,7 @@ export function DetailPanel({
   onUpdateQuickEmoji,
   onClose,
 }: DetailPanelProps) {
+  const { t } = useTranslation('panels')
   const [groupTitle, setGroupTitle] = useState(activeConversation.name)
   const [groupAvatar, setGroupAvatar] = useState<File | null>(null)
 
@@ -476,7 +478,7 @@ export function DetailPanel({
                 setDirectNickname('')
                 void onUpdateContactNickname('')
               }}
-              title="Xóa biệt danh"
+              title={t('removeAliasBtn')}
               type="button"
             >
               <X size={16} />
@@ -533,7 +535,7 @@ export function DetailPanel({
                 <button
                   disabled={Boolean(busyAction)}
                   onClick={onCopyGroupInviteLink}
-                  title="Copy link mời"
+                  title={t('copyGroupLinkTitle')}
                   type="button"
                 >
                   <Copy size={15} />
@@ -780,7 +782,7 @@ export function DetailPanel({
                   <p style={{ margin: 0, marginTop: '4px', color: 'var(--muted)', fontSize: '14px' }}>{members.length} thành viên</p>
                 </div>
               </div>
-              <button className="icon-button" onClick={closeMembersModal} type="button" title="Đóng" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--subtle)' }}>
+              <button className="icon-button" onClick={closeMembersModal} type="button" title={t('closeModal')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--subtle)' }}>
                 <X size={18} />
               </button>
             </div>
@@ -827,7 +829,7 @@ export function DetailPanel({
                             handleClearMemberNickname(member.id);
                             setEditingNicknameId(null);
                           }}
-                          title="Xóa biệt danh"
+                          title={t('removeAliasBtn')}
                           type="button"
                           style={{ display: 'grid', placeItems: 'center', width: '28px', height: '28px', background: 'var(--surface-soft)', color: '#ef4444', borderRadius: '4px', cursor: 'pointer', border: '1px solid var(--line)' }}
                         >
@@ -835,7 +837,7 @@ export function DetailPanel({
                         </button>
                         <button
                           onClick={() => setEditingNicknameId(null)}
-                          title="Hủy"
+                          title={t('cancelBtn')}
                           type="button"
                           style={{ display: 'grid', placeItems: 'center', width: '28px', height: '28px', background: 'var(--surface-soft)', color: 'var(--muted)', borderRadius: '4px', cursor: 'pointer', border: '1px solid var(--line)' }}
                         >
@@ -857,7 +859,7 @@ export function DetailPanel({
                   {!editingNicknameId || editingNicknameId !== member.id ? (
                     <button
                       onClick={() => setActionMenuMemberId((prev) => prev === member.id ? null : member.id)}
-                      title="Hành động"
+                      title={t('actionsTitle')}
                       type="button"
                       style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%', background: actionMenuMemberId === member.id ? 'var(--surface-soft)' : 'transparent', border: 'none', cursor: 'pointer', color: 'var(--subtle)' }}
                     >
@@ -874,7 +876,7 @@ export function DetailPanel({
                         }}
                         style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'transparent', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}
                       >
-                        <Tag size={14} /> Đổi biệt danh
+                        <Tag size={14} /> {t('changeAliasMenu')}
                       </button>
 
                       {isGroupOwner && member.id !== currentUserId ? (
@@ -885,7 +887,7 @@ export function DetailPanel({
                               onClick={() => { onUpdateMemberRole(member.id, 'member'); setActionMenuMemberId(null); }}
                               style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'transparent', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}
                             >
-                              <Shield size={14} /> Hạ quyền Admin
+                              <Shield size={14} /> {t('demoteAdminMenu')}
                             </button>
                           ) : member.role !== 'owner' ? (
                             <button
@@ -893,7 +895,7 @@ export function DetailPanel({
                               onClick={() => { onUpdateMemberRole(member.id, 'admin'); setActionMenuMemberId(null); }}
                               style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'transparent', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}
                             >
-                              <ShieldCheck size={14} /> Nâng quyền Admin
+                              <ShieldCheck size={14} /> {t('promoteAdminMenu')}
                             </button>
                           ) : null}
 
@@ -903,7 +905,7 @@ export function DetailPanel({
                               onClick={() => { onTransferOwner(member.id); setActionMenuMemberId(null); }}
                               style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'transparent', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: 'var(--text)' }}
                             >
-                              <UserCog size={14} /> Chuyển Owner
+                              <UserCog size={14} /> {t('transferOwnerMenu')}
                             </button>
                           ) : null}
                           <div style={{ height: '1px', background: 'var(--line)', margin: '4px 0' }} />
@@ -915,7 +917,7 @@ export function DetailPanel({
                         onClick={() => { onRemoveMember(member.id); setActionMenuMemberId(null); }}
                         style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', background: 'transparent', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#ef4444' }}
                       >
-                        <Trash2 size={14} /> Xóa thành viên
+                        <Trash2 size={14} /> {t('removeMemberMenu')}
                       </button>
                     </div>
                   ) : null}
@@ -935,27 +937,27 @@ export function DetailPanel({
                   <Settings2 size={22} />
                 </div>
                 <div>
-                  <h2 style={{ margin: 0, fontSize: '18px' }}>Cập nhật nhóm</h2>
-                  <p style={{ margin: 0, marginTop: '4px', color: 'var(--muted)', fontSize: '14px' }}>Đổi tên và ảnh đại diện</p>
+                  <h2 style={{ margin: 0, fontSize: '18px' }}>{t('updateGroupTitle')}</h2>
+                  <p style={{ margin: 0, marginTop: '4px', color: 'var(--muted)', fontSize: '14px' }}>{t('updateGroupDesc')}</p>
                 </div>
               </div>
-              <button className="icon-button" onClick={closeEditGroupModal} type="button" title="Đóng" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--subtle)' }}>
+              <button className="icon-button" onClick={closeEditGroupModal} type="button" title={t('closeModal')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--subtle)' }}>
                 <X size={18} />
               </button>
             </div>
             
             <div style={{ padding: '24px' }}>
               <label style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-                <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>Tên nhóm</span>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>{t('groupNameInputD')}</span>
                 <input
-                  aria-label="Tên nhóm"
+                  aria-label={t('groupNameAria')}
                   onChange={(event) => setGroupTitle(event.target.value)}
                   value={groupTitle}
                   style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--line-strong)', outline: 'none' }}
                 />
               </label>
               <label style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>Ảnh đại diện</span>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>{t('groupAvatarInputD')}</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <div style={{ width: '48px', height: '48px', flexShrink: 0, borderRadius: '50%', background: 'var(--surface-soft)', border: '1px dashed var(--line-strong)', display: 'grid', placeItems: 'center', color: 'var(--subtle)' }}>
                     {groupAvatar ? <Check size={20} color="var(--primary)" /> : <ImagePlus size={20} />}
@@ -971,14 +973,14 @@ export function DetailPanel({
                 type="button"
                 style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '6px', border: '1px solid var(--line)', background: '#fff', cursor: 'pointer', fontWeight: 600, color: 'var(--text)' }}
               >
-                <X size={16} /> Hủy
+                <X size={16} /> {t('cancelBtn')}
               </button>
               <button
                 disabled={Boolean(busyAction) || (!groupAvatar && groupTitle.trim() === activeConversation.name)}
                 type="submit"
                 style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '6px', border: 'none', background: 'var(--primary)', color: '#fff', cursor: 'pointer', fontWeight: 600 }}
               >
-                <Save size={16} /> Lưu thay đổi
+                <Save size={16} /> {t('saveChangesBtn')}
               </button>
             </div>
           </form>
@@ -994,25 +996,25 @@ export function DetailPanel({
                   <UserPlus size={22} />
                 </div>
                 <div>
-                  <h2 style={{ margin: 0, fontSize: '18px' }}>Thêm thành viên</h2>
-                  <p style={{ margin: 0, marginTop: '4px', color: 'var(--muted)', fontSize: '14px' }}>Mời bạn bè vào nhóm</p>
+                  <h2 style={{ margin: 0, fontSize: '18px' }}>{t('addMemberTitle')}</h2>
+                  <p style={{ margin: 0, marginTop: '4px', color: 'var(--muted)', fontSize: '14px' }}>{t('addMemberDesc')}</p>
                 </div>
               </div>
-              <button className="icon-button" onClick={closeAddMemberModal} type="button" title="Đóng" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--subtle)' }}>
+              <button className="icon-button" onClick={closeAddMemberModal} type="button" title={t('closeModal')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--subtle)' }}>
                 <X size={18} />
               </button>
             </div>
             
             <div style={{ padding: '24px' }}>
               <label style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-                <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>Chọn bạn bè</span>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)' }}>{t('selectFriendLabel')}</span>
                 <select
-                  aria-label="Chọn thành viên"
+                  aria-label={t('selectFriendAria')}
                   onChange={(event) => setSelectedFriendId(event.target.value)}
                   value={selectedFriendId}
                   style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--line-strong)', outline: 'none', background: '#fff' }}
                 >
-                  <option value="">-- Chọn một người --</option>
+                  <option value="">{t('selectFriendPlaceholder')}</option>
                   {addableFriends.map((friend) => (
                     <option key={friend.id} value={friend.id}>
                       {friend.fullName}
@@ -1028,7 +1030,7 @@ export function DetailPanel({
                 type="button"
                 style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '6px', border: '1px solid var(--line)', background: '#fff', cursor: 'pointer', fontWeight: 600, color: 'var(--text)' }}
               >
-                <X size={16} /> Hủy
+                <X size={16} /> {t('cancelBtn')}
               </button>
               <button
                 disabled={Boolean(busyAction) || !selectedFriendId}
@@ -1036,7 +1038,7 @@ export function DetailPanel({
                 type="button"
                 style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '6px', border: 'none', background: 'var(--primary)', color: '#fff', cursor: 'pointer', fontWeight: 600 }}
               >
-                <Check size={16} /> Thêm ngay
+                <Check size={16} /> {t('addNowBtn')}
               </button>
             </div>
           </div>
@@ -1051,18 +1053,18 @@ export function DetailPanel({
                   <Shield size={22} />
                 </div>
                 <div>
-                  <h2 style={{ margin: 0, fontSize: '18px' }}>Tài khoản đã hạn chế</h2>
-                  <p style={{ margin: 0, marginTop: '4px', color: 'var(--muted)', fontSize: '14px' }}>{restrictedContacts.length} tài khoản</p>
+                  <h2 style={{ margin: 0, fontSize: '18px' }}>{t('restrictedAccTitle')}</h2>
+                  <p style={{ margin: 0, marginTop: '4px', color: 'var(--muted)', fontSize: '14px' }}>{t('restrictedAccCount', { count: restrictedContacts.length })}</p>
                 </div>
               </div>
-              <button className="icon-button" onClick={closeRestrictedModal} type="button" title="Đóng" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--subtle)' }}>
+              <button className="icon-button" onClick={closeRestrictedModal} type="button" title={t('closeModal')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--subtle)' }}>
                 <X size={18} />
               </button>
             </div>
             
             <div className="group-member-stack" style={{ padding: '16px 24px 24px', maxHeight: '65vh', overflowY: 'auto' }}>
               <p style={{ fontSize: '13px', color: 'var(--subtle)', marginBottom: '16px', lineHeight: 1.5 }}>
-                Những tài khoản này không thể thấy trạng thái hoạt động hoặc trạng thái đã xem của bạn. Tin nhắn từ họ sẽ không hiển thị thông báo.
+                {t('restrictedAccDesc')}
               </p>
               {restrictedContacts.map((contact) => (
                 <div className="group-detail-member" key={contact.id} style={{ position: 'relative' }}>
@@ -1081,13 +1083,13 @@ export function DetailPanel({
                       }
                     }}
                   >
-                    Bỏ hạn chế
+                    {t('unrestrictBtn')}
                   </button>
                 </div>
               ))}
               {restrictedContacts.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--subtle)' }}>
-                  Chưa có tài khoản nào bị hạn chế.
+                  {t('noRestrictedAcc')}
                 </div>
               )}
             </div>

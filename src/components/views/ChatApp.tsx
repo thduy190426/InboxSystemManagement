@@ -113,6 +113,7 @@ type ChatAppProps = {
 }
 
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 
 type MessagePaginationState = {
   hasMore: boolean
@@ -121,31 +122,31 @@ type MessagePaginationState = {
 }
 
 
-function getAttachmentPreview(message?: Message) {
+function getAttachmentPreview(message: Message | undefined, t: any) {
   const attachment = message?.attachments?.[0]
   const attachmentType = attachment?.type
 
   if (attachment?.mimeType === 'image/gif') {
-    return 'Đã gửi một GIF!'
+    return t('gifSent')
   }
 
   if (attachmentType === 'image') {
-    return 'Đã gửi một ảnh!'
+    return t('imageSent')
   }
 
   if (attachmentType === 'audio') {
-    return 'Đã gửi một tin nhắn thoại!'
+    return t('audioSent')
   }
 
   if (attachmentType === 'video') {
-    return 'Đã gửi một video!'
+    return t('videoSent')
   }
 
   if (attachmentType === 'file') {
-    return 'Đã gửi một tệp!'
+    return t('fileSent')
   }
 
-  return message?.text ?? 'Chưa có tin nhắn!'
+  return message?.text ?? t('noMessage')
 }
 
 function readChatQueryParams() {
@@ -204,6 +205,7 @@ export function ChatApp({
   )
   const [isDetailOpen, setIsDetailOpen] = useState(false)
   const queryClient = useQueryClient()
+  const { t } = useTranslation('chatapp')
 
   const { data: conversations = [], isLoading: isConversationsLoading } = useQuery<Conversation[]>({
     queryKey: ['conversations'],
@@ -389,11 +391,11 @@ export function ChatApp({
         }
 
         window.history.replaceState(null, '', nextPath)
-        pushToast(response.message || 'Đã gửi yêu cầu tham gia nhóm!', 'info')
+        pushToast(response.message || t('groupJoinReqSent'), 'info')
       })
       .catch((error) => {
         window.history.replaceState(null, '', toAppPath({ view: 'chat' }))
-        pushToast(getErrorMessage(error, 'Không thể mở link nhóm!'))
+        pushToast(getErrorMessage(error, t('groupJoinReqErr')))
       })
   }, [pushToast])
 
@@ -722,7 +724,7 @@ export function ChatApp({
         }
       } catch (error) {
         if (isMounted) {
-          setPageErrorMessage(error instanceof Error ? error.message : 'Không thể tải tin nhắn!')
+          setPageErrorMessage(error instanceof Error ? error.message : t('loadMessagesErr'))
         }
       }
     }
@@ -1568,7 +1570,7 @@ export function ChatApp({
           conversation.id === activeConversation.id
             ? {
               ...conversation,
-              lastMessage: getAttachmentPreview(createdMessage),
+              lastMessage: getAttachmentPreview(createdMessage, t),
               lastMessageByMe: true,
               lastMessageIsAttachment: Boolean(createdMessage.attachments?.length),
               lastMessageAt: createdMessage.createdAt ?? null,
@@ -1619,7 +1621,7 @@ export function ChatApp({
           conversation.id === activeConversation.id
             ? {
               ...conversation,
-              lastMessage: 'Đã gửi một GIF!',
+              lastMessage: t('gifSent'),
               lastMessageByMe: true,
               lastMessageIsAttachment: true,
               lastMessageAt: createdMessage.createdAt ?? null,
@@ -1707,7 +1709,7 @@ export function ChatApp({
 
       setConversations((current: Conversation[] = []) =>
         current.map((conversation) =>
-          conversation.id === activeConversation.id && conversation.lastMessage !== 'Chưa có tin nhắn!'
+          conversation.id === activeConversation.id && conversation.lastMessage !== t('noMessage')
             ? {
               ...conversation,
               lastMessage:
@@ -1743,7 +1745,7 @@ export function ChatApp({
         (message) => message.id !== messageId,
       )
       const nextLastMessageItem = nextMessages.at(-1)
-      const nextLastMessage = getAttachmentPreview(nextLastMessageItem)
+      const nextLastMessage = getAttachmentPreview(nextLastMessageItem, t)
       const nextLastTime = nextLastMessageItem?.time ?? ''
 
       setMessagesByConversation((current) => ({
@@ -1788,7 +1790,7 @@ export function ChatApp({
       }))
       setConversations(nextConversations)
     } catch (error) {
-      pushToast(getErrorMessage(error, 'Không thể xóa tin nhắn!'))
+      pushToast(getErrorMessage(error, t('deleteMsgErr')))
     } finally {
       setBusyMessageId('')
     }
@@ -1841,7 +1843,7 @@ export function ChatApp({
       }))
       setConversations(nextConversations)
     } catch (error) {
-      pushToast(getErrorMessage(error, 'Không thể thu hồi tin nhắn!'))
+      pushToast(getErrorMessage(error, t('recallMsgErr')))
     } finally {
       setBusyMessageId('')
     }
@@ -1864,7 +1866,7 @@ export function ChatApp({
         ),
       }))
     } catch (error) {
-      pushToast(getErrorMessage(error, 'Không thể cập nhật ghim tin nhắn!'))
+      pushToast(getErrorMessage(error, t('pinMsgErr')))
     } finally {
       setBusyMessageId('')
     }
@@ -1904,7 +1906,7 @@ export function ChatApp({
           .sort((first: any, second: any) => Number(second.pinned) - Number(first.pinned)),
       )
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể chuyển tiếp tin nhắn!')
+      setErrorMessage(error instanceof Error ? error.message : t('forwardMsgErr'))
       throw error
     } finally {
       setBusyMessageId('')
@@ -1921,12 +1923,12 @@ export function ChatApp({
       const message = await reportMessage(
         activeConversation.id,
         messageId,
-        'Tin nhắn có nội dung không phù hợp hoặc spam!',
+        t('reportMsgTitle'),
       )
 
-      pushToast(message || 'Đã gửi báo cáo đến Admin!', 'info')
+      pushToast(message || t('reportMsgSuccess'), 'info')
     } catch (error) {
-      pushToast(getErrorMessage(error, 'Không thể gửi báo cáo tin nhắn!'))
+      pushToast(getErrorMessage(error, t('reportMsgErr')))
     } finally {
       setBusyMessageId('')
     }
@@ -1950,7 +1952,7 @@ export function ChatApp({
         ),
       }))
     } catch (error) {
-      pushToast(getErrorMessage(error, 'Không thể reaction tin nhắn!'))
+      pushToast(getErrorMessage(error, t('reactMsgErr')))
     } finally {
       setBusyMessageId('')
     }
@@ -1973,7 +1975,7 @@ export function ChatApp({
         ),
       }))
     } catch (error) {
-      pushToast(getErrorMessage(error, 'Không thể thu hồi reaction!'))
+      pushToast(getErrorMessage(error, t('unreactMsgErr')))
     } finally {
       setBusyMessageId('')
     }
@@ -2005,7 +2007,7 @@ export function ChatApp({
           .sort((first: any, second: any) => Number(second.pinned) - Number(first.pinned)),
       )
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể cập nhật ghim!')
+      setErrorMessage(error instanceof Error ? error.message : t('pinUpdateErr'))
     } finally {
       setBusyConversationAction('')
     }
@@ -2035,7 +2037,7 @@ export function ChatApp({
         ),
       )
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể cập nhật tắt tiếng!')
+      setErrorMessage(error instanceof Error ? error.message : t('muteUpdateErr'))
     } finally {
       setBusyConversationAction('')
     }
@@ -2061,9 +2063,9 @@ export function ChatApp({
     }
 
     setConfirmDialog({
-      title: 'Lưu trữ đoạn hội thoại?',
-      description: `Hội thoại "${activeConversation.name}" sẽ được ẩn khỏi danh sách hiện tại.`,
-      confirmLabel: 'Lưu trữ',
+      title: t('archiveTitle'),
+      description: t('archiveDesc', { name: activeConversation.name }),
+      confirmLabel: t('archiveBtn'),
       tone: 'danger',
       onConfirm: archiveActiveConversation,
     })
@@ -2104,7 +2106,7 @@ export function ChatApp({
         window.history.replaceState(null, '', toAppPath({ view: 'chat' }))
       }
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể lưu trữ cuộc trò chuyện!')
+      setErrorMessage(error instanceof Error ? error.message : t('archiveErr'))
     } finally {
       setBusyConversationAction('')
     }
@@ -2119,7 +2121,7 @@ export function ChatApp({
       if (pinned) {
         const pinnedCount = conversations.filter((c: Conversation) => c.pinned).length
         if (pinnedCount >= 3) {
-          pushToast('Chỉ có thể ghim tối đa 3 cuộc hội thoại!', 'error')
+          pushToast(t('pinLimitErr'), 'error')
           return
         }
       }
@@ -2134,9 +2136,9 @@ export function ChatApp({
         return [...next.filter((c: Conversation) => c.pinned), ...next.filter((c: Conversation) => !c.pinned)]
       })
 
-      pushToast(pinned ? 'Đã ghim hội thoại!' : 'Đã bỏ ghim hội thoại!', 'info')
+      pushToast(pinned ? t('pinSuccess') : t('unpinSuccess'), 'info')
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể ghim/bỏ ghim hội thoại!')
+      setErrorMessage(error instanceof Error ? error.message : t('pinErr'))
     } finally {
       setBusyConversationAction('')
     }
@@ -2152,9 +2154,9 @@ export function ChatApp({
       archivedConversations.find((item) => item.id === conversationId)
 
     setConfirmDialog({
-      title: 'Xóa hội thoại?',
-      description: `Hội thoại "${conversation?.name || 'này'}" sẽ bị ẩn khỏi danh sách trò chuyện của bạn.`,
-      confirmLabel: 'Xóa',
+      title: t('deleteTitle'),
+      description: t('deleteDesc', { name: conversation?.name || 'này' }),
+      confirmLabel: t('deleteBtn'),
       tone: 'danger',
       onConfirm: () => deleteConversationFromInbox(conversationId),
     })
@@ -2210,9 +2212,9 @@ export function ChatApp({
         )
       }
 
-      pushToast('Đã xóa hội thoại khỏi danh sách của bạn.', 'info')
+      pushToast(t('deleteSuccess'), 'info')
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể xóa hội thoại!')
+      setErrorMessage(error instanceof Error ? error.message : t('deleteErr'))
     } finally {
       setBusyConversationAction('')
     }
@@ -2226,9 +2228,9 @@ export function ChatApp({
     const conversation = archivedConversations.find((item) => item.id === conversationId)
 
     setConfirmDialog({
-      title: 'Khôi phục hội thoại?',
-      description: `Hội thoại "${conversation?.name || 'này'}" sẽ quay lại danh sách hộp thư.`,
-      confirmLabel: 'Khôi phục',
+      title: t('unarchiveTitle'),
+      description: t('unarchiveDesc', { name: conversation?.name || 'này' }),
+      confirmLabel: t('unarchiveBtn'),
       onConfirm: () => restoreArchivedConversation(conversationId),
     })
   }
@@ -2262,7 +2264,7 @@ export function ChatApp({
       setConversationFilter('all')
       handleSelectConversation(restoredConversation.id)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể khôi phục hội thoại!')
+      setErrorMessage(error instanceof Error ? error.message : t('unarchiveErr'))
     } finally {
       setBusyConversationAction('')
     }
@@ -2274,11 +2276,9 @@ export function ChatApp({
     }
 
     setConfirmDialog({
-      title: activeConversation.blocked ? 'Bỏ chặn người dùng?' : 'Chặn người dùng?',
-      description: activeConversation.blocked
-        ? 'Bạn sẽ có thể nhận và gửi tin nhắn với người này trở lại.'
-        : 'Bạn sẽ không thể nhận và gửi tin nhắn với người này cho đến khi bỏ chặn.',
-      confirmLabel: activeConversation.blocked ? 'Bỏ chặn' : 'Chặn',
+      title: activeConversation.blocked ? t('unblockTitle') : t('blockTitle'),
+      description: activeConversation.blocked ? t('unblockDesc') : t('blockDesc'),
+      confirmLabel: activeConversation.blocked ? t('unblockBtn') : t('blockBtn'),
       tone: activeConversation.blocked ? 'default' : 'danger',
       onConfirm: toggleActiveConversationBlocked,
     })
@@ -2305,7 +2305,7 @@ export function ChatApp({
               ...conversation,
               blocked: isBlocked,
               friendshipStatus: response.friendshipStatus,
-              status: isBlocked ? 'Đã chặn' : conversation.status,
+              status: isBlocked ? t('statusBlocked') : conversation.status,
             }
             : conversation,
         ),
@@ -2315,7 +2315,7 @@ export function ChatApp({
         setDraft('')
       }
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể cập nhật trạng thái chặn!')
+      setErrorMessage(error instanceof Error ? error.message : t('blockErr'))
     } finally {
       setBusyConversationAction('')
     }
@@ -2339,7 +2339,7 @@ export function ChatApp({
       setFriends(nextFriends)
       void response
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể cập nhật biệt danh!')
+      setErrorMessage(error instanceof Error ? error.message : t('nicknameErr'))
     } finally {
       setBusyConversationAction('')
     }
@@ -2363,7 +2363,7 @@ export function ChatApp({
       handleSelectConversation(conversation.id)
       setIsDetailOpen(true)
     } catch (error) {
-      pushToast(getErrorMessage(error, 'Không thể tạo nhóm!'))
+      pushToast(getErrorMessage(error, t('createGroupErr')))
       throw error
     } finally {
       setIsCreatingGroup(false)
@@ -2453,7 +2453,7 @@ export function ChatApp({
       if (error instanceof Error) {
         pushToast(error.message, 'error')
       } else {
-        pushToast('Cập nhật ảnh nền thất bại!', 'error')
+        pushToast(t('bgUpdateErr'), 'error')
       }
     } finally {
       setBusyConversationAction('')
@@ -2481,7 +2481,7 @@ export function ChatApp({
       )
       await refreshActiveGroup(activeConversation.id)
     } catch (error) {
-      pushToast(getErrorMessage(error, 'Không thể cập nhật nhóm!'))
+      pushToast(getErrorMessage(error, t('updateGroupErr')))
       throw error
     } finally {
       setBusyConversationAction('')
@@ -2511,7 +2511,7 @@ export function ChatApp({
       console.log('[QuickEmoji] Đã cập nhật thành công ở giao diện (frontend state)')
     } catch (error) {
       console.error('[QuickEmoji] Lỗi khi gọi API cập nhật:', error)
-      pushToast('Không thể thay đổi biểu tượng cảm xúc', 'error')
+      pushToast(t('emojiUpdateErr'), 'error')
     } finally {
       setBusyConversationAction('')
     }
@@ -2533,7 +2533,7 @@ export function ChatApp({
       }))
       await refreshActiveGroup(activeConversation.id)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể thêm thành viên!')
+      setErrorMessage(error instanceof Error ? error.message : t('addMemberErr'))
     } finally {
       setBusyConversationAction('')
     }
@@ -2545,9 +2545,9 @@ export function ChatApp({
     }
 
     setConfirmDialog({
-      title: 'Xoá thành viên nhóm?',
-      description: 'Thành viên này sẽ không truy cập được nhóm này nữa.',
-      confirmLabel: 'Xoá thành viên',
+      title: t('removeMemberTitle'),
+      description: t('removeMemberDesc'),
+      confirmLabel: t('removeMemberBtn'),
       tone: 'danger',
       onConfirm: () => removeActiveGroupMember(userId),
     })
@@ -2569,7 +2569,7 @@ export function ChatApp({
       }))
       await refreshActiveGroup(activeConversation.id)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể xóa thành viên!')
+      setErrorMessage(error instanceof Error ? error.message : t('removeMemberErr'))
     } finally {
       setBusyConversationAction('')
     }
@@ -2591,7 +2591,7 @@ export function ChatApp({
       }))
       await refreshActiveGroup(activeConversation.id)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể cập nhật biệt danh!')
+      setErrorMessage(error instanceof Error ? error.message : t('nicknameErr'))
     } finally {
       setBusyConversationAction('')
     }
@@ -2613,7 +2613,7 @@ export function ChatApp({
       }))
       await refreshActiveGroup(activeConversation.id)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể cập nhật quyền thành viên!')
+      setErrorMessage(error instanceof Error ? error.message : t('roleUpdateErr'))
     } finally {
       setBusyConversationAction('')
     }
@@ -2625,9 +2625,9 @@ export function ChatApp({
     }
 
     setConfirmDialog({
-      title: 'Chuyển Owner nhóm?',
-      description: 'Bạn sẽ trở thành Admin và thành viên này sẽ có toàn quyền với nhóm!',
-      confirmLabel: 'Chuyển Owner',
+      title: t('transferOwnerTitle'),
+      description: t('transferOwnerDesc'),
+      confirmLabel: t('transferOwnerBtn'),
       tone: 'danger',
       onConfirm: () => transferActiveGroupOwner(userId),
     })
@@ -2649,7 +2649,7 @@ export function ChatApp({
       }))
       await refreshActiveGroup(activeConversation.id)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể chuyển Owner!')
+      setErrorMessage(error instanceof Error ? error.message : t('transferOwnerErr'))
     } finally {
       setBusyConversationAction('')
     }
@@ -2691,9 +2691,9 @@ export function ChatApp({
         ...current,
         [activeConversation.id]: token,
       }))
-      pushToast('Đã tạo link mời mới!', 'info')
+      pushToast(t('createLinkSuccess'), 'info')
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể tạo link mời mới!')
+      setErrorMessage(error instanceof Error ? error.message : t('createLinkErr'))
     } finally {
       setBusyConversationAction('')
     }
@@ -2719,7 +2719,7 @@ export function ChatApp({
       }))
       await refreshActiveGroup(activeConversation.id)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể duyệt yêu cầu tham gia!')
+      setErrorMessage(error instanceof Error ? error.message : t('approveJoinErr'))
     } finally {
       setBusyConversationAction('')
     }
@@ -2731,9 +2731,9 @@ export function ChatApp({
     }
 
     setConfirmDialog({
-      title: 'Rời nhóm chat?',
-      description: 'Bạn sẽ không còn thấy tin nhắn mới trong nhóm này!',
-      confirmLabel: 'Rời nhóm',
+      title: t('leaveGroupTitle'),
+      description: t('leaveGroupDesc'),
+      confirmLabel: t('leaveGroupBtn'),
       tone: 'danger',
       onConfirm: leaveActiveGroup,
     })
@@ -2781,7 +2781,7 @@ export function ChatApp({
           : toAppPath({ view: 'chat' }),
       )
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể rời nhóm!')
+      setErrorMessage(error instanceof Error ? error.message : t('leaveGroupErr'))
     } finally {
       setBusyConversationAction('')
     }
@@ -2793,9 +2793,9 @@ export function ChatApp({
     }
 
     setConfirmDialog({
-      title: 'Giải tán nhóm chat?',
-      description: 'Tất cả thành viên sẽ không còn thấy nhóm này. Hành động này không thể hoàn tác trong ứng dụng.',
-      confirmLabel: 'Giải tán nhóm',
+      title: t('disbandGroupTitle'),
+      description: t('disbandGroupDesc'),
+      confirmLabel: t('disbandGroupBtn'),
       tone: 'danger',
       onConfirm: disbandActiveGroup,
     })
@@ -2845,7 +2845,7 @@ export function ChatApp({
       )
     } catch (error) {
       locallyDisbandedConversationIdsRef.current.delete(activeConversation.id)
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể giải tán nhóm!')
+      setErrorMessage(error instanceof Error ? error.message : t('disbandGroupErr'))
     } finally {
       setBusyConversationAction('')
     }
@@ -2865,7 +2865,7 @@ export function ChatApp({
         direction: 'outgoing',
       })
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Không thể bắt đầu cuộc gọi!')
+      setErrorMessage(error instanceof Error ? error.message : t('startCallErr'))
     }
   }
 
@@ -2893,7 +2893,7 @@ export function ChatApp({
     return (
       <>
         <button
-          aria-label="Đóng danh sách hội thoại"
+          aria-label={t('closeChatList')}
           className={`inbox-backdrop ${isInboxOpen ? 'is-active' : ''}`}
           onClick={() => setIsInboxOpen(false)}
           type="button"
@@ -3072,7 +3072,7 @@ export function ChatApp({
         {renderNavRail()}
         {renderInboxPanel()}
         <section className="loading-panel">
-          {pageErrorMessage || 'Không có hội thoại nào trong tài khoản này!'}
+          {pageErrorMessage || t('noConversations')}
         </section>
         
       </main>
@@ -3132,7 +3132,7 @@ export function ChatApp({
       />
       {isDetailOpen ? (
         <button
-          aria-label="Đóng thông tin hội thoại"
+          aria-label={t('closeChatInfo')}
           className="detail-backdrop"
           onClick={() => setIsDetailOpen(false)}
           type="button"

@@ -12387,3 +12387,33 @@ html.dark, [data-theme='dark'] {
 
 .auth-facebook-btn { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; padding: 12px 16px; background-color: var(--surface); border: 1px solid var(--line); border-radius: 8px; font-weight: 600; cursor: pointer; transition: background-color 0.2s; margin-bottom: 24px; color: var(--text); }  
 .auth-facebook-btn:hover:not(:disabled) { background-color: var(--surface-soft); } 
+
+.sp-select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--bg, #f5f5f5);
+  color: var(--text-color, #1a1a1a);
+  border: 1px solid var(--border-color, #ddd);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  min-width: 140px;
+}
+
+[data-theme='dark'] .sp-select {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.sp-select:focus {
+  border-color: var(--primary, #3b82f6);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+[data-theme='dark'] .sp-select option {
+  background: #2a2a2a;
+  color: #fff;
+}

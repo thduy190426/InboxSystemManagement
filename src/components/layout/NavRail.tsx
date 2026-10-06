@@ -15,14 +15,15 @@ import {
 import type { AuthUser } from '../../services/api/authApi'
 import type { AppView } from '../../types'
 // import { useTheme } from '../providers/ThemeProvider'
+import { useTranslation } from 'react-i18next'
 
-const navItems = [
-  { label: 'Tin nhắn', value: 'chat' as const, icon: MessageCircle },
-  { label: 'Danh bạ', value: 'contacts' as const, icon: Users },
-  { label: 'Hồ sơ', value: 'profile' as const, icon: UserRound },
-  { label: 'Quản trị', value: 'admin' as const, icon: Shield },
-  { label: 'Cài đặt', value: 'settings' as const, icon: Settings },
-  { label: 'Thông báo', value: 'notifications' as const, icon: Bell },
+const navItemsConfig = [
+  { value: 'chat' as const, icon: MessageCircle },
+  { value: 'contacts' as const, icon: Users },
+  { value: 'profile' as const, icon: UserRound },
+  { value: 'admin' as const, icon: Shield },
+  { value: 'settings' as const, icon: Settings },
+  { value: 'notifications' as const, icon: Bell },
 ]
 
 type NavRailProps = {
@@ -46,6 +47,7 @@ export function NavRail({
   onLogout,
 }: NavRailProps) {
   // const { theme, toggleTheme } = useTheme()
+  const { t } = useTranslation('nav')
   const [isRinging, setIsRinging] = useState(false)
   const prevCountRef = useRef(notificationCount)
 
@@ -119,7 +121,7 @@ export function NavRail({
     <aside
       ref={asideRef}
       className={isOpen ? 'nav-rail is-open' : 'nav-rail'}
-      aria-label="Điều hướng chính"
+      aria-label={t('mainNav')}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -128,18 +130,18 @@ export function NavRail({
       <button
         className="sidebar-toggle"
         onClick={onToggleOpen}
-        title={isOpen ? 'Thu gọn sidebar' : 'Mở rộng sidebar'}
+        title={isOpen ? t('collapseSidebar') : t('expandSidebar')}
         type="button"
       >
         {isOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
-        <span>{isOpen ? 'Thu gọn' : 'Mở rộng'}</span>
+        <span>{isOpen ? t('collapse') : t('expand')}</span>
       </button>
 
       <button
         className="profile-avatar-button"
         style={{ margin: '0 auto' }}
         onClick={() => onChangeView('profile')}
-        title="Chỉnh sửa hồ sơ"
+        title={t('editProfile')}
         type="button"
       >
         {currentUser?.avatarUrl ? (
@@ -150,7 +152,7 @@ export function NavRail({
       </button>
 
       <nav className="nav-items">
-        {navItems.map((item) => {
+        {navItemsConfig.map((item) => {
           if (item.value === 'admin' && currentUser?.role !== 'admin') {
             return null
           }
@@ -163,7 +165,7 @@ export function NavRail({
               className={item.value === activeView ? 'nav-button is-active' : 'nav-button'}
               key={item.value}
               onClick={() => onChangeView(item.value)}
-              title={item.label}
+              title={t(item.value)}
               type="button"
             >
               <Icon 
@@ -172,11 +174,11 @@ export function NavRail({
                 className={item.value === 'notifications' && isRinging ? 'animate-ring' : undefined} 
               />
               {badgeCount > 0 ? (
-                <strong className="nav-count-badge" aria-label={`${badgeCount} thông báo mới!`}>
+                <strong className="nav-count-badge" aria-label={t('newNotifications', { count: badgeCount })}>
                   {badgeCount > 99 ? '99+' : badgeCount}
                 </strong>
               ) : null}
-              <span>{item.label}</span>
+              <span>{t(item.value)}</span>
             </button>
           )
         })}
@@ -200,11 +202,11 @@ export function NavRail({
         <button
           className="nav-button nav-settings"
           onClick={onLogout}
-          title="Đăng xuất"
+          title={t('logout')}
           type="button"
         >
           <LogOut size={22} strokeWidth={2.1} />
-          <span>Đăng xuất</span>
+          <span>{t('logout')}</span>
         </button>
       </div>
     </aside>
