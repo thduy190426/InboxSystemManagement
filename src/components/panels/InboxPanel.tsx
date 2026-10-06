@@ -335,16 +335,57 @@ export function InboxPanel({
     return getLastNameWord(resolvedName)
   }
 
+  function translateConversationPreviewText(message: string) {
+    const text = message.trim()
+    const normalized = text.replace(/\s+/g, ' ')
+
+    const endedCallMatch = normalized.match(/^Cuộc gọi:\s*Kết thúc,\s*Thời lượng:\s*(.+)$/i)
+    if (endedCallMatch) {
+      return t('inboxCallEndedDuration', { duration: endedCallMatch[1] })
+    }
+
+    const ongoingCallMatch = normalized.match(/^Cuộc gọi đang diễn ra:\s*Thời lượng\s*(.+)$/i)
+    if (ongoingCallMatch) {
+      return t('inboxCallOngoingDuration', { duration: ongoingCallMatch[1] })
+    }
+
+    if (/^Cuộc gọi:\s*Không bắt máy\.?$/i.test(normalized) || /^Không bắt máy!?$/i.test(normalized)) {
+      return t('inboxCallNoAnswer')
+    }
+
+    if (/^Cuộc gọi:\s*Đã hủy!?$/i.test(normalized) || /^Đã hủy!?$/i.test(normalized)) {
+      return t('inboxCallCanceled')
+    }
+
+    if (/^Cuộc gọi nhỡ!?$/i.test(normalized)) {
+      return t('inboxMissedCall')
+    }
+
+    if (/^Đã từ chối!?$/i.test(normalized)) {
+      return t('inboxDeclined')
+    }
+
+    const knownPreviews: Record<string, string> = {
+      'Đã gửi một GIF!': t('inboxSentGif'),
+      'Đã gửi một ảnh!': t('inboxSentImage'),
+      'Đã gửi một tin nhắn thoại!': t('inboxSentVoice'),
+      'Đã gửi một video!': t('inboxSentVideo'),
+      'Đã gửi một tệp!': t('inboxSentFile'),
+      'Đã gửi một nhãn dán!': t('inboxSentSticker'),
+      'Đã tạo một bình chọn': t('inboxPollCreated'),
+    }
+
+    return knownPreviews[normalized] ?? message
+  }
+
   function getConversationPreview(conversation: Conversation) {
+    const translatedLastMessage = translateConversationPreviewText(conversation.lastMessage)
+
     if (!conversation.lastMessageByMe) {
-      return conversation.lastMessage
+      return translatedLastMessage
     }
 
-    if (conversation.lastMessageIsAttachment) {
-      return conversation.lastMessage.replace(/^Đã gửi/, t('youSent'))
-    }
-
-    return `${t('youSent')} ${conversation.lastMessage}`
+    return `${t('youSent')} ${translatedLastMessage}`
   }
 
   function renderStripAvatar(conversation: Conversation) {
