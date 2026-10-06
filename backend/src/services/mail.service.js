@@ -14,6 +14,7 @@ function initMailClient() {
         host: 'smtp.gmail.com',
         port: 465,
         secure: true,
+        family: 4, // Ép buộc sử dụng IPv4 để tránh lỗi ENETUNREACH IPv6 trên Railway
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS,
