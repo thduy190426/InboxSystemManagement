@@ -12,14 +12,15 @@ function initMailClient() {
     if (!nodemailerTransporter) {
       nodemailerTransporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
-        port: 465,
-        secure: true,
-        family: 4, // Ép buộc sử dụng IPv4 để tránh lỗi ENETUNREACH IPv6 trên Railway
+        port: 587,
+        secure: false,
+        requireTLS: true,
+        family: 4, 
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS,
         },
-        connectionTimeout: 10000, // 10 giây để kết nối
+        connectionTimeout: 10000, 
         greetingTimeout: 10000,
         socketTimeout: 15000,
       });
