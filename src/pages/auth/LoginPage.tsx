@@ -33,6 +33,15 @@ export function LoginPage({
   const [newPassword, setNewPassword] = useState('')
   const [confirmNewPassword, setConfirmNewPassword] = useState('')
   const [isResetting, setIsResetting] = useState(false)
+  const [countdown, setCountdown] = useState(0)
+
+  useEffect(() => {
+    let timer: any
+    if (countdown > 0) {
+      timer = setTimeout(() => setCountdown(countdown - 1), 1000)
+    }
+    return () => clearTimeout(timer)
+  }, [countdown])
 
   async function handleForgotPasswordSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -46,8 +55,12 @@ export function LoginPage({
            setResetCode(res.resetCode)
         }
         setForgotPasswordStep(2)
+        setCountdown(60)
       } catch (err: any) {
         toast.error(err.message || 'Có lỗi xảy ra!')
+        if (err.status === 429) {
+          setCountdown(err.retryAfterSeconds || 60)
+        }
       } finally {
         setIsResetting(false)
       }
@@ -172,8 +185,17 @@ export function LoginPage({
                     />
                   </div>
                 </label>
-                <button className="auth-primary" disabled={isResetting || !resetEmail} type="submit" style={{ marginTop: '16px' }}>
-                  {isResetting ? 'Đang gửi...' : 'Gửi mã OTP'}
+                <button 
+                  className="auth-primary" 
+                  disabled={isResetting || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(resetEmail) || countdown > 0} 
+                  type="submit" 
+                  style={{ marginTop: '16px' }}
+                >
+                  {isResetting 
+                    ? 'Đang gửi...' 
+                    : countdown > 0 
+                      ? `Gửi lại sau ${countdown}s` 
+                      : 'Gửi mã OTP'}
                   <ArrowRight size={18} />
                 </button>
               </>
