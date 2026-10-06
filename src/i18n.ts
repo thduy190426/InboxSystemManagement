@@ -214,6 +214,30 @@ const resources = {
       s5Body: "Data is kept for the time necessary for operational purposes. When an account is disabled or deleted, related data may be handled according to the system retention policy.",
       s6Title: "6. Your Rights",
       s6Body: "You can update your profile, change your password, log out of the current session and contact the administrator for personal data support."
+    },
+    story: {
+      friend: "A friend",
+      newVideoToast: "{{author}} just posted a new video story",
+      newVideoNotification: "{{author}} just posted a new video story",
+      notificationTitle: "New story",
+      yourStory: "Your story",
+      createStory: "Create new story",
+      clickToUpload: "Click to select photo or video",
+      addTextPlaceholder: "Add text to story...",
+      privacyLabel: "Privacy:",
+      privacyPublic: "Public",
+      privacyFriends: "Friends",
+      privacyOnlyMe: "Only me",
+      shareBtn: "Share to story",
+      uploading: "Uploading...",
+      postSuccess: "Story posted successfully!",
+      postError: "Failed to post story!",
+      replyPlaceholder: "Reply...",
+      replySent: "Comment sent",
+      reactSent: "Reacted with {{emoji}}",
+      reactTooltip: "React with {{emoji}}",
+      replyPrefix: "[Story Reply]: ",
+      reactPrefix: "[Story Reaction]: "
     }
   },
   vi: {
@@ -427,6 +451,30 @@ const resources = {
       s5Body: "Dữ liệu được lưu trong thời gian cần thiết cho mục đích vận hành. Khi tài khoản bị vô hiệu hóa hoặc xóa, dữ liệu liên quan có thể được xử lý theo chính sách lưu trữ của hệ thống.",
       s6Title: "6. Quyền của bạn",
       s6Body: "Bạn có thể cập nhật hồ sơ, đổi mật khẩu, đăng xuất khỏi phiên hiện tại và liên hệ quản trị viên để yêu cầu hỗ trợ về dữ liệu cá nhân."
+    },
+    story: {
+      friend: "Một người bạn",
+      newVideoToast: "{{author}} vừa đăng tải 1 video story mới",
+      newVideoNotification: "{{author}} vừa đăng tải 1 video story mới",
+      notificationTitle: "Tin mới",
+      yourStory: "Tin của bạn",
+      createStory: "Tạo tin mới",
+      clickToUpload: "Nhấp để chọn ảnh hoặc video",
+      addTextPlaceholder: "Thêm văn bản vào tin...",
+      privacyLabel: "Quyền riêng tư:",
+      privacyPublic: "Công khai",
+      privacyFriends: "Bạn bè",
+      privacyOnlyMe: "Chỉ mình tôi",
+      shareBtn: "Chia sẻ lên tin",
+      uploading: "Đang tải lên...",
+      postSuccess: "Đã đăng tin thành công!",
+      postError: "Lỗi khi đăng tin!",
+      replyPlaceholder: "Trả lời...",
+      replySent: "Đã gửi bình luận",
+      reactSent: "Đã thả cảm xúc {{emoji}}",
+      reactTooltip: "Thả cảm xúc {{emoji}}",
+      replyPrefix: "[Phản hồi Story]: ",
+      reactPrefix: "[Cảm xúc Story]: "
     }
   }
 };

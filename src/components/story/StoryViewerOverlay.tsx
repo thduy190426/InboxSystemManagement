@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { X, ChevronLeft, ChevronRight, Heart } from 'lucide-react'
 import type { UserStoryGroup } from '../../types'
 import { AvatarFallback } from '../ui/AvatarFallback'
+import { useTranslation } from 'react-i18next'
 
 type StoryViewerOverlayProps = {
   initialGroup: UserStoryGroup
@@ -22,6 +23,7 @@ export function StoryViewerOverlay({ initialGroup, allGroups, onClose, onReply, 
   const [showReactions, setShowReactions] = useState(false)
   const [reactions, setReactions] = useState<Record<string, string>>({})
   const [mounted, setMounted] = useState(false)
+  const { t } = useTranslation('story')
 
   const currentGroup = allGroups[currentGroupIndex]
   const currentItem = currentGroup?.items[currentItemIndex]
@@ -81,18 +83,18 @@ export function StoryViewerOverlay({ initialGroup, allGroups, onClose, onReply, 
 
   const handleSendReply = () => {
     if (replyText.trim()) {
-      onReply(currentGroup.user_id, `[Phản hồi Story]: ${replyText}`)
+      onReply(currentGroup.user_id, `${t('replyPrefix')}${replyText}`)
       setReplyText('')
-      pushToast('Đã gửi bình luận')
+      pushToast(t('replySent'))
     }
   }
 
   const handleReact = (emoji: string) => {
     if (!currentItem) return
     setReactions(prev => ({ ...prev, [currentItem.id]: emoji }))
-    onReply(currentGroup.user_id, `[Cảm xúc Story]: ${emoji}`)
+    onReply(currentGroup.user_id, `${t('reactPrefix')}${emoji}`)
     setShowReactions(false)
-    pushToast(`Đã thả cảm xúc ${emoji}`)
+    pushToast(t('reactSent', { emoji }))
   }
 
   if (!currentItem || !mounted || typeof document === 'undefined') return null
@@ -147,7 +149,7 @@ export function StoryViewerOverlay({ initialGroup, allGroups, onClose, onReply, 
           <input 
             type="text" 
             className="story-reply-input" 
-            placeholder="Trả lời..." 
+            placeholder={t('replyPlaceholder')} 
             value={replyText}
             onChange={e => setReplyText(e.target.value)}
             onKeyDown={e => {
@@ -198,7 +200,7 @@ export function StoryViewerOverlay({ initialGroup, allGroups, onClose, onReply, 
                       transform: currentReaction === emoji ? 'scale(1.2)' : 'scale(1)',
                       transition: 'transform 0.2s',
                     }}
-                    title={`Thả cảm xúc ${emoji}`}
+                    title={t('reactTooltip', { emoji })}
                   >
                     {emoji}
                   </button>

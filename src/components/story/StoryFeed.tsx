@@ -5,6 +5,7 @@ import { storyApi } from '../../services/api/storyApi'
 import type { UserStoryGroup } from '../../types'
 import { getRealtimeSocket } from '../../services/realtime/realtime'
 import { getStoredAuthSession } from '../../services/storage/authStorage'
+import { useTranslation } from 'react-i18next'
 
 type StoryFeedProps = {
   onCreateClick: () => void
@@ -15,6 +16,7 @@ type StoryFeedProps = {
 export function StoryFeed({ onCreateClick, onStoryClick, pushToast }: StoryFeedProps) {
   const user = getStoredAuthSession()?.user
   const [storyGroups, setStoryGroups] = useState<UserStoryGroup[]>([])
+  const { t } = useTranslation('story')
 
   useEffect(() => {
     loadStories()
@@ -26,13 +28,13 @@ export function StoryFeed({ onCreateClick, onStoryClick, pushToast }: StoryFeedP
 
     const handleStoryCreated = (newStory?: any) => {
       if (newStory && String(newStory.user_id) !== String(user?.id) && newStory.media_type === 'video') {
-        const authorName = newStory.user?.display_name || newStory.user?.full_name || 'Một người bạn'
+        const authorName = newStory.user?.display_name || newStory.user?.full_name || t('friend')
         if (pushToast) {
-          pushToast(`${authorName} vừa đăng tải 1 video story mới`, 'info')
+          pushToast(t('newVideoToast', { author: authorName }), 'info')
         }
         import('../../services/core/browserNotifications').then(({ showBrowserNotification }) => {
-          showBrowserNotification('Tin mới', {
-            body: `${authorName} vừa đăng tải 1 video story mới`
+          showBrowserNotification(t('notificationTitle'), {
+            body: t('newVideoNotification', { author: authorName })
           })
         }).catch(err => console.error(err))
       }
@@ -74,14 +76,14 @@ export function StoryFeed({ onCreateClick, onStoryClick, pushToast }: StoryFeedP
           type="button"
         >
           <div className="story-avatar-wrap">
-            <AvatarFallback name={user?.fullName || 'My Story'} src={user?.avatarUrl || ''} />
+            <AvatarFallback name={user?.fullName || t('yourStory')} src={user?.avatarUrl || ''} />
             {!myStoryGroup && (
               <span className="create-story-badge">
                 <Plus size={12} />
               </span>
             )}
           </div>
-          <span className="story-name">Tin của bạn</span>
+          <span className="story-name">{t('yourStory')}</span>
         </button>
 
         {otherStoryGroups.map((group) => (

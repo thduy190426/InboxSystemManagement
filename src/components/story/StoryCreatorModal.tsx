@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { X, Image as ImageIcon, Send } from 'lucide-react'
 import { storyApi } from '../../services/api/storyApi'
+import { useTranslation } from 'react-i18next'
 
 type StoryCreatorModalProps = {
   onClose: () => void
@@ -18,6 +19,7 @@ export function StoryCreatorModal({ onClose, onSuccess, pushToast, isClosing }: 
   const [isUploading, setIsUploading] = useState(false)
   const [mounted, setMounted] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { t } = useTranslation('story')
 
   useEffect(() => {
     setMounted(true)
@@ -37,10 +39,10 @@ export function StoryCreatorModal({ onClose, onSuccess, pushToast, isClosing }: 
     setIsUploading(true)
     try {
       await storyApi.createStory(file, privacy, textContent)
-      pushToast('Đã đăng tin thành công!', 'info')
+      pushToast(t('postSuccess'), 'info')
       onSuccess()
     } catch (err) {
-      pushToast('Lỗi khi đăng tin!', 'error')
+      pushToast(t('postError'), 'error')
     } finally {
       setIsUploading(false)
     }
@@ -52,7 +54,7 @@ export function StoryCreatorModal({ onClose, onSuccess, pushToast, isClosing }: 
     <div className={`story-creator-overlay ${isClosing ? 'is-closing' : ''}`}>
       <div className={`story-creator-modal ${isClosing ? 'is-closing' : ''}`}>
         <header>
-          <h2>Tạo tin mới</h2>
+          <h2>{t('createStory')}</h2>
           <button className="close-btn" onClick={onClose} disabled={isUploading} type="button">
             <X size={20} />
           </button>
@@ -63,7 +65,7 @@ export function StoryCreatorModal({ onClose, onSuccess, pushToast, isClosing }: 
             <>
               <div className="upload-placeholder" onClick={() => fileInputRef.current?.click()}>
                 <ImageIcon size={48} />
-                <p>Nhấp để chọn ảnh hoặc video</p>
+                <p>{t('clickToUpload')}</p>
               </div>
               <input 
                 type="file" 
@@ -87,17 +89,17 @@ export function StoryCreatorModal({ onClose, onSuccess, pushToast, isClosing }: 
             <div className="story-options">
               <input 
                 type="text" 
-                placeholder="Thêm văn bản vào tin..." 
+                placeholder={t('addTextPlaceholder')} 
                 value={textContent}
                 onChange={e => setTextContent(e.target.value)}
                 className="story-text-input"
               />
               <div className="privacy-select">
-                <label>Quyền riêng tư:</label>
+                <label>{t('privacyLabel')}</label>
                 <select value={privacy} onChange={e => setPrivacy(e.target.value)}>
-                  <option value="public">Công khai</option>
-                  <option value="friends">Bạn bè</option>
-                  <option value="only_me">Chỉ mình tôi</option>
+                  <option value="public">{t('privacyPublic')}</option>
+                  <option value="friends">{t('privacyFriends')}</option>
+                  <option value="only_me">{t('privacyOnlyMe')}</option>
                 </select>
               </div>
             </div>
@@ -113,7 +115,7 @@ export function StoryCreatorModal({ onClose, onSuccess, pushToast, isClosing }: 
               type="button"
             >
               <Send size={16} />
-              {isUploading ? 'Đang tải lên...' : 'Chia sẻ lên tin'}
+              {isUploading ? t('uploading') : t('shareBtn')}
             </button>
           )}
         </footer>
