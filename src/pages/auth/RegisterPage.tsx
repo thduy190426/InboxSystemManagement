@@ -11,6 +11,7 @@ import {
   UserPlus,
   Users,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import type { AuthPageProps } from '../../types'
 import registerBg from '../../bg-images/RegisterBG.jpg'
 
@@ -40,7 +41,7 @@ function normalizePhone(value: FormDataEntryValue | null) {
   return phone ? phone.replace(/[()\s.-]/g, '') : ''
 }
 
-function validateRegisterForm(formData: FormData) {
+function validateRegisterForm(formData: FormData, t: (key: string) => string) {
   const fullName = normalizeText(formData.get('fullName'))
   const email = normalizeEmail(formData.get('email'))
   const phone = normalizePhone(formData.get('phone'))
@@ -50,53 +51,53 @@ function validateRegisterForm(formData: FormData) {
   const errors: RegisterErrors = {}
 
   if (!gender) {
-    errors.gender = 'Vui lòng chọn giới tính!'
+    errors.gender = t('register.errors.genderRequired')
   } else if (!['male', 'female', 'other'].includes(gender)) {
-    errors.gender = 'Giới tính không hợp lệ!'
+    errors.gender = t('register.errors.genderInvalid')
   }
 
   if (!fullName) {
-    errors.fullName = 'Vui lòng nhập họ và tên!'
+    errors.fullName = t('register.errors.fullNameRequired')
   } else if (fullName.length < 2) {
-    errors.fullName = 'Họ và tên phải có ít nhất 2 ký tự!'
+    errors.fullName = t('register.errors.fullNameMin')
   } else if (fullName.length > 120) {
-    errors.fullName = 'Họ và tên không được vượt quá 120 ký tự!'
+    errors.fullName = t('register.errors.fullNameMax')
   } else if (!fullNamePattern.test(fullName)) {
-    errors.fullName = 'Chỉ dùng chữ cái, khoảng trắng, dấu gạch nối hoặc dấu nháy!'
+    errors.fullName = t('register.errors.fullNamePattern')
   }
 
   if (!email) {
-    errors.email = 'Vui lòng nhập Email!'
+    errors.email = t('register.errors.emailRequired')
   } else if (email.length > 190) {
-    errors.email = 'Email không được vượt quá 190 ký tự!'
+    errors.email = t('register.errors.emailMax')
   } else if (!emailPattern.test(email)) {
-    errors.email = 'Email chưa đúng định dạng!'
+    errors.email = t('register.errors.emailPattern')
   }
 
   if (phone && !phonePattern.test(phone)) {
-    errors.phone = 'Số điện thoại phải có 9-15 chữ số và có thể bắt đầu bằng dấu +!'
+    errors.phone = t('register.errors.phonePattern')
   }
 
   const passwordRequirements = [
-    password.length >= 8 || 'ít nhất 8 ký tự!',
-    password.length <= 72 || 'không quá 72 ký tự!',
-    !/\s/.test(password) || 'không chứa khoảng trắng!',
-    /[a-z]/.test(password) || 'có chữ thường!',
-    /[A-Z]/.test(password) || 'có chữ hoa!',
-    /[0-9]/.test(password) || 'có chữ số!',
-    /[^A-Za-z0-9]/.test(password) || 'có ký tự đặc biệt!',
+    password.length >= 8 || t('register.errors.passwordLengthMin'),
+    password.length <= 72 || t('register.errors.passwordLengthMax'),
+    !/\s/.test(password) || t('register.errors.passwordNoSpaces'),
+    /[a-z]/.test(password) || t('register.errors.passwordLowercase'),
+    /[A-Z]/.test(password) || t('register.errors.passwordUppercase'),
+    /[0-9]/.test(password) || t('register.errors.passwordNumber'),
+    /[^A-Za-z0-9]/.test(password) || t('register.errors.passwordSpecial'),
   ].filter((requirement): requirement is string => typeof requirement === 'string')
 
   if (!password) {
-    errors.password = 'Vui lòng nhập mật khẩu!'
+    errors.password = t('register.errors.passwordRequired')
   } else if (passwordRequirements.length) {
-    errors.password = `Mật khẩu cần ${passwordRequirements.join(', ')}!`
+    errors.password = `${t('register.errors.passwordNeeds')} ${passwordRequirements.join(', ')}!`
   }
 
   if (!confirmPassword) {
-    errors.confirmPassword = 'Vui lòng nhập lại mật khẩu!'
+    errors.confirmPassword = t('register.errors.confirmPasswordRequired')
   } else if (password && confirmPassword !== password) {
-    errors.confirmPassword = 'Mật khẩu xác nhận không khớp!'
+    errors.confirmPassword = t('register.errors.confirmPasswordMismatch')
   }
 
   return {
@@ -122,6 +123,7 @@ export function RegisterPage({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<RegisterErrors>({})
   const [isFormFilled, setIsFormFilled] = useState(false)
+  const { t } = useTranslation('auth')
 
   function handleFormChange(event: FormEvent<HTMLFormElement>) {
     const formData = new FormData(event.currentTarget)
@@ -145,11 +147,11 @@ export function RegisterPage({
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    const validation = validateRegisterForm(new FormData(event.currentTarget))
+    const validation = validateRegisterForm(new FormData(event.currentTarget), t)
 
     if (Object.keys(validation.errors).length > 0) {
       setFieldErrors(validation.errors)
-      pushToast('Vui lòng kiểm tra lại thông tin đăng ký!', 'error')
+      pushToast(t('register.errors.checkInfo'), 'error')
       return
     }
 
@@ -174,15 +176,15 @@ export function RegisterPage({
         <div className="auth-card-header">
           <span className="section-kicker" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <UserPlus size={14} />
-            Đăng ký
+            {t('register.registerButton')}
           </span>
-          <h1 id="register-title">Tạo tài khoản mới</h1>
-          <p>Tạo tài khoản để bắt đầu quản lý chat ngay hôm nay!</p>
+          <h1 id="register-title">{t('register.title')}</h1>
+          <p>{t('register.subtitle')}</p>
         </div>
 
         <form className="auth-form" onChange={handleFormChange} onSubmit={handleSubmit}>
           <label className="auth-field">
-            <span>Họ và tên</span>
+            <span>{t('register.fullNameLabel')}</span>
             <div className="auth-input-row">
               <User size={18} />
               <input
@@ -190,7 +192,7 @@ export function RegisterPage({
                 maxLength={120}
                 minLength={2}
                 name="fullName"
-                placeholder="Nhập họ và tên tại đây"
+                placeholder={t('register.fullNamePlaceholder')}
                 required
                 type="text"
               />
@@ -201,14 +203,14 @@ export function RegisterPage({
           </label>
 
           <label className="auth-field">
-            <span>Email</span>
+            <span>{t('register.emailLabel')}</span>
             <div className="auth-input-row">
               <Mail size={18} />
               <input
                 autoComplete="email"
                 maxLength={190}
                 name="email"
-                placeholder="Nhập địa chỉ Email tại đây"
+                placeholder={t('register.emailPlaceholder')}
                 required
                 type="email"
               />
@@ -217,7 +219,7 @@ export function RegisterPage({
           </label>
 
           <label className="auth-field">
-            <span>Số điện thoại</span>
+            <span>{t('register.phoneLabel')}</span>
             <div className="auth-input-row">
               <Phone size={18} />
               <input
@@ -225,7 +227,7 @@ export function RegisterPage({
                 inputMode="tel"
                 maxLength={32}
                 name="phone"
-                placeholder="Nhập số điện thoại tại đây"
+                placeholder={t('register.phonePlaceholder')}
                 type="tel"
               />
             </div>
@@ -233,23 +235,23 @@ export function RegisterPage({
           </label>
 
           <label className="auth-field">
-            <span>Giới tính</span>
+            <span>{t('register.genderLabel')}</span>
             <div className="auth-input-row">
               <Users size={18} />
               <select name="gender" required defaultValue="">
                 <option value="" disabled hidden>
-                  Chọn giới tính của bạn
+                  {t('register.genderPlaceholder')}
                 </option>
-                <option value="male">Nam</option>
-                <option value="female">Nữ</option>
-                <option value="other">Khác</option>
+                <option value="male">{t('register.genderMale')}</option>
+                <option value="female">{t('register.genderFemale')}</option>
+                <option value="other">{t('register.genderOther')}</option>
               </select>
             </div>
             {fieldErrors.gender ? <span className="auth-field-error">{fieldErrors.gender}</span> : null}
           </label>
 
           <label className="auth-field">
-            <span>Mật khẩu</span>
+            <span>{t('register.passwordLabel')}</span>
             <div className="auth-input-row">
               <Lock size={18} />
               <input
@@ -257,15 +259,15 @@ export function RegisterPage({
                 maxLength={72}
                 minLength={8}
                 name="password"
-                placeholder="Nhập mật khẩu tại đây"
+                placeholder={t('register.passwordPlaceholder')}
                 required
                 type={showPassword ? 'text' : 'password'}
               />
               <button
-                aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                aria-label={showPassword ? t('register.hidePassword') : t('register.showPassword')}
                 className="password-toggle"
                 onClick={() => setShowPassword((current) => !current)}
-                title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                title={showPassword ? t('register.hidePassword') : t('register.showPassword')}
                 type="button"
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -277,7 +279,7 @@ export function RegisterPage({
           </label>
 
           <label className="auth-field">
-            <span>Xác nhận mật khẩu</span>
+            <span>{t('register.confirmPasswordLabel')}</span>
             <div className="auth-input-row">
               <Lock size={18} />
               <input
@@ -285,19 +287,19 @@ export function RegisterPage({
                 maxLength={72}
                 minLength={8}
                 name="confirmPassword"
-                placeholder="Nhập lại mật khẩu tại đây"
+                placeholder={t('register.confirmPasswordPlaceholder')}
                 required
                 type={showConfirmPassword ? 'text' : 'password'}
               />
               <button
                 aria-label={
                   showConfirmPassword
-                    ? 'Ẩn mật khẩu xác nhận'
-                    : 'Hiện mật khẩu xác nhận'
+                    ? t('register.hideConfirmPassword')
+                    : t('register.showConfirmPassword')
                 }
                 className="password-toggle"
                 onClick={() => setShowConfirmPassword((current) => !current)}
-                title={showConfirmPassword ? 'Ẩn mật khẩu xác nhận' : 'Hiện mật khẩu xác nhận'}
+                title={showConfirmPassword ? t('register.hideConfirmPassword') : t('register.showConfirmPassword')}
                 type="button"
               >
                 {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -311,13 +313,13 @@ export function RegisterPage({
           <label className="auth-check auth-policy">
             <input name="terms" required type="checkbox" />
             <span>
-              Tôi đồng ý với{' '}
+              {t('register.termsStart')}{' '}
               <a href="/terms" target="_blank" rel="noreferrer">
-                Điều khoản sử dụng
+                {t('register.termsLink')}
               </a>{' '}
-              và{' '}
+              {t('register.termsAnd')}{' '}
               <a href="/privacy" target="_blank" rel="noreferrer">
-                Chính sách bảo mật
+                {t('register.privacyLink')}
               </a>
               .
             </span>
@@ -329,19 +331,19 @@ export function RegisterPage({
             type="submit"
           >
             <UserPlus size={18} />
-            {isSubmitting ? 'Đang đăng ký...' : 'Đăng ký'}
+            {isSubmitting ? t('register.registering') : t('register.registerButton')}
           </button>
         </form>
 
         <div className="auth-security">
           <ShieldCheck size={18} />
-          <span>Dữ liệu đăng nhập được bảo vệ bằng xác thực bảo mật.</span>
+          <span>{t('register.securityNotice')}</span>
         </div>
 
         <p className="auth-switch">
-          Đã có tài khoản?
+          {t('register.hasAccount')}
           <button disabled={isSubmitting} onClick={onSwitchMode} type="button">
-            Đăng nhập
+            {t('register.loginNow')}
           </button>
         </p>
       </section>

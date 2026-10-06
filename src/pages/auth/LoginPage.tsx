@@ -6,6 +6,7 @@ import { useGoogleLogin } from '@react-oauth/google'
 import FacebookLoginDefault from '@greatsumini/react-facebook-login'
 const FacebookLogin = (FacebookLoginDefault as any).default || FacebookLoginDefault
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 import type { AuthPageProps } from '../../types'
 import loginBg from '../../bg-images/LoginBG.jpg'
 
@@ -23,6 +24,7 @@ export function LoginPage({
   const [isFormFilled, setIsFormFilled] = useState(false)
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null)
   const recaptchaRef = useRef<ReCAPTCHA>(null)
+  const { t } = useTranslation('auth')
 
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -31,7 +33,7 @@ export function LoginPage({
       }
     },
     onError: () => {
-      toast.error('Đăng nhập bằng Google thất bại. Vui lòng thử lại.')
+      toast.error(t('login.googleLoginFailed'))
     },
   })
 
@@ -88,10 +90,10 @@ export function LoginPage({
         <div className="auth-card-header">
           <span className="section-kicker" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <LogIn size={14} />
-            Đăng nhập
+            {t('login.loginButton')}
           </span>
-          <h1 id="login-title">Chào mừng trở lại!</h1>
-          <p>Tiếp tục quản lý hội thoại khách hàng và đội nhóm của bạn.</p>
+          <h1 id="login-title">{t('login.title')}</h1>
+          <p>{t('login.subtitle')}</p>
         </div>
 
         {errorMessage ? (
@@ -102,14 +104,14 @@ export function LoginPage({
 
         <form className="auth-form" onChange={handleFormChange} onSubmit={handleSubmit}>
           <label className="auth-field" htmlFor="login-email">
-            <span>Email</span>
+            <span>{t('login.emailLabel')}</span>
             <div className="auth-input-row">
               <Mail size={18} />
               <input
                 id="login-email"
                 autoComplete="email"
                 name="email"
-                placeholder="Nhập Email của bạn tại đây"
+                placeholder={t('login.emailPlaceholder')}
                 required
                 type="email"
               />
@@ -117,7 +119,7 @@ export function LoginPage({
           </label>
 
           <label className="auth-field" htmlFor="login-password">
-            <span>Mật khẩu</span>
+            <span>{t('login.passwordLabel')}</span>
             <div className="auth-input-row">
               <Lock size={18} />
               <input
@@ -125,15 +127,15 @@ export function LoginPage({
                 autoComplete="current-password"
                 minLength={6}
                 name="password"
-                placeholder="Nhập mật khẩu"
+                placeholder={t('login.passwordPlaceholder')}
                 required
                 type={showPassword ? 'text' : 'password'}
               />
               <button
-                aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                aria-label={showPassword ? t('login.hidePassword') : t('login.showPassword')}
                 className="password-toggle"
                 onClick={() => setShowPassword((current) => !current)}
-                title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                title={showPassword ? t('login.hidePassword') : t('login.showPassword')}
                 type="button"
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -144,7 +146,7 @@ export function LoginPage({
           <div className="auth-form-row">
             <label className="auth-check">
               <input defaultChecked name="rememberLogin" type="checkbox" />
-              <span>Ghi nhớ đăng nhập</span>
+              <span>{t('login.rememberLogin')}</span>
             </label>
           </div>
 
@@ -161,13 +163,13 @@ export function LoginPage({
             disabled={isSubmitting || !isFormFilled || !recaptchaToken}
             type="submit"
           >
-            {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
+            {isSubmitting ? t('login.loggingIn') : t('login.loginButton')}
             <ArrowRight size={18} />
           </button>
         </form>
 
         <div className="auth-divider">
-          <span>Hoặc</span>
+          <span>{t('login.or')}</span>
         </div>
 
         <button 
@@ -183,7 +185,7 @@ export function LoginPage({
             <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
             <path fill="none" d="M0 0h48v48H0z"></path>
           </svg>
-          Đăng nhập bằng Google
+          {t('login.googleLogin')}
         </button>
 
         <FacebookLogin
@@ -194,7 +196,7 @@ export function LoginPage({
             }
           }}
           onFail={() => {
-            toast.error('Đăng nhập bằng Facebook thất bại. Vui lòng thử lại.')
+            toast.error(t('login.facebookLoginFailed'))
           }}
           render={({ onClick }: any) => (
             <button
@@ -207,15 +209,15 @@ export function LoginPage({
                 <path fill="#1877F2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                 <path fill="#fff" d="M16.671 15.542l.532-3.469h-3.328v-2.25c0-.949.465-1.874 1.956-1.874h1.514V5.006s-1.374-.235-2.686-.235c-2.741 0-4.533 1.662-4.533 4.669v2.633H7.078v3.469h3.047v8.385a12.09 12.09 0 003.75 0v-8.385h2.796z"/>
               </svg>
-              Đăng nhập bằng Facebook
+              {t('login.facebookLogin')}
             </button>
           )}
         />
 
         <p className="auth-switch">
-          Chưa có tài khoản?
+          {t('login.noAccount')}
           <button disabled={isSubmitting} onClick={onSwitchMode} type="button">
-            Tạo tài khoản mới
+            {t('login.createNewAccount')}
           </button>
         </p>
       </section>
