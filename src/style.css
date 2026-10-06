@@ -8337,6 +8337,78 @@ html.dark .chat-pinned-more:hover {
   gap: 8px;
 }
 
+.admin-user-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+
+.admin-user-filters,
+.admin-bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-user-filters label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.admin-user-filters select,
+.admin-user-filters button,
+.admin-bulk-actions button {
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.admin-user-filters select {
+  padding: 0 28px 0 10px;
+}
+
+.admin-user-filters button,
+.admin-bulk-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 11px;
+  cursor: pointer;
+}
+
+.admin-bulk-actions span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.admin-user-filters button:disabled,
+.admin-bulk-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.admin-bulk-actions button.is-danger {
+  color: var(--rose);
+}
+
+.admin-bulk-actions .lucide-loader-2 {
+  animation: confirm-dialog-spin 760ms linear infinite;
+}
+
 .message-report-section {
   margin-bottom: 24px;
 }
@@ -8517,6 +8589,18 @@ html.dark .chat-pinned-more:hover {
 
 .admin-table tr:hover td {
   background: rgba(0, 0, 0, 0.01);
+}
+
+.admin-select-cell {
+  width: 44px;
+  text-align: center;
+}
+
+.admin-select-cell input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  cursor: pointer;
 }
 
 .user-cell {
@@ -12268,6 +12352,27 @@ html.dark, [data-theme='dark'] {
     justify-content: flex-end;
     margin-top: 8px;
     gap: 12px;
+  }
+
+  .admin-user-toolbar {
+    align-items: stretch;
+  }
+
+  .admin-user-filters,
+  .admin-bulk-actions {
+    width: 100%;
+  }
+
+  .admin-user-filters label,
+  .admin-user-filters select,
+  .admin-user-filters button,
+  .admin-bulk-actions button {
+    flex: 1 1 160px;
+  }
+
+  .admin-select-cell {
+    width: 100%;
+    text-align: right;
   }
 
   .message-report-row {

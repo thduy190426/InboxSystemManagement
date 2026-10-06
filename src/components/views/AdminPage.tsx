@@ -87,6 +87,10 @@ const USER_PAGE_SIZE = 20
 const REPORT_PAGE_SIZE = 10
 const EDIT_EXIT_DURATION_MS = 140
 const REPORT_STATUSES: Array<MessageReportStatus | 'all'> = ['pending', 'reviewed', 'dismissed', 'all']
+const USER_ROLES: Array<AdminUserRole | 'all'> = ['all', 'user', 'agent', 'owner']
+const USER_STATUSES: Array<AdminUserStatus | 'all'> = ['all', 'active', 'inactive', 'suspended']
+const USER_GENDERS = ['all', 'male', 'female', 'other', 'prefer_not_to_say', 'unknown'] as const
+type UserGenderFilter = typeof USER_GENDERS[number]
 
 const emptyStats: AdminStats = {
   totalUsers: 0,
@@ -323,6 +327,24 @@ function getGenderLabel(gender: string | null | undefined, t: any) {
   return t('genderUnknown')
 }
 
+function getRoleLabel(role: AdminUserRole | 'all', t: any) {
+  if (role === 'all') return t('filterAllRoles')
+  return formatChartLabel(role, t)
+}
+
+function getUserStatusFilterLabel(status: AdminUserStatus | 'all', t: any) {
+  if (status === 'all') return t('filterAllAccounts')
+  if (status === 'suspended') return t('filterLockedAccounts')
+  if (status === 'inactive') return t('filterOfflineAccounts')
+  return t('filterUnlockedAccounts')
+}
+
+function getGenderFilterLabel(gender: UserGenderFilter, t: any) {
+  if (gender === 'all') return t('filterAllGenders')
+  if (gender === 'unknown') return t('genderUnknown')
+  return getGenderLabel(gender, t)
+}
+
 function createEditState(user: AdminUser): EditUserState {
   return {
     user,
@@ -337,6 +359,9 @@ function readAdminQueryParams() {
   const params = new URLSearchParams(window.location.search)
   const pageParam = Number(params.get('page'))
   const reportStatusParam = params.get('reportStatus') as MessageReportStatus | 'all' | null
+  const roleParam = params.get('role') as AdminUserRole | 'all' | null
+  const statusParam = params.get('status') as AdminUserStatus | 'all' | null
+  const genderParam = params.get('gender') as UserGenderFilter | null
 
   return {
     page: Number.isInteger(pageParam) && pageParam > 0 ? pageParam : 1,
@@ -344,6 +369,9 @@ function readAdminQueryParams() {
     reportStatus: reportStatusParam && REPORT_STATUSES.includes(reportStatusParam)
       ? reportStatusParam
       : 'pending',
+    role: roleParam && USER_ROLES.includes(roleParam) ? roleParam : 'all',
+    status: statusParam && USER_STATUSES.includes(statusParam) ? statusParam : 'all',
+    gender: genderParam && USER_GENDERS.includes(genderParam) ? genderParam : 'all',
   }
 }
 
@@ -351,6 +379,9 @@ function updateAdminQueryParams(params: {
   page: number
   search: string
   reportStatus: MessageReportStatus | 'all'
+  role: AdminUserRole | 'all'
+  status: AdminUserStatus | 'all'
+  gender: UserGenderFilter
 }) {
   if (window.location.pathname !== '/admin') {
     return
@@ -370,6 +401,18 @@ function updateAdminQueryParams(params: {
     query.set('reportStatus', params.reportStatus)
   }
 
+  if (params.role !== 'all') {
+    query.set('role', params.role)
+  }
+
+  if (params.status !== 'all') {
+    query.set('status', params.status)
+  }
+
+  if (params.gender !== 'all') {
+    query.set('gender', params.gender)
+  }
+
   const nextUrl = query.toString() ? `/admin?${query.toString()}` : '/admin'
 
   if (`${window.location.pathname}${window.location.search}` !== nextUrl) {
@@ -383,6 +426,9 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
   const [timeFilter, setTimeFilter] = useState('30days')
   const [searchQuery, setSearchQuery] = useState(initialQueryParams.search)
   const [debouncedSearch, setDebouncedSearch] = useState(initialQueryParams.search)
+  const [roleFilter, setRoleFilter] = useState<AdminUserRole | 'all'>(initialQueryParams.role)
+  const [statusFilter, setStatusFilter] = useState<AdminUserStatus | 'all'>(initialQueryParams.status)
+  const [genderFilter, setGenderFilter] = useState<UserGenderFilter>(initialQueryParams.gender)
   const [stats, setStats] = useState<AdminStats>(emptyStats)
   const [users, setUsers] = useState<AdminUser[]>([])
   const [reports, setReports] = useState<MessageReport[]>([])
@@ -408,18 +454,29 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
   const [isSavingUser, setIsSavingUser] = useState(false)
   const [isCreatingUser, setIsCreatingUser] = useState(false)
   const [busyLockUserId, setBusyLockUserId] = useState<string | null>(null)
+  const [busyBulkAction, setBusyBulkAction] = useState<'lock' | 'unlock' | 'delete' | null>(null)
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(() => new Set())
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null)
   const [isConfirmWorking, setIsConfirmWorking] = useState(false)
   const hasMountedSearchEffectRef = useRef(false)
   const suppressSearchEffectRef = useRef(false)
 
   const isLoading = isStatsLoading || isUsersLoading
+  const selectedUsers = useMemo(
+    () => users.filter((user) => selectedUserIds.has(user.id)),
+    [selectedUserIds, users],
+  )
+  const selectableUserIds = useMemo(() => users.map((user) => user.id), [users])
+  const isAllCurrentPageSelected =
+    selectableUserIds.length > 0 && selectableUserIds.every((userId) => selectedUserIds.has(userId))
+  const hasUserFilters = roleFilter !== 'all' || statusFilter !== 'all' || genderFilter !== 'all'
 
   const handleExportUsers = () => {
-    const headers = ['ID', t('colUser'), t('displayNameLabel'), t('emailLabel'), t('colRole'), t('colAccount'), t('colLastLogin'), t('colCreatedAt')]
-    const data = users.map(u => [u.id, u.fullName, u.displayName, u.email, u.role, u.status, u.lastLogin, u.createdAt])
+    const sourceUsers = selectedUsers.length > 0 ? selectedUsers : users
+    const headers = ['ID', t('colUser'), t('displayNameLabel'), t('emailLabel'), t('colRole'), t('colAccount'), t('colGender'), t('colLastLogin'), t('colCreatedAt')]
+    const data = sourceUsers.map(u => [u.id, u.fullName, u.displayName, u.email, u.role, getStatusLabel(u.status, t), getGenderLabel(u.gender, t), u.lastLogin, u.createdAt])
     exportToCSV('users_export.csv', headers, data)
-    pushToast?.(t('exportUsersSuccess'), 'info')
+    pushToast?.(selectedUsers.length > 0 ? t('exportSelectedUsersSuccess', { count: selectedUsers.length }) : t('exportUsersSuccess'), 'info')
   }
 
   const handleExportReports = () => {
@@ -438,6 +495,9 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
       setDebouncedSearch(params.search)
       setPage(params.page)
       setReportStatus(params.reportStatus)
+      setRoleFilter(params.role)
+      setStatusFilter(params.status)
+      setGenderFilter(params.gender)
     }
 
     window.addEventListener('popstate', handleLocationChange)
@@ -491,8 +551,15 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
       page,
       reportStatus,
       search: debouncedSearch,
+      role: roleFilter,
+      status: statusFilter,
+      gender: genderFilter,
     })
-  }, [debouncedSearch, page, reportStatus])
+  }, [debouncedSearch, genderFilter, page, reportStatus, roleFilter, statusFilter])
+
+  useEffect(() => {
+    setSelectedUserIds(new Set())
+  }, [debouncedSearch, genderFilter, page, roleFilter, statusFilter])
 
   useEffect(() => {
     let isMounted = true
@@ -538,6 +605,9 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
           page,
           limit: USER_PAGE_SIZE,
           search: debouncedSearch,
+          role: roleFilter,
+          status: statusFilter,
+          gender: genderFilter,
         })
 
         if (isMounted) {
@@ -565,7 +635,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
     return () => {
       isMounted = false
     }
-  }, [debouncedSearch, page, pushToast])
+  }, [debouncedSearch, genderFilter, page, pushToast, roleFilter, statusFilter])
 
   useEffect(() => {
     let isMounted = true
@@ -676,6 +746,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
     if (isUsersLoading) {
       return Array.from({ length: 5 }).map((_, i) => (
         <tr key={i} className="skeleton-row">
+          <td data-label={t('selectUserLabel')}><div className="skeleton skeleton-icon"></div></td>
           <td data-label={t('colUser')}>
             <div className="user-cell">
               <div className="skeleton skeleton-avatar"></div>
@@ -704,7 +775,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
     if (users.length === 0) {
       return (
         <tr>
-          <td colSpan={7}>
+          <td colSpan={8}>
             <div className="admin-empty-row">
               {debouncedSearch ? t('noMatchingUsers') : t('noUsers')}
             </div>
@@ -719,6 +790,14 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
 
       return (
         <tr key={user.id}>
+          <td className="admin-select-cell" data-label={t('selectUserLabel')}>
+            <input
+              aria-label={t('selectUserAria', { name: user.name })}
+              checked={selectedUserIds.has(user.id)}
+              type="checkbox"
+              onChange={(event) => toggleUserSelection(user.id, event.target.checked)}
+            />
+          </td>
           <td data-label={t('colUser')}>
             <div className="user-cell">
               <AvatarFallback className="user-avatar" name={user.fullName} src={user.avatarUrl} />
@@ -773,7 +852,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
         </tr>
       )
     })
-  }, [busyLockUserId, debouncedSearch, isUsersLoading, users])
+  }, [busyLockUserId, debouncedSearch, isUsersLoading, selectedUserIds, users])
 
   async function refreshStats() {
     try {
@@ -795,6 +874,75 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
     } catch (error) {
       pushToast?.(getErrorMessage(error, t('reportsRefreshErr')), 'error')
     }
+  }
+
+  async function refreshUsers(showSuccess = false) {
+    setIsUsersLoading(true)
+
+    try {
+      const response = await fetchAdminUsers({
+        page,
+        limit: USER_PAGE_SIZE,
+        search: debouncedSearch,
+        role: roleFilter,
+        status: statusFilter,
+        gender: genderFilter,
+      })
+
+      setUsers(response.users)
+      setPagination(response.pagination)
+      setPageError(null)
+
+      if (showSuccess) {
+        pushToast?.(t('usersRefreshSuccess'), 'info')
+      }
+    } catch (error) {
+      const message = getErrorMessage(error, t('usersRefreshErr'))
+
+      setUsers([])
+      setPageError(message)
+      pushToast?.(message, 'error')
+    } finally {
+      setIsUsersLoading(false)
+    }
+  }
+
+  function toggleUserSelection(userId: string, checked: boolean) {
+    setSelectedUserIds((currentSelection) => {
+      const nextSelection = new Set(currentSelection)
+
+      if (checked) {
+        nextSelection.add(userId)
+      } else {
+        nextSelection.delete(userId)
+      }
+
+      return nextSelection
+    })
+  }
+
+  function toggleCurrentPageSelection(checked: boolean) {
+    setSelectedUserIds((currentSelection) => {
+      const nextSelection = new Set(currentSelection)
+
+      selectableUserIds.forEach((userId) => {
+        if (checked) {
+          nextSelection.add(userId)
+        } else {
+          nextSelection.delete(userId)
+        }
+      })
+
+      return nextSelection
+    })
+  }
+
+  function handleUserFilterChange(
+    setter: (value: any) => void,
+    value: AdminUserRole | AdminUserStatus | UserGenderFilter | 'all',
+  ) {
+    setter(value)
+    setPage(1)
   }
 
   async function handleUpdateReportStatus(
@@ -957,6 +1105,75 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
         }))
         pushToast?.(t('deleteAccountSuccess'))
         void refreshStats()
+      },
+    })
+  }
+
+  function openBulkLockDialog(shouldLock: boolean) {
+    const targetUsers = selectedUsers.filter((user) => shouldLock ? user.isActive : !user.isActive)
+
+    if (targetUsers.length === 0) {
+      pushToast?.(shouldLock ? t('bulkNoUnlockedUsers') : t('bulkNoLockedUsers'), 'error')
+      return
+    }
+
+    setConfirmDialog({
+      title: shouldLock ? t('bulkLockConfirmTitle') : t('bulkUnlockConfirmTitle'),
+      description: shouldLock
+        ? t('bulkLockConfirmDesc', { count: targetUsers.length })
+        : t('bulkUnlockConfirmDesc', { count: targetUsers.length }),
+      confirmLabel: shouldLock ? t('lockBtn') : t('unlockBtn'),
+      cancelLabel: t('cancelBtn'),
+      tone: shouldLock ? 'danger' : 'default',
+      onConfirm: async () => {
+        setBusyBulkAction(shouldLock ? 'lock' : 'unlock')
+
+        try {
+          const responses = await Promise.all(
+            targetUsers.map((user) => shouldLock ? lockAdminUser(user.id) : unlockAdminUser(user.id)),
+          )
+
+          responses.forEach((response) => updateUserInList(response.user))
+          setSelectedUserIds(new Set())
+          pushToast?.(shouldLock ? t('bulkLockSuccess', { count: responses.length }) : t('bulkUnlockSuccess', { count: responses.length }))
+          void refreshStats()
+        } finally {
+          setBusyBulkAction(null)
+        }
+      },
+    })
+  }
+
+  function openBulkDeleteDialog() {
+    if (selectedUsers.length === 0) {
+      return
+    }
+
+    setConfirmDialog({
+      title: t('bulkDeleteConfirmTitle'),
+      description: t('bulkDeleteConfirmDesc', { count: selectedUsers.length }),
+      confirmLabel: t('deleteBtn'),
+      cancelLabel: t('cancelBtn'),
+      tone: 'danger',
+      onConfirm: async () => {
+        setBusyBulkAction('delete')
+
+        try {
+          await Promise.all(selectedUsers.map((user) => deleteUser(user.id)))
+          const deletedIds = new Set(selectedUsers.map((user) => user.id))
+
+          setUsers((currentUsers) => currentUsers.filter((item) => !deletedIds.has(item.id)))
+          setPagination((currentPagination) => ({
+            ...currentPagination,
+            total: Math.max(0, currentPagination.total - deletedIds.size),
+            totalPages: Math.max(1, Math.ceil(Math.max(0, currentPagination.total - deletedIds.size) / currentPagination.limit)),
+          }))
+          setSelectedUserIds(new Set())
+          pushToast?.(t('bulkDeleteSuccess', { count: deletedIds.size }))
+          void refreshStats()
+        } finally {
+          setBusyBulkAction(null)
+        }
       },
     })
   }
@@ -1145,9 +1362,13 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
         <div className="section-header">
           <h2>{t('userListSection')}</h2>
           <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="btn-secondary" disabled={isUsersLoading} onClick={() => void refreshUsers(true)} type="button" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--surface-hover)', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', color: 'var(--text)', cursor: 'pointer' }}>
+              {isUsersLoading ? <Loader2 size={15} /> : <Users size={15} />}
+              {t('refreshBtn')}
+            </button>
             <button className="btn-secondary" onClick={handleExportUsers} type="button" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--surface-hover)', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', color: 'var(--text)', cursor: 'pointer' }}>
               <Download size={15} />
-              {t('exportCSVBtn')}
+              {selectedUsers.length > 0 ? t('exportSelectedBtn') : t('exportCSVBtn')}
             </button>
             <button className="btn-primary" onClick={() => setCreateUser(emptyCreateUser)} type="button">
               <Plus size={16} />
@@ -1156,10 +1377,86 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
           </div>
         </div>
 
+        <div className="admin-user-toolbar">
+          <div className="admin-user-filters">
+            <label>
+              <span>{t('roleFilterLabel')}</span>
+              <select
+                value={roleFilter}
+                onChange={(event) => handleUserFilterChange(setRoleFilter, event.target.value as AdminUserRole | 'all')}
+              >
+                {USER_ROLES.map((role) => (
+                  <option key={role} value={role}>{getRoleLabel(role, t)}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>{t('accountFilterLabel')}</span>
+              <select
+                value={statusFilter}
+                onChange={(event) => handleUserFilterChange(setStatusFilter, event.target.value as AdminUserStatus | 'all')}
+              >
+                {USER_STATUSES.map((status) => (
+                  <option key={status} value={status}>{getUserStatusFilterLabel(status, t)}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>{t('genderFilterLabel')}</span>
+              <select
+                value={genderFilter}
+                onChange={(event) => handleUserFilterChange(setGenderFilter, event.target.value as UserGenderFilter)}
+              >
+                {USER_GENDERS.map((gender) => (
+                  <option key={gender} value={gender}>{getGenderFilterLabel(gender, t)}</option>
+                ))}
+              </select>
+            </label>
+            <button
+              disabled={!hasUserFilters}
+              type="button"
+              onClick={() => {
+                setRoleFilter('all')
+                setStatusFilter('all')
+                setGenderFilter('all')
+                setPage(1)
+              }}
+            >
+              <X size={14} />
+              {t('clearFiltersBtn')}
+            </button>
+          </div>
+
+          <div className="admin-bulk-actions">
+            <span>{t('selectedUsersCount', { count: selectedUsers.length })}</span>
+            <button disabled={selectedUsers.length === 0 || Boolean(busyBulkAction)} type="button" onClick={() => openBulkLockDialog(true)}>
+              {busyBulkAction === 'lock' ? <Loader2 size={14} /> : <Lock size={14} />}
+              {t('lockSelectedBtn')}
+            </button>
+            <button disabled={selectedUsers.length === 0 || Boolean(busyBulkAction)} type="button" onClick={() => openBulkLockDialog(false)}>
+              {busyBulkAction === 'unlock' ? <Loader2 size={14} /> : <Unlock size={14} />}
+              {t('unlockSelectedBtn')}
+            </button>
+            <button className="is-danger" disabled={selectedUsers.length === 0 || Boolean(busyBulkAction)} type="button" onClick={openBulkDeleteDialog}>
+              {busyBulkAction === 'delete' ? <Loader2 size={14} /> : <Trash2 size={14} />}
+              {t('deleteSelectedBtn')}
+            </button>
+          </div>
+        </div>
+
         <div className="admin-table-wrapper">
           <table className="admin-table">
             <thead>
               <tr>
+                <th className="admin-select-cell">
+                  <input
+                    aria-label={t('selectAllUsersAria')}
+                    checked={isAllCurrentPageSelected}
+                    disabled={users.length === 0}
+                    type="checkbox"
+                    onChange={(event) => toggleCurrentPageSelection(event.target.checked)}
+                  />
+                </th>
                 <th>{t('colUser')}</th>
                 <th>{t('colRole')}</th>
                 <th>{t('colAccount')}</th>

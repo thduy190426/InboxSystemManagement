@@ -5,6 +5,8 @@ const { validateRegisterPayload } = require('../../utils/validation')
 
 const ALLOWED_ROLES = new Set(['user', 'agent', 'owner'])
 const ALLOWED_REPORT_STATUSES = new Set(['pending', 'reviewed', 'dismissed'])
+const ALLOWED_USER_STATUSES = new Set(['active', 'inactive', 'suspended'])
+const ALLOWED_GENDERS = new Set(['male', 'female', 'other', 'prefer_not_to_say', 'unknown'])
 const MAX_PAGE_SIZE = 100
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const messageReportsTableReady = pool
@@ -272,8 +274,36 @@ async function getAdminUsers(request, response, next) {
     const limit = Math.min(toPositiveInteger(request.query.limit, 20), MAX_PAGE_SIZE)
     const offset = (page - 1) * limit
     const search = typeof request.query.search === 'string' ? request.query.search.trim() : ''
+    const role = typeof request.query.role === 'string' ? request.query.role.trim() : ''
+    const status = typeof request.query.status === 'string' ? request.query.status.trim() : ''
+    const gender = typeof request.query.gender === 'string' ? request.query.gender.trim() : ''
     const filters = ['deleted_at IS NULL', 'role <> ?']
     const params = ['admin']
+
+    if (role && ALLOWED_ROLES.has(role)) {
+      filters.push('role = ?')
+      params.push(role)
+    }
+
+    if (status && ALLOWED_USER_STATUSES.has(status)) {
+      if (status === 'suspended') {
+        filters.push('is_active = 0')
+      } else if (status === 'inactive') {
+        filters.push('is_active = 1 AND presence = ?')
+        params.push('offline')
+      } else {
+        filters.push('is_active = 1')
+      }
+    }
+
+    if (gender && ALLOWED_GENDERS.has(gender)) {
+      if (gender === 'unknown') {
+        filters.push('(gender IS NULL OR gender = \'\')')
+      } else {
+        filters.push('gender = ?')
+        params.push(gender)
+      }
+    }
 
     if (search) {
       const term = `%${escapeLike(search)}%`

@@ -84,6 +84,9 @@ export type FetchAdminUsersParams = {
   page?: number
   limit?: number
   search?: string
+  role?: AdminUserRole | 'all'
+  status?: AdminUserStatus | 'all'
+  gender?: string
 }
 
 export type FetchAdminUsersResponse = {
@@ -144,6 +147,18 @@ export function fetchAdminUsers(params: FetchAdminUsersParams = {}) {
 
   if (params.search) {
     query.set('search', params.search)
+  }
+
+  if (params.role && params.role !== 'all') {
+    query.set('role', params.role)
+  }
+
+  if (params.status && params.status !== 'all') {
+    query.set('status', params.status)
+  }
+
+  if (params.gender && params.gender !== 'all') {
+    query.set('gender', params.gender)
   }
 
   const suffix = query.toString() ? `?${query.toString()}` : ''
