@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import type { AuthUser } from '../../services/api/authApi'
 import type { AppView } from '../../types'
-import { useTheme } from '../providers/ThemeProvider'
+// import { useTheme } from '../providers/ThemeProvider'
 
 const navItems = [
   { label: 'Tin nhắn', value: 'chat' as const, icon: MessageCircle },

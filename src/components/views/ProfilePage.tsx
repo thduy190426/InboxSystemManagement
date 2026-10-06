@@ -293,8 +293,9 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
         </div>
       </header>
 
-      <div className="pp-grid">
-        <ProfileSection icon={<Camera size={15} />} title="Ảnh đại diện">
+      <form className="pp-form-wrapper" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div className="pp-grid">
+          <ProfileSection icon={<Camera size={15} />} title="Ảnh đại diện">
           <div className="pp-avatar-card">
             <div className="pp-avatar-wrap">
               <AvatarFallback
@@ -346,8 +347,7 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
           </div>
         </ProfileSection>
 
-        <form className="pp-form-card" onSubmit={handleSubmit}>
-          <ProfileSection icon={<IdCard size={15} />} title="Thông tin cơ bản">
+        <ProfileSection icon={<IdCard size={15} />} title="Thông tin cơ bản">
             <div className="pp-fields">
 
               <ProfileField label="Tên hiển thị" icon={<IdCard size={14} />} error={profileErrors.displayName}>
@@ -495,19 +495,19 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
               </ProfileField>
             </div>
           </ProfileSection>
+        </div>
 
-          <div className="pp-form-footer">
-            <button
-              className="pp-save-btn"
-              disabled={isSaving || !hasChanges}
-              type="submit"
-            >
-              <Save size={15} />
-              {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
-            </button>
-          </div>
-        </form>
-      </div>
+        <div className="pp-form-footer" style={{ marginTop: '24px' }}>
+          <button
+            className="pp-save-btn"
+            disabled={isSaving || !hasChanges}
+            type="submit"
+          >
+            <Save size={15} />
+            {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
+          </button>
+        </div>
+      </form>
 
       {cropImageSrc && (
         <AvatarCropper
