@@ -189,7 +189,7 @@ const conversationParticipantHiddenAtReady = pool
     console.error('Không thể đảm bảo cột hidden_at cho người tham gia cuộc trò chuyện:', error)
     throw error
   })
-const conversationParticipantMessageRequestStatusReady = pool
+const conversationParticipantMessageRequestStatusReady = conversationParticipantHiddenAtReady.then(() => pool
   .execute(
     `ALTER TABLE conversation_participants
       ADD COLUMN message_request_status ENUM('none', 'pending') NOT NULL DEFAULT 'none'`,
@@ -201,7 +201,7 @@ const conversationParticipantMessageRequestStatusReady = pool
 
     console.error('Không thể đảm bảo cột message_request_status cho người tham gia cuộc trò chuyện:', error)
     throw error
-  })
+  }))
 const groupInviteTokensTableReady = pool
   .execute(
     `CREATE TABLE IF NOT EXISTS group_invite_tokens (
