@@ -52,7 +52,7 @@ function getActionLabel(user: ContactUser, t: any) {
 }
 
 function getGenderLabel(gender: string | null | undefined, t: any) {
-  if (gender === 'male') return 'Nam'
+  if (gender === 'male') return t('genderM', { defaultValue: 'Nam' })
   if (gender === 'female') return t('genderF')
   if (gender === 'other') return t('genderO')
   if (gender === 'prefer_not_to_say') return t('genderHidden')
