@@ -13,6 +13,7 @@ import {
 } from '../../services/api/userApi'
 import { AvatarCropper } from '../ui/AvatarCropper'
 import { AvatarFallback } from '../ui/AvatarFallback'
+import { useTranslation } from 'react-i18next'
 import type { EmojiClickData, EmojiStyle, Theme } from 'emoji-picker-react'
 const EmojiPicker = lazy(() => import('emoji-picker-react'))
 
@@ -46,67 +47,67 @@ function getLocalDateInputValue(date = new Date()) {
   return `${year}-${month}-${day}`
 }
 
-function getGenderLabel(gender: string) {
-  if (gender === 'male') return 'Nam'
-  if (gender === 'female') return 'Nữ'
-  if (gender === 'other') return 'Khác'
-  if (gender === 'prefer_not_to_say') return 'Không muốn chia sẻ'
-  return 'Chưa cập nhật'
+function getGenderLabel(gender: string, t: (key: string) => string) {
+  if (gender === 'male') return t('genderMale')
+  if (gender === 'female') return t('genderFemale')
+  if (gender === 'other') return t('genderOther')
+  if (gender === 'prefer_not_to_say') return t('genderPreferNotToSay')
+  return t('genderUnknown')
 }
 
-function getGlobalRoleLabel(role: string) {
-  if (role === 'owner') return 'Người sáng lập'
-  if (role === 'admin') return 'Quản trị viên'
-  if (role === 'moderator') return 'Người kiểm duyệt'
-  if (role === 'user') return 'Thành viên'
-  return role ? role.charAt(0).toUpperCase() + role.slice(1) : 'Thành viên'
+function getGlobalRoleLabel(role: string, t: (key: string) => string) {
+  if (role === 'owner') return t('roleOwner')
+  if (role === 'admin') return t('roleAdmin')
+  if (role === 'moderator') return t('roleModerator')
+  if (role === 'user') return t('roleUser')
+  return role ? role.charAt(0).toUpperCase() + role.slice(1) : t('roleUser')
 }
 
-function validateProfileForm(form: ProfilePayload) {
+function validateProfileForm(form: ProfilePayload, t: (key: string) => string) {
   const errors: ProfileErrors = {}
 
   if (!form.displayName.trim()) {
-    errors.displayName = 'Vui lòng nhập tên hiển thị!'
+    errors.displayName = t('errors.displayNameRequired')
   } else if (form.displayName.trim().length > 80) {
-    errors.displayName = 'Tên hiển thị không được vượt quá 80 ký tự!'
+    errors.displayName = t('errors.displayNameMax')
   }
 
   if (form.handle.trim() && !/^[a-z0-9][a-z0-9._]{2,31}$/.test(form.handle.trim())) {
-    errors.handle = 'Tên định danh phải có 3–32 ký tự, chỉ gồm chữ thường, số, dấu chấm hoặc gạch dưới!'
+    errors.handle = t('errors.handleInvalid')
   }
 
   if (!form.phone.trim()) {
-    errors.phone = 'Vui lòng nhập số điện thoại!'
+    errors.phone = t('errors.phoneRequired')
   } else if (!/^\+?[0-9\s.-]{8,32}$/.test(form.phone.trim())) {
-    errors.phone = 'Số điện thoại không hợp lệ!'
+    errors.phone = t('errors.phoneInvalid')
   }
 
   if (!form.gender) {
-    errors.gender = 'Vui lòng chọn giới tính!'
+    errors.gender = t('errors.genderRequired')
   }
 
   if (!form.birthDate) {
-    errors.birthDate = 'Vui lòng chọn ngày sinh!'
+    errors.birthDate = t('errors.birthDateRequired')
   } else if (form.birthDate > getLocalDateInputValue()) {
-    errors.birthDate = 'Ngày sinh không được lớn hơn ngày hiện tại!'
+    errors.birthDate = t('errors.birthDateMax')
   }
 
   if (!form.address.trim()) {
-    errors.address = 'Vui lòng nhập địa chỉ!'
+    errors.address = t('errors.addressRequired')
   } else if (form.address.trim().length > 255) {
-    errors.address = 'Địa chỉ không được vượt quá 255 ký tự!'
+    errors.address = t('errors.addressMax')
   }
 
   if (!form.statusMessage.trim()) {
-    errors.statusMessage = 'Vui lòng nhập trạng thái cá nhân!'
+    errors.statusMessage = t('errors.statusMessageRequired')
   } else if (form.statusMessage.trim().length > 120) {
-    errors.statusMessage = 'Trạng thái không được vượt quá 120 ký tự!'
+    errors.statusMessage = t('errors.statusMessageMax')
   }
 
   if (!form.bio.trim()) {
-    errors.bio = 'Vui lòng nhập giới thiệu!'
+    errors.bio = t('errors.bioRequired')
   } else if (form.bio.trim().length > 255) {
-    errors.bio = 'Giới thiệu không được vượt quá 255 ký tự!'
+    errors.bio = t('errors.bioMax')
   }
 
   return errors
@@ -164,8 +165,9 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
   const [profileErrors, setProfileErrors] = useState<ProfileErrors>({})
   const [isBioExpanded, setIsBioExpanded] = useState(false)
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false)
+  const { t } = useTranslation('profile')
 
-  const handleEmojiClick = (emojiData: EmojiClickData) => {
+  const handleEmojiClick = (EmojiClickData: EmojiClickData) => {
     setForm(prev => ({ ...prev, statusEmoji: emojiData.emoji }))
     setIsEmojiPickerOpen(false)
   }
@@ -188,7 +190,7 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
       })
       .catch((error) => {
         if (isMounted) {
-          pushToast(error instanceof Error ? error.message : 'Không thể tải hồ sơ!', 'error')
+          pushToast(error instanceof Error ? error.message : t('profileLoadFailed'), 'error')
         }
       })
 
@@ -214,9 +216,9 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
         const response = await uploadAvatar(file)
         onUserChange(response.user)
         setAvatarUrl(response.user.avatarUrl ?? '')
-        pushToast('Đã cập nhật ảnh đại diện!', 'info')
+        pushToast(t('avatarUpdated'), 'info')
       } catch (error) {
-        pushToast(error instanceof Error ? error.message : 'Không thể cập nhật ảnh đại diện!', 'error')
+        pushToast(error instanceof Error ? error.message : t('avatarUpdateFailed'), 'error')
       } finally {
         setIsUploading(false)
       }
@@ -240,9 +242,9 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
       const response = await uploadAvatar(file)
       onUserChange(response.user)
       setAvatarUrl(response.user.avatarUrl ?? '')
-      pushToast('Đã cập nhật ảnh đại diện!', 'info')
+      pushToast(t('avatarUpdated'), 'info')
     } catch (error) {
-      pushToast(error instanceof Error ? error.message : 'Không thể cập nhật ảnh đại diện!', 'error')
+      pushToast(error instanceof Error ? error.message : t('avatarUpdateFailed'), 'error')
     } finally {
       setIsUploading(false)
     }
@@ -252,10 +254,10 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
     event.preventDefault()
     if (!hasChanges) return
 
-    const errors = validateProfileForm(form)
+    const errors = validateProfileForm(form, t)
     if (Object.keys(errors).length > 0) {
       setProfileErrors(errors)
-      pushToast('Vui lòng điền đầy đủ thông tin hồ sơ bắt buộc!', 'error')
+      pushToast(t('errors.fillRequired'), 'error')
       return
     }
 
@@ -268,9 +270,9 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
       setFullName(response.user.fullName)
       setForm(nextForm)
       setInitialForm(nextForm)
-      pushToast('Đã lưu hồ sơ!', 'info')
+      pushToast(t('profileSaved'), 'info')
     } catch (error) {
-      pushToast(error instanceof Error ? error.message : 'Không thể lưu hồ sơ!', 'error')
+      pushToast(error instanceof Error ? error.message : t('profileSaveFailed'), 'error')
     } finally {
       setIsSaving(false)
     }
@@ -282,20 +284,20 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
         <div>
           <div className="pp-page-kicker">
             <User size={12} />
-            Hồ sơ cá nhân
+            {t('kicker')}
           </div>
-          <h1 id="profile-title">Chỉnh sửa profile</h1>
+          <h1 id="profile-title">{t('title')}</h1>
         </div>
         <div className="pp-header-aside">
           {hasChanges && (
-            <span className="pp-unsaved-badge">Chưa lưu</span>
+            <span className="pp-unsaved-badge">{t('unsaved')}</span>
           )}
         </div>
       </header>
 
       <form className="pp-form-wrapper" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <div className="pp-grid">
-          <ProfileSection icon={<Camera size={15} />} title="Ảnh đại diện">
+          <ProfileSection icon={<Camera size={15} />} title={t('avatarSection')}>
           <div className="pp-avatar-card">
             <div className="pp-avatar-wrap">
               <AvatarFallback
@@ -305,31 +307,31 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
               {currentUser?.role && (
                 <div className={`pp-role-badge pp-role-badge--${currentUser.role.toLowerCase()}`}>
                   <Shield size={11} />
-                  <span>{getGlobalRoleLabel(currentUser.role)}</span>
+                  <span>{getGlobalRoleLabel(currentUser.role, t)}</span>
                 </div>
               )}
             </div>
             <div className="pp-avatar-info">
-              <strong className="pp-avatar-name">{form.displayName || fullName || 'Người dùng'}</strong>
+              <strong className="pp-avatar-name">{form.displayName || fullName || t('defaultUser')}</strong>
               {form.handle && (
                 <span className="pp-avatar-handle">@{form.handle}</span>
               )}
               <span className="pp-avatar-status">
-                {form.statusEmoji} {form.statusMessage || 'Chưa cập nhật trạng thái'}
+                {form.statusEmoji} {form.statusMessage || t('statusNotUpdated')}
               </span>
             </div>
             <label className="pp-upload-btn">
               <Camera size={14} />
-              {isUploading ? 'Đang tải...' : 'Đổi ảnh'}
+              {isUploading ? t('uploading') : t('changeAvatar')}
               <input accept="image/*" disabled={isUploading} onChange={handleAvatarChange} type="file" />
             </label>
           </div>
         </ProfileSection>
 
-        <ProfileSection icon={<AlignLeft size={15} />} title="Giới thiệu bản thân">
+        <ProfileSection icon={<AlignLeft size={15} />} title={t('bioSection')}>
           <div className="pp-bio-preview">
             <p className={isBioExpanded ? 'is-expanded' : ''}>
-              {form.bio || 'Chưa có giới thiệu!'}
+              {form.bio || t('bioEmpty')}
             </p>
             {hasLongBio && (
               <button
@@ -337,32 +339,32 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
                 onClick={() => setIsBioExpanded((v) => !v)}
                 type="button"
               >
-                {isBioExpanded ? 'Thu gọn' : 'Xem thêm'}
+                {isBioExpanded ? t('collapse') : t('seeMore')}
               </button>
             )}
           </div>
           <div className="pp-meta-chips">
-            <span className="pp-chip"><Users size={12} />{getGenderLabel(form.gender)}</span>
+            <span className="pp-chip"><Users size={12} />{getGenderLabel(form.gender, t)}</span>
             {form.address && <span className="pp-chip"><MapPin size={12} />{form.address}</span>}
           </div>
         </ProfileSection>
 
-        <ProfileSection icon={<IdCard size={15} />} title="Thông tin cơ bản">
+        <ProfileSection icon={<IdCard size={15} />} title={t('basicInfoSection')}>
             <div className="pp-fields">
 
-              <ProfileField label="Tên hiển thị" icon={<IdCard size={14} />} error={profileErrors.displayName}>
+              <ProfileField label={t('displayNameLabel')} icon={<IdCard size={14} />} error={profileErrors.displayName}>
                 <input
                   className="pp-input"
                   maxLength={80}
                   name="displayName"
                   onChange={handleChange}
-                  placeholder="Tên hiển thị trong chat"
+                  placeholder={t('displayNamePlaceholder')}
                   required
                   value={form.displayName}
                 />
               </ProfileField>
 
-              <ProfileField label="Tên định danh" icon={<AtSign size={14} />} error={profileErrors.handle}>
+              <ProfileField label={t('handleLabel')} icon={<AtSign size={14} />} error={profileErrors.handle}>
                 <div className="pp-input-prefix">
                   <span>@</span>
                   <input
@@ -370,25 +372,25 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
                     maxLength={32}
                     name="handle"
                     onChange={handleChange}
-                    placeholder="tên.định.danh"
+                    placeholder={t('handlePlaceholder')}
                     value={form.handle}
                   />
                 </div>
               </ProfileField>
 
-              <ProfileField label="Số điện thoại" icon={<Phone size={14} />} error={profileErrors.phone}>
+              <ProfileField label={t('phoneLabel')} icon={<Phone size={14} />} error={profileErrors.phone}>
                 <input
                   className="pp-input"
                   maxLength={32}
                   name="phone"
                   onChange={handleChange}
-                  placeholder="Số điện thoại"
+                  placeholder={t('phonePlaceholder')}
                   required
                   value={form.phone}
                 />
               </ProfileField>
 
-              <ProfileField label="Giới tính" icon={<Users size={14} />} error={profileErrors.gender}>
+              <ProfileField label={t('genderLabel')} icon={<Users size={14} />} error={profileErrors.gender}>
                 <select
                   className={`pp-input pp-select${form.gender ? ' has-value' : ''}`}
                   name="gender"
@@ -396,15 +398,15 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
                   required
                   value={form.gender}
                 >
-                  <option value="">Chưa cập nhật</option>
-                  <option value="male">Nam</option>
-                  <option value="female">Nữ</option>
-                  <option value="other">Khác</option>
-                  <option value="prefer_not_to_say">Không muốn chia sẻ</option>
+                  <option value="">{t('genderPlaceholder')}</option>
+                  <option value="male">{t('genderMale')}</option>
+                  <option value="female">{t('genderFemale')}</option>
+                  <option value="other">{t('genderOther')}</option>
+                  <option value="prefer_not_to_say">{t('genderPreferNotToSay')}</option>
                 </select>
               </ProfileField>
 
-              <ProfileField label="Ngày sinh" icon={<CalendarDays size={14} />} error={profileErrors.birthDate}>
+              <ProfileField label={t('birthDateLabel')} icon={<CalendarDays size={14} />} error={profileErrors.birthDate}>
                 <input
                   className="pp-input"
                   max={getLocalDateInputValue()}
@@ -418,21 +420,21 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
             </div>
           </ProfileSection>
 
-          <ProfileSection icon={<MapPin size={15} />} title="Thông tin bổ sung">
+          <ProfileSection icon={<MapPin size={15} />} title={t('additionalInfoSection')}>
             <div className="pp-fields">
-              <ProfileField label="Địa chỉ" icon={<MapPin size={14} />} error={profileErrors.address} wide>
+              <ProfileField label={t('addressLabel')} icon={<MapPin size={14} />} error={profileErrors.address} wide>
                 <input
                   className="pp-input"
                   maxLength={255}
                   name="address"
                   onChange={handleChange}
-                  placeholder="Địa chỉ liên hệ"
+                  placeholder={t('addressPlaceholder')}
                   required
                   value={form.address}
                 />
               </ProfileField>
 
-              <ProfileField label="Trạng thái cá nhân" icon={<MessageSquare size={14} />} error={profileErrors.statusMessage} wide>
+              <ProfileField label={t('statusLabel')} icon={<MessageSquare size={14} />} error={profileErrors.statusMessage} wide>
                 <div style={{ display: 'flex', gap: '8px', position: 'relative' }}>
                   <button
                     className="pp-input pp-select"
@@ -458,7 +460,7 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
                     maxLength={120}
                     name="statusMessage"
                     onChange={handleChange}
-                    placeholder="Ví dụ: Đang sẵn sàng hỗ trợ"
+                    placeholder={t('statusPlaceholder')}
                     required
                     style={{ flexGrow: 1 }}
                     value={form.statusMessage}
@@ -466,28 +468,28 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
                 </div>
               </ProfileField>
 
-              <ProfileField label="Thời gian hiển thị" icon={<CalendarDays size={14} />} wide>
+              <ProfileField label={t('statusDurationLabel')} icon={<CalendarDays size={14} />} wide>
                 <select
                   className={`pp-input pp-select${form.statusDuration ? ' has-value' : ''}`}
                   name="statusDuration"
                   onChange={handleChange}
                   value={form.statusDuration}
                 >
-                  <option value="none">Không xóa (Mặc định)</option>
-                  <option value="1h">1 giờ</option>
-                  <option value="4h">4 giờ</option>
-                  <option value="today">Đến cuối ngày</option>
-                  <option value="week">Đến cuối tuần</option>
+                  <option value="none">{t('durationNone')}</option>
+                  <option value="1h">{t('duration1h')}</option>
+                  <option value="4h">{t('duration4h')}</option>
+                  <option value="today">{t('durationToday')}</option>
+                  <option value="week">{t('durationWeek')}</option>
                 </select>
               </ProfileField>
 
-              <ProfileField label="Giới thiệu" icon={<AlignLeft size={14} />} error={profileErrors.bio} wide>
+              <ProfileField label={t('bioLabel')} icon={<AlignLeft size={14} />} error={profileErrors.bio} wide>
                 <textarea
                   className={`pp-input pp-textarea${form.bio ? ' has-value' : ''}`}
                   maxLength={255}
                   name="bio"
                   onChange={handleChange}
-                  placeholder="Một vài dòng giới thiệu về bạn"
+                  placeholder={t('bioPlaceholder')}
                   required
                   rows={4}
                   value={form.bio}
@@ -504,7 +506,7 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
             type="submit"
           >
             <Save size={15} />
-            {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
+            {isSaving ? t('saving') : t('saveChanges')}
           </button>
         </div>
       </form>

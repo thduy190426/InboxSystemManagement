@@ -1,4 +1,5 @@
 import { AtSign, Bell, MessageCircle, UserPlus } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import type { BrowserNotificationPermission } from '../../services/core/browserNotifications'
 import type { AppNotification, ContactUser, Conversation } from '../../types'
 import { AvatarFallback } from '../ui/AvatarFallback'
@@ -52,6 +53,8 @@ export function NotificationsPanel({
   onOpenConversation,
   onOpenNotification,
 }: NotificationsPanelProps) {
+  const { t } = useTranslation('notifications')
+
   const unreadConversations = conversations.filter((c) => c.unread > 0)
   const mentionNotifications = notifications.filter((n) => n.type === 'mention')
   const unreadMentionCount = mentionNotifications.filter((n) => !n.readAt).length
@@ -59,10 +62,10 @@ export function NotificationsPanel({
   const totalNotifications = totalUnreadMessages + friendRequests.length + unreadMentionCount
 
   const browserNotificationLabel =
-    browserNotificationPermission === 'granted' ? 'Thông báo đẩy đã bật'
-    : browserNotificationPermission === 'denied' ? 'Trình duyệt đang chặn thông báo'
-    : browserNotificationPermission === 'unsupported' ? 'Trình duyệt không hỗ trợ'
-    : 'Bật thông báo trình duyệt'
+    browserNotificationPermission === 'granted' ? t('browserGranted')
+    : browserNotificationPermission === 'denied' ? t('browserDenied')
+    : browserNotificationPermission === 'unsupported' ? t('browserUnsupported')
+    : t('browserEnable')
 
   const isBrowserBtnDisabled =
     browserNotificationPermission === 'granted' ||
@@ -75,9 +78,9 @@ export function NotificationsPanel({
         <div>
           <div className="np-page-kicker">
             <Bell size={12} />
-            Thông báo
+            {t('kicker')}
           </div>
-          <h1 id="notifications-title">Cập nhật mới nhất</h1>
+          <h1 id="notifications-title">{t('title')}</h1>
         </div>
         <div className="np-header-aside">
           <button
@@ -98,9 +101,9 @@ export function NotificationsPanel({
       <div className="np-grid">
         <NotificationSection
           icon={<MessageCircle size={15} />}
-          title="Tin nhắn chưa đọc"
+          title={t('unreadMessagesTitle')}
           count={totalUnreadMessages}
-          emptyText="Không có tin nhắn chưa đọc!"
+          emptyText={t('unreadMessagesEmpty')}
         >
           {unreadConversations.map((conversation) => (
             <button
@@ -124,9 +127,9 @@ export function NotificationsPanel({
 
         <NotificationSection
           icon={<AtSign size={15} />}
-          title="Nhắc đến bạn"
+          title={t('mentionsTitle')}
           count={unreadMentionCount}
-          emptyText="Chưa có mention mới!"
+          emptyText={t('mentionsEmpty')}
         >
           {mentionNotifications.map((notification) => (
             <button
@@ -154,9 +157,9 @@ export function NotificationsPanel({
 
         <NotificationSection
           icon={<UserPlus size={15} />}
-          title="Lời mời kết bạn"
+          title={t('friendRequestsTitle')}
           count={friendRequests.length}
-          emptyText="Không có lời mời kết bạn mới!"
+          emptyText={t('friendRequestsEmpty')}
         >
           {friendRequests.map((request) => (
             <button
@@ -171,7 +174,7 @@ export function NotificationsPanel({
               <div className="np-row-content">
                 <strong>{request.fullName}</strong>
                 <span>{request.email}</span>
-                <small>Muốn kết bạn với bạn</small>
+                <small>{t('wantsToConnect')}</small>
               </div>
               <span className="np-badge">1</span>
             </button>
