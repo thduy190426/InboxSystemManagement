@@ -787,27 +787,43 @@ async function googleLogin(req, res, next) {
 
     if (!user) {
       const handle = payload.email.split('@')[0] + Math.floor(Math.random() * 1000);
+      const publicId = randomUUID();
       const [result] = await pool.execute(
-        'INSERT INTO users (public_id, email, full_name, display_name, handle, avatar_url, is_email_verified) VALUES (UUID(), ?, ?, ?, ?, ?, 1)',
-        [payload.email, payload.name || 'Người dùng mới', payload.name || 'Người dùng mới', handle, payload.picture || null]
+        `INSERT INTO users (
+          public_id, email, full_name, display_name, handle, avatar_url, is_email_verified,
+          password_hash, presence, role, is_active
+        ) VALUES (?, ?, ?, ?, ?, ?, 1, ?, 'offline', 'user', 1)`,
+        [publicId, payload.email, payload.name || 'Người dùng mới', payload.name || 'Người dùng mới', handle, payload.picture || null, '']
       );
       const [newUsers] = await pool.execute('SELECT * FROM users WHERE id = ?', [result.insertId]);
       user = newUsers[0];
       await ensureUserProfileColumns(pool, user.id);
     }
 
-    const sessionToken = randomBytes(64).toString('hex');
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const session = await createUserSession(user.id, req);
 
     await pool.execute(
-      'INSERT INTO sessions (token, user_id, user_agent, ip_address, expires_at) VALUES (?, ?, ?, ?, ?)',
-      [sessionToken, user.id, req.headers['user-agent'] || '', req.ip || '', expiresAt]
+      `UPDATE users
+      SET presence = 'online',
+        last_seen_at = CURRENT_TIMESTAMP,
+        online_since = COALESCE(online_since, CURRENT_TIMESTAMP),
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?`,
+      [user.id],
     );
+    await emitPresenceChanged(user.id, 'online');
 
     res.status(200).json({
       message: 'Đăng nhập thành công',
-      user: toPublicUser(user),
-      token: sessionToken,
+      user: toPublicUser({
+        ...user,
+        presence: 'online',
+        online_since: user.online_since || new Date(),
+      }),
+      session: {
+        refreshToken: session.refreshToken,
+        expiresAt: session.expiresAt,
+      },
     });
   } catch (error) {
     next(error);
@@ -832,28 +848,44 @@ async function facebookLogin(req, res, next) {
     if (!user) {
       const handle = email.split('@')[0] + Math.floor(Math.random() * 1000);
       const picture = payload.picture?.data?.url || null;
+      const publicId = randomUUID();
       
       const [result] = await pool.execute(
-        'INSERT INTO users (public_id, email, full_name, display_name, handle, avatar_url, is_email_verified) VALUES (UUID(), ?, ?, ?, ?, ?, 1)',
-        [email, payload.name || 'Người dùng mới', payload.name || 'Người dùng mới', handle, picture]
+        `INSERT INTO users (
+          public_id, email, full_name, display_name, handle, avatar_url, is_email_verified,
+          password_hash, presence, role, is_active
+        ) VALUES (?, ?, ?, ?, ?, ?, 1, ?, 'offline', 'user', 1)`,
+        [publicId, email, payload.name || 'Người dùng mới', payload.name || 'Người dùng mới', handle, picture, '']
       );
       const [newUsers] = await pool.execute('SELECT * FROM users WHERE id = ?', [result.insertId]);
       user = newUsers[0];
       await ensureUserProfileColumns(pool, user.id);
     }
 
-    const sessionToken = randomBytes(64).toString('hex');
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const session = await createUserSession(user.id, req);
 
     await pool.execute(
-      'INSERT INTO sessions (token, user_id, user_agent, ip_address, expires_at) VALUES (?, ?, ?, ?, ?)',
-      [sessionToken, user.id, req.headers['user-agent'] || '', req.ip || '', expiresAt]
+      `UPDATE users
+      SET presence = 'online',
+        last_seen_at = CURRENT_TIMESTAMP,
+        online_since = COALESCE(online_since, CURRENT_TIMESTAMP),
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?`,
+      [user.id],
     );
+    await emitPresenceChanged(user.id, 'online');
 
     res.status(200).json({
       message: 'Đăng nhập thành công',
-      user: toPublicUser(user),
-      token: sessionToken,
+      user: toPublicUser({
+        ...user,
+        presence: 'online',
+        online_since: user.online_since || new Date(),
+      }),
+      session: {
+        refreshToken: session.refreshToken,
+        expiresAt: session.expiresAt,
+      },
     });
   } catch (error) {
     next(error);

@@ -24,7 +24,6 @@ const queryClient = new QueryClient({
   },
 })
 
-// Replace with your actual Google Client ID from Google Cloud Console
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '1234567890-placeholder.apps.googleusercontent.com'
 
 createRoot(document.getElementById('root')!).render(

@@ -55,7 +55,6 @@ export function OnlineDurationBadge({
     return () => clearInterval(interval)
   }, [onlineSince, lastSeenAt, status, presence])
 
-  // Hide if online, or if less than 1 minute (usually just say 'online' or wait), or more than 7 days
   if (presence === 'online' || diffMinutes < 1 || diffMinutes > 10080) {
     return null
   }

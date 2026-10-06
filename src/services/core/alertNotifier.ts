@@ -4,7 +4,6 @@ const originalTitle = document.title || 'Inbox';
 export function playAlertSound() {
   const audio = new Audio('/audio/TDuy_Message.mp3');
   audio.play().catch(() => {
-    // Ignore error if browser blocks autoplay without interaction
   });
 }
 
@@ -19,7 +18,7 @@ export function flashDocumentTitle(message: string) {
   }
 
   let isOriginal = false;
-  document.title = message; // immediately set title
+  document.title = message; 
   
   titleFlashInterval = window.setInterval(() => {
     document.title = isOriginal ? message : originalTitle;
