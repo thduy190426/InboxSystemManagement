@@ -1,5 +1,4 @@
 import { apiFetch, ApiRequestError, requestJson } from './apiClient'
-import i18n from '../../i18n'
 
 export type AuthUser = {
   id: string

@@ -1,6 +1,5 @@
 import { io, type Socket } from 'socket.io-client'
 import { getStoredRefreshToken } from '../storage/authStorage'
-import i18n from '../../i18n'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:4000/api'
 const SOCKET_URL = API_BASE_URL.replace(/\/api\/?$/, '')

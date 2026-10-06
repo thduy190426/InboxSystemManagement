@@ -1,4 +1,3 @@
-import i18n from '../../i18n'
 export type Sticker = {
   id: string
   url: string

@@ -1,6 +1,5 @@
 import type { AppNotification } from '../../types'
 import { requestJson } from './apiClient'
-import i18n from '../../i18n'
 
 type NotificationsResponse = {
   notifications: AppNotification[]

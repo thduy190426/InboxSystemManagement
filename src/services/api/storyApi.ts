@@ -1,6 +1,5 @@
 ﻿import { apiFetch, requestJson } from './apiClient'
 import type { UserStoryGroup } from '../../types'
-import i18n from '../../i18n'
 
 export const storyApi = {
   createStory: async (file: File, privacy: string, textContent: string = '') => {
