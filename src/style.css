@@ -10975,9 +10975,14 @@ html.dark .message-search-button.is-active {
 }
 
 .np-push-btn--active {
-  background: rgba(74,222,128,0.1);
-  border-color: rgba(74,222,128,0.25);
+  background: rgba(74,222,128,0.15);
+  border-color: rgba(74,222,128,0.4);
   color: #4ade80;
+}
+
+.np-push-btn--active:disabled {
+  opacity: 1;
+  cursor: default;
 }
 
 .np-push-btn:disabled {
