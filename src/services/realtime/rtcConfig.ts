@@ -1,3 +1,4 @@
+import i18n from '../../i18n'
 const defaultIceServers: RTCIceServer[] = [{ urls: 'stun:stun.l.google.com:19302' }]
 
 function parseIceServers(value: string | undefined): RTCIceServer[] {
@@ -9,7 +10,7 @@ function parseIceServers(value: string | undefined): RTCIceServer[] {
     const parsed = JSON.parse(value) as unknown
 
     if (!Array.isArray(parsed)) {
-      throw new Error('Cấu trúc VITE_RTC_ICE_SERVERS không hợp lệ, phải là một mảng!')
+      throw new Error(i18n.t('api.error', { defaultValue: 'Cấu trúc VITE_RTC_ICE_SERVERS không hợp lệ, phải là một mảng!' }))
     }
 
     const iceServers = parsed.filter((server): server is RTCIceServer => {
@@ -23,7 +24,7 @@ function parseIceServers(value: string | undefined): RTCIceServer[] {
 
     return iceServers.length ? iceServers : defaultIceServers
   } catch (error) {
-    console.warn('VITE_RTC_ICE_SERVERS không hợp lệ, mặc định sử dụng STUN server:', error)
+    console.warn(i18n.t('api.error', { defaultValue: 'VITE_RTC_ICE_SERVERS không hợp lệ, mặc định sử dụng STUN server:' }), error)
     return defaultIceServers
   }
 }

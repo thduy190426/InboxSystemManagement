@@ -1,5 +1,6 @@
 import type { AuthUser } from './authApi'
 import { apiFetch, requestJson } from './apiClient'
+import i18n from '../../i18n'
 
 type AvatarResponse = {
   message: string
@@ -63,7 +64,7 @@ export type PrivacyPayload = {
 }
 
 async function requestProfile(path: string, options: RequestInit = {}) {
-  return requestJson<ProfileResponse>(path, options, 'Không thể xử lý hồ sơ người dùng!')
+  return requestJson<ProfileResponse>(path, options, i18n.t('api.error', { defaultValue: 'Không thể xử lý hồ sơ người dùng!' }))
 }
 
 export function fetchProfile() {
@@ -84,7 +85,7 @@ export function changePassword(payload: ChangePasswordPayload) {
       method: 'PATCH',
       body: JSON.stringify(payload),
     },
-    'Không thể đổi mật khẩu!',
+    i18n.t('api.error', { defaultValue: 'Không thể đổi mật khẩu!' }),
   )
 }
 
@@ -99,7 +100,7 @@ export function fetchSessions() {
   return requestJson<SessionsResponse>(
     '/users/me/sessions',
     {},
-    'Không thể tải danh sách phiên đăng nhập!',
+    i18n.t('api.error', { defaultValue: 'Không thể tải danh sách phiên đăng nhập!' }),
   )
 }
 
@@ -109,7 +110,7 @@ export function revokeSession(sessionId: string) {
     {
       method: 'DELETE',
     },
-    'Không thể thu hồi phiên đăng nhập!',
+    i18n.t('api.error', { defaultValue: 'Không thể thu hồi phiên đăng nhập!' }),
   )
 }
 
@@ -119,7 +120,7 @@ export function revokeOtherSessions() {
     {
       method: 'DELETE',
     },
-    'Không thể đăng xuất khỏi thiết bị khác!',
+    i18n.t('api.error', { defaultValue: 'Không thể đăng xuất khỏi thiết bị khác!' }),
   )
 }
 
@@ -130,7 +131,7 @@ export function deleteAccount(payload: DeleteAccountPayload) {
       method: 'DELETE',
       body: JSON.stringify(payload),
     },
-    'Không thể xoá tài khoản!',
+    i18n.t('api.error', { defaultValue: 'Không thể xoá tài khoản!' }),
   )
 }
 
@@ -146,7 +147,7 @@ export async function uploadAvatar(file: File) {
   const body = await response.json().catch(() => ({}))
 
   if (!response.ok) {
-    throw new Error(body.message ?? 'Không thể cập nhật ảnh đại diện!')
+    throw new Error(body.message ?? i18n.t('api.error', { defaultValue: 'Không thể cập nhật ảnh đại diện!' }))
   }
 
   return body as AvatarResponse

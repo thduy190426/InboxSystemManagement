@@ -1,4 +1,5 @@
 import { requestJson } from './apiClient'
+import i18n from '../../i18n'
 
 export type AdminUserRole = 'user' | 'agent' | 'owner'
 export type AdminUserStatus = 'active' | 'inactive' | 'suspended'
@@ -128,7 +129,7 @@ export async function fetchAdminStats(timeFilter?: string) {
   const response = await requestJson<{ stats: AdminStats }>(
     '/admin/stats' + queryString,
     {},
-    'Không thể tải thống kê quản trị!',
+    i18n.t('api.error', { defaultValue: 'Không thể tải thống kê quản trị!' }),
   )
 
   return response.stats
@@ -166,7 +167,7 @@ export function fetchAdminUsers(params: FetchAdminUsersParams = {}) {
   return requestJson<FetchAdminUsersResponse>(
     `/admin/users${suffix}`,
     {},
-    'Không thể tải danh sách người dùng!',
+    i18n.t('api.error', { defaultValue: 'Không thể tải danh sách người dùng!' }),
   )
 }
 
@@ -192,7 +193,7 @@ export function fetchMessageReports(
   return requestJson<FetchMessageReportsResponse>(
     `/admin/message-reports${suffix}`,
     {},
-    'Không thể tải danh sách báo cáo!',
+    i18n.t('api.error', { defaultValue: 'Không thể tải danh sách báo cáo!' }),
   )
 }
 
@@ -206,7 +207,7 @@ export function updateMessageReportStatus(
       method: 'PATCH',
       body: JSON.stringify({ status }),
     },
-    'Không thể cập nhật báo cáo!',
+    i18n.t('api.error', { defaultValue: 'Không thể cập nhật báo cáo!' }),
   )
 }
 
@@ -217,7 +218,7 @@ export function updateAdminUser(userId: string, payload: UpdateAdminUserPayload)
       method: 'PUT',
       body: JSON.stringify(payload),
     },
-    'Không thể cập nhật người dùng!',
+    i18n.t('api.error', { defaultValue: 'Không thể cập nhật người dùng!' }),
   )
 }
 
@@ -228,7 +229,7 @@ export function createAdminUser(payload: CreateAdminUserPayload) {
       method: 'POST',
       body: JSON.stringify(payload),
     },
-    'Không thể tạo người dùng!',
+    i18n.t('api.error', { defaultValue: 'Không thể tạo người dùng!' }),
   )
 }
 
@@ -238,7 +239,7 @@ export function lockAdminUser(userId: string) {
     {
       method: 'PATCH',
     },
-    'Không thể khóa tài khoản!',
+    i18n.t('api.error', { defaultValue: 'Không thể khóa tài khoản!' }),
   )
 }
 
@@ -248,7 +249,7 @@ export function unlockAdminUser(userId: string) {
     {
       method: 'PATCH',
     },
-    'Không thể mở khóa tài khoản!',
+    i18n.t('api.error', { defaultValue: 'Không thể mở khóa tài khoản!' }),
   )
 }
 
@@ -258,6 +259,6 @@ export function deleteUser(userId: string) {
     {
       method: 'DELETE',
     },
-    'Không thể xóa người dùng!',
+    i18n.t('api.error', { defaultValue: 'Không thể xóa người dùng!' }),
   )
 }

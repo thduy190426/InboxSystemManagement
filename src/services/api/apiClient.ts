@@ -1,5 +1,6 @@
 import { clearStoredAuthSession, getStoredRefreshToken } from '../storage/authStorage'
 import { disconnectRealtimeSocket } from '../realtime/realtime'
+import i18n from '../../i18n'
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:4000/api'
 export const SESSION_EXPIRED_EVENT = 'auth:session-expired'
@@ -43,7 +44,7 @@ export async function apiFetch(path: string, options: ApiFetchOptions = {}) {
 
   if (auth && !token) {
     expireSession()
-    throw new ApiRequestError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!', 401)
+    throw new ApiRequestError(i18n.t('app.sessionExpired'), 401)
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -64,7 +65,7 @@ export async function apiFetch(path: string, options: ApiFetchOptions = {}) {
 export async function requestJson<T>(
   path: string,
   options: ApiFetchOptions = {},
-  defaultErrorMessage = 'Không thể xử lý yêu cầu!',
+  defaultErrorMessage = i18n.t('api.genericError', { defaultValue: 'Không thể xử lý yêu cầu!' }),
 ) {
   const response = await apiFetch(path, {
     ...options,

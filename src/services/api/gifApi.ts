@@ -1,3 +1,4 @@
+import i18n from '../../i18n'
 const GIPHY_API_BASE_URL = 'https://api.giphy.com/v1/gifs'
 const GIPHY_API_KEY = import.meta.env.VITE_GIPHY_API_KEY as string | undefined
 
@@ -59,7 +60,7 @@ function mapGif(item: GiphyItem): GifSearchResult | null {
 
 export async function fetchGifs(query: string, limit = 24) {
   if (!GIPHY_API_KEY) {
-    throw new Error('Chưa cấu hình VITE_GIPHY_API_KEY để tìm GIF!')
+    throw new Error(i18n.t('api.error', { defaultValue: 'Chưa cấu hình VITE_GIPHY_API_KEY để tìm GIF!' }))
   }
 
   const params = new URLSearchParams({
@@ -78,7 +79,7 @@ export async function fetchGifs(query: string, limit = 24) {
   const body = (await response.json().catch(() => ({}))) as GiphyResponse
 
   if (!response.ok) {
-    throw new Error('Không thể tải GIF từ GIPHY!')
+    throw new Error(i18n.t('api.error', { defaultValue: 'Không thể tải GIF từ GIPHY!' }))
   }
 
   return (body.data || [])

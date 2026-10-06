@@ -1,4 +1,5 @@
 import { apiFetch, ApiRequestError, requestJson } from './apiClient'
+import i18n from '../../i18n'
 
 export type AuthUser = {
   id: string
@@ -116,8 +117,7 @@ async function requestAuth(path: string, payload: LoginPayload | RegisterPayload
         auth: false,
         method: 'POST',
         body: JSON.stringify(payload),
-      },
-      'Không thể xử lý yêu cầu!',
+      }
     )
   } catch (error) {
     if (error instanceof ApiRequestError) {
@@ -143,8 +143,7 @@ async function requestAuthJson<T>(
         auth: false,
         method: 'POST',
         body: JSON.stringify(payload),
-      },
-      'Không thể xử lý yêu cầu!',
+      }
     )
   } catch (error) {
     if (error instanceof ApiRequestError) {

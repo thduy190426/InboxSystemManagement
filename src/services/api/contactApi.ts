@@ -1,5 +1,6 @@
 import type { ContactUser } from '../../types'
 import { requestJson } from './apiClient'
+import i18n from '../../i18n'
 
 type SearchResponse = {
   users: ContactUser[]
@@ -30,7 +31,7 @@ type ContactNicknameResponse = {
 }
 
 async function request<T>(path: string, options: RequestInit = {}) {
-  return requestJson<T>(path, options, 'Không thể xử lý yêu cầu!')
+  return requestJson<T>(path, options, i18n.t('api.error', { defaultValue: 'Không thể xử lý yêu cầu!' }))
 }
 
 export async function searchUsers(query: string) {

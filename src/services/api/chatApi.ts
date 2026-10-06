@@ -1,5 +1,6 @@
 import type { CallHistoryItem, Conversation, ConversationMember, GroupJoinRequest, Message } from '../../types'
 import { apiFetch } from './apiClient'
+import i18n from '../../i18n'
 
 type ConversationsResponse = {
   conversations: Conversation[]
@@ -94,7 +95,7 @@ async function request<T>(path: string, options: RequestInit = {}) {
   const body = await response.json().catch(() => ({}))
 
   if (!response.ok) {
-    throw new Error(body.message ?? 'Không thể tải dữ liệu từ máy chủ!')
+    throw new Error(body.message ?? i18n.t('api.error', { defaultValue: 'Không thể tải dữ liệu từ máy chủ!' }))
   }
 
   return body as T
@@ -225,7 +226,7 @@ export async function sendPoll(
     const message: Message = {
       id: Math.random().toString(36).substring(7),
       author: 'me',
-      text: 'Đã tạo một bình chọn',
+      text: i18n.t('api.error', { defaultValue: 'Đã tạo một bình chọn' }),
       type: 'poll',
       poll: {
         ...pollData,
@@ -273,7 +274,7 @@ export async function uploadMessageAttachment(conversationId: string, file: File
   const body = await response.json().catch(() => ({}))
 
   if (!response.ok) {
-    throw new Error(body.message ?? 'Không thể tải file lên!')
+    throw new Error(body.message ?? i18n.t('api.error', { defaultValue: 'Không thể tải file lên!' }))
   }
 
   return (body as UploadAttachmentResponse).message
@@ -496,7 +497,7 @@ export async function createGroupConversation(payload: {
   const body = await response.json().catch(() => ({}))
 
   if (!response.ok) {
-    throw new Error(body.message ?? 'Không thể tạo nhóm!')
+    throw new Error(body.message ?? i18n.t('api.error', { defaultValue: 'Không thể tạo nhóm!' }))
   }
 
   return (body as ConversationResponse).conversation
@@ -587,7 +588,7 @@ export async function updateConversationBackground(
   const body = await response.json().catch(() => ({}))
 
   if (!response.ok) {
-    throw new Error(body.message ?? 'Cập nhật ảnh nền thất bại!')
+    throw new Error(body.message ?? i18n.t('api.error', { defaultValue: 'Cập nhật ảnh nền thất bại!' }))
   }
 
   return (body as ConversationResponse).conversation
@@ -614,7 +615,7 @@ export async function updateGroupConversation(
   const body = await response.json().catch(() => ({}))
 
   if (!response.ok) {
-    throw new Error(body.message ?? 'Không thể cập nhật nhóm!')
+    throw new Error(body.message ?? i18n.t('api.error', { defaultValue: 'Không thể cập nhật nhóm!' }))
   }
 
   return (body as ConversationResponse).conversation

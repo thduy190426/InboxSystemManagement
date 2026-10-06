@@ -52,7 +52,7 @@ export function TermsPage() {
           </div>
         </header>
 
-        <section className="legal-summary" aria-label="Tóm tắt">
+        <section className="legal-summary" aria-label={t('summary', { defaultValue: 'Summary' })}>
           <div>
             <ShieldCheck size={18} />
             <span>{t('lastUpdate')}</span>

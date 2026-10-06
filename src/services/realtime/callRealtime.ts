@@ -1,6 +1,7 @@
 import type { Socket } from 'socket.io-client'
 import type { CallSession, CallType } from '../../types'
 import { getRealtimeSocket } from './realtime'
+import i18n from '../../i18n'
 
 type Ack<T = unknown> = {
   ok: boolean
@@ -23,7 +24,7 @@ function getSocketOrThrow() {
   const socket = getRealtimeSocket()
 
   if (!socket) {
-    throw new Error('Bạn cần đăng nhập để thực hiện cuộc gọi!')
+    throw new Error(i18n.t('api.error', { defaultValue: 'Bạn cần đăng nhập để thực hiện cuộc gọi!' }))
   }
 
   return socket
@@ -33,7 +34,7 @@ function emitWithAck<T>(socket: Socket, eventName: string, payload: unknown) {
   return new Promise<Ack<T>>((resolve) => {
     socket.timeout(8000).emit(eventName, payload, (error: Error | null, response: Ack<T>) => {
       if (error) {
-        resolve({ ok: false, message: 'Máy chủ không phản hồi kịp thời!' } as Ack<T>)
+        resolve({ ok: false, message: i18n.t('api.error', { defaultValue: 'Máy chủ không phản hồi kịp thời!' }) } as Ack<T>)
         return
       }
 
@@ -51,7 +52,7 @@ export async function startRealtimeCall(conversationId: string, type: CallType) 
   )
 
   if (!response.ok || !response.call) {
-    throw new Error(response.message || 'Không thể bắt đầu cuộc gọi!')
+    throw new Error(response.message || i18n.t('api.error', { defaultValue: 'Không thể bắt đầu cuộc gọi!' }))
   }
 
   return response.call
@@ -62,7 +63,7 @@ export async function acceptRealtimeCall(callId: string) {
   const response = await emitWithAck(socket, 'call:accept', { callId })
 
   if (!response.ok) {
-    throw new Error(response.message || 'Không thể nhận cuộc gọi!')
+    throw new Error(response.message || i18n.t('api.error', { defaultValue: 'Không thể nhận cuộc gọi!' }))
   }
 }
 

@@ -1,4 +1,5 @@
 import { requestJson } from './apiClient'
+import i18n from '../../i18n'
 
 export type GlobalSearchConversation = {
   id: string
@@ -40,6 +41,6 @@ export function globalSearch(query: string) {
   return requestJson<GlobalSearchResponse>(
     `/search?q=${encodeURIComponent(query)}`,
     {},
-    'Không thể tìm kiếm!',
+    i18n.t('api.error', { defaultValue: 'Không thể tìm kiếm!' }),
   )
 }
