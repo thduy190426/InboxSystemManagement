@@ -952,7 +952,31 @@ export function ChatPanel({
     })
   }
 
+  function getDisplayMessageText(text: string) {
+    const withoutLeadingIcon = text.replace(/^\s*📍\s*/, '')
+    const normalized = withoutLeadingIcon.replace(/\s+/g, ' ').trim()
+
+    const ipLocationMatch = normalized.match(/^Vị trí \(ước tính qua IP\):\s*(.+)$/i)
+    if (ipLocationMatch) {
+      return t('geoIpLocation', { url: ipLocationMatch[1] })
+    }
+
+    const currentLocationMatch = normalized.match(/^Vị trí hiện tại:\s*(.+)$/i)
+    if (currentLocationMatch) {
+      return t('geoCurrentLocation', { url: currentLocationMatch[1] })
+    }
+
+    const exactLocationMatch = normalized.match(/^Vị trí chính xác:\s*(.+)$/i)
+    if (exactLocationMatch) {
+      return t('geoExactLocation', { url: exactLocationMatch[1] })
+    }
+
+    return withoutLeadingIcon
+  }
+
   function renderHighlightedText(message: Message) {
+    const displayText = getDisplayMessageText(message.text)
+
     if (!normalizedSearch) {
       const mentionNames = message.mentions?.flatMap((mention) => [
         mention.fullName,
@@ -968,10 +992,10 @@ export function ChatPanel({
         : null
 
       if (!pattern) {
-        return linkifyText(message.text)
+        return linkifyText(displayText)
       }
 
-      return message.text.split(pattern).map((part, index) => {
+      return displayText.split(pattern).map((part, index) => {
         pattern.lastIndex = 0
 
         return pattern.test(part) ? (
@@ -984,16 +1008,16 @@ export function ChatPanel({
       })
     }
 
-    const lowerText = message.text.toLocaleLowerCase('vi-VN')
+    const lowerText = displayText.toLocaleLowerCase('vi-VN')
     const matchIndex = lowerText.indexOf(normalizedSearch)
 
     if (matchIndex === -1) {
-      return linkifyText(message.text)
+      return linkifyText(displayText)
     }
 
-    const before = message.text.slice(0, matchIndex)
-    const match = message.text.slice(matchIndex, matchIndex + normalizedSearch.length)
-    const after = message.text.slice(matchIndex + normalizedSearch.length)
+    const before = displayText.slice(0, matchIndex)
+    const match = displayText.slice(matchIndex, matchIndex + normalizedSearch.length)
+    const after = displayText.slice(matchIndex + normalizedSearch.length)
 
     return (
       <>
@@ -1014,7 +1038,7 @@ export function ChatPanel({
 
   function getReplyText(message: Message | NonNullable<Message['replyTo']>) {
     if (message.text) {
-      return message.text
+      return getDisplayMessageText(message.text)
     }
 
     if (message.type === 'image') {
