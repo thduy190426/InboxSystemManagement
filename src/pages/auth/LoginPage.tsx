@@ -27,7 +27,7 @@ export function LoginPage({
   const [isFormFilled, setIsFormFilled] = useState(false)
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null)
   const recaptchaRef = useRef<ReCAPTCHA>(null)
-  const { t } = useTranslation('auth')
+  const { t, i18n } = useTranslation('auth')
 
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -165,6 +165,7 @@ export function LoginPage({
               ref={recaptchaRef}
               sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"}
               onChange={handleRecaptchaChange}
+              hl={i18n.language}
             />
           </div>
 
