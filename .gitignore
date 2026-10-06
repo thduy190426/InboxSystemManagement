@@ -54,3 +54,6 @@ build/
 
 # OS Files
 Thumbs.db
+
+# Python
+*.py
