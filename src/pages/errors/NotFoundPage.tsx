@@ -1,4 +1,5 @@
 import { ArrowLeft, Home, MessageCircleWarning, Compass, ShieldAlert } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 type NotFoundPageProps = {
   isAuthenticated?: boolean
@@ -11,6 +12,7 @@ export function NotFoundPage({
   onGoHome,
   onGoBack,
 }: NotFoundPageProps) {
+  const { t } = useTranslation('notfound')
   return (
     <main className="not-found-shell">
       <section className="not-found-panel" aria-labelledby="not-found-title">
@@ -24,30 +26,29 @@ export function NotFoundPage({
         <div className="not-found-content-wrapper">
           <div className="not-found-copy">
             <span className="section-kicker">
-              <ShieldAlert size={18} /> Lỗi 404 - Không tìm thấy
+              <ShieldAlert size={18} /> {t('kicker')}
             </span>
-            <h1 id="not-found-title">Trang này đã rời khỏi cuộc trò chuyện!</h1>
+            <h1 id="not-found-title">{t('title')}</h1>
             <p>
-              Đường dẫn bạn mở không tồn tại hoặc đã được chuyển đi. Hãy quay lại khu vực
-              chính để tiếp tục quản lý hội thoại nhé!
+              {t('description')}
             </p>
           </div>
           
           <div className="not-found-suggestions">
             <div className="suggestion-item">
               <Compass size={18} />
-              <span>Kiểm tra lại đường dẫn URL xem có chính xác không.</span>
+              <span>{t('suggestion')}</span>
             </div>
           </div>
 
           <div className="not-found-actions">
             <button className="auth-primary" onClick={onGoHome} type="button">
               <Home size={18} />
-              {isAuthenticated ? 'Về hộp thư chính' : 'Về trang đăng nhập'}
+              {isAuthenticated ? t('homeAuth') : t('homeUnauth')}
             </button>
             <button className="not-found-secondary" onClick={onGoBack} type="button">
               <ArrowLeft size={18} />
-              Quay lại trang trước
+              {t('back')}
             </button>
           </div>
         </div>

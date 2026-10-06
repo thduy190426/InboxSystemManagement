@@ -1,39 +1,42 @@
 import { ArrowLeft, CheckCircle2, FileText, ShieldCheck } from 'lucide-react'
-
-const termsSections = [
-  {
-    title: '1. Chấp nhận điều khoản',
-    body: 'Khi tạo tài khoản hoặc sử dụng hệ thống Inbox System Management, bạn đồng ý tuân thủ các điều khoản này. Nếu bạn không đồng ý, vui lòng không tiếp tục sử dụng dịch vụ.',
-  },
-  {
-    title: '2. Tài khoản người dùng',
-    body: 'Bạn chịu trách nhiệm bảo mật thông tin đăng nhập, mật khẩu và mọi hoạt động diễn ra trong tài khoản của mình. Hãy thông báo cho quản trị viên nếu phát hiện truy cập bất thường.',
-  },
-  {
-    title: '3. Sử dụng hợp lệ',
-    body: 'Không sử dụng hệ thống để gửi nội dung vi phạm pháp luật, spam, lừa đảo, quấy rối, phát tán mã độc hoặc xâm phạm quyền riêng tư của người khác.',
-  },
-  {
-    title: '4. Nội dung và dữ liệu',
-    body: 'Bạn giữ quyền đối với nội dung do mình tạo, nhưng cho phép hệ thống xử lý dữ liệu đó để vận hành các tính năng như nhắn tin, quản lý hội thoại, thông báo và hỗ trợ khách hàng.',
-  },
-  {
-    title: '5. Tạm ngưng hoặc chấm dứt truy cập',
-    body: 'Chúng tôi có thể tạm ngưng hoặc chấm dứt quyền truy cập nếu tài khoản vi phạm điều khoản, gây rủi ro bảo mật hoặc ảnh hưởng đến trải nghiệm của người dùng khác.',
-  },
-  {
-    title: '6. Thay đổi điều khoản',
-    body: 'Điều khoản có thể được cập nhật khi sản phẩm thay đổi. Phiên bản mới sẽ có hiệu lực khi được đăng tải trong hệ thống.',
-  },
-]
+import { useTranslation } from 'react-i18next'
 
 export function TermsPage() {
+  const { t } = useTranslation('terms')
+
+  const termsSections = [
+    {
+      title: t('s1Title'),
+      body: t('s1Body'),
+    },
+    {
+      title: t('s2Title'),
+      body: t('s2Body'),
+    },
+    {
+      title: t('s3Title'),
+      body: t('s3Body'),
+    },
+    {
+      title: t('s4Title'),
+      body: t('s4Body'),
+    },
+    {
+      title: t('s5Title'),
+      body: t('s5Body'),
+    },
+    {
+      title: t('s6Title'),
+      body: t('s6Body'),
+    },
+  ]
+
   return (
     <main className="legal-shell">
       <article className="legal-document" aria-labelledby="terms-title">
         <a className="legal-back-link" href="/register">
           <ArrowLeft size={18} />
-          Quay lại đăng ký
+          {t('backToRegister')}
         </a>
 
         <header className="legal-hero">
@@ -41,11 +44,10 @@ export function TermsPage() {
             <FileText size={30} />
           </div>
           <div>
-            <span className="section-kicker">Inbox System Management</span>
-            <h1 id="terms-title">Điều khoản sử dụng</h1>
+            <span className="section-kicker">{t('kicker')}</span>
+            <h1 id="terms-title">{t('title')}</h1>
             <p>
-              Các nguyên tắc cơ bản khi bạn tạo tài khoản, quản lý hội thoại và sử
-              dụng các tính năng trong hệ thống.
+              {t('description')}
             </p>
           </div>
         </header>
@@ -53,11 +55,11 @@ export function TermsPage() {
         <section className="legal-summary" aria-label="Tóm tắt">
           <div>
             <ShieldCheck size={18} />
-            <span>Lần cập nhật gần nhất: 23/06/2026</span>
+            <span>{t('lastUpdate')}</span>
           </div>
           <div>
             <CheckCircle2 size={18} />
-            <span>Áp dụng cho tất cả người dùng đã đăng ký</span>
+            <span>{t('appliesTo')}</span>
           </div>
         </section>
 
