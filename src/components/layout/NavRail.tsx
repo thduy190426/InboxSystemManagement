@@ -8,9 +8,9 @@ import {
   Settings,
   Shield,
   UserRound,
-  Users,
-  Moon,
-  Sun
+  Users
+  // Moon,
+  // Sun
 } from 'lucide-react'
 import type { AuthUser } from '../../services/api/authApi'
 import type { AppView } from '../../types'
@@ -45,7 +45,7 @@ export function NavRail({
   onToggleOpen,
   onLogout,
 }: NavRailProps) {
-  const { theme, toggleTheme } = useTheme()
+  // const { theme, toggleTheme } = useTheme()
   const [isRinging, setIsRinging] = useState(false)
   const prevCountRef = useRef(notificationCount)
 
