@@ -7,6 +7,7 @@ const NotFoundPage = lazy(() => import('./pages/errors/NotFoundPage').then(m => 
 const PrivacyPolicyPage = lazy(() => import('./pages/legal/PrivacyPolicyPage').then(m => ({ default: m.PrivacyPolicyPage })))
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage').then(m => ({ default: m.RegisterPage })))
 const TermsPage = lazy(() => import('./pages/legal/TermsPage').then(m => ({ default: m.TermsPage })))
+const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })))
 
 import {
   ApiError,
@@ -452,6 +453,13 @@ export function App() {
       )
     }
 
+    if (authScreen === 'forgot-password') {
+      return (
+        <ForgotPasswordPage
+          onBackToLogin={() => navigateAuth('login')}
+        />
+      )
+    }
 
     return (
       <LoginPage
@@ -464,6 +472,10 @@ export function App() {
         }}
         onGoogleLogin={handleGoogleLoginAction}
         onFacebookLogin={handleFacebookLoginAction}
+        onForgotPassword={() => {
+          setAuthError('')
+          navigateAuth('forgot-password')
+        }}
       />
     )
   })()

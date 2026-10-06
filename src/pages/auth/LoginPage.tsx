@@ -9,9 +9,10 @@ import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import type { AuthPageProps } from '../../types'
 import loginBg from '../../bg-images/LoginBG.jpg'
-import { forgotPassword, resetPassword } from '../../services/api/authApi'
 
-type LoginPageProps = AuthPageProps
+type LoginPageProps = AuthPageProps & {
+  onForgotPassword?: () => void
+}
 
 export function LoginPage({
   errorMessage,
@@ -20,73 +21,13 @@ export function LoginPage({
   onSwitchMode,
   onGoogleLogin,
   onFacebookLogin,
+  onForgotPassword,
 }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [isFormFilled, setIsFormFilled] = useState(false)
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null)
   const recaptchaRef = useRef<ReCAPTCHA>(null)
   const { t } = useTranslation('auth')
-  const [isForgotPassword, setIsForgotPassword] = useState(false)
-  const [forgotPasswordStep, setForgotPasswordStep] = useState<1 | 2>(1)
-  const [resetEmail, setResetEmail] = useState('')
-  const [resetCode, setResetCode] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmNewPassword, setConfirmNewPassword] = useState('')
-  const [isResetting, setIsResetting] = useState(false)
-  const [countdown, setCountdown] = useState(0)
-
-  useEffect(() => {
-    let timer: any
-    if (countdown > 0) {
-      timer = setTimeout(() => setCountdown(countdown - 1), 1000)
-    }
-    return () => clearTimeout(timer)
-  }, [countdown])
-
-  async function handleForgotPasswordSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (forgotPasswordStep === 1) {
-      if (!resetEmail) return
-      setIsResetting(true)
-      try {
-        const res = await forgotPassword({ email: resetEmail })
-        toast.success(res.message)
-        if (res.resetCode) {
-           setResetCode(res.resetCode)
-        }
-        setForgotPasswordStep(2)
-        setCountdown(60)
-      } catch (err: any) {
-        toast.error(err.message || 'Có lỗi xảy ra!')
-        if (err.status === 429) {
-          setCountdown(err.retryAfterSeconds || 60)
-        }
-      } finally {
-        setIsResetting(false)
-      }
-    } else {
-      if (!resetCode || !newPassword || !confirmNewPassword) return
-      if (newPassword !== confirmNewPassword) {
-        toast.error('Mật khẩu không khớp!')
-        return
-      }
-      setIsResetting(true)
-      try {
-        const res = await resetPassword({ email: resetEmail, token: resetCode, password: newPassword, confirmPassword: confirmNewPassword })
-        toast.success(res.message)
-        setIsForgotPassword(false)
-        setForgotPasswordStep(1)
-        setResetEmail('')
-        setResetCode('')
-        setNewPassword('')
-        setConfirmNewPassword('')
-      } catch (err: any) {
-        toast.error(err.message || 'Có lỗi xảy ra!')
-      } finally {
-        setIsResetting(false)
-      }
-    }
-  }
 
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -158,125 +99,13 @@ export function LoginPage({
           <p>{t('login.subtitle')}</p>
         </div>
 
-        {errorMessage && !isForgotPassword ? (
+        {errorMessage ? (
           <div className="auth-error-notice" role="alert">
             {errorMessage}
           </div>
         ) : null}
 
-        {isForgotPassword ? (
-          <form className="auth-form" onSubmit={handleForgotPasswordSubmit}>
-            {forgotPasswordStep === 1 ? (
-              <>
-                <p style={{ color: 'var(--sp-text-muted)', fontSize: '14px', marginBottom: '16px' }}>
-                  Nhập email của bạn, chúng tôi sẽ gửi mã OTP để đặt lại mật khẩu.
-                </p>
-                <label className="auth-field" htmlFor="reset-email">
-                  <span>{t('login.emailLabel')}</span>
-                  <div className="auth-input-row">
-                    <Mail size={18} />
-                    <input
-                      id="reset-email"
-                      placeholder={t('login.emailPlaceholder')}
-                      required
-                      type="email"
-                      value={resetEmail}
-                      onChange={(e) => setResetEmail(e.target.value)}
-                    />
-                  </div>
-                </label>
-                <button 
-                  className="auth-primary" 
-                  disabled={isResetting || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(resetEmail) || countdown > 0} 
-                  type="submit" 
-                  style={{ marginTop: '16px' }}
-                >
-                  {isResetting 
-                    ? 'Đang gửi...' 
-                    : countdown > 0 
-                      ? `Gửi lại sau ${countdown}s` 
-                      : 'Gửi mã OTP'}
-                  <ArrowRight size={18} />
-                </button>
-              </>
-            ) : (
-              <>
-                <p style={{ color: 'var(--sp-text-muted)', fontSize: '14px', marginBottom: '16px' }}>
-                  Mã OTP đã được gửi đến <strong>{resetEmail}</strong>
-                </p>
-                <label className="auth-field" htmlFor="reset-code">
-                  <span>Mã xác thực (OTP)</span>
-                  <div className="auth-input-row">
-                    <Lock size={18} />
-                    <input
-                      id="reset-code"
-                      placeholder="Nhập mã 6 số"
-                      required
-                      type="text"
-                      value={resetCode}
-                      onChange={(e) => setResetCode(e.target.value)}
-                    />
-                  </div>
-                </label>
-                <label className="auth-field" htmlFor="new-password">
-                  <span>Mật khẩu mới</span>
-                  <div className="auth-input-row">
-                    <Lock size={18} />
-                    <input
-                      id="new-password"
-                      placeholder="Mật khẩu mới (tối thiểu 6 ký tự)"
-                      required
-                      minLength={6}
-                      type={showPassword ? 'text' : 'password'}
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                    />
-                    <button
-                      className="password-toggle"
-                      onClick={() => setShowPassword((current) => !current)}
-                      type="button"
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </label>
-                <label className="auth-field" htmlFor="confirm-new-password">
-                  <span>Xác nhận mật khẩu mới</span>
-                  <div className="auth-input-row">
-                    <Lock size={18} />
-                    <input
-                      id="confirm-new-password"
-                      placeholder="Nhập lại mật khẩu mới"
-                      required
-                      minLength={6}
-                      type={showPassword ? 'text' : 'password'}
-                      value={confirmNewPassword}
-                      onChange={(e) => setConfirmNewPassword(e.target.value)}
-                    />
-                  </div>
-                </label>
-                <button className="auth-primary" disabled={isResetting || !resetCode || !newPassword || !confirmNewPassword} type="submit" style={{ marginTop: '16px' }}>
-                  {isResetting ? 'Đang xử lý...' : 'Đặt lại mật khẩu'}
-                  <ArrowRight size={18} />
-                </button>
-              </>
-            )}
-
-            <div style={{ textAlign: 'center', marginTop: '16px' }}>
-              <button 
-                type="button" 
-                onClick={() => {
-                  setIsForgotPassword(false)
-                  setForgotPasswordStep(1)
-                }} 
-                style={{ background: 'none', border: 'none', color: 'var(--sp-text-muted)', fontSize: '14px', cursor: 'pointer' }}
-              >
-                Quay lại Đăng nhập
-              </button>
-            </div>
-          </form>
-        ) : (
-          <form className="auth-form" onChange={handleFormChange} onSubmit={handleSubmit}>
+        <form className="auth-form" onChange={handleFormChange} onSubmit={handleSubmit}>
           <label className="auth-field" htmlFor="login-email">
             <span>{t('login.emailLabel')}</span>
             <div className="auth-input-row">
@@ -324,7 +153,7 @@ export function LoginPage({
             </label>
             <button
               type="button"
-              onClick={() => setIsForgotPassword(true)}
+              onClick={onForgotPassword}
               style={{ background: 'none', border: 'none', color: 'var(--sp-accent)', fontSize: '13px', fontWeight: 500, cursor: 'pointer', padding: 0 }}
             >
               Quên mật khẩu?
@@ -348,13 +177,10 @@ export function LoginPage({
             <ArrowRight size={18} />
           </button>
         </form>
-        )}
 
-        {!isForgotPassword && (
-          <>
-            <div className="auth-divider">
-              <span>{t('login.or')}</span>
-            </div>
+        <div className="auth-divider">
+          <span>{t('login.or')}</span>
+        </div>
 
         <button 
           className="auth-google-btn" 
@@ -403,10 +229,7 @@ export function LoginPage({
           <button disabled={isSubmitting} onClick={onSwitchMode} type="button">
           </button>
         </p>
-        </>
-        )}
       </section>
     </main>
   )
 }
-
