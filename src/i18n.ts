@@ -692,6 +692,10 @@ const resources = {
       rejectBtn: 'Reject',
 
       detailHeader: 'Chat Details',
+      roleOwner: 'Owner',
+      roleAdmin: 'Admin',
+      roleModerator: 'Moderator',
+      roleMember: 'Member',
       copyGroupLinkTitle: 'Copy invite link',
       leaveGroupBtn: 'Leave group',
       leaveGroupConfirmTitle: 'Leave group?',
@@ -1726,6 +1730,10 @@ const resources = {
       rejectBtn: 'Từ chối',
 
       detailHeader: 'Chi tiết hội thoại',
+      roleOwner: 'Chủ sở hữu',
+      roleAdmin: 'Quản trị viên',
+      roleModerator: 'Người kiểm duyệt',
+      roleMember: 'Thành viên',
       copyGroupLinkTitle: 'Copy link mời',
       leaveGroupBtn: 'Rời nhóm',
       leaveGroupConfirmTitle: 'Rời khỏi nhóm?',

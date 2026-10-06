@@ -317,9 +317,31 @@ export function DetailPanel({
     await onUpdateMemberNickname(memberId, '')
   }
 
+  function getDisplayMessageText(text: string) {
+    const withoutLeadingIcon = text.replace(/^\s*📍\s*/, '')
+    const normalized = withoutLeadingIcon.replace(/\s+/g, ' ').trim()
+
+    const ipLocationMatch = normalized.match(/^Vị trí \(ước tính qua IP\):\s*(.+)$/i)
+    if (ipLocationMatch) {
+      return t('geoIpLocation', { url: ipLocationMatch[1] })
+    }
+
+    const currentLocationMatch = normalized.match(/^Vị trí hiện tại:\s*(.+)$/i)
+    if (currentLocationMatch) {
+      return t('geoCurrentLocation', { url: currentLocationMatch[1] })
+    }
+
+    const exactLocationMatch = normalized.match(/^Vị trí chính xác:\s*(.+)$/i)
+    if (exactLocationMatch) {
+      return t('geoExactLocation', { url: exactLocationMatch[1] })
+    }
+
+    return withoutLeadingIcon
+  }
+
   function getPinnedMessageText(message: Message) {
     if (message.text) {
-      return message.text
+      return getDisplayMessageText(message.text)
     }
 
     if (message.type === 'image') {
@@ -351,18 +373,40 @@ export function DetailPanel({
 
   function getRoleLabel(role: ConversationMember['role']) {
     if (role === 'owner') {
-      return 'Owner'
+      return t('roleOwner')
     }
 
     if (role === 'admin') {
-      return 'Admin'
+      return t('roleAdmin')
     }
 
     if (role === 'moderator') {
-      return 'Moderator'
+      return t('roleModerator')
     }
 
-    return t('labelUser', { defaultValue: 'User' })
+    return t('roleMember')
+  }
+
+  function getConversationRoleLabel(role: string | null | undefined) {
+    const normalizedRole = String(role || '').trim().toLocaleLowerCase('vi-VN')
+
+    if (['owner', 'chủ sở hữu', 'người sáng lập'].includes(normalizedRole)) {
+      return t('roleOwner')
+    }
+
+    if (['admin', 'administrator', 'quản trị', 'quản trị viên'].includes(normalizedRole)) {
+      return t('roleAdmin')
+    }
+
+    if (['moderator', 'người kiểm duyệt', 'kiểm duyệt viên'].includes(normalizedRole)) {
+      return t('roleModerator')
+    }
+
+    if (['member', 'user', 'thành viên', 'người dùng'].includes(normalizedRole)) {
+      return t('roleMember')
+    }
+
+    return role || t('roleMember')
   }
 
   return (
@@ -384,7 +428,7 @@ export function DetailPanel({
           />
         </span>
         <h2>{activeConversation.name}</h2>
-        <p>{activeConversation.role}</p>
+        <p>{getConversationRoleLabel(activeConversation.role)}</p>
       </div>
 
       <div className="detail-actions">
