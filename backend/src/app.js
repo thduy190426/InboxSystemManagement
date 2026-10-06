@@ -12,6 +12,7 @@ const userRoutes = require('./routes/core/user.routes')
 const storyRoutes = require('./routes/core/story.routes')
 const { authenticate, requireAdmin } = require('./middleware/auth.middleware')
 const { notFoundHandler, errorHandler } = require('./middleware/error.middleware')
+const { globalRateLimit } = require('./middleware/rateLimit.middleware')
 const { logRequest } = require('./middleware/requestLogger.middleware')
 const { getAllowedOrigins, normalizeOrigin } = require('./utils/allowedOrigins')
 
@@ -40,6 +41,7 @@ app.use(cors(corsOptions))
 app.options('*', cors(corsOptions))
 app.use(express.json({ limit: '1mb' }))
 app.use(logRequest)
+app.use('/api', globalRateLimit)
 
 app.get('/api/health', (_request, response) => {
   response.json({

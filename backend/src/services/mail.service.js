@@ -1,43 +1,75 @@
 const { Resend } = require('resend');
+const nodemailer = require('nodemailer');
 
 let resendClient = null;
+let nodemailerTransporter = null;
+let useNodemailer = false;
 
-function getMailClient() {
-  if (resendClient) return resendClient;
-
-  const apiKey = process.env.RESEND_API_KEY;
-
-  if (!apiKey) {
-    console.warn('Cảnh báo: Thiếu RESEND_API_KEY trong biến môi trường!');
-    return null;
+function initMailClient() {
+  if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+    if (!nodemailerTransporter) {
+      nodemailerTransporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      });
+      useNodemailer = true;
+      console.log('Khởi tạo kết nối Nodemailer (Gmail)');
+    }
+    return true;
   }
 
-  console.log('Khởi tạo kết nối Resend API');
+  const apiKey = process.env.RESEND_API_KEY;
+  if (apiKey) {
+    if (!resendClient) {
+      resendClient = new Resend(apiKey);
+      console.log('Khởi tạo kết nối Resend API');
+    }
+    return true;
+  }
 
-  resendClient = new Resend(apiKey);
-  return resendClient;
+  console.warn('Cảnh báo: Chưa cấu hình dịch vụ gửi Email (SMTP hoặc Resend)!');
+  return false;
 }
 
 function getSender() {
-  return `"${process.env.MAIL_SENDER_NAME || 'Inbox System'}" <${process.env.RESEND_SENDER_EMAIL || 'onboarding@resend.dev'}>`
+  if (useNodemailer) {
+    return `"${process.env.MAIL_SENDER_NAME || 'Inbox System'}" <${process.env.SMTP_USER}>`;
+  }
+  return `"${process.env.MAIL_SENDER_NAME || 'Inbox System'}" <${process.env.RESEND_SENDER_EMAIL || 'onboarding@resend.dev'}>`;
 }
 
-async function sendPasswordResetCode({ email, fullName, code }) {
-  const client = getMailClient()
-
-  if (!client) {
+async function sendMailWrapper(mailOptions) {
+  if (!initMailClient()) {
     if (process.env.NODE_ENV === 'production') {
-      const error = new Error('Dịch vụ gửi Email chưa được cấu hình!')
-      error.statusCode = 503
-      throw error
+      const error = new Error('Dịch vụ gửi Email chưa được cấu hình!');
+      error.statusCode = 503;
+      throw error;
     }
-    return {
-      skipped: true,
-    }
+    return { skipped: true };
   }
 
   try {
-    const { data, error } = await client.emails.send({
+    if (useNodemailer) {
+      const info = await nodemailerTransporter.sendMail(mailOptions);
+      console.log('Đã gửi email thành công (Nodemailer):', info.messageId);
+      return { skipped: false };
+    } else {
+      const { data, error } = await resendClient.emails.send(mailOptions);
+      if (error) throw error;
+      console.log('Đã gửi email thành công (Resend):', data?.id);
+      return { skipped: false };
+    }
+  } catch (error) {
+    console.error('Lỗi hệ thống khi gửi Email:', error);
+    return { skipped: false, error };
+  }
+}
+
+async function sendPasswordResetCode({ email, fullName, code }) {
+  return await sendMailWrapper({
     from: getSender(),
     to: email,
     subject: 'Mã đặt lại mật khẩu của bạn',
@@ -211,40 +243,12 @@ async function sendPasswordResetCode({ email, fullName, code }) {
       </table>
     </body>
     </html>
-  `,
-    
-    });
-
-    if (error) {
-      console.error('Lỗi CHI TIẾT khi gửi email đặt lại mật khẩu (Resend):', error);
-    } else {
-      console.log('Đã gửi email đặt lại mật khẩu thành công:', data?.id);
-    }
-  } catch (error) {
-    console.error('Lỗi hệ thống khi gọi Resend API (Đặt lại MK):', error);
-  }
-
-  return {
-    skipped: false,
-  }
+  `
+  });
 }
 
 async function sendEmailVerificationCode({ email, fullName, code }) {
-  const client = getMailClient()
-
-  if (!client) {
-    if (process.env.NODE_ENV === 'production') {
-      const error = new Error('Dịch vụ gửi Email chưa được cấu hình!')
-      error.statusCode = 503
-      throw error
-    }
-    return {
-      skipped: true,
-    }
-  }
-
-  try {
-    const { data, error } = await client.emails.send({
+  return await sendMailWrapper({
     from: getSender(),
     to: email,
     subject: 'Mã xác thực Email của bạn',
@@ -409,22 +413,8 @@ async function sendEmailVerificationCode({ email, fullName, code }) {
   </table>
 </body>
 </html>
-    `,
-    
-    });
-
-    if (error) {
-      console.error('Lỗi CHI TIẾT khi gửi email xác thực (Resend):', error);
-    } else {
-      console.log('Đã gửi email xác thực thành công:', data?.id);
-    }
-  } catch (error) {
-    console.error('Lỗi hệ thống khi gọi Resend API (Xác thực):', error);
-  }
-
-  return {
-    skipped: false,
-  }
+  `
+  });
 }
 
 module.exports = {

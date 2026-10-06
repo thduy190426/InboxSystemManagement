@@ -122,9 +122,18 @@ const uploadAvatarRateLimit = createRateLimiter({
   message: 'Bạn thay đổi ảnh đại diện quá nhiều lần. Vui lòng thử lại sau!',
 })
 
+const globalRateLimit = createRateLimiter({
+  keyPrefix: 'global',
+  keyGenerator: (request) => `ip:${getClientIp(request)}`,
+  limit: 1000,
+  windowMs: 15 * 60 * 1000,
+  message: 'Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau!',
+})
+
 module.exports = {
   createRateLimiter,
   forgotPasswordRateLimit,
+  globalRateLimit,
   loginRateLimit,
   registerRateLimit,
   resendVerificationRateLimit,
