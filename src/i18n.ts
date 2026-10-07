@@ -200,7 +200,8 @@ const resources = {
       saveChanges: "Save Changes",
       profileSaved: "Profile saved!",
       profileSaveFailed: "Failed to save profile!",
-      profileLoadFailed: "Failed to load profile!"
+      profileLoadFailed: "Failed to load profile!",
+      loading: "Loading..."
     },
     notfound: {
       kicker: "Error 404 - Not Found",
@@ -1264,7 +1265,8 @@ const resources = {
       saveChanges: "Lưu thay đổi",
       profileSaved: "Đã lưu hồ sơ!",
       profileSaveFailed: "Không thể lưu hồ sơ!",
-      profileLoadFailed: "Không thể tải hồ sơ!"
+      profileLoadFailed: "Không thể tải hồ sơ!",
+      loading: "Đang tải..."
     },
     notfound: {
       kicker: "Lỗi 404 - Không tìm thấy",
