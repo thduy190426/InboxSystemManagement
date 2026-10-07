@@ -33,7 +33,7 @@ createRoot(document.getElementById('root')!).render(
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <App />
-          <Toaster richColors position="top-right" />
+          <Toaster richColors position="top-right" expand={true} visibleToasts={5} />
         </ThemeProvider>
       </QueryClientProvider>
     </GoogleOAuthProvider>
