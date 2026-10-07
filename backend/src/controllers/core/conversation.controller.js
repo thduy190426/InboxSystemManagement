@@ -180,7 +180,7 @@ const messagePollsTablesReady = pool
     console.error('Không thể đảm bảo bảng khảo sát tin nhắn:', error)
     throw error
   })
-const conversationParticipantHiddenAtReady = withSchemaLock('inbox_system_management:conversation_participants:hidden_at', async (connection) => {
+const conversationParticipantHiddenAtReady = withSchemaLock('inbox:cp:hidden_at', async (connection) => {
   try {
     await executeSchemaChangeWithRetry(
       connection,
@@ -211,7 +211,7 @@ const messagesE2EEReady = withSchemaLock('inbox_system_management:messages:e2ee'
   }
 })
 const conversationParticipantMessageRequestStatusReady = conversationParticipantHiddenAtReady.then(() => 
-  withSchemaLock('inbox_system_management:conversation_participants:message_request_status', async (connection) => {
+  withSchemaLock('inbox:cp:msg_req_status', async (connection) => {
     try {
       await executeSchemaChangeWithRetry(
         connection,
