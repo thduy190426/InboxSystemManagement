@@ -235,7 +235,7 @@ export function MessageItem(props: MessageItemProps) {
                           {message.isEdited ? <span>{t('editedLabel')}</span> : null}
                           {effectiveAuthor === 'me' ? (
                             <>
-                              {message.state !== 'read' && (
+                              {message.state !== 'seen' && (
                                 <>
                                   <CheckCheck aria-label={getMessageStateLabel(message)} size={15} />
                                   <span>{getMessageStateLabel(message)}</span>

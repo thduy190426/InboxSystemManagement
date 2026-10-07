@@ -90,8 +90,6 @@ export function useChatRealtime({
         syncDeliveredReceipts(conversationId).catch(() => undefined)
       }
 
-      const nextActive = nextConversations.find((conversation) => conversation.id === conversationId)
-
       const members = await fetchConversationMembers(conversationId)
 
       setMembersByConversation((current) => ({
