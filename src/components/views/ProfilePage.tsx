@@ -406,7 +406,7 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
                 </select>
               </ProfileField>
 
-              <ProfileField label={t('birthDateLabel')} icon={<CalendarDays size={14} />} error={profileErrors.birthDate}>
+              <ProfileField label={t('birthDateLabel')} icon={<CalendarDays size={14} />} error={profileErrors.birthDate} wide>
                 <input
                   className="pp-input"
                   max={getLocalDateInputValue()}
