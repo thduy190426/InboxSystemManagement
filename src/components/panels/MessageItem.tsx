@@ -24,6 +24,11 @@ export function MessageItem(props: MessageItemProps) {
     activeSearchMessageId, focusedMessageId, activeConversation, members 
   } = useChatState()
   
+  const seenByMembers = (members || []).filter(
+    (m) => String(m.lastReadMessageId) === String(message.id) && String(m.userId) !== String(currentUserId)
+  )
+  const hasSeenReceipts = seenByMembers.length > 0
+  
   const { 
     startReplying, startForwarding, handleDeleteForMe, handleRecall, handleReport, 
     handleTogglePin, onRetryMessage, handleToggleReaction, startEditing, cancelEditing, 
@@ -230,8 +235,12 @@ export function MessageItem(props: MessageItemProps) {
                           {message.isEdited ? <span>{t('editedLabel')}</span> : null}
                           {effectiveAuthor === 'me' ? (
                             <>
-                              <CheckCheck aria-label={getMessageStateLabel(message)} size={15} />
-                              <span>{getMessageStateLabel(message)}</span>
+                              {message.state !== 'read' && (
+                                <>
+                                  <CheckCheck aria-label={getMessageStateLabel(message)} size={15} />
+                                  <span>{getMessageStateLabel(message)}</span>
+                                </>
+                              )}
                               {message.state === 'failed' ? (
                                 <button
                                   className="message-retry-button"
@@ -247,6 +256,27 @@ export function MessageItem(props: MessageItemProps) {
                         </span>
                         {renderReactions(message)}
                       </div>
+                      
+                      {hasSeenReceipts && effectiveAuthor === 'me' ? (
+                        <div className="message-read-receipts" style={{
+                          display: 'flex',
+                          justifyContent: 'flex-end',
+                          gap: '2px',
+                          marginTop: '2px',
+                          paddingRight: '2px'
+                        }}>
+                          {seenByMembers.map(m => (
+                            <div key={m.userId} title={`Đã xem bởi ${m.fullName}`}>
+                              <AvatarFallback
+                                className="message-read-avatar"
+                                name={m.fullName || ''}
+                                src={m.avatarUrl || ''}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+
                       {editingMessageId !== message.id && !['sending', 'failed'].includes(message.state ?? '') ? (
                         <span className="message-actions">
                           <button

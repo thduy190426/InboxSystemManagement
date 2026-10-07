@@ -848,6 +848,8 @@ async function loadConversationMembers(connection, conversationId, currentUserId
       conversation_participants.joined_at,
       conversation_participants.created_at,
       conversation_participants.updated_at,
+      conversation_participants.last_read_message_id,
+      conversation_participants.last_read_at,
       CASE
         WHEN users.show_activity_status = 1
           AND users.presence = 'online'
@@ -882,6 +884,8 @@ async function loadConversationMembers(connection, conversationId, currentUserId
     joinedAt: formatRelativeTime(row.joined_at),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    lastReadMessageId: row.last_read_message_id ? String(row.last_read_message_id) : null,
+    lastReadAt: row.last_read_at || null,
   }))
 }
 

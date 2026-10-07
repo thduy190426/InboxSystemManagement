@@ -206,6 +206,8 @@ export type ConversationMember = {
   joinedAt: string
   createdAt?: string
   updatedAt?: string
+  lastReadMessageId?: string | null
+  lastReadAt?: string | null
 }
 
 export type GroupJoinRequest = {

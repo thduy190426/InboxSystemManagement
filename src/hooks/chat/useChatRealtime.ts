@@ -92,14 +92,12 @@ export function useChatRealtime({
 
       const nextActive = nextConversations.find((conversation) => conversation.id === conversationId)
 
-      if (nextActive?.type === 'group') {
-        const members = await fetchConversationMembers(conversationId)
+      const members = await fetchConversationMembers(conversationId)
 
-        setMembersByConversation((current) => ({
-          ...current,
-          [conversationId]: members,
-        }))
-      }
+      setMembersByConversation((current) => ({
+        ...current,
+        [conversationId]: members,
+      }))
     }
 
     function removeConversationLocally(conversationId: string) {

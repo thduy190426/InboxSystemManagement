@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --sp-accent: #2563eb;
   --sp-accent-soft: rgba(37, 99, 235, 0.12);
   --sp-accent-hover: #1d4ed8;
@@ -12682,3 +12682,6 @@ html.dark .sp-select option {
   background: #2a2a2a;
   color: #fff;
 }
+
+.message-read-avatar { width: 14px !important; height: 14px !important; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--bg-color); font-size: 8px !important; }
+
