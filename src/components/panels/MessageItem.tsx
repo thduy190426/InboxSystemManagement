@@ -1,6 +1,6 @@
 import { useChatState, useMessageActions, useChatUI } from './ChatContexts'
 
-import { Suspense, lazy } from 'react'
+import { Suspense, lazy, useState, useEffect } from 'react'
 import { MoreHorizontal, Reply, Pencil, Copy, Pin, Trash2, Check, CheckCheck, PinOff, Calendar, X, SendHorizontal, Smile, Download, Flag } from 'lucide-react'
 import type { Message } from '../../types'
 import { AvatarFallback } from '../ui/AvatarFallback'
@@ -17,7 +17,32 @@ export type MessageItemProps = {
 
 export function MessageItem(props: MessageItemProps) {
   const { t } = useTranslation('panels')
-  const { index, message, displayMessages } = props;
+  const { index, message: originalMessage, displayMessages } = props;
+  const [decryptedText, setDecryptedText] = useState(originalMessage.text)
+
+  useEffect(() => {
+    if (originalMessage.isE2ee && originalMessage.author === 'them' && originalMessage.senderId && originalMessage.e2eeType !== undefined) {
+      import('../../lib/e2ee/E2EEEngine').then(({ e2eeEngine }) => {
+        e2eeEngine.decryptMessage(originalMessage.senderId!, originalMessage.e2eeType!, originalMessage.text)
+          .then(text => setDecryptedText(text))
+          .catch(err => {
+            console.error('Failed to decrypt message:', err)
+            setDecryptedText('[Lỗi giải mã: Khóa không khớp]')
+          })
+      })
+    } else if (originalMessage.isE2ee && originalMessage.author === 'me') {
+      if (originalMessage.text && originalMessage.text.length > 50 && !originalMessage.text.includes(' ')) {
+        setDecryptedText('[Tin nhắn bí mật của bạn]')
+      } else {
+        setDecryptedText(originalMessage.text)
+      }
+    } else {
+      setDecryptedText(originalMessage.text)
+    }
+  }, [originalMessage])
+
+  const message = { ...originalMessage, text: decryptedText }
+
   const { 
     currentUserId, editingMessageId, busyMessageId, editingText, 
     openActionMenuId, openReactionPickerId, searchMatches, 

@@ -1,4 +1,6 @@
 import { useModerationSettings } from '../../hooks/useModerationSettings'
+import { keyManager } from '../../lib/e2ee/KeyManager'
+import { e2eeEngine } from '../../lib/e2ee/E2EEEngine'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { FormEvent } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
@@ -194,6 +196,10 @@ export function ChatApp({
   const [draft, setDraft] = useState('')
   const [replyingTo, setReplyingTo] = useState<Message | null>(null)
   const [focusedMessageId, setFocusedMessageId] = useState('')
+
+  useEffect(() => {
+    keyManager.initializeKeysIfNeeded().catch(console.error)
+  }, [])
   const [isSidebarOpen, setIsSidebarOpen] = useState(getInitialSidebarState)
   const [inboxWidth, setInboxWidth] = useState(getInitialInboxWidth)
   const [isResizing, setIsResizing] = useState(false)
@@ -1421,10 +1427,27 @@ export function ChatApp({
       }
       setReplyingTo(null)
 
+      let sendText = text
+      let isE2ee = false
+      let e2eeType: number | undefined = undefined
+
+      if (activeConversation.type === 'secret') {
+        const activeMembers = membersByConversation[activeConversation.id] || []
+        const remoteUser = activeMembers.find(m => String(m.userId) !== String(currentUser?.id))
+        if (remoteUser) {
+          const cipherResult = await e2eeEngine.encryptMessage(remoteUser.userId, text)
+          sendText = cipherResult.body ?? ''
+          isE2ee = true
+          e2eeType = cipherResult.type
+        }
+      }
+
       const createdMessage = await sendMessage(
         activeConversation.id,
-        text,
+        sendText,
         parentMessageId,
+        isE2ee,
+        e2eeType
       )
       removeQueuedMessage(temporaryMessage.id)
       updateTypingStatus(activeConversation.id, false).catch(() => undefined)

@@ -24,6 +24,9 @@ export type Message = {
   reactions?: MessageReaction[]
   attachments?: MessageAttachment[]
   poll?: MessagePoll
+  senderId?: number
+  isE2ee?: boolean
+  e2eeType?: number
 }
 
 export type MessageReply = {
@@ -153,7 +156,7 @@ export type Attachment = {
 
 export type Conversation = {
   id: string
-  type?: 'direct' | 'group' | 'support'
+  type?: 'direct' | 'group' | 'support' | 'secret'
   name: string
   role: string
   status: string

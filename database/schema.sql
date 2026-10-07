@@ -123,7 +123,7 @@ CREATE TABLE contacts (
 CREATE TABLE conversations (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   public_id CHAR(36) NOT NULL,
-  type ENUM('direct', 'group', 'support') NOT NULL DEFAULT 'direct',
+  type ENUM('direct', 'group', 'support', 'secret') NOT NULL DEFAULT 'direct',
   title VARCHAR(150) NULL,
   avatar_url VARCHAR(500) NULL,
   description VARCHAR(255) NULL,
@@ -180,6 +180,8 @@ CREATE TABLE messages (
   type ENUM('text', 'image', 'file', 'audio', 'video', 'system') NOT NULL DEFAULT 'text',
   body TEXT NULL,
   status ENUM('sending', 'sent', 'delivered', 'seen', 'failed', 'deleted') NOT NULL DEFAULT 'sent',
+  is_e2ee TINYINT(1) NOT NULL DEFAULT 0,
+  e2ee_sender_device_id INT UNSIGNED NULL,
   edited_at DATETIME NULL,
   deleted_at DATETIME NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -658,5 +660,44 @@ CREATE TABLE stories (
   KEY idx_stories_user_id (user_id),
   KEY idx_stories_expires_at (expires_at),
   CONSTRAINT fk_stories_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+CREATE TABLE e2ee_devices (
+  user_id BIGINT UNSIGNED NOT NULL,
+  device_id INT UNSIGNED NOT NULL,
+  registration_id INT UNSIGNED NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  last_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, device_id),
+  CONSTRAINT fk_e2ee_devices_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE e2ee_identity_keys (
+  user_id BIGINT UNSIGNED NOT NULL,
+  device_id INT UNSIGNED NOT NULL,
+  identity_key TEXT NOT NULL,
+  PRIMARY KEY (user_id, device_id),
+  CONSTRAINT fk_e2ee_identity_keys_device FOREIGN KEY (user_id, device_id) REFERENCES e2ee_devices (user_id, device_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE e2ee_signed_prekeys (
+  user_id BIGINT UNSIGNED NOT NULL,
+  device_id INT UNSIGNED NOT NULL,
+  key_id INT UNSIGNED NOT NULL,
+  public_key TEXT NOT NULL,
+  signature TEXT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, device_id, key_id),
+  CONSTRAINT fk_e2ee_signed_prekeys_device FOREIGN KEY (user_id, device_id) REFERENCES e2ee_devices (user_id, device_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE e2ee_onetime_prekeys (
+  user_id BIGINT UNSIGNED NOT NULL,
+  device_id INT UNSIGNED NOT NULL,
+  key_id INT UNSIGNED NOT NULL,
+  public_key TEXT NOT NULL,
+  PRIMARY KEY (user_id, device_id, key_id),
+  CONSTRAINT fk_e2ee_onetime_prekeys_device FOREIGN KEY (user_id, device_id) REFERENCES e2ee_devices (user_id, device_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

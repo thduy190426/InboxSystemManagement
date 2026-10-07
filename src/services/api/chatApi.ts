@@ -198,12 +198,14 @@ export async function sendMessage(
   conversationId: string,
   text: string,
   parentMessageId?: string | null,
+  isE2ee?: boolean,
+  e2eeType?: number
 ) {
   const response = await request<CreateMessageResponse>(
     `/conversations/${conversationId}/messages`,
     {
       method: 'POST',
-      body: JSON.stringify({ text, parentMessageId }),
+      body: JSON.stringify({ text, parentMessageId, isE2ee, e2eeType }),
     },
   )
 

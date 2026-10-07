@@ -189,6 +189,20 @@ const conversationParticipantHiddenAtReady = pool
     console.error('Không thể đảm bảo cột hidden_at cho người tham gia cuộc trò chuyện:', error)
     throw error
   })
+const messagesE2EEReady = pool
+  .execute(
+    `ALTER TABLE messages
+      ADD COLUMN is_e2ee BOOLEAN NOT NULL DEFAULT FALSE,
+      ADD COLUMN e2ee_type TINYINT NULL`,
+  )
+  .catch((error) => {
+    if (error && error.code === 'ER_DUP_FIELDNAME') {
+      return
+    }
+
+    console.error('Không thể đảm bảo cột e2ee cho tin nhắn:', error)
+    throw error
+  })
 const conversationParticipantMessageRequestStatusReady = conversationParticipantHiddenAtReady.then(() => pool
   .execute(
     `ALTER TABLE conversation_participants
@@ -569,6 +583,9 @@ function mapMessage(
     id: String(row.id),
     author: isOwnMessage ? 'me' : 'them',
     text: row.body || '',
+    isE2ee: Boolean(row.is_e2ee),
+    e2eeType: row.e2ee_type,
+    senderId: row.sender_id,
     time: formatRelativeTime(row.created_at),
     type: row.type,
     state: messageState,
@@ -1192,6 +1209,8 @@ async function loadConversationMessages(
       messages.sender_id,
       messages.type,
       messages.body,
+      messages.is_e2ee,
+      messages.e2ee_type,
       messages.status,
       messages.edited_at,
       messages.created_at,
@@ -1231,6 +1250,8 @@ async function loadConversationMessages(
       messages.sender_id,
       messages.type,
       messages.body,
+      messages.is_e2ee,
+      messages.e2ee_type,
       messages.status,
       messages.edited_at,
       messages.created_at,
@@ -3196,6 +3217,8 @@ async function searchConversationMessages(request, response, next) {
         messages.sender_id,
         messages.type,
         messages.body,
+        messages.is_e2ee,
+        messages.e2ee_type,
         messages.status,
         messages.edited_at,
         messages.created_at,
@@ -3233,6 +3256,8 @@ async function searchConversationMessages(request, response, next) {
         messages.sender_id,
         messages.type,
         messages.body,
+        messages.is_e2ee,
+        messages.e2ee_type,
         messages.status,
         messages.edited_at,
         messages.created_at,
@@ -3461,6 +3486,8 @@ async function createMessage(request, response, next) {
       request.body.parentMessageId === null || request.body.parentMessageId === undefined
         ? null
         : Number(request.body.parentMessageId)
+    const isE2ee = Boolean(request.body.isE2ee)
+    const e2eeType = request.body.e2eeType !== undefined ? Number(request.body.e2eeType) : null
 
     if (!text) {
       return response.status(422).json({
@@ -3528,9 +3555,11 @@ async function createMessage(request, response, next) {
           parent_message_id,
           type,
           body,
-          status
-        ) VALUES (?, ?, ?, ?, 'text', ?, 'sent')`,
-        [randomUUID(), conversationId, currentUserId, parentMessageId, text],
+          status,
+          is_e2ee,
+          e2ee_type
+        ) VALUES (?, ?, ?, ?, 'text', ?, 'sent', ?, ?)`,
+        [randomUUID(), conversationId, currentUserId, parentMessageId, text, isE2ee, e2eeType],
       )
 
       const [conversationRows] = await connection.execute(
