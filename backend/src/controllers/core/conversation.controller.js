@@ -91,25 +91,29 @@ const messagePinsTableReady = pool
     )`,
   )
   .then(async () => {
-    await pool.execute(
-      `ALTER TABLE message_pins
-        ADD COLUMN conversation_id BIGINT UNSIGNED NULL`,
-    ).catch((error) => {
-      if (error && error.code === 'ER_DUP_FIELDNAME') {
-        return
+    await withSchemaLock('inbox_system_management:message_pins:conversation_id', async (connection) => {
+      try {
+        await executeSchemaChangeWithRetry(
+          connection,
+          `ALTER TABLE message_pins
+            ADD COLUMN conversation_id BIGINT UNSIGNED NULL`
+        )
+      } catch (error) {
+        if (error && error.code === 'ER_DUP_FIELDNAME') return
+        throw error
       }
-
-      throw error
     })
-    await pool.execute(
-      `ALTER TABLE message_pins
-        ADD INDEX idx_message_pins_conversation (conversation_id, created_at)`,
-    ).catch((error) => {
-      if (error && error.code === 'ER_DUP_KEYNAME') {
-        return
+    await withSchemaLock('inbox_system_management:message_pins:idx_conversation', async (connection) => {
+      try {
+        await executeSchemaChangeWithRetry(
+          connection,
+          `ALTER TABLE message_pins
+            ADD INDEX idx_message_pins_conversation (conversation_id, created_at)`
+        )
+      } catch (error) {
+        if (error && error.code === 'ER_DUP_KEYNAME') return
+        throw error
       }
-
-      throw error
     })
   })
   .catch((error) => {
@@ -176,46 +180,51 @@ const messagePollsTablesReady = pool
     console.error('Không thể đảm bảo bảng khảo sát tin nhắn:', error)
     throw error
   })
-const conversationParticipantHiddenAtReady = pool
-  .execute(
-    `ALTER TABLE conversation_participants
-      ADD COLUMN hidden_at TIMESTAMP NULL DEFAULT NULL`,
-  )
-  .catch((error) => {
-    if (error && error.code === 'ER_DUP_FIELDNAME') {
-      return
-    }
-
+const conversationParticipantHiddenAtReady = withSchemaLock('inbox_system_management:conversation_participants:hidden_at', async (connection) => {
+  try {
+    await executeSchemaChangeWithRetry(
+      connection,
+      `ALTER TABLE conversation_participants
+        ADD COLUMN hidden_at TIMESTAMP NULL DEFAULT NULL`
+    )
+  } catch (error) {
+    if (error && error.code === 'ER_DUP_FIELDNAME') return
     console.error('Không thể đảm bảo cột hidden_at cho người tham gia cuộc trò chuyện:', error)
     throw error
-  })
-const messagesE2EEReady = pool
-  .execute(
-    `ALTER TABLE messages
-      ADD COLUMN is_e2ee BOOLEAN NOT NULL DEFAULT FALSE,
-      ADD COLUMN e2ee_type TINYINT NULL`,
-  )
-  .catch((error) => {
-    if (error && error.code === 'ER_DUP_FIELDNAME') {
-      return
-    }
-
+  }
+})
+const messagesE2EEReady = withSchemaLock('inbox_system_management:messages:e2ee', async (connection) => {
+  try {
+    await connection.execute('SET FOREIGN_KEY_CHECKS=0')
+    await executeSchemaChangeWithRetry(
+      connection,
+      `ALTER TABLE messages
+        ADD COLUMN is_e2ee BOOLEAN NOT NULL DEFAULT FALSE,
+        ADD COLUMN e2ee_type TINYINT NULL`
+    )
+  } catch (error) {
+    if (error && error.code === 'ER_DUP_FIELDNAME') return
     console.error('Không thể đảm bảo cột e2ee cho tin nhắn:', error)
     throw error
-  })
-const conversationParticipantMessageRequestStatusReady = conversationParticipantHiddenAtReady.then(() => pool
-  .execute(
-    `ALTER TABLE conversation_participants
-      ADD COLUMN message_request_status ENUM('none', 'pending') NOT NULL DEFAULT 'none'`,
-  )
-  .catch((error) => {
-    if (error && error.code === 'ER_DUP_FIELDNAME') {
-      return
+  } finally {
+    await connection.execute('SET FOREIGN_KEY_CHECKS=1')
+  }
+})
+const conversationParticipantMessageRequestStatusReady = conversationParticipantHiddenAtReady.then(() => 
+  withSchemaLock('inbox_system_management:conversation_participants:message_request_status', async (connection) => {
+    try {
+      await executeSchemaChangeWithRetry(
+        connection,
+        `ALTER TABLE conversation_participants
+          ADD COLUMN message_request_status ENUM('none', 'pending') NOT NULL DEFAULT 'none'`
+      )
+    } catch (error) {
+      if (error && error.code === 'ER_DUP_FIELDNAME') return
+      console.error('Không thể đảm bảo cột message_request_status cho người tham gia cuộc trò chuyện:', error)
+      throw error
     }
-
-    console.error('Không thể đảm bảo cột message_request_status cho người tham gia cuộc trò chuyện:', error)
-    throw error
-  }))
+  })
+)
 const groupInviteTokensTableReady = pool
   .execute(
     `CREATE TABLE IF NOT EXISTS group_invite_tokens (
@@ -301,17 +310,18 @@ async function ensureConversationParticipantHiddenAtColumn() {
   await conversationParticipantHiddenAtReady
 }
 
-const conversationQuickEmojiReady = pool
-  .execute(
-    `ALTER TABLE conversations
-      ADD COLUMN quick_emoji VARCHAR(20) NULL DEFAULT '👍'`
-  )
-  .catch((error) => {
-    if (error && error.code === 'ER_DUP_FIELDNAME') {
-      return
-    }
+const conversationQuickEmojiReady = withSchemaLock('inbox_system_management:conversations:quick_emoji', async (connection) => {
+  try {
+    await executeSchemaChangeWithRetry(
+      connection,
+      `ALTER TABLE conversations
+        ADD COLUMN quick_emoji VARCHAR(20) NULL DEFAULT '👍'`
+    )
+  } catch (error) {
+    if (error && error.code === 'ER_DUP_FIELDNAME') return
     throw error
-  })
+  }
+})
 
 async function ensureConversationQuickEmojiColumn() {
   await conversationQuickEmojiReady
