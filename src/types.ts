@@ -141,7 +141,7 @@ export type MessageReaction = {
 export type MessageAttachment = {
   name: string
   meta: string
-  type: 'image' | 'file' | 'audio' | 'video'
+  type: 'image' | 'file' | 'audio' | 'video' | 'link'
   url: string
   mimeType: string
   sizeBytes: number
@@ -150,7 +150,7 @@ export type MessageAttachment = {
 export type Attachment = {
   name: string
   meta: string
-  type: 'image' | 'file' | 'audio' | 'video'
+  type: 'image' | 'file' | 'audio' | 'video' | 'link'
   url?: string
 }
 

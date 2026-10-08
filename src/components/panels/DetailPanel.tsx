@@ -32,6 +32,7 @@ import {
   FolderOpen,
   EyeOff,
   Users,
+  Link2,
 } from 'lucide-react'
 import type { ContactUser, Conversation, ConversationMember, GroupJoinRequest, Message } from '../../types'
 import { AvatarFallback } from '../ui/AvatarFallback'
@@ -177,6 +178,7 @@ export function DetailPanel({
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false)
   const [isAddMemberModalClosing, setIsAddMemberModalClosing] = useState(false)
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false)
+  const [attachmentTab, setAttachmentTab] = useState<'image' | 'file' | 'link'>('image')
 
   const MEMBER_PREVIEW_COUNT = 0
 
@@ -248,6 +250,16 @@ export function DetailPanel({
       return !nameLower.includes('gif') && !nameLower.includes('emoji') && !nameLower.includes('sticker')
     })
   }, [activeConversation.attachments])
+
+  const imageAttachments = validAttachments.filter(a => a.type === 'image' || a.type === 'video')
+  const fileAttachments = validAttachments.filter(a => a.type === 'file' || a.type === 'audio')
+  const linkAttachments = validAttachments.filter(a => a.type === 'link')
+
+  const currentTabAttachments = useMemo(() => {
+    if (attachmentTab === 'image') return imageAttachments
+    if (attachmentTab === 'file') return fileAttachments
+    return linkAttachments
+  }, [attachmentTab, imageAttachments, fileAttachments, linkAttachments])
 
   useEffect(() => {
     setGroupTitle(activeConversation.name)
@@ -791,18 +803,73 @@ export function DetailPanel({
           </h3>
           <span>{validAttachments.length}</span>
         </div>
+        
+        <div style={{ display: 'flex', gap: '8px', padding: '0 16px 12px' }}>
+          <button
+            onClick={() => setAttachmentTab('image')}
+            style={{
+              flex: 1,
+              padding: '6px',
+              borderRadius: '6px',
+              border: 'none',
+              background: attachmentTab === 'image' ? 'var(--primary-soft)' : 'transparent',
+              color: attachmentTab === 'image' ? 'var(--primary-strong)' : 'var(--muted)',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            {t('tabImages', 'Ảnh')} ({imageAttachments.length})
+          </button>
+          <button
+            onClick={() => setAttachmentTab('file')}
+            style={{
+              flex: 1,
+              padding: '6px',
+              borderRadius: '6px',
+              border: 'none',
+              background: attachmentTab === 'file' ? 'var(--primary-soft)' : 'transparent',
+              color: attachmentTab === 'file' ? 'var(--primary-strong)' : 'var(--muted)',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            {t('tabFiles', 'Tệp')} ({fileAttachments.length})
+          </button>
+          <button
+            onClick={() => setAttachmentTab('link')}
+            style={{
+              flex: 1,
+              padding: '6px',
+              borderRadius: '6px',
+              border: 'none',
+              background: attachmentTab === 'link' ? 'var(--primary-soft)' : 'transparent',
+              color: attachmentTab === 'link' ? 'var(--primary-strong)' : 'var(--muted)',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            {t('tabLinks', 'Link')} ({linkAttachments.length})
+          </button>
+        </div>
+
         <div className="attachment-list">
-          {validAttachments.map((attachment) => (
+          {currentTabAttachments.map((attachment) => (
             <a
               className="attachment-row"
-              download={attachment.name}
+              download={attachment.type !== 'link' ? attachment.name : undefined}
               href={attachment.url || '#'}
               key={`${attachment.name}-${attachment.url || ''}`}
               rel="noreferrer"
               target={attachment.url ? '_blank' : undefined}
             >
-              <span className={attachment.type === 'image' ? 'attachment-icon attachment-thumb' : 'attachment-icon'}>
-                {attachment.type === 'image' ? (
+              <span className={attachment.type === 'image' || attachment.type === 'video' ? 'attachment-icon attachment-thumb' : 'attachment-icon'}>
+                {attachment.type === 'image' || attachment.type === 'video' ? (
                   <>
                     {attachment.url ? (
                       <img
@@ -816,6 +883,8 @@ export function DetailPanel({
                     ) : null}
                     <Image size={18} />
                   </>
+                ) : attachment.type === 'link' ? (
+                  <Link2 size={18} />
                 ) : (
                   <FileText size={18} />
                 )}
@@ -826,6 +895,11 @@ export function DetailPanel({
               </span>
             </a>
           ))}
+          {currentTabAttachments.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '16px', color: 'var(--subtle)', fontSize: '13px' }}>
+              {t('noAttachmentsInTab', 'Không có dữ liệu')}
+            </div>
+          )}
         </div>
       </section>
 
