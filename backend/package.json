@@ -17,6 +17,7 @@
     "express": "^4.21.2",
     "google-auth-library": "^11.1.0",
     "helmet": "^8.0.0",
+    "link-preview-js": "^5.0.0",
     "multer": "^2.2.0",
     "mysql2": "^3.11.5",
     "nodemailer": "^9.1.1",

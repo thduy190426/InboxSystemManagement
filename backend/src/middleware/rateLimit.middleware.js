@@ -125,7 +125,7 @@ const uploadAvatarRateLimit = createRateLimiter({
 const globalRateLimit = createRateLimiter({
   keyPrefix: 'global',
   keyGenerator: (request) => `ip:${getClientIp(request)}`,
-  limit: 1000,
+  limit: 10000,
   windowMs: 15 * 60 * 1000,
   message: 'Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau!',
 })

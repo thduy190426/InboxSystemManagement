@@ -95,6 +95,13 @@ function getResponsePayload(payload) {
 }
 
 function logRequest(request, _response, next) {
+  // Ignore spammy polling logs
+  const isSpammy = request.originalUrl.includes('/typing') || request.originalUrl.includes('/presence') || request.originalUrl.includes('/stats')
+  
+  if (isSpammy) {
+    return next()
+  }
+
   const startedAt = process.hrtime.bigint()
   const requestId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
   const originalJson = _response.json.bind(_response)

@@ -7,6 +7,7 @@ import { AvatarFallback } from '../ui/AvatarFallback'
 import type { EmojiStyle, Theme } from 'emoji-picker-react'
 import { PollMessage } from './PollMessage'
 import { useTranslation } from 'react-i18next'
+import { LinkPreview } from '../ui/LinkPreview'
 const EmojiPicker = lazy(() => import('emoji-picker-react'))
 
 export type MessageItemProps = {
@@ -250,7 +251,23 @@ export function MessageItem(props: MessageItemProps) {
                             ) : isCallMsg(message) ? (
                               renderCallMessage(message)
                             ) : shouldRenderMessageText(message) ? (
-                              <p>{renderHighlightedText(message)}</p>
+                              <>
+                                <p>{renderHighlightedText(message)}</p>
+                                {(() => {
+                                  if (!message.text) return null
+                                  const urlRegex = /(https?:\/\/[^\s]+)/g
+                                  const urls = message.text.match(urlRegex)
+                                  if (!urls) return null
+                                  const uniqueUrls = Array.from(new Set(urls)).slice(0, 3)
+                                  return (
+                                    <div className="message-link-previews" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+                                      {uniqueUrls.map(url => (
+                                        <LinkPreview key={url} url={url} />
+                                      ))}
+                                    </div>
+                                  )
+                                })()}
+                              </>
                             ) : null}
                             {renderAttachments(message)}
                           </>
