@@ -354,7 +354,7 @@ export function DetailPanel({
     if (normalized === 'Đã bỏ ghim một tin nhắn' || normalized === 'Unpinned a message') {
       return `📌 ${t('msgUnpinned')}`
     }
-    if (normalized === 'Đã từ chối!' || normalized === 'Declined!') {
+    if (/^Đã từ chối!?$/i.test(normalized) || /^Declined!?$/i.test(normalized)) {
       return t('inboxDeclined')
     }
 
