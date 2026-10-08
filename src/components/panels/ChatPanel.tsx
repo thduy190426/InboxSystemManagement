@@ -41,7 +41,7 @@ import { OnlineDurationBadge } from '../ui/OnlineDurationBadge'
 const MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024
 const ALLOWED_ATTACHMENT_TYPE_PREFIXES = ['image/', 'audio/', 'video/']
 
-import { Virtuoso } from 'react-virtuoso'
+import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso'
 
 export function parseMessageDate(message?: Message) {
   const value = message?.createdAt || message?.updatedAt
@@ -250,9 +250,7 @@ export function ChatPanel({
   const [floatingReactions, setFloatingReactions] = useState<{ id: string; emoji: string; x: number; rotation: number }[]>([])
   const isAtLatestMessageRef = useRef(isAtLatestMessage)
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({})
-  const threadRef = useRef<HTMLDivElement | null>(null)
-  const threadContentRef = useRef<HTMLDivElement | null>(null)
-  const threadEndRef = useRef<HTMLDivElement | null>(null)
+  const virtuosoRef = useRef<VirtuosoHandle>(null)
   const mentionQuery = useMemo(() => {
     const match = draft.match(/(?:^|\s)@([\p{L}\p{N}\s._-]{0,40})$/u)
 
@@ -289,26 +287,13 @@ export function ChatPanel({
       )
   }, [activeConversation.id, conversations, forwardQuery])
 
-  const updateLatestMessageVisibility = useCallback(() => {
-    const thread = threadRef.current
-
-    if (!thread) {
-      setIsAtLatestMessage(true)
-      return
-    }
-
-    const distanceFromBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight
-
-    setIsAtLatestMessage(distanceFromBottom <= 80)
-  }, [])
-
   const scrollToLatestMessage = useCallback((behavior: ScrollBehavior = 'smooth') => {
-    threadEndRef.current?.scrollIntoView({
+    virtuosoRef.current?.scrollToIndex({
+      index: 'LAST',
+      align: 'end',
       behavior,
-      block: 'end',
     })
-    window.setTimeout(updateLatestMessageVisibility, behavior === 'smooth' ? 240 : 0)
-  }, [updateLatestMessageVisibility])
+  }, [])
 
   function isSameMessageGroup(message: Message, sibling?: Message) {
     if (!sibling || message.author === 'system' || sibling.author === 'system') {
@@ -398,26 +383,6 @@ export function ChatPanel({
   useEffect(() => {
     isAtLatestMessageRef.current = isAtLatestMessage
   }, [isAtLatestMessage])
-
-  useEffect(() => {
-    const threadContent = threadContentRef.current
-    if (!threadContent) {
-      return
-    }
-
-    const observer = new ResizeObserver(() => {
-      if (isAtLatestMessageRef.current) {
-        scrollToLatestMessage('auto')
-      }
-    })
-
-    observer.observe(threadContent)
-    return () => observer.disconnect()
-  }, [scrollToLatestMessage])
-
-  useEffect(() => {
-    window.requestAnimationFrame(updateLatestMessageVisibility)
-  }, [activeConversation.id, messages.length, updateLatestMessageVisibility])
 
   useEffect(() => {
     if (!isGifPickerOpen) {
@@ -1484,12 +1449,21 @@ export function ChatPanel({
 
       <div className="thread" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
         <Virtuoso
+          ref={virtuosoRef}
           className="thread-virtuoso"
           data={displayMessages}
           firstItemIndex={0}
           initialTopMostItemIndex={displayMessages.length > 0 ? displayMessages.length - 1 : 0}
-          followOutput={(isAtBottom) => isAtBottom ? 'smooth' : false}
+          followOutput={(isAtBottom) => {
+            const lastMessage = displayMessages[displayMessages.length - 1]
+            if (lastMessage?.author === 'me') {
+              return 'smooth'
+            }
+            return isAtBottom ? 'smooth' : false
+          }}
           alignToBottom
+          atBottomStateChange={(atBottom) => setIsAtLatestMessage(atBottom)}
+          atBottomThreshold={100}
           startReached={onLoadOlderMessages}
           components={{
             Header: () => (
