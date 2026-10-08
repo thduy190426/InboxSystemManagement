@@ -206,6 +206,31 @@ export function useChatRealtime({
         .catch(() => undefined)
     }
 
+    function handlePresenceChanged(payload: { userId: string; presence: string }) {
+      setFriends((current) =>
+        current?.map((f) =>
+          String(f.userId) === String(payload.userId) ? { ...f, presence: payload.presence as any } : f
+        )
+      )
+
+      setConversations((current) =>
+        current?.map((c) => {
+          if (c.type === 'direct' && String(c.userId) === String(payload.userId)) {
+            return { ...c, presence: payload.presence as any }
+          }
+          if (c.type === 'group' && c.members) {
+            return {
+              ...c,
+              members: c.members.map((m) =>
+                String(m.userId) === String(payload.userId) ? { ...m, presence: payload.presence as any } : m
+              ),
+            }
+          }
+          return c
+        })
+      )
+    }
+
     function handleNotificationsChanged() {
       fetchNotifications()
         .then((nextNotifications) => {
@@ -277,7 +302,7 @@ export function useChatRealtime({
 
     realtimeSocket.on('conversation:changed', handleConversationChanged)
     realtimeSocket.on('contacts:changed', handleContactsChanged)
-    realtimeSocket.on('presence:changed', handleContactsChanged)
+    realtimeSocket.on('presence:changed', handlePresenceChanged)
     realtimeSocket.on('notifications:changed', handleNotificationsChanged)
     realtimeSocket.on('call:incoming', handleIncomingCall)
     realtimeSocket.on('call:ringing', handleRingingCall)
@@ -292,7 +317,7 @@ export function useChatRealtime({
     return () => {
       realtimeSocket.off('conversation:changed', handleConversationChanged)
       realtimeSocket.off('contacts:changed', handleContactsChanged)
-      realtimeSocket.off('presence:changed', handleContactsChanged)
+      realtimeSocket.off('presence:changed', handlePresenceChanged)
       realtimeSocket.off('notifications:changed', handleNotificationsChanged)
       realtimeSocket.off('call:incoming', handleIncomingCall)
       realtimeSocket.off('call:ringing', handleRingingCall)
