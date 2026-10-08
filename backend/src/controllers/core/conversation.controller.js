@@ -1653,7 +1653,8 @@ async function listConversations(request, response, next) {
           messages.conversation_id,
           message_attachments.original_name,
           message_attachments.mime_type,
-          message_attachments.file_size_bytes
+          message_attachments.file_size_bytes,
+          message_attachments.storage_url
         FROM message_attachments
         INNER JOIN messages ON messages.id = message_attachments.message_id
         LEFT JOIN message_hidden_entries
