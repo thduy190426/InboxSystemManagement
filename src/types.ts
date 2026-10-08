@@ -174,6 +174,7 @@ export type Conversation = {
   archived: boolean
   messageRequestStatus?: 'none' | 'pending'
   contactId: string | null
+  userId?: number
   nickname?: string | null
   onlineSince?: string | null
   friendshipStatus: ContactUser['friendshipStatus'] | null
