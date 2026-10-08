@@ -820,7 +820,7 @@ export function DetailPanel({
               transition: 'all 0.2s'
             }}
           >
-            {t('tabImages', 'Ảnh')} ({imageAttachments.length})
+            {t('tabImages')} ({imageAttachments.length})
           </button>
           <button
             onClick={() => setAttachmentTab('file')}
@@ -837,7 +837,7 @@ export function DetailPanel({
               transition: 'all 0.2s'
             }}
           >
-            {t('tabFiles', 'Tệp')} ({fileAttachments.length})
+            {t('tabFiles')} ({fileAttachments.length})
           </button>
           <button
             onClick={() => setAttachmentTab('link')}
@@ -854,7 +854,7 @@ export function DetailPanel({
               transition: 'all 0.2s'
             }}
           >
-            {t('tabLinks', 'Link')} ({linkAttachments.length})
+            {t('tabLinks')} ({linkAttachments.length})
           </button>
         </div>
 
@@ -897,7 +897,7 @@ export function DetailPanel({
           ))}
           {currentTabAttachments.length === 0 && (
             <div style={{ textAlign: 'center', padding: '16px', color: 'var(--subtle)', fontSize: '13px' }}>
-              {t('noAttachmentsInTab', 'Không có dữ liệu')}
+              {t('noAttachmentsInTab')}
             </div>
           )}
         </div>
