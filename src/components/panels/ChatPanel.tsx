@@ -1343,7 +1343,9 @@ export function ChatPanel({
             </span>
             <span className="chat-profile-copy">
               <h2>{activeConversation.name}</h2>
-              <p>{activeConversation.restricted ? t('statusOffline') : activeConversation.status}</p>
+              {activeConversation.restricted || (activeConversation.status && activeConversation.status !== 'Ngoại tuyến' && activeConversation.status !== 'Offline') ? (
+                <p>{activeConversation.restricted ? t('statusOffline') : activeConversation.status}</p>
+              ) : null}
             </span>
           </button>
         </div>

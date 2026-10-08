@@ -368,17 +368,11 @@ function formatOfflineDuration(lastSeenAt) {
     return `Hoạt động ${elapsedHours} giờ trước`
   }
 
-  if (elapsedDays < 30) {
+  if (elapsedDays <= 3) {
     return `Hoạt động ${elapsedDays} ngày trước`
   }
 
-  const elapsedMonths = Math.floor(elapsedDays / 30)
-
-  if (elapsedMonths < 12) {
-    return `Hoạt động ${elapsedMonths} tháng trước`
-  }
-
-  return `Hoạt động ${Math.floor(elapsedMonths / 12)} năm trước`
+  return 'Ngoại tuyến'
 }
 
 function getPresenceLabel(presence, lastSeenAt = null) {
