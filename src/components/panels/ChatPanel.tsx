@@ -953,7 +953,7 @@ export function ChatPanel({
   }
 
   function getDisplayMessageText(text: string) {
-    const withoutLeadingIcon = text.replace(/^\s*📍\s*/, '')
+    const withoutLeadingIcon = text.replace(/^\s*(📍|📌)\s*/, '')
     const normalized = withoutLeadingIcon.replace(/\s+/g, ' ').trim()
 
     const ipLocationMatch = normalized.match(/^Vị trí \(ước tính qua IP\):\s*(.+)$/i)
@@ -971,7 +971,17 @@ export function ChatPanel({
       return t('geoExactLocation', { url: exactLocationMatch[1] })
     }
 
-    return withoutLeadingIcon
+    if (normalized === 'Đã ghim một tin nhắn' || normalized === 'Pinned a message') {
+      return `📌 ${t('msgPinned')}`
+    }
+    if (normalized === 'Đã bỏ ghim một tin nhắn' || normalized === 'Unpinned a message') {
+      return `📌 ${t('msgUnpinned')}`
+    }
+    if (normalized === 'Đã từ chối!' || normalized === 'Declined!') {
+      return t('inboxDeclined')
+    }
+
+    return text.replace(/^\s*📍\s*/, '')
   }
 
   function renderHighlightedText(message: Message) {
@@ -1141,7 +1151,7 @@ export function ChatPanel({
           onClick={() => onStartCall(isVideo ? 'video' : 'audio')}
           type="button"
         >
-          {t('callAgain', { defaultValue: 'Gọi lại' })}
+          {t('callAgain')}
         </button>
       </div>
     )
