@@ -287,7 +287,7 @@ export function ChatPanel({
       )
   }, [activeConversation.id, conversations, forwardQuery])
 
-  const scrollToLatestMessage = useCallback((behavior: ScrollBehavior = 'smooth') => {
+  const scrollToLatestMessage = useCallback((behavior: 'auto' | 'smooth' = 'smooth') => {
     virtuosoRef.current?.scrollToIndex({
       index: 'LAST',
       align: 'end',
