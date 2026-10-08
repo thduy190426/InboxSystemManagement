@@ -2,7 +2,7 @@ import type { Message } from '../../types'
 
 export const SIDEBAR_STATE_KEY = 'sidebar_is_open'
 export const INBOX_WIDTH_KEY = 'inbox_width'
-const OFFLINE_MESSAGE_QUEUE_KEY = 'offline_message_queue'
+
 export const COMPACT_LAYOUT_MEDIA_QUERY = '(max-width: 1024px)'
 export const MESSAGE_PAGE_LIMIT = 40
 export const CONVERSATION_FILTERS: string[] = ['all', 'unread', 'requests', 'group', 'archived']
@@ -54,48 +54,29 @@ export function getInitialCompactLayoutState() {
   return typeof window !== 'undefined' && window.matchMedia(COMPACT_LAYOUT_MEDIA_QUERY).matches
 }
 
-function readOfflineMessageQueue() {
-  try {
-    const rawQueue = localStorage.getItem(OFFLINE_MESSAGE_QUEUE_KEY)
+import { savePendingMessage, getPendingMessages, removePendingMessage as removePendingIndexedDB, registerBackgroundSync } from './indexedDB'
 
-    if (!rawQueue) {
-      return []
-    }
-
-    const queue = JSON.parse(rawQueue)
-
-    return Array.isArray(queue) ? (queue as QueuedMessage[]) : []
-  } catch {
-    return []
-  }
-}
-
-function writeOfflineMessageQueue(queue: QueuedMessage[]) {
-  localStorage.setItem(OFFLINE_MESSAGE_QUEUE_KEY, JSON.stringify(queue))
-}
-
-export function getQueuedMessagesForUser(userId: string) {
+export async function getQueuedMessagesForUser(userId: string) {
   if (!userId) {
     return []
   }
 
-  return readOfflineMessageQueue().filter((item) => item.userId === userId)
+  const queue = await getPendingMessages()
+  return queue.filter((item) => item.userId === userId)
 }
 
-export function upsertQueuedMessage(item: QueuedMessage) {
-  const queue = readOfflineMessageQueue()
-  const nextQueue = [
-    ...queue.filter((queuedItem) => queuedItem.message.id !== item.message.id),
-    item,
-  ]
-
-  writeOfflineMessageQueue(nextQueue)
+export async function upsertQueuedMessage(item: QueuedMessage) {
+  const queue = await getPendingMessages()
+  const exists = queue.some((queuedItem) => queuedItem.message.id === item.message.id)
+  
+  if (!exists) {
+    await savePendingMessage(item)
+    await registerBackgroundSync()
+  }
 }
 
-export function removeQueuedMessage(messageId: string) {
-  writeOfflineMessageQueue(
-    readOfflineMessageQueue().filter((queuedItem) => queuedItem.message.id !== messageId),
-  )
+export async function removeQueuedMessage(messageId: string) {
+  await removePendingIndexedDB(messageId)
 }
 
 export function mergeQueuedMessages(existingMessages: Message[], queuedMessages: Message[]) {

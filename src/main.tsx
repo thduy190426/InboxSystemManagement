@@ -25,6 +25,16 @@ const queryClient = new QueryClient({
   },
 })
 
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'MESSAGES_SYNCED') {
+      console.log('Background sync completed for messages:', event.data.syncedIds)
+      queryClient.invalidateQueries({ queryKey: ['messages'] })
+      queryClient.invalidateQueries({ queryKey: ['conversations'] })
+    }
+  })
+}
+
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '1234567890-placeholder.apps.googleusercontent.com'
 
 createRoot(document.getElementById('root')!).render(

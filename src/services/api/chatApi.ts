@@ -1,6 +1,7 @@
 import type { CallHistoryItem, Conversation, ConversationMember, GroupJoinRequest, Message } from '../../types'
 import { apiFetch } from './apiClient'
 import i18n from '../../i18n'
+import { cacheConversations, getCachedConversations, cacheMessages, getCachedMessages } from '../core/indexedDB'
 
 type ConversationsResponse = {
   conversations: Conversation[]
@@ -109,7 +110,19 @@ export async function fetchConversations(options: { archived?: boolean } = {}) {
   qs.set('_t', Date.now().toString())
 
   const path = `/conversations?${qs.toString()}`
+  
+  if (!navigator.onLine) {
+    if (!options.archived) {
+      return await getCachedConversations()
+    }
+    return []
+  }
+
   const response = await request<ConversationsResponse>(path)
+
+  if (!options.archived) {
+    await cacheConversations(response.conversations)
+  }
 
   return response.conversations
 }
@@ -139,9 +152,30 @@ export async function fetchMessagesPage(
   }
 
   const query = params.toString()
+  
+  if (!navigator.onLine) {
+    if (!options.before && !options.around) {
+      const cached = await getCachedMessages(conversationId)
+      return {
+        messages: cached,
+        hasMore: false,
+        nextCursor: null,
+      }
+    }
+    return {
+      messages: [],
+      hasMore: false,
+      nextCursor: null,
+    }
+  }
+
   const response = await request<MessagesResponse>(
     `/conversations/${conversationId}/messages${query ? `?${query}` : ''}`,
   )
+
+  if (!options.before && !options.around) {
+    await cacheMessages(conversationId, response.messages)
+  }
 
   return {
     messages: response.messages,

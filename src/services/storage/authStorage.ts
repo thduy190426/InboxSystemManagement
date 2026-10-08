@@ -1,4 +1,5 @@
 import type { AuthResponse, AuthUser } from '../api/authApi'
+import { cacheAuthToken, authStore } from '../core/indexedDB'
 
 const AUTH_USER_KEY = 'auth_user'
 const REFRESH_TOKEN_KEY = 'refresh_token'
@@ -66,6 +67,8 @@ export function storeAuthSession(response: AuthResponse, rememberLogin: boolean)
   if (response.session) {
     targetStorage.setItem(REFRESH_TOKEN_KEY, response.session.refreshToken)
     targetStorage.setItem(REFRESH_TOKEN_EXPIRES_AT_KEY, response.session.expiresAt)
+    // cache for service worker background sync
+    cacheAuthToken(response.session.refreshToken).catch(console.error)
   }
 }
 
@@ -80,4 +83,5 @@ export function updateStoredAuthUser(user: AuthUser) {
 export function clearStoredAuthSession() {
   clearStorage(window.localStorage)
   clearStorage(window.sessionStorage)
+  authStore.removeItem('refreshToken').catch(console.error)
 }

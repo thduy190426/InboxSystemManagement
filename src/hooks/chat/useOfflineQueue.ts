@@ -15,19 +15,20 @@ export function useOfflineQueue({ currentUserId, setMessagesByConversation, push
   useEffect(() => {
     if (!currentUserId) return
 
-    const queuedMessages = getQueuedMessagesForUser(currentUserId)
-    if (queuedMessages.length === 0) return
+    getQueuedMessagesForUser(currentUserId).then((queuedMessages) => {
+      if (queuedMessages.length === 0) return
 
-    setMessagesByConversation((current) => {
-      const nextMessagesByConversation = { ...current }
-      queuedMessages.forEach((queuedItem: QueuedMessage) => {
-        nextMessagesByConversation[queuedItem.conversationId] = mergeQueuedMessages(
-          nextMessagesByConversation[queuedItem.conversationId] ?? [],
-          [{ ...queuedItem.message, state: 'failed' }],
-        )
+      setMessagesByConversation((current) => {
+        const nextMessagesByConversation = { ...current }
+        queuedMessages.forEach((queuedItem: QueuedMessage) => {
+          nextMessagesByConversation[queuedItem.conversationId] = mergeQueuedMessages(
+            nextMessagesByConversation[queuedItem.conversationId] ?? [],
+            [{ ...queuedItem.message, state: 'failed' }],
+          )
+        })
+        return nextMessagesByConversation
       })
-      return nextMessagesByConversation
-    })
+    }).catch(() => undefined)
   }, [currentUserId, setMessagesByConversation])
 
   const flushOfflineMessageQueue = useCallback(async () => {
@@ -36,7 +37,7 @@ export function useOfflineQueue({ currentUserId, setMessagesByConversation, push
       return
     }
 
-    const queuedMessages = getQueuedMessagesForUser(currentUserId)
+    const queuedMessages = await getQueuedMessagesForUser(currentUserId)
     if (queuedMessages.length === 0) return
 
     isFlushingOfflineQueueRef.current = true
@@ -57,7 +58,7 @@ export function useOfflineQueue({ currentUserId, setMessagesByConversation, push
             queuedItem.parentMessageId,
           )
 
-          removeQueuedMessage(queuedItem.message.id)
+          await removeQueuedMessage(queuedItem.message.id)
           setMessagesByConversation((current) => ({
             ...current,
             [queuedItem.conversationId]: (current[queuedItem.conversationId] ?? []).map((message) =>
@@ -86,8 +87,9 @@ export function useOfflineQueue({ currentUserId, setMessagesByConversation, push
 
     function handleOnline() {
       flushOfflineMessageQueue()
-        .then(() => {
-          if (getQueuedMessagesForUser(currentUserId as string).length === 0) {
+        .then(async () => {
+          const remaining = await getQueuedMessagesForUser(currentUserId as string)
+          if (remaining.length === 0) {
             pushToast('Tin nhắn offline đã được gửi lại.', 'info')
           }
         })

@@ -707,7 +707,8 @@ export function ChatApp({
         const messagePage = await fetchMessagesPage(activeId, { limit: MESSAGE_PAGE_LIMIT })
 
         if (isMounted) {
-          const queuedMessages = getQueuedMessagesForUser(currentUserIdRef.current)
+          const queued = await getQueuedMessagesForUser(currentUserIdRef.current)
+          const queuedMessages = queued
             .filter((queuedItem) => queuedItem.conversationId === activeId)
             .map((queuedItem) => ({ ...queuedItem.message, state: 'failed' as const }))
 
