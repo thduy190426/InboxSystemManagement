@@ -252,21 +252,28 @@ export function SettingsPage({
   const [activeSection, setActiveSection] = useState<string>('privacy-activity')
 
   useEffect(() => {
+    const intersectionRatios = new Map<string, number>()
+
     const observer = new IntersectionObserver(
       (entries) => {
+        entries.forEach((entry) => {
+          intersectionRatios.set(entry.target.id, entry.isIntersecting ? entry.intersectionRatio : 0)
+        })
+
         let maxRatio = 0
         let visibleSection = ''
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && entry.intersectionRatio > maxRatio) {
-            maxRatio = entry.intersectionRatio
-            visibleSection = entry.target.id
+        intersectionRatios.forEach((ratio, id) => {
+          if (ratio > maxRatio) {
+            maxRatio = ratio
+            visibleSection = id
           }
         })
+
         if (visibleSection) {
           setActiveSection(visibleSection)
         }
       },
-      { root: null, rootMargin: '-20% 0px -60% 0px', threshold: [0, 0.25, 0.5, 0.75, 1] }
+      { root: null, rootMargin: '-20% 0px -20% 0px', threshold: [0, 0.25, 0.5, 0.75, 1] }
     )
 
     const sections = ['privacy-activity', 'device-settings', 'app-settings', 'privacy-profile', 'password', 'two-factor', 'sessions', 'delete-account']
@@ -562,6 +569,9 @@ export function SettingsPage({
           </button>
           <button className={`sp-nav-item${activeSection === 'device-settings' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('device-settings')}>
             <Laptop size={15} /> {t('navDevice')}
+          </button>
+          <button className={`sp-nav-item${activeSection === 'app-settings' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('app-settings')}>
+            <Settings size={15} /> {t('appTitle', { defaultValue: 'Cài đặt Ứng dụng' })}
           </button>
           <button className={`sp-nav-item${activeSection === 'privacy-profile' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('privacy-profile')}>
             <IdCard size={15} /> {t('navProfile')}

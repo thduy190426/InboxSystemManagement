@@ -1,6 +1,6 @@
 import { useModerationSettings } from '../../hooks/useModerationSettings'
 import { keyManager } from '../../lib/e2ee/KeyManager'
-import { e2eeEngine } from '../../lib/e2ee/E2EEEngine'
+
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { FormEvent } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
@@ -15,57 +15,19 @@ import {
   type BrowserNotificationPermission,
 } from '../../services/core/browserNotifications'
 import {
-  archiveConversation,
-  addGroupMember,
-  createDirectConversation,
-  createGroupConversation,
-  deleteMessage,
-  disbandGroupConversation,
   fetchConversations,
   fetchConversationCalls,
   fetchConversationMembers,
   fetchGroupInvite,
   fetchGroupJoinRequests,
-  fetchMessagesPage,
   fetchTypingStatus,
-  forwardMessage,
-  hideConversation,
-  leaveGroupConversation,
   markConversationDelivered,
   markConversationRead,
-  recallMessage,
-  removeGroupMember,
-  removeMessageReaction,
   requestGroupJoin,
-  reportMessage,
-  resetGroupInvite,
-  reviewGroupJoinRequest,
-  searchConversationMessages,
-  sendMessage,
-  sendGifMessage,
-  toggleMessageReaction,
-  toggleMessagePin,
-  transferGroupOwner,
-  unarchiveConversation,
-  uploadMessageAttachment,
-  updateConversationSettings,
-  updateConversationQuickEmoji,
-  updateGroupConversation,
-  updateConversationBackground,
-  updateGroupMemberNickname,
-  updateGroupMemberRole,
-  updateTypingStatus,
-  updateMessage,
-  sendPoll,
-  votePoll,
-  type MessageSearchFilters,
-} from '../../services/api/chatApi'
+  updateTypingStatus, fetchMessagesPage } from '../../services/api/chatApi'
 import {
-  blockContact,
   fetchFriends,
   fetchIncomingRequests,
-  unblockContact,
-  updateContactNickname,
 } from '../../services/api/contactApi'
 import { startRealtimeCall } from '../../services/realtime/callRealtime'
 import {
@@ -76,7 +38,7 @@ import {
 } from '../../services/api/notificationApi'
 import { disconnectRealtimeSocket } from '../../services/realtime/realtime'
 import { playAlertSound, flashDocumentTitle, playCallRing } from '../../services/core/alertNotifier'
-import type { GifSearchResult } from '../../services/api/gifApi'
+
 import type {
   AppNotification,
   AppView,
@@ -89,8 +51,11 @@ import type {
   Message,
 } from '../../types'
 import { useOfflineQueue } from '../../hooks/chat/useOfflineQueue'
+import { useGroupManagement } from '../../hooks/chat/useGroupManagement'
+import { useConversationActions } from '../../hooks/chat/useConversationActions'
+import { useChatMessageActions } from '../../hooks/chat/useChatMessageActions'
 import { useChatRealtime } from '../../hooks/chat/useChatRealtime'
-import { getQueuedMessagesForUser, removeQueuedMessage, upsertQueuedMessage, mergeQueuedMessages, mergeLatestMessages, type QueuedMessage, prependOlderMessages, getInitialSidebarState, getInitialInboxWidth, getInitialCompactLayoutState, MESSAGE_PAGE_LIMIT, CONVERSATION_FILTERS, SIDEBAR_STATE_KEY, INBOX_WIDTH_KEY } from '../../services/core/offlineQueue'
+import { getQueuedMessagesForUser, mergeQueuedMessages, mergeLatestMessages, getInitialSidebarState, getInitialInboxWidth, getInitialCompactLayoutState, MESSAGE_PAGE_LIMIT, CONVERSATION_FILTERS, SIDEBAR_STATE_KEY, INBOX_WIDTH_KEY } from '../../services/core/offlineQueue'
 const AdminPage = lazy(() => import('./AdminPage').then(m => ({ default: m.AdminPage })))
 const CallOverlay = lazy(() => import('../media/CallOverlay').then(m => ({ default: m.CallOverlay })))
 import { ChatPanel } from '../panels/ChatPanel'
@@ -124,32 +89,7 @@ type MessagePaginationState = {
 }
 
 
-function getAttachmentPreview(message: Message | undefined, t: any) {
-  const attachment = message?.attachments?.[0]
-  const attachmentType = attachment?.type
 
-  if (attachment?.mimeType === 'image/gif') {
-    return t('gifSent')
-  }
-
-  if (attachmentType === 'image') {
-    return t('imageSent')
-  }
-
-  if (attachmentType === 'audio') {
-    return t('audioSent')
-  }
-
-  if (attachmentType === 'video') {
-    return t('videoSent')
-  }
-
-  if (attachmentType === 'file') {
-    return t('fileSent')
-  }
-
-  return message?.text ?? t('noMessage')
-}
 
 function readChatQueryParams() {
   const params = new URLSearchParams(window.location.search)
@@ -725,7 +665,7 @@ export function ChatApp({
             },
           }))
 
-          if (messagePage.messages.some((message) => message.author === 'them')) {
+          if (messagePage.messages.some((message: any) => message.author === 'them')) {
             syncDeliveredReceipts(activeId).catch(() => undefined)
           }
         }
@@ -803,82 +743,6 @@ export function ChatApp({
       contactId: conversation.contactId,
       onlineSince: conversation.onlineSince,
     }
-  }
-
-  async function handleLoadOlderMessages() {
-    if (!activeId || !activeMessagePagination?.hasMore || activeMessagePagination.isLoadingOlder) {
-      return
-    }
-
-    try {
-      setMessagePaginationByConversation((current) => ({
-        ...current,
-        [activeId]: {
-          ...current[activeId],
-          hasMore: current[activeId]?.hasMore ?? true,
-          isLoadingOlder: true,
-          nextCursor: current[activeId]?.nextCursor ?? null,
-        },
-      }))
-
-      const messagePage = await fetchMessagesPage(activeId, {
-        before: activeMessagePagination.nextCursor,
-        limit: MESSAGE_PAGE_LIMIT,
-      })
-
-      setMessagesByConversation((current) => ({
-        ...current,
-        [activeId]: prependOlderMessages(current[activeId] ?? [], messagePage.messages),
-      }))
-      setMessagePaginationByConversation((current) => ({
-        ...current,
-        [activeId]: {
-          hasMore: messagePage.hasMore,
-          isLoadingOlder: false,
-          nextCursor: messagePage.nextCursor,
-        },
-      }))
-    } catch (error) {
-      setMessagePaginationByConversation((current) => ({
-        ...current,
-        [activeId]: {
-          ...current[activeId],
-          hasMore: current[activeId]?.hasMore ?? true,
-          isLoadingOlder: false,
-          nextCursor: current[activeId]?.nextCursor ?? null,
-        },
-      }))
-      pushToast(getErrorMessage(error, t('loadOlderErr')))
-    }
-  }
-
-  async function handleSearchMessages(filters: MessageSearchFilters) {
-    if (!activeConversation) {
-      return []
-    }
-
-    return searchConversationMessages(activeConversation.id, filters)
-  }
-
-  async function handleJumpToMessage(messageId: string) {
-    if (!activeConversation) {
-      return
-    }
-
-    const messagePage = await fetchMessagesPage(activeConversation.id, {
-      around: messageId,
-      limit: MESSAGE_PAGE_LIMIT,
-    })
-
-    setMessagesByConversation((current) => ({
-      ...current,
-      [activeConversation.id]: mergeLatestMessages(
-        current[activeConversation.id] ?? [],
-        messagePage.messages,
-      ).sort((left, right) => Number(left.id) - Number(right.id)),
-    }))
-    setFocusedMessageId(messageId)
-    window.setTimeout(() => setFocusedMessageId(''), 1600)
   }
 
   useEffect(() => {
@@ -1332,757 +1196,6 @@ export function ChatApp({
     await sendActiveConversationMessage(draft, true)
   }
 
-  async function sendActiveConversationMessage(
-    textValue: string,
-    clearDraft = false,
-    retryMessage?: Message,
-  ) {
-    if (!activeConversation) {
-      return
-    }
-
-    if (activeConversation.blocked) {
-      pushToast(t('blockedUser'))
-      return
-    }
-
-    let text = textValue.trim()
-
-    if (!text) {
-      return
-    }
-
-    const { modified: moderatedText, isBlocked } = applyModerationToText(text)
-    if (isBlocked) {
-      pushToast(t('moderationBlocked'), 'error')
-      return
-    }
-    text = moderatedText
-
-    const parentMessageId = retryMessage?.replyTo?.id ?? replyingTo?.id ?? undefined
-    const temporaryMessage: Message =
-      retryMessage ?? {
-        id: `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        author: 'me',
-        text,
-        time: t('now'),
-        createdAt: new Date().toISOString(),
-        type: 'text',
-        state: 'sending',
-        replyTo: replyingTo
-          ? {
-            id: replyingTo.id,
-            author: replyingTo.author,
-            text: replyingTo.text,
-            type: replyingTo.type,
-            senderName: replyingTo.senderName,
-          }
-          : null,
-        mentions: [],
-        reactions: [],
-        attachments: [],
-      }
-    const queuedMessage: QueuedMessage = {
-      conversationId: activeConversation.id,
-      message: temporaryMessage,
-      parentMessageId,
-      userId: currentUserIdRef.current,
-          }
-
-    try {
-      setIsSending(true)
-      upsertQueuedMessage({
-        ...queuedMessage,
-        message: { ...temporaryMessage, state: 'sending' },
-      })
-
-      setMessagesByConversation((current) => ({
-        ...current,
-        [activeConversation.id]: retryMessage
-          ? (current[activeConversation.id] ?? []).map((message) =>
-            message.id === retryMessage.id
-              ? { ...message, createdAt: message.createdAt || new Date().toISOString(), state: 'sending', time: t('now') }
-              : message,
-          )
-          : [...(current[activeConversation.id] ?? []), temporaryMessage],
-      }))
-      setShouldAutoScrollToLatest(true)
-
-      setConversations((current: Conversation[] = []) =>
-        current.map((conversation) =>
-          conversation.id === activeConversation.id
-            ? {
-              ...conversation,
-              lastMessage: text,
-              lastMessageByMe: true,
-              lastMessageIsAttachment: false,
-              lastMessageAt: temporaryMessage.createdAt,
-              lastTime: t('now'),
-            }
-            : conversation,
-        ),
-      )
-
-      if (clearDraft) {
-        setDraft('')
-      }
-      setReplyingTo(null)
-
-      let sendText = text
-      let isE2ee = false
-      let e2eeType: number | undefined = undefined
-
-      if (activeConversation.type === 'secret') {
-        const activeMembers = membersByConversation[activeConversation.id] || []
-        const remoteUser = activeMembers.find(m => String(m.userId) !== String(currentUser?.id))
-        if (remoteUser) {
-          const cipherResult = await e2eeEngine.encryptMessage(remoteUser.userId, text)
-          sendText = cipherResult.body ?? ''
-          isE2ee = true
-          e2eeType = cipherResult.type
-        }
-      }
-
-      const createdMessage = await sendMessage(
-        activeConversation.id,
-        sendText,
-        parentMessageId,
-        isE2ee,
-        e2eeType
-      )
-      removeQueuedMessage(temporaryMessage.id)
-      updateTypingStatus(activeConversation.id, false).catch(() => undefined)
-      lastSentTypingRef.current = {
-        conversationId: activeConversation.id,
-        isTyping: false,
-      }
-
-      if (typingStopTimerRef.current) {
-        window.clearTimeout(typingStopTimerRef.current)
-        typingStopTimerRef.current = null
-      }
-
-      setMessagesByConversation((current) => ({
-        ...current,
-        [activeConversation.id]: (current[activeConversation.id] ?? []).map((message) =>
-          message.id === temporaryMessage.id ? createdMessage : message,
-        ),
-      }))
-    } catch (error) {
-      setMessagesByConversation((current) => ({
-        ...current,
-        [activeConversation.id]: (current[activeConversation.id] ?? []).map((message) =>
-          message.id === temporaryMessage.id ? { ...message, state: 'failed' } : message,
-        ),
-      }))
-      upsertQueuedMessage({
-        ...queuedMessage,
-        message: { ...temporaryMessage, state: 'failed' },
-              })
-      pushToast(
-        error instanceof Error
-          ? `${error.message} ${t('sendRetainedSuffix')}`
-          : t('sendRetainedErr'),
-      )
-    } finally {
-      setIsSending(false)
-    }
-  }
-
-  async function handleSendQuickMessage(text: string) {
-    await sendActiveConversationMessage(text)
-  }
-
-  async function handleSendPoll(pollData: Omit<import('../../types').MessagePoll, 'id' | 'totalVotes' | 'isClosed'>) {
-    if (!activeConversation) return
-    try {
-      const createdMessage = await sendPoll(activeConversation.id, pollData, replyingTo?.id)
-      setMessagesByConversation((current) => ({
-        ...current,
-        [activeConversation.id]: [...(current[activeConversation.id] ?? []), createdMessage],
-      }))
-      setConversations((current: Conversation[] = []) =>
-        current.map((conversation) =>
-          conversation.id === activeConversation.id
-            ? {
-              ...conversation,
-              lastMessage: t('pollCreated'),
-              lastMessageByMe: true,
-              lastMessageAt: createdMessage.createdAt ?? null,
-              lastTime: createdMessage.time,
-            }
-            : conversation,
-        ),
-      )
-      setReplyingTo(null)
-    } catch (error) {
-      pushToast(error instanceof Error ? error.message : t('createPollErr'))
-    }
-  }
-
-  async function handleVotePoll(messageId: string, optionIds: string[]) {
-    if (!activeConversation) return
-    try {
-      setMessagesByConversation((current) => {
-        const conversationMessages = current[activeConversation.id] ?? []
-        return {
-          ...current,
-          [activeConversation.id]: conversationMessages.map(msg => {
-            if (msg.id === messageId && msg.poll) {
-              const updatedPoll = { ...msg.poll }
-              const prevVotedOptionIds = new Set(
-                updatedPoll.options
-                  .filter(o => o.voterIds.includes(currentUserIdRef.current))
-                  .map(o => o.id)
-              )
-              let voteChange = 0
-              updatedPoll.options = updatedPoll.options.map(o => {
-                const isSelected = optionIds.includes(o.id)
-                const wasSelected = prevVotedOptionIds.has(o.id)
-                const voterIds = o.voterIds.filter(id => id !== currentUserIdRef.current)
-                if (isSelected) voterIds.push(currentUserIdRef.current)
-
-                if (isSelected && !wasSelected) voteChange++
-                if (!isSelected && wasSelected) voteChange--
-
-                return { ...o, voterIds }
-              })
-              updatedPoll.totalVotes += voteChange
-              return { ...msg, poll: updatedPoll }
-            }
-            return msg
-          })
-        }
-      })
-
-      await votePoll(activeConversation.id, messageId, optionIds)
-    } catch (error) {
-      pushToast(error instanceof Error ? error.message : t('votePollErr'))
-    }
-  }
-
-  async function handleRetryMessage(message: Message) {
-    await sendActiveConversationMessage(message.text, false, message)
-  }
-  async function handleUploadAttachment(file: File) {
-    if (!activeConversation || isUploadingAttachment) {
-      return
-    }
-
-    if (activeConversation.blocked) {
-      pushToast(t('blockedUser'))
-      return
-    }
-
-    if (isFileBlocked(file.name)) {
-      pushToast(t('blockedFileErr'), 'error')
-      return
-    }
-
-    try {
-      setIsUploadingAttachment(true)
-
-      let uploadFile = file
-      if (file.type.startsWith('image/')) {
-        const imageCompression = (await import('browser-image-compression')).default
-        const options = {
-          maxSizeMB: 1,
-          maxWidthOrHeight: 1920,
-          useWebWorker: true
-        }
-        try {
-          const compressedFile = await imageCompression(file, options)
-          uploadFile = new File([compressedFile], file.name, { type: compressedFile.type })
-        } catch (e) {
-          console.warn('Image compression failed', e)
-        }
-      }
-
-      const createdMessage = await uploadMessageAttachment(activeConversation.id, uploadFile)
-
-      setMessagesByConversation((current) => ({
-        ...current,
-        [activeConversation.id]: [...(current[activeConversation.id] ?? []), createdMessage],
-      }))
-
-      setConversations((current: Conversation[] = []) =>
-        current.map((conversation) =>
-          conversation.id === activeConversation.id
-            ? {
-              ...conversation,
-              lastMessage: getAttachmentPreview(createdMessage, t),
-              lastMessageByMe: true,
-              lastMessageIsAttachment: Boolean(createdMessage.attachments?.length),
-              lastMessageAt: createdMessage.createdAt ?? null,
-              lastTime: createdMessage.time,
-              attachments: [
-                ...(createdMessage.attachments ?? []),
-                ...conversation.attachments,
-              ],
-            }
-            : conversation,
-        ),
-      )
-    } catch (error) {
-      pushToast(getErrorMessage(error, t('sendFileErr')))
-    } finally {
-      setIsUploadingAttachment(false)
-    }
-  }
-
-  async function handleSendGif(gif: GifSearchResult) {
-    if (!activeConversation || isUploadingAttachment) {
-      return
-    }
-
-    if (activeConversation.blocked) {
-      pushToast(t('blockedUser'))
-      return
-    }
-
-    try {
-      setIsUploadingAttachment(true)
-
-      const createdMessage = await sendGifMessage(activeConversation.id, {
-        url: gif.url,
-        title: gif.title,
-        width: gif.width,
-        height: gif.height,
-        sizeBytes: gif.sizeBytes,
-      })
-
-      setMessagesByConversation((current) => ({
-        ...current,
-        [activeConversation.id]: [...(current[activeConversation.id] ?? []), createdMessage],
-      }))
-
-      setConversations((current: Conversation[] = []) =>
-        current.map((conversation) =>
-          conversation.id === activeConversation.id
-            ? {
-              ...conversation,
-              lastMessage: t('gifSent'),
-              lastMessageByMe: true,
-              lastMessageIsAttachment: true,
-              lastMessageAt: createdMessage.createdAt ?? null,
-              lastTime: createdMessage.time,
-              attachments: [
-                ...(createdMessage.attachments ?? []),
-                ...conversation.attachments,
-              ],
-            }
-            : conversation,
-        ),
-      )
-    } catch (error) {
-      pushToast(getErrorMessage(error, t('sendGifErr')))
-      throw error
-    } finally {
-      setIsUploadingAttachment(false)
-    }
-  }
-
-  async function handleSendSticker(url: string) {
-    if (!activeConversation || isUploadingAttachment) {
-      return
-    }
-
-    if (activeConversation.blocked) {
-      pushToast(t('blockedUser'))
-      return
-    }
-
-    try {
-      setIsUploadingAttachment(true)
-
-      const createdMessage = await sendGifMessage(activeConversation.id, {
-        url: url,
-        title: 'Sticker',
-      })
-
-      setMessagesByConversation((current) => ({
-        ...current,
-        [activeConversation.id]: [...(current[activeConversation.id] ?? []), createdMessage],
-      }))
-
-      setConversations((current: Conversation[] = []) =>
-        current.map((conversation) =>
-          conversation.id === activeConversation.id
-            ? {
-              ...conversation,
-              lastMessage: t('stickerSent'),
-              lastMessageByMe: true,
-              lastMessageIsAttachment: true,
-              lastMessageAt: createdMessage.createdAt ?? null,
-              lastTime: createdMessage.time,
-              attachments: [
-                ...(createdMessage.attachments ?? []),
-                ...conversation.attachments,
-              ],
-            }
-            : conversation,
-        ),
-      )
-    } catch (error) {
-      pushToast(getErrorMessage(error, t('sendStickerErr')))
-    } finally {
-      setIsUploadingAttachment(false)
-    }
-  }
-
-  async function handleEditMessage(messageId: string, text: string) {
-    if (!activeConversation || busyMessageId) {
-      return
-    }
-
-    try {
-      setBusyMessageId(messageId)
-
-      const updatedMessage = await updateMessage(activeConversation.id, messageId, text)
-
-      setMessagesByConversation((current) => ({
-        ...current,
-        [activeConversation.id]: (current[activeConversation.id] ?? []).map((message) =>
-          message.id === messageId ? updatedMessage : message,
-        ),
-      }))
-
-      setConversations((current: Conversation[] = []) =>
-        current.map((conversation) =>
-          conversation.id === activeConversation.id && conversation.lastMessage !== t('noMessage')
-            ? {
-              ...conversation,
-              lastMessage:
-                conversation.lastMessage ===
-                  messagesByConversation[activeConversation.id]?.find(
-                    (message) => message.id === messageId,
-                  )?.text
-                  ? text
-                  : conversation.lastMessage,
-            }
-            : conversation,
-        ),
-      )
-    } catch (error) {
-      pushToast(getErrorMessage(error, t('editMsgErr')))
-      throw error
-    } finally {
-      setBusyMessageId('')
-    }
-  }
-
-  async function handleDeleteMessage(messageId: string) {
-    if (!activeConversation || busyMessageId) {
-      return
-    }
-
-    try {
-      setBusyMessageId(messageId)
-
-      await deleteMessage(activeConversation.id, messageId)
-
-      const nextMessages = (messagesByConversation[activeConversation.id] ?? []).filter(
-        (message) => message.id !== messageId,
-      )
-      const nextLastMessageItem = nextMessages.at(-1)
-      const nextLastMessage = getAttachmentPreview(nextLastMessageItem, t)
-      const nextLastTime = nextLastMessageItem?.time ?? ''
-
-      setMessagesByConversation((current) => ({
-        ...current,
-        [activeConversation.id]: nextMessages,
-      }))
-      setReplyingTo((current) => (current?.id === messageId ? null : current))
-
-      setConversations((current: Conversation[] = []) =>
-        current.map((conversation) =>
-          conversation.id === activeConversation.id
-            ? {
-              ...conversation,
-              lastMessage: nextLastMessage,
-              lastMessageByMe: nextLastMessageItem?.author === 'me',
-              lastMessageIsAttachment: Boolean(nextLastMessageItem?.attachments?.length),
-              lastMessageAt: nextLastMessageItem?.createdAt ?? null,
-              lastTime: nextLastTime,
-            }
-            : conversation,
-        ),
-      )
-
-      const [serverMessagePage, nextConversations] = await Promise.all([
-        fetchMessagesPage(activeConversation.id, { limit: MESSAGE_PAGE_LIMIT }),
-        fetchConversations(),
-      ])
-
-      setMessagesByConversation((current) => ({
-        ...current,
-        [activeConversation.id]: mergeLatestMessages(current[activeConversation.id] ?? [], serverMessagePage.messages).filter(
-          (message) => message.id !== messageId,
-        ),
-      }))
-      setMessagePaginationByConversation((current) => ({
-        ...current,
-        [activeConversation.id]: {
-          hasMore: current[activeConversation.id]?.hasMore ?? serverMessagePage.hasMore,
-          isLoadingOlder: false,
-          nextCursor: current[activeConversation.id]?.nextCursor ?? serverMessagePage.nextCursor,
-        },
-      }))
-      setConversations(nextConversations)
-    } catch (error) {
-      pushToast(getErrorMessage(error, t('deleteMsgErr')))
-    } finally {
-      setBusyMessageId('')
-    }
-  }
-
-  async function handleRecallMessage(messageId: string) {
-    if (!activeConversation || busyMessageId) {
-      return
-    }
-
-    try {
-      setBusyMessageId(messageId)
-
-      const updatedConversation = await recallMessage(activeConversation.id, messageId)
-
-      const nextMessages = (messagesByConversation[activeConversation.id] ?? []).filter(
-        (message) => message.id !== messageId,
-      )
-
-      setMessagesByConversation((current) => ({
-        ...current,
-        [activeConversation.id]: nextMessages,
-      }))
-      setReplyingTo((current) => (current?.id === messageId ? null : current))
-
-      setConversations((current: Conversation[] = []) =>
-        current.map((conversation) =>
-          conversation.id === activeConversation.id ? updatedConversation : conversation,
-        ),
-      )
-
-      const [serverMessagePage, nextConversations] = await Promise.all([
-        fetchMessagesPage(activeConversation.id, { limit: MESSAGE_PAGE_LIMIT }),
-        fetchConversations(),
-      ])
-
-      setMessagesByConversation((current) => ({
-        ...current,
-        [activeConversation.id]: mergeLatestMessages(current[activeConversation.id] ?? [], serverMessagePage.messages).filter(
-          (message) => message.id !== messageId,
-        ),
-      }))
-      setMessagePaginationByConversation((current) => ({
-        ...current,
-        [activeConversation.id]: {
-          hasMore: serverMessagePage.hasMore,
-          isLoadingOlder: false,
-          nextCursor: serverMessagePage.nextCursor,
-        },
-      }))
-      setConversations(nextConversations)
-    } catch (error) {
-      pushToast(getErrorMessage(error, t('recallMsgErr')))
-    } finally {
-      setBusyMessageId('')
-    }
-  }
-
-  async function handleToggleMessagePin(messageId: string) {
-    if (!activeConversation || busyMessageId) {
-      return
-    }
-
-    try {
-      setBusyMessageId(messageId)
-
-      const updatedMessage = await toggleMessagePin(activeConversation.id, messageId)
-
-      setMessagesByConversation((current) => ({
-        ...current,
-        [activeConversation.id]: (current[activeConversation.id] ?? []).map((message) =>
-          message.id === messageId ? updatedMessage : message,
-        ),
-      }))
-    } catch (error) {
-      pushToast(getErrorMessage(error, t('pinMsgErr')))
-    } finally {
-      setBusyMessageId('')
-    }
-  }
-
-  async function handleForwardMessage(messageId: string, targetConversationId: string) {
-    if (!activeConversation || busyMessageId) {
-      return
-    }
-
-    try {
-      setBusyMessageId(messageId)
-
-      const response = await forwardMessage(activeConversation.id, messageId, targetConversationId)
-
-      setMessagesByConversation((current) => {
-        if (!current[targetConversationId]) {
-          return current
-        }
-
-        return {
-          ...current,
-          [targetConversationId]: [...current[targetConversationId], response.message],
-        }
-      })
-
-      setConversations((current: Conversation[] = []) =>
-        current
-          .map((conversation) =>
-            conversation.id === targetConversationId
-              ? {
-                ...conversation,
-                ...response.conversation,
-              }
-              : conversation,
-          )
-          .sort((first: any, second: any) => Number(second.pinned) - Number(first.pinned)),
-      )
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : t('forwardMsgErr'))
-      throw error
-    } finally {
-      setBusyMessageId('')
-    }
-  }
-
-  async function handleReportMessage(messageId: string) {
-    if (!activeConversation || busyMessageId) {
-      return
-    }
-
-    try {
-      setBusyMessageId(messageId)
-      const message = await reportMessage(
-        activeConversation.id,
-        messageId,
-        t('reportMsgTitle'),
-      )
-
-      pushToast(message || t('reportMsgSuccess'), 'info')
-    } catch (error) {
-      pushToast(getErrorMessage(error, t('reportMsgErr')))
-    } finally {
-      setBusyMessageId('')
-    }
-  }
-
-  async function handleToggleMessageReaction(messageId: string, emoji: string) {
-    if (!activeConversation || busyMessageId) {
-      return
-    }
-
-    try {
-      setBusyMessageId(messageId)
-      setErrorMessage('')
-
-      const message = await toggleMessageReaction(activeConversation.id, messageId, emoji)
-
-      setMessagesByConversation((current) => ({
-        ...current,
-        [activeConversation.id]: (current[activeConversation.id] ?? []).map((item) =>
-          item.id === messageId ? message : item,
-        ),
-      }))
-    } catch (error) {
-      pushToast(getErrorMessage(error, t('reactMsgErr')))
-    } finally {
-      setBusyMessageId('')
-    }
-  }
-
-  async function handleRemoveMessageReaction(messageId: string, emoji: string) {
-    if (!activeConversation || busyMessageId) {
-      return
-    }
-
-    try {
-      setBusyMessageId(messageId)
-
-      const message = await removeMessageReaction(activeConversation.id, messageId, emoji)
-
-      setMessagesByConversation((current) => ({
-        ...current,
-        [activeConversation.id]: (current[activeConversation.id] ?? []).map((item) =>
-          item.id === messageId ? message : item,
-        ),
-      }))
-    } catch (error) {
-      pushToast(getErrorMessage(error, t('unreactMsgErr')))
-    } finally {
-      setBusyMessageId('')
-    }
-  }
-
-  async function handleTogglePinned() {
-    if (!activeConversation || busyConversationAction) {
-      return
-    }
-
-    try {
-      setBusyConversationAction('pin')
-      setErrorMessage('')
-
-      const updatedConversation = await updateConversationSettings(activeConversation.id, {
-        pinned: !activeConversation.pinned,
-      })
-
-      setConversations((current: Conversation[] = []) =>
-        current
-          .map((conversation) =>
-            conversation.id === activeConversation.id
-              ? {
-                ...conversation,
-                pinned: updatedConversation.pinned,
-              }
-              : conversation,
-          )
-          .sort((first: any, second: any) => Number(second.pinned) - Number(first.pinned)),
-      )
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : t('pinUpdateErr'))
-    } finally {
-      setBusyConversationAction('')
-    }
-  }
-
-  async function handleToggleMuted() {
-    if (!activeConversation || busyConversationAction) {
-      return
-    }
-
-    try {
-      setBusyConversationAction('mute')
-      setErrorMessage('')
-
-      const updatedConversation = await updateConversationSettings(activeConversation.id, {
-        muted: !activeConversation.muted,
-      })
-
-      setConversations((current: Conversation[] = []) =>
-        current.map((conversation) =>
-          conversation.id === activeConversation.id
-            ? {
-              ...conversation,
-              muted: updatedConversation.muted,
-            }
-            : conversation,
-        ),
-      )
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : t('muteUpdateErr'))
-    } finally {
-      setBusyConversationAction('')
-    }
-  }
-
   async function handleConfirmDialog() {
     if (!confirmDialog || isConfirming) {
       return
@@ -2097,184 +1210,6 @@ export function ChatApp({
     }
   }
 
-  async function handleArchiveConversation() {
-    if (!activeConversation || busyConversationAction) {
-      return
-    }
-
-    setConfirmDialog({
-      title: t('archiveTitle'),
-      description: t('archiveDesc', { name: activeConversation.name }),
-      confirmLabel: t('archiveBtn'),
-      tone: 'danger',
-      onConfirm: archiveActiveConversation,
-    })
-  }
-
-  async function archiveActiveConversation() {
-    if (!activeConversation || busyConversationAction) {
-      return
-    }
-
-    try {
-      setBusyConversationAction('archive')
-      setErrorMessage('')
-
-      await archiveConversation(activeConversation.id)
-
-      const nextConversations = conversations.filter(
-        (conversation) => conversation.id !== activeConversation.id,
-      )
-      const nextConversationId = nextConversations[0]?.id || ''
-
-      setConversations(nextConversations)
-      setMessagesByConversation((current) => {
-        const next = { ...current }
-        delete next[activeConversation.id]
-        return next
-      })
-      setMessagePaginationByConversation((current) => {
-        const next = { ...current }
-        delete next[activeConversation.id]
-        return next
-      })
-      setActiveId(nextConversationId)
-
-      if (nextConversationId) {
-        window.history.replaceState(null, '', toAppPath({ view: 'chat', conversationId: nextConversationId }))
-      } else {
-        window.history.replaceState(null, '', toAppPath({ view: 'chat' }))
-      }
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : t('archiveErr'))
-    } finally {
-      setBusyConversationAction('')
-    }
-  }
-
-  async function handleTogglePinConversation(conversationId: string, pinned: boolean) {
-    if (busyConversationAction) {
-      return
-    }
-
-    try {
-      if (pinned) {
-        const pinnedCount = conversations.filter((c: Conversation) => c.pinned).length
-        if (pinnedCount >= 3) {
-          pushToast(t('pinLimitErr'), 'error')
-          return
-        }
-      }
-
-      setBusyConversationAction('pin-conversation')
-      setErrorMessage('')
-
-      const updatedConversation = await updateConversationSettings(conversationId, { pinned })
-
-      setConversations((current: Conversation[] = []) => {
-        const next = current.map((c: Conversation) => (c.id === conversationId ? updatedConversation : c))
-        return [...next.filter((c: Conversation) => c.pinned), ...next.filter((c: Conversation) => !c.pinned)]
-      })
-
-      pushToast(pinned ? t('pinSuccess') : t('unpinSuccess'), 'info')
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : t('pinErr'))
-    } finally {
-      setBusyConversationAction('')
-    }
-  }
-
-  function handleDeleteConversation(conversationId: string) {
-    if (busyConversationAction) {
-      return
-    }
-
-    const conversation =
-      conversations.find((item) => item.id === conversationId) ||
-      archivedConversations.find((item) => item.id === conversationId)
-
-    setConfirmDialog({
-      title: t('deleteTitle'),
-      description: t('deleteDesc', { name: conversation?.name || t('thisConversation') }),
-      confirmLabel: t('deleteBtn'),
-      tone: 'danger',
-      onConfirm: () => deleteConversationFromInbox(conversationId),
-    })
-  }
-
-  async function deleteConversationFromInbox(conversationId: string) {
-    if (busyConversationAction) {
-      return
-    }
-
-    try {
-      setBusyConversationAction('delete-conversation')
-      setErrorMessage('')
-
-      await hideConversation(conversationId)
-
-      const nextConversations = conversations.filter(
-        (conversation) => conversation.id !== conversationId,
-      )
-      const nextArchivedConversations = archivedConversations.filter(
-        (conversation) => conversation.id !== conversationId,
-      )
-      const nextConversationId =
-        activeId === conversationId ? nextConversations[0]?.id || '' : activeId
-
-      setConversations(nextConversations)
-      setArchivedConversations(nextArchivedConversations)
-      setMessagesByConversation((current) => {
-        const next = { ...current }
-        delete next[conversationId]
-        return next
-      })
-      setMessagePaginationByConversation((current) => {
-        const next = { ...current }
-        delete next[conversationId]
-        return next
-      })
-      setMembersByConversation((current) => {
-        const next = { ...current }
-        delete next[conversationId]
-        return next
-      })
-
-      if (activeId === conversationId) {
-        setActiveId(nextConversationId)
-        setIsDetailOpen(false)
-        window.history.replaceState(
-          null,
-          '',
-          nextConversationId
-            ? toAppPath({ view: 'chat', conversationId: nextConversationId })
-            : toAppPath({ view: 'chat' }),
-        )
-      }
-
-      pushToast(t('deleteSuccess'), 'info')
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : t('deleteErr'))
-    } finally {
-      setBusyConversationAction('')
-    }
-  }
-
-  function handleRestoreConversation(conversationId: string) {
-    if (busyConversationAction) {
-      return
-    }
-
-    const conversation = archivedConversations.find((item) => item.id === conversationId)
-
-    setConfirmDialog({
-      title: t('unarchiveTitle'),
-      description: t('unarchiveDesc', { name: conversation?.name || t('thisConversation') }),
-      confirmLabel: t('unarchiveBtn'),
-      onConfirm: () => restoreArchivedConversation(conversationId),
-    })
-  }
-
   function handleOpenPinnedMessage(messageId: string) {
     setActiveView('chat')
     handleJumpToMessage(messageId).catch(() => {
@@ -2283,612 +1218,6 @@ export function ChatApp({
         setFocusedMessageId(messageId)
       })
     })
-  }
-
-  async function restoreArchivedConversation(conversationId: string) {
-    if (busyConversationAction) {
-      return
-    }
-
-    try {
-      setBusyConversationAction('restore')
-      setErrorMessage('')
-
-      const restoredConversation = await unarchiveConversation(conversationId)
-      const nextConversations = await fetchConversations()
-
-      setArchivedConversations((current: Conversation[] = []) =>
-        current.filter((conversation) => conversation.id !== conversationId),
-      )
-      setConversations(nextConversations)
-      setConversationFilter('all')
-      handleSelectConversation(restoredConversation.id)
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : t('unarchiveErr'))
-    } finally {
-      setBusyConversationAction('')
-    }
-  }
-
-  async function handleToggleBlocked() {
-    if (!activeConversation || busyConversationAction || !activeConversation.contactId) {
-      return
-    }
-
-    setConfirmDialog({
-      title: activeConversation.blocked ? t('unblockTitle') : t('blockTitle'),
-      description: activeConversation.blocked ? t('unblockDesc') : t('blockDesc'),
-      confirmLabel: activeConversation.blocked ? t('unblockBtn') : t('blockBtn'),
-      tone: activeConversation.blocked ? 'default' : 'danger',
-      onConfirm: toggleActiveConversationBlocked,
-    })
-  }
-
-  async function toggleActiveConversationBlocked() {
-    if (!activeConversation || busyConversationAction || !activeConversation.contactId) {
-      return
-    }
-
-    try {
-      setBusyConversationAction('block')
-      setErrorMessage('')
-
-      const response = activeConversation.blocked
-        ? await unblockContact(activeConversation.contactId)
-        : await blockContact(activeConversation.contactId)
-      const isBlocked = response.friendshipStatus === 'blocked'
-
-      setConversations((current: Conversation[] = []) =>
-        current.map((conversation) =>
-          conversation.id === activeConversation.id
-            ? {
-              ...conversation,
-              blocked: isBlocked,
-              friendshipStatus: response.friendshipStatus,
-              status: isBlocked ? t('statusBlocked') : conversation.status,
-            }
-            : conversation,
-        ),
-      )
-
-      if (isBlocked) {
-        setDraft('')
-      }
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : t('blockErr'))
-    } finally {
-      setBusyConversationAction('')
-    }
-  }
-
-  async function handleUpdateContactNickname(nickname: string) {
-    if (!activeConversation || busyConversationAction || !activeConversation.contactId) {
-      return
-    }
-
-    try {
-      setBusyConversationAction('nickname')
-      setErrorMessage('')
-      const response = await updateContactNickname(activeConversation.contactId, nickname)
-      const [nextConversations, nextFriends] = await Promise.all([
-        fetchConversations(),
-        fetchFriends(),
-      ])
-
-      setConversations(nextConversations)
-      setFriends(nextFriends)
-      void response
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : t('nicknameErr'))
-    } finally {
-      setBusyConversationAction('')
-    }
-  }
-
-  async function handleCreateGroup(payload: {
-    title: string
-    memberIds: string[]
-    avatar?: File | null
-  }) {
-    if (isCreatingGroup) {
-      return
-    }
-
-    try {
-      setIsCreatingGroup(true)
-
-      const conversation = await createGroupConversation(payload)
-
-      setConversations((current: Conversation[] = []) => [conversation, ...current])
-      handleSelectConversation(conversation.id)
-      setIsDetailOpen(true)
-    } catch (error) {
-      pushToast(getErrorMessage(error, t('createGroupErr')))
-      throw error
-    } finally {
-      setIsCreatingGroup(false)
-    }
-  }
-
-  async function handleStartDirectMessage(user: Pick<ContactUser, 'id' | 'fullName' | 'friendshipStatus' | 'contactId'>) {
-    const conversation = await createDirectConversation(user.id)
-
-    setConversations((current: Conversation[] = []) => [
-      conversation,
-      ...current.filter((item) => item.id !== conversation.id),
-    ])
-    setConversationFilter('all')
-    setActiveView('chat')
-    handleSelectConversation(conversation.id)
-    pushToast(
-      conversation.friendshipStatus === 'accepted'
-        ? t('dmOpened')
-        : t('dmOpenedHidden'),
-      'info',
-    )
-  }
-
-  async function refreshActiveGroup(conversationId: string) {
-    const [nextConversations, nextMembers, nextMessagePage] = await Promise.all([
-      fetchConversations(),
-      fetchConversationMembers(conversationId),
-      fetchMessagesPage(conversationId, { limit: MESSAGE_PAGE_LIMIT }),
-    ])
-
-    setConversations(nextConversations)
-    setMembersByConversation((current) => ({
-      ...current,
-      [conversationId]: nextMembers,
-    }))
-    setMessagesByConversation((current) => ({
-      ...current,
-      [conversationId]: mergeLatestMessages(current[conversationId] ?? [], nextMessagePage.messages),
-    }))
-    setMessagePaginationByConversation((current) => ({
-      ...current,
-      [conversationId]: {
-        hasMore: current[conversationId]?.hasMore ?? nextMessagePage.hasMore,
-        isLoadingOlder: false,
-        nextCursor: current[conversationId]?.nextCursor ?? nextMessagePage.nextCursor,
-      },
-    }))
-  }
-
-  async function handleUpdateBackground(payload: { backgroundImage?: File | null; removeBackground?: boolean }) {
-    console.log('handleUpdateBackground called with payload:', payload);
-    if (!activeConversation || busyConversationAction) {
-      console.log('Early return: activeConversation:', !!activeConversation, 'busyConversationAction:', busyConversationAction);
-      return
-    }
-
-    try {
-      console.log('Setting busy action to background...');
-      setBusyConversationAction('background')
-      console.log('Calling updateConversationBackground API...');
-      const updatedConversation = await updateConversationBackground(activeConversation.id, payload)
-      console.log('API response:', updatedConversation);
-
-      try {
-        const newUrl = updatedConversation.backgroundImage || 'null'
-        const oldUrl = activeConversation.backgroundImage || ''
-        localStorage.setItem(`bg-override-${activeConversation.id}`, newUrl)
-        localStorage.setItem(`bg-known-backend-${activeConversation.id}`, oldUrl)
-      } catch (e) { }
-
-      setTimeout(() => {
-        fetchConversations().then(setConversations).catch(() => undefined)
-      }, 5000)
-
-      setConversations((current: Conversation[] = []) =>
-        current.map((conversation) =>
-          conversation.id === activeConversation.id
-            ? {
-              ...conversation,
-              ...updatedConversation,
-            }
-            : conversation,
-        ),
-      )
-    } catch (error) {
-      if (error instanceof Error) {
-        pushToast(error.message, 'error')
-      } else {
-        pushToast(t('bgUpdateErr'), 'error')
-      }
-    } finally {
-      setBusyConversationAction('')
-    }
-  }
-
-  async function handleUpdateGroup(payload: { title?: string; avatar?: File | null }) {
-    if (!activeConversation || activeConversation.type !== 'group' || busyConversationAction) {
-      return
-    }
-
-    try {
-      setBusyConversationAction('group')
-      const updatedConversation = await updateGroupConversation(activeConversation.id, payload)
-
-      setConversations((current: Conversation[] = []) =>
-        current.map((conversation) =>
-          conversation.id === activeConversation.id
-            ? {
-              ...conversation,
-              ...updatedConversation,
-            }
-            : conversation,
-        ),
-      )
-      await refreshActiveGroup(activeConversation.id)
-    } catch (error) {
-      pushToast(getErrorMessage(error, t('updateGroupErr')))
-      throw error
-    } finally {
-      setBusyConversationAction('')
-    }
-  }
-
-  async function handleUpdateQuickEmoji(emoji: string) {
-    if (!activeConversation || busyConversationAction) return
-    try {
-      console.log(`[QuickEmoji] Updating emoji to: ${emoji} for conversationId: ${activeConversation.id}`)
-      setBusyConversationAction('emoji')
-      
-      const updatedConversation = await updateConversationQuickEmoji(activeConversation.id, emoji)
-      
-      console.log('[QuickEmoji] Backend response:', updatedConversation)
-      
-      setConversations((current: Conversation[] = []) =>
-        current.map((conversation) =>
-          conversation.id === activeConversation.id
-            ? {
-              ...conversation,
-              quickEmoji: updatedConversation?.quickEmoji || emoji,
-            }
-            : conversation,
-        ),
-      )
-      console.log('[QuickEmoji] Frontend state updated successfully')
-    } catch (error) {
-      console.error('[QuickEmoji] Failed to call update API:', error)
-      pushToast(t('emojiUpdateErr'), 'error')
-    } finally {
-      setBusyConversationAction('')
-    }
-  }
-
-  async function handleAddMember(userId: string) {
-    if (!activeConversation || activeConversation.type !== 'group' || busyConversationAction) {
-      return
-    }
-
-    try {
-      setBusyConversationAction('member')
-      setErrorMessage('')
-      const members = await addGroupMember(activeConversation.id, userId)
-
-      setMembersByConversation((current) => ({
-        ...current,
-        [activeConversation.id]: members,
-      }))
-      await refreshActiveGroup(activeConversation.id)
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : t('addMemberErr'))
-    } finally {
-      setBusyConversationAction('')
-    }
-  }
-
-  async function handleRemoveMember(userId: string) {
-    if (!activeConversation || activeConversation.type !== 'group' || busyConversationAction) {
-      return
-    }
-
-    setConfirmDialog({
-      title: t('removeMemberTitle'),
-      description: t('removeMemberDesc'),
-      confirmLabel: t('removeMemberBtn'),
-      tone: 'danger',
-      onConfirm: () => removeActiveGroupMember(userId),
-    })
-  }
-
-  async function removeActiveGroupMember(userId: string) {
-    if (!activeConversation || activeConversation.type !== 'group' || busyConversationAction) {
-      return
-    }
-
-    try {
-      setBusyConversationAction('member')
-      setErrorMessage('')
-      const members = await removeGroupMember(activeConversation.id, userId)
-
-      setMembersByConversation((current) => ({
-        ...current,
-        [activeConversation.id]: members,
-      }))
-      await refreshActiveGroup(activeConversation.id)
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : t('removeMemberErr'))
-    } finally {
-      setBusyConversationAction('')
-    }
-  }
-
-  async function handleUpdateMemberNickname(userId: string, nickname: string) {
-    if (!activeConversation || activeConversation.type !== 'group' || busyConversationAction) {
-      return
-    }
-
-    try {
-      setBusyConversationAction(`member-nickname-${userId}`)
-      setErrorMessage('')
-      const members = await updateGroupMemberNickname(activeConversation.id, userId, nickname)
-
-      setMembersByConversation((current) => ({
-        ...current,
-        [activeConversation.id]: members,
-      }))
-      await refreshActiveGroup(activeConversation.id)
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : t('nicknameErr'))
-    } finally {
-      setBusyConversationAction('')
-    }
-  }
-
-  async function handleUpdateMemberRole(userId: string, role: 'admin' | 'member') {
-    if (!activeConversation || activeConversation.type !== 'group' || busyConversationAction) {
-      return
-    }
-
-    try {
-      setBusyConversationAction(`member-role-${userId}`)
-      setErrorMessage('')
-      const members = await updateGroupMemberRole(activeConversation.id, userId, role)
-
-      setMembersByConversation((current) => ({
-        ...current,
-        [activeConversation.id]: members,
-      }))
-      await refreshActiveGroup(activeConversation.id)
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : t('roleUpdateErr'))
-    } finally {
-      setBusyConversationAction('')
-    }
-  }
-
-  async function handleTransferOwner(userId: string) {
-    if (!activeConversation || activeConversation.type !== 'group' || busyConversationAction) {
-      return
-    }
-
-    setConfirmDialog({
-      title: t('transferOwnerTitle'),
-      description: t('transferOwnerDesc'),
-      confirmLabel: t('transferOwnerBtn'),
-      tone: 'danger',
-      onConfirm: () => transferActiveGroupOwner(userId),
-    })
-  }
-
-  async function transferActiveGroupOwner(userId: string) {
-    if (!activeConversation || activeConversation.type !== 'group' || busyConversationAction) {
-      return
-    }
-
-    try {
-      setBusyConversationAction(`owner-${userId}`)
-      setErrorMessage('')
-      const members = await transferGroupOwner(activeConversation.id, userId)
-
-      setMembersByConversation((current) => ({
-        ...current,
-        [activeConversation.id]: members,
-      }))
-      await refreshActiveGroup(activeConversation.id)
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : t('transferOwnerErr'))
-    } finally {
-      setBusyConversationAction('')
-    }
-  }
-
-  async function handleCopyGroupInviteLink() {
-    if (!activeConversation || activeConversation.type !== 'group' || busyConversationAction) {
-      return
-    }
-
-    try {
-      setBusyConversationAction('invite')
-      const token = activeGroupInviteToken || await fetchGroupInvite(activeConversation.id)
-      const inviteUrl = `${window.location.origin}${toAppPath({ view: 'chat' })}?join=${encodeURIComponent(token)}`
-
-      setGroupInviteTokensByConversation((current) => ({
-        ...current,
-        [activeConversation.id]: token,
-      }))
-      await navigator.clipboard.writeText(inviteUrl)
-      pushToast(t('copiedNewLink'), 'info')
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : t('copyNewLinkErr'))
-    } finally {
-      setBusyConversationAction('')
-    }
-  }
-
-  async function handleResetGroupInviteLink() {
-    if (!activeConversation || activeConversation.type !== 'group' || busyConversationAction) {
-      return
-    }
-
-    try {
-      setBusyConversationAction('invite')
-      const token = await resetGroupInvite(activeConversation.id)
-
-      setGroupInviteTokensByConversation((current) => ({
-        ...current,
-        [activeConversation.id]: token,
-      }))
-      pushToast(t('createLinkSuccess'), 'info')
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : t('createLinkErr'))
-    } finally {
-      setBusyConversationAction('')
-    }
-  }
-
-  async function handleReviewGroupJoinRequest(requestId: string, action: 'approve' | 'decline') {
-    if (!activeConversation || activeConversation.type !== 'group' || busyConversationAction) {
-      return
-    }
-
-    try {
-      setBusyConversationAction(`join-request-${requestId}`)
-      const members = await reviewGroupJoinRequest(activeConversation.id, requestId, action)
-      const requests = await fetchGroupJoinRequests(activeConversation.id)
-
-      setMembersByConversation((current) => ({
-        ...current,
-        [activeConversation.id]: members,
-      }))
-      setGroupJoinRequestsByConversation((current) => ({
-        ...current,
-        [activeConversation.id]: requests,
-      }))
-      await refreshActiveGroup(activeConversation.id)
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : t('approveJoinErr'))
-    } finally {
-      setBusyConversationAction('')
-    }
-  }
-
-  async function handleLeaveGroup() {
-    if (!activeConversation || activeConversation.type !== 'group' || busyConversationAction) {
-      return
-    }
-
-    setConfirmDialog({
-      title: t('leaveGroupTitle'),
-      description: t('leaveGroupDesc'),
-      confirmLabel: t('leaveGroupBtn'),
-      tone: 'danger',
-      onConfirm: leaveActiveGroup,
-    })
-  }
-
-  async function leaveActiveGroup() {
-    if (!activeConversation || activeConversation.type !== 'group' || busyConversationAction) {
-      return
-    }
-
-    try {
-      setBusyConversationAction('leave')
-      setErrorMessage('')
-      await leaveGroupConversation(activeConversation.id)
-
-      const nextConversations = conversations.filter(
-        (conversation) => conversation.id !== activeConversation.id,
-      )
-      const nextConversationId = nextConversations[0]?.id || ''
-
-      setConversations(nextConversations)
-      setMessagesByConversation((current) => {
-        const next = { ...current }
-        delete next[activeConversation.id]
-        return next
-      })
-      setMessagePaginationByConversation((current) => {
-        const next = { ...current }
-        delete next[activeConversation.id]
-        return next
-      })
-      setMembersByConversation((current) => {
-        const next = { ...current }
-        delete next[activeConversation.id]
-        return next
-      })
-      setActiveId(nextConversationId)
-      setIsDetailOpen(false)
-
-      window.history.replaceState(
-        null,
-        '',
-        nextConversationId
-          ? toAppPath({ view: 'chat', conversationId: nextConversationId })
-          : toAppPath({ view: 'chat' }),
-      )
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : t('leaveGroupErr'))
-    } finally {
-      setBusyConversationAction('')
-    }
-  }
-
-  async function handleDisbandGroup() {
-    if (!activeConversation || activeConversation.type !== 'group' || busyConversationAction) {
-      return
-    }
-
-    setConfirmDialog({
-      title: t('disbandGroupTitle'),
-      description: t('disbandGroupDesc'),
-      confirmLabel: t('disbandGroupBtn'),
-      tone: 'danger',
-      onConfirm: disbandActiveGroup,
-    })
-  }
-
-  async function disbandActiveGroup() {
-    if (!activeConversation || activeConversation.type !== 'group' || busyConversationAction) {
-      return
-    }
-
-    try {
-      setBusyConversationAction('disband')
-      setErrorMessage('')
-      locallyDisbandedConversationIdsRef.current.add(activeConversation.id)
-      await disbandGroupConversation(activeConversation.id)
-
-      const nextConversations = conversations.filter(
-        (conversation) => conversation.id !== activeConversation.id,
-      )
-      const nextConversationId = nextConversations[0]?.id || ''
-
-      setConversations(nextConversations)
-      setMessagesByConversation((current) => {
-        const next = { ...current }
-        delete next[activeConversation.id]
-        return next
-      })
-      setMessagePaginationByConversation((current) => {
-        const next = { ...current }
-        delete next[activeConversation.id]
-        return next
-      })
-      setMembersByConversation((current) => {
-        const next = { ...current }
-        delete next[activeConversation.id]
-        return next
-      })
-      setActiveId(nextConversationId)
-      setIsDetailOpen(false)
-
-      window.history.replaceState(
-        null,
-        '',
-        nextConversationId
-          ? toAppPath({ view: 'chat', conversationId: nextConversationId })
-          : toAppPath({ view: 'chat' }),
-      )
-    } catch (error) {
-      locallyDisbandedConversationIdsRef.current.delete(activeConversation.id)
-      setErrorMessage(error instanceof Error ? error.message : t('disbandGroupErr'))
-    } finally {
-      setBusyConversationAction('')
-    }
   }
 
   async function handleStartCall(type: CallType) {
@@ -2999,6 +1328,107 @@ export function ChatApp({
   ]
     .filter(Boolean)
     .join(' ')
+
+      const {
+        handleUpdateGroup,
+        handleAddMember,
+        handleRemoveMember,
+        handleUpdateMemberNickname,
+        handleUpdateMemberRole,
+        handleTransferOwner,
+        handleCopyGroupInviteLink,
+        handleResetGroupInviteLink,
+        handleReviewGroupJoinRequest,
+        handleLeaveGroup,
+        handleDisbandGroup,
+      } = useGroupManagement({
+        activeConversation,
+        activeGroupInviteToken,
+        busyConversationAction,
+        conversations,
+        locallyDisbandedConversationIdsRef,
+        t,
+        pushToast,
+        setBusyConversationAction,
+        setConfirmDialog,
+        setConversations,
+        setMembersByConversation,
+        setMessagesByConversation,
+        setMessagePaginationByConversation,
+        setGroupInviteTokensByConversation,
+        setGroupJoinRequestsByConversation,
+        setActiveId,
+        setIsDetailOpen,
+      });
+
+      const {
+        handleDeleteConversation,
+        handleRestoreConversation,
+        handleArchiveConversation,
+        handleStartDirectMessage,
+        handleTogglePinConversation,
+        handleToggleMuted,
+        handleToggleBlocked,
+        handleCreateGroup,
+        handleUpdateContactNickname,
+        handleTogglePinned,
+        handleUpdateBackground,
+        handleUpdateQuickEmoji,
+      } = useConversationActions({
+        activeConversation,
+        activeId,
+        archivedConversations,
+        busyConversationAction,
+        conversations,
+        isCreatingGroup,
+        t,
+        pushToast,
+        setActiveId,
+        setActiveView,
+        setArchivedConversations,
+        setBusyConversationAction,
+        setConfirmDialog,
+        setConversations,
+        setConversationFilter,
+        setIsCreatingGroup,
+        setIsDetailOpen,
+        setFriends,
+        setMembersByConversation,
+        setMessagesByConversation,
+        setMessagePaginationByConversation,
+        setDraft,
+        handleSelectConversation,
+      });
+
+      const { handleDeleteMessage, handleRecallMessage, handleEditMessage, handleForwardMessage, handleReportMessage, handleSendGif, handleToggleMessagePin, handleRemoveMessageReaction, handleRetryMessage, handleLoadOlderMessages, handleSendQuickMessage, handleSendPoll, handleVotePoll, handleToggleMessageReaction, handleUploadAttachment, handleSearchMessages, handleJumpToMessage, handleSendSticker, sendActiveConversationMessage } = useChatMessageActions({
+        activeConversation,
+        activeId,
+        activeMessagePagination,
+        busyMessageId,
+        currentUser,
+        currentUserIdRef,
+        isUploadingAttachment,
+        lastSentTypingRef,
+        membersByConversation,
+        messagesByConversation,
+        replyingTo,
+        typingStopTimerRef,
+        t,
+        applyModerationToText,
+        isFileBlocked,
+        pushToast,
+        setBusyMessageId,
+        setConversations,
+        setDraft,
+        setFocusedMessageId,
+        setIsSending,
+        setIsUploadingAttachment,
+        setMessagesByConversation,
+        setMessagePaginationByConversation,
+        setReplyingTo,
+        setShouldAutoScrollToLatest,
+      });
+
 
   const shellStyle = {
     '--inbox-width': inboxWidth === 100 ? '100px' : `clamp(320px, ${inboxWidth}px, 45vw)`
