@@ -748,8 +748,8 @@ export function SettingsPage({
           <Card
             id="two-factor"
             icon={<ShieldCheck size={16} />}
-            title="Xác thực 2 bước (2FA)"
-            description="Tăng cường bảo mật cho tài khoản của bạn."
+            title={t('twoFactor.title')}
+            description={t('twoFactor.description')}
           >
             <TwoFactorSettings
               isEnabled={!!currentUser?.twoFactorEnabled}

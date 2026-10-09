@@ -119,13 +119,13 @@ export function LoginPage({
             if (code && onLogin2FA) onLogin2FA(code);
           }}>
             <label className="auth-field" htmlFor="login-2fa-code">
-              <span>Mã xác thực 2 bước (hoặc mã dự phòng)</span>
+              <span>{t('login.twoFactorLabel')}</span>
               <div className="auth-input-row">
                 <Lock size={18} />
                 <input
                   id="login-2fa-code"
                   name="code"
-                  placeholder="Nhập mã 6 số"
+                  placeholder={t('login.twoFactorPlaceholder')}
                   required
                   type="text"
                   minLength={6}
@@ -133,11 +133,11 @@ export function LoginPage({
               </div>
             </label>
             <button className="primary-action-button" disabled={isSubmitting} type="submit">
-              <span>Xác nhận</span>
+              <span>{t('login.twoFactorConfirm')}</span>
               <ArrowRight size={18} />
             </button>
             <button className="secondary-action-button" disabled={isSubmitting} type="button" onClick={onCancel2FA} style={{ marginTop: '12px', background: 'transparent', color: 'var(--text-color)', border: '1px solid var(--border-color)' }}>
-              Hủy
+              {t('login.twoFactorCancel')}
             </button>
           </form>
         ) : (

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { setup2FA, verifySetup2FA, disable2FA } from '../../services/api/authApi'
 import { ShieldCheck, Trash2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 export function TwoFactorSettings({
   isEnabled,
@@ -13,6 +14,7 @@ export function TwoFactorSettings({
   onDisabled: () => void
   pushToast: (msg: string, tone?: 'info'|'error') => void
 }) {
+  const { t } = useTranslation('settings')
   const [setupData, setSetupData] = useState<{ secret: string, qrCodeUrl: string } | null>(null)
   const [verifyCode, setVerifyCode] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -28,7 +30,7 @@ export function TwoFactorSettings({
       const res = await setup2FA()
       setSetupData(res)
     } catch (err: any) {
-      pushToast(err.message || 'Lỗi khi cài đặt 2FA', 'error')
+      pushToast(err.message || t('twoFactor.setupErr'), 'error')
     } finally {
       setIsSubmitting(false)
     }
@@ -41,10 +43,10 @@ export function TwoFactorSettings({
     try {
       const res = await verifySetup2FA({ secret: setupData.secret, token: verifyCode })
       setBackupCodes(res.backupCodes)
-      pushToast('Kích hoạt 2FA thành công!', 'info')
+      pushToast(t('twoFactor.verifySuccess'), 'info')
       onEnabled()
     } catch (err: any) {
-      pushToast(err.message || 'Mã xác thực không đúng', 'error')
+      pushToast(err.message || t('twoFactor.verifyErr'), 'error')
     } finally {
       setIsSubmitting(false)
     }
@@ -56,11 +58,11 @@ export function TwoFactorSettings({
     setIsSubmitting(true)
     try {
       await disable2FA({ token: disableToken, password: disablePassword })
-      pushToast('Đã tắt 2FA', 'info')
+      pushToast(t('twoFactor.disableSuccess'), 'info')
       setShowDisable(false)
       onDisabled()
     } catch (err: any) {
-      pushToast(err.message || 'Lỗi khi tắt 2FA', 'error')
+      pushToast(err.message || t('twoFactor.disableErr'), 'error')
     } finally {
       setIsSubmitting(false)
     }
@@ -70,8 +72,8 @@ export function TwoFactorSettings({
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div style={{ padding: '16px', background: 'var(--sp-success-bg, #e6f4ea)', borderRadius: '8px', color: 'var(--sp-success, #137333)' }}>
-          <strong>Lưu lại mã dự phòng (Backup Codes)</strong>
-          <p>Mã dự phòng này chỉ được hiển thị 1 lần. Hãy lưu trữ cẩn thận để khôi phục tài khoản nếu bạn mất thiết bị 2FA.</p>
+          <strong>{t('twoFactor.backupCodesTitle')}</strong>
+          <p>{t('twoFactor.backupCodesDesc')}</p>
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
           {backupCodes.map((code) => (
@@ -81,7 +83,7 @@ export function TwoFactorSettings({
           ))}
         </div>
         <button className="sp-btn sp-btn--primary" onClick={() => setBackupCodes([])} style={{ alignSelf: 'flex-start' }}>
-          Đã lưu mã dự phòng
+          {t('twoFactor.savedBackupCodesBtn')}
         </button>
       </div>
     )
@@ -91,10 +93,10 @@ export function TwoFactorSettings({
     if (showDisable) {
       return (
         <form onSubmit={handleDisable} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <p>Nhập mật khẩu và mã 2FA hiện tại để tắt Xác thực 2 bước.</p>
+          <p>{t('twoFactor.disablePrompt')}</p>
           <input
             type="password"
-            placeholder="Mật khẩu"
+            placeholder={t('twoFactor.passwordPlaceholder')}
             className="sp-input"
             value={disablePassword}
             onChange={(e) => setDisablePassword(e.target.value)}
@@ -103,7 +105,7 @@ export function TwoFactorSettings({
           />
           <input
             type="text"
-            placeholder="Mã 2FA (6 số)"
+            placeholder={t('twoFactor.codePlaceholder')}
             className="sp-input"
             value={disableToken}
             onChange={(e) => setDisableToken(e.target.value)}
@@ -112,10 +114,10 @@ export function TwoFactorSettings({
           />
           <div style={{ display: 'flex', gap: '12px' }}>
             <button className="sp-btn sp-btn--danger" type="submit" disabled={isSubmitting}>
-              Tắt 2FA
+              {t('twoFactor.confirmDisableBtn')}
             </button>
             <button className="sp-btn" type="button" onClick={() => setShowDisable(false)} disabled={isSubmitting}>
-              Hủy
+              {t('twoFactor.cancelBtn')}
             </button>
           </div>
         </form>
@@ -125,10 +127,10 @@ export function TwoFactorSettings({
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <p style={{ color: 'var(--sp-success, #137333)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <ShieldCheck size={18} /> Đang bảo vệ bằng 2FA
+          <ShieldCheck size={18} /> {t('twoFactor.enabledText')}
         </p>
         <button className="sp-btn sp-btn--danger" onClick={() => setShowDisable(true)} style={{ alignSelf: 'flex-start' }}>
-          <Trash2 size={16} /> Tắt Xác thực 2 bước
+          <Trash2 size={16} /> {t('twoFactor.disableBtn')}
         </button>
       </div>
     )
@@ -137,12 +139,12 @@ export function TwoFactorSettings({
   if (setupData) {
     return (
       <form onSubmit={handleVerify} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <p>1. Quét mã QR này bằng ứng dụng Google Authenticator hoặc Authy.</p>
+        <p>{t('twoFactor.step1')}</p>
         <img src={setupData.qrCodeUrl} alt="QR Code" style={{ width: '200px', height: '200px', alignSelf: 'center', background: '#fff', padding: '12px', borderRadius: '8px' }} />
-        <p>2. Nhập mã 6 số hiện trên ứng dụng để xác nhận.</p>
+        <p>{t('twoFactor.step2')}</p>
         <input
           type="text"
-          placeholder="Nhập mã 6 số"
+          placeholder={t('twoFactor.codePlaceholder')}
           value={verifyCode}
           onChange={(e) => setVerifyCode(e.target.value)}
           required
@@ -151,10 +153,10 @@ export function TwoFactorSettings({
         />
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
           <button className="sp-btn sp-btn--primary" type="submit" disabled={isSubmitting}>
-            Xác nhận
+            {t('twoFactor.confirmSetupBtn')}
           </button>
           <button className="sp-btn" type="button" onClick={() => setSetupData(null)} disabled={isSubmitting}>
-            Hủy
+            {t('twoFactor.cancelBtn')}
           </button>
         </div>
       </form>
@@ -163,9 +165,9 @@ export function TwoFactorSettings({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <p>Xác thực 2 bước (2FA) giúp bảo vệ tài khoản của bạn khỏi việc truy cập trái phép bằng cách yêu cầu mã bảo mật từ ứng dụng bên thứ 3 (Google Authenticator, Authy, v.v.).</p>
+      <p>{t('twoFactor.infoText')}</p>
       <button className="sp-btn sp-btn--primary" onClick={handleSetup} disabled={isSubmitting} style={{ alignSelf: 'flex-start' }}>
-        Thiết lập 2FA
+        {t('twoFactor.setupBtn')}
       </button>
     </div>
   )
