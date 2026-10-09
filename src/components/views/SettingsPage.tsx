@@ -269,7 +269,7 @@ export function SettingsPage({
       { root: null, rootMargin: '-20% 0px -60% 0px', threshold: [0, 0.25, 0.5, 0.75, 1] }
     )
 
-    const sections = ['privacy-activity', 'device-settings', 'app-settings', 'privacy-profile', 'password', 'sessions', 'delete-account']
+    const sections = ['privacy-activity', 'device-settings', 'app-settings', 'privacy-profile', 'password', 'two-factor', 'sessions', 'delete-account']
     sections.forEach((id) => {
       const el = document.getElementById(id)
       if (el) observer.observe(el)
