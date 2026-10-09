@@ -1,4 +1,4 @@
-import { Mic, MicOff, Phone, Volume2, VolumeX, Video, VideoOff, X, MonitorUp, Signal, Minimize2, Maximize2 } from 'lucide-react'
+import { Mic, MicOff, Phone, Volume2, VolumeX, Video, VideoOff, X, MonitorUp, Signal, Minimize2, Maximize2, PictureInPicture, Zap } from 'lucide-react'
 import { memo, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -153,6 +153,9 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
   const [isSpeakerOn, setIsSpeakerOn] = useState(true)
   const [isCameraOn, setIsCameraOn] = useState(call.type === 'video')
   const [isScreenSharing, setIsScreenSharing] = useState(false)
+  const [isPiPMode, setIsPiPMode] = useState(false)
+  const [isBlurOn, setIsBlurOn] = useState(false)
+  const pipWindowRef = useRef<any>(null)
   const [audioInputs, setAudioInputs] = useState<DeviceOption[]>([])
   const [audioOutputs, setAudioOutputs] = useState<DeviceOption[]>([])
   const [videoInputs, setVideoInputs] = useState<DeviceOption[]>([])
@@ -358,7 +361,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
       if (!localStreamRef.current || callStatus !== 'ongoing') return
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          audio: selectedAudioInputId ? { deviceId: { exact: selectedAudioInputId } } : true,
+          audio: selectedAudioInputId ? { deviceId: { exact: selectedAudioInputId }, noiseSuppression: true, echoCancellation: true } : { noiseSuppression: true, echoCancellation: true },
           video: call.type === 'video' ? (selectedVideoInputId ? { deviceId: { exact: selectedVideoInputId } } : true) : false,
         })
         localStreamRef.current.getTracks().forEach(track => {
@@ -406,7 +409,7 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
     }
 
     const stream = await navigator.mediaDevices.getUserMedia({
-      audio: selectedAudioInputId ? { deviceId: { exact: selectedAudioInputId } } : true,
+      audio: selectedAudioInputId ? { deviceId: { exact: selectedAudioInputId }, noiseSuppression: true, echoCancellation: true } : { noiseSuppression: true, echoCancellation: true },
       video:
         call.type === 'video'
           ? selectedVideoInputId
@@ -1173,6 +1176,63 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
     }
   }
 
+  async function togglePiP() {
+    if (!('documentPictureInPicture' in window)) {
+      onError(t('pipNotSupported', { defaultValue: 'Trình duyệt không hỗ trợ Document Picture-in-Picture!' }))
+      return
+    }
+
+    if (pipWindowRef.current) {
+      pipWindowRef.current.close()
+      return
+    }
+
+    try {
+      const pipWindow = await (window as any).documentPictureInPicture.requestWindow({
+        width: 380,
+        height: 500,
+      })
+      pipWindowRef.current = pipWindow
+      setIsPiPMode(true)
+
+      if (callShellRef.current) {
+        pipWindow.document.body.append(callShellRef.current)
+      }
+
+      Array.from(document.styleSheets).forEach((styleSheet) => {
+        try {
+          const style = document.createElement('style')
+          style.textContent = Array.from(styleSheet.cssRules).map(r => r.cssText).join('')
+          pipWindow.document.head.append(style)
+        } catch (e) {
+          if (styleSheet.href) {
+            const link = document.createElement('link')
+            link.rel = 'stylesheet'
+            link.href = styleSheet.href
+            pipWindow.document.head.append(link)
+          }
+        }
+      })
+
+      pipWindow.addEventListener('pagehide', () => {
+        setIsPiPMode(false)
+        pipWindowRef.current = null
+        if (callShellRef.current) {
+          document.querySelector('.call-overlay')?.append(callShellRef.current)
+        }
+      })
+    } catch (error) {
+      onError(t('pipFailed', { defaultValue: 'Không thể mở Picture-in-Picture!' }))
+    }
+  }
+
+  function toggleBackgroundBlur() {
+    // Để tích hợp hoàn chỉnh Background Blur, cần sử dụng @mediapipe/selfie_segmentation 
+    // kết hợp với <canvas> để vẽ lại luồng video đã được xóa phông.
+    setIsBlurOn(!isBlurOn)
+    onError(t('blurNotImplemented', { defaultValue: 'Tính năng làm mờ phông nền yêu cầu cài đặt thư viện @mediapipe/tasks-vision.' }))
+  }
+
   function formatElapsed() {
     const minutes = Math.floor(elapsedSeconds / 60)
     const seconds = elapsedSeconds % 60
@@ -1260,6 +1320,11 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {canShowVideo && (
+               <button onClick={togglePiP} title={isPiPMode ? t("closePip", { defaultValue: "Đóng PiP" }) : t("openPip", { defaultValue: "Mở PiP (Picture-in-Picture)" })} type="button">
+                 <PictureInPicture size={18} />
+               </button>
+            )}
             <button onClick={() => setIsMinimized(!isMinimized)} title={isMinimized ? t("maximize", { defaultValue: "Phóng to" }) : t("minimize", { defaultValue: "Thu nhỏ" })} type="button">
               {isMinimized ? <Maximize2 size={18} /> : <Minimize2 size={18} />}
             </button>
@@ -1410,6 +1475,9 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
                 <>
                   <button className="call-control" onClick={toggleCamera} title={isCameraOn ? t('turnOffCam', { defaultValue: 'Tắt camera' }) : t('turnOnCam', { defaultValue: 'Bật camera' })} type="button">
                     {isCameraOn ? <Video size={20} /> : <VideoOff size={20} />}
+                  </button>
+                  <button className={`call-control ${isBlurOn ? 'is-active' : ''}`} onClick={toggleBackgroundBlur} title={t('toggleBlur', { defaultValue: 'Làm mờ phông nền' })} type="button">
+                    <Zap size={20} />
                   </button>
                   {callStatus === 'ongoing' ? (
                     isScreenSharing ? (

@@ -60,7 +60,7 @@ async function syncMessages() {
         }
       } catch (err) {
         console.error('Failed to sync message', item.message.id, err)
-        break // Stop on first network error to maintain order and wait for next sync
+        break 
       }
     }
 

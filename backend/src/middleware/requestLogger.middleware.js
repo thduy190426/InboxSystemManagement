@@ -95,7 +95,6 @@ function getResponsePayload(payload) {
 }
 
 function logRequest(request, _response, next) {
-  // Ignore spammy polling logs
   const isSpammy = request.originalUrl.includes('/typing') || request.originalUrl.includes('/presence') || request.originalUrl.includes('/stats')
   
   if (isSpammy) {

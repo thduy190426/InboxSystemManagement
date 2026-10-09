@@ -13,7 +13,6 @@ async function uploadKeys(req, res, next) {
     try {
       await connection.beginTransaction()
 
-      // 1. Insert or update device
       await connection.execute(
         `INSERT INTO e2ee_devices (user_id, device_id, registration_id)
          VALUES (?, ?, ?)
@@ -21,7 +20,6 @@ async function uploadKeys(req, res, next) {
         [userId, deviceId, registrationId, registrationId]
       )
 
-      // 2. Insert or update identity key
       await connection.execute(
         `INSERT INTO e2ee_identity_keys (user_id, device_id, identity_key)
          VALUES (?, ?, ?)
@@ -29,7 +27,6 @@ async function uploadKeys(req, res, next) {
         [userId, deviceId, identityKey, identityKey]
       )
 
-      // 3. Insert or update signed prekey
       await connection.execute(
         `INSERT INTO e2ee_signed_prekeys (user_id, device_id, key_id, public_key, signature)
          VALUES (?, ?, ?, ?, ?)
@@ -40,9 +37,7 @@ async function uploadKeys(req, res, next) {
         ]
       )
 
-      // 4. Insert one-time prekeys
       if (Array.isArray(oneTimePreKeys) && oneTimePreKeys.length > 0) {
-        // To avoid storing too many, we could optionally clear old ones first
         await connection.execute(
           `DELETE FROM e2ee_onetime_prekeys WHERE user_id = ? AND device_id = ?`,
           [userId, deviceId]
@@ -78,8 +73,6 @@ async function uploadKeys(req, res, next) {
 async function fetchKeys(req, res, next) {
   try {
     const targetUserId = req.params.userId
-    // In a fully multi-device setup, we'd fetch for ALL devices of the target user.
-    // For simplicity, we fetch the most recently seen device.
     const [devices] = await db.execute(
       `SELECT device_id, registration_id
        FROM e2ee_devices
@@ -95,19 +88,16 @@ async function fetchKeys(req, res, next) {
 
     const device = devices[0]
 
-    // Fetch identity key
     const [identityKeys] = await db.execute(
       `SELECT identity_key FROM e2ee_identity_keys WHERE user_id = ? AND device_id = ?`,
       [targetUserId, device.device_id]
     )
 
-    // Fetch signed prekey
     const [signedPreKeys] = await db.execute(
       `SELECT key_id, public_key, signature FROM e2ee_signed_prekeys WHERE user_id = ? AND device_id = ? ORDER BY created_at DESC LIMIT 1`,
       [targetUserId, device.device_id]
     )
 
-    // Fetch ONE one-time prekey
     const [oneTimePreKeys] = await db.execute(
       `SELECT key_id, public_key FROM e2ee_onetime_prekeys WHERE user_id = ? AND device_id = ? LIMIT 1`,
       [targetUserId, device.device_id]
@@ -131,7 +121,6 @@ async function fetchKeys(req, res, next) {
       } : null
     }
 
-    // If we served a one-time prekey, we should delete it so it's not reused.
     if (oneTimePreKeys.length > 0) {
       await db.execute(
         `DELETE FROM e2ee_onetime_prekeys WHERE user_id = ? AND device_id = ? AND key_id = ?`,
@@ -139,7 +128,6 @@ async function fetchKeys(req, res, next) {
       )
     }
 
-    // Send array of bundles (one per device). Here just one for simplicity.
     res.json({
       devices: [
         {
