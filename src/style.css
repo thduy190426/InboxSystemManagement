@@ -12685,7 +12685,6 @@ html.dark .sp-select option {
 
 .message-read-avatar { width: 14px !important; height: 14px !important; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--bg-color); font-size: 8px !important; }
 
-/* Link Preview Styles */
 .link-preview-card {
   display: flex;
   background: var(--surface, #ffffff);
@@ -12726,7 +12725,7 @@ html.dark .link-preview-card {
 
 .layout-vertical .link-preview-image-container {
   width: 100%;
-  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  padding-bottom: 56.25%;
 }
 
 .layout-horizontal .link-preview-image-container {
@@ -12810,8 +12809,6 @@ html.dark .link-preview-footer {
   height: 16px;
   border-radius: 2px;
 }
-
-/* Skeleton Loading */
 .link-preview-skeleton {
   background: var(--surface, #ffffff);
   border: 1px solid var(--border-color, #e0e0e0);

@@ -156,6 +156,11 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
   const [isPiPMode, setIsPiPMode] = useState(false)
   const [isBlurOn, setIsBlurOn] = useState(false)
   const pipWindowRef = useRef<any>(null)
+  const blurCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const hiddenVideoRef = useRef<HTMLVideoElement | null>(null)
+  const segmenterRef = useRef<any>(null)
+  const blurRafId = useRef<number | null>(null)
+  const rawStreamRef = useRef<MediaStream | null>(null)
   const [audioInputs, setAudioInputs] = useState<DeviceOption[]>([])
   const [audioOutputs, setAudioOutputs] = useState<DeviceOption[]>([])
   const [videoInputs, setVideoInputs] = useState<DeviceOption[]>([])
@@ -230,6 +235,10 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
 
   useEffect(() => {
     refreshMediaDevices().catch(() => undefined)
+    return () => {
+      if (blurRafId.current) cancelAnimationFrame(blurRafId.current)
+      if (segmenterRef.current) segmenterRef.current.close()
+    }
   }, [])
 
   useEffect(() => {
@@ -1226,11 +1235,155 @@ export function CallOverlay({ call, currentUserId, onClear, onError }: CallOverl
     }
   }
 
-  function toggleBackgroundBlur() {
-    // Để tích hợp hoàn chỉnh Background Blur, cần sử dụng @mediapipe/selfie_segmentation 
-    // kết hợp với <canvas> để vẽ lại luồng video đã được xóa phông.
-    setIsBlurOn(!isBlurOn)
-    onError(t('blurNotImplemented', { defaultValue: 'Tính năng làm mờ phông nền yêu cầu cài đặt thư viện @mediapipe/tasks-vision.' }))
+  async function toggleBackgroundBlur() {
+    try {
+      if (isBlurOn) {
+        setIsBlurOn(false)
+        if (blurRafId.current) {
+          cancelAnimationFrame(blurRafId.current)
+          blurRafId.current = null
+        }
+        
+        if (rawStreamRef.current && localStreamRef.current) {
+          const rawVideoTrack = rawStreamRef.current.getVideoTracks()[0]
+          const oldVideo = localStreamRef.current.getVideoTracks()[0]
+          if (oldVideo) {
+            localStreamRef.current.removeTrack(oldVideo)
+          }
+          if (rawVideoTrack) {
+            localStreamRef.current.addTrack(rawVideoTrack)
+            peersRef.current.forEach(({ peer }) => {
+              const sender = peer.getSenders().find(s => s.track?.kind === 'video')
+              if (sender) sender.replaceTrack(rawVideoTrack)
+            })
+          }
+          if (localVideoRef.current) {
+            localVideoRef.current.srcObject = localStreamRef.current
+          }
+        }
+        return
+      }
+
+      setIsBlurOn(true)
+      
+      if (!segmenterRef.current) {
+        const { ImageSegmenter, FilesetResolver } = await import('@mediapipe/tasks-vision')
+        const vision = await FilesetResolver.forVisionTasks(
+          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/wasm"
+        )
+        segmenterRef.current = await ImageSegmenter.createFromOptions(vision, {
+          baseOptions: {
+            modelAssetPath: "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite",
+            delegate: "GPU"
+          },
+          runningMode: "VIDEO",
+          outputCategoryMask: true
+        })
+      }
+
+      if (!hiddenVideoRef.current) {
+        hiddenVideoRef.current = document.createElement('video')
+        hiddenVideoRef.current.autoplay = true
+        hiddenVideoRef.current.playsInline = true
+        hiddenVideoRef.current.muted = true
+      }
+      if (!blurCanvasRef.current) {
+        blurCanvasRef.current = document.createElement('canvas')
+      }
+
+      if (!rawStreamRef.current && localStreamRef.current) {
+        const videoTrack = localStreamRef.current.getVideoTracks()[0]
+        if (videoTrack) {
+          rawStreamRef.current = new MediaStream([videoTrack])
+        }
+      }
+
+      if (!rawStreamRef.current) {
+        onError(t('noCameraBlur', { defaultValue: "Không tìm thấy luồng Camera!" }))
+        setIsBlurOn(false)
+        return
+      }
+
+      hiddenVideoRef.current.srcObject = rawStreamRef.current
+      await hiddenVideoRef.current.play()
+
+      const canvas = blurCanvasRef.current
+      const ctx = canvas.getContext('2d', { willReadFrequently: true })
+      if (!ctx) return
+
+      let lastVideoTime = -1
+
+      function renderLoop() {
+        if (!isBlurOn || !hiddenVideoRef.current || !segmenterRef.current || !ctx) return
+
+        const video = hiddenVideoRef.current
+        if (video.videoWidth > 0 && video.videoHeight > 0) {
+          canvas.width = video.videoWidth
+          canvas.height = video.videoHeight
+        }
+
+        if (video.currentTime !== lastVideoTime && canvas.width > 0 && canvas.height > 0) {
+          lastVideoTime = video.currentTime
+          
+          const startTimeMs = performance.now()
+          const result = segmenterRef.current.segmentForVideo(video, startTimeMs)
+
+          if (result && result.categoryMask) {
+            const width = canvas.width
+            const height = canvas.height
+            const maskArray = result.categoryMask.getAsUint8Array()
+            
+            ctx.drawImage(video, 0, 0, width, height)
+            const clearData = ctx.getImageData(0, 0, width, height)
+            
+            ctx.filter = 'blur(12px)'
+            ctx.drawImage(video, 0, 0, width, height)
+            ctx.filter = 'none'
+            const blurredData = ctx.getImageData(0, 0, width, height)
+            
+            for (let i = 0; i < maskArray.length; i++) {
+              if (maskArray[i] > 0) {
+                const offset = i * 4
+                blurredData.data[offset] = clearData.data[offset]
+                blurredData.data[offset+1] = clearData.data[offset+1]
+                blurredData.data[offset+2] = clearData.data[offset+2]
+                blurredData.data[offset+3] = clearData.data[offset+3]
+              }
+            }
+            
+            ctx.putImageData(blurredData, 0, 0)
+          }
+        }
+        blurRafId.current = requestAnimationFrame(renderLoop)
+      }
+
+      renderLoop()
+
+      const processedStream = canvas.captureStream(30)
+      const processedVideoTrack = processedStream.getVideoTracks()[0]
+
+      if (localStreamRef.current) {
+        const oldVideo = localStreamRef.current.getVideoTracks()[0]
+        if (oldVideo) {
+          localStreamRef.current.removeTrack(oldVideo)
+        }
+        localStreamRef.current.addTrack(processedVideoTrack)
+      }
+
+      peersRef.current.forEach(({ peer }) => {
+        const sender = peer.getSenders().find(s => s.track?.kind === 'video')
+        if (sender) sender.replaceTrack(processedVideoTrack)
+      })
+
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = localStreamRef.current
+      }
+
+    } catch (error) {
+      console.error(error)
+      onError(t('blurFailed', { defaultValue: 'Không thể khởi tạo Mờ phông nền!' }))
+      setIsBlurOn(false)
+    }
   }
 
   function formatElapsed() {

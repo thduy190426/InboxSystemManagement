@@ -10,7 +10,7 @@ export function LinkPreview({ url }: LinkPreviewProps) {
   const { data: preview, isLoading, isError } = useQuery({
     queryKey: ['linkPreview', url],
     queryFn: () => fetchLinkPreview(url),
-    staleTime: 1000 * 60 * 60, // Cache for 1 hour
+    staleTime: 1000 * 60 * 60, 
     retry: false,
     refetchOnWindowFocus: false,
   })
