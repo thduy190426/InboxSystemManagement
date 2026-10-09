@@ -22,6 +22,11 @@ export function getRealtimeSocket() {
       token,
     },
     transports: ['websocket', 'polling'],
+    reconnection: true,
+    reconnectionDelay: 1000, 
+    reconnectionDelayMax: 8000, 
+    randomizationFactor: 0.1, 
+    reconnectionAttempts: Infinity,
   })
 
   return socket

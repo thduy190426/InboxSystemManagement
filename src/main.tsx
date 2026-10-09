@@ -1,6 +1,9 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient } from '@tanstack/react-query'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister'
+import localforage from 'localforage'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import './i18n'
 import './style.css'
@@ -15,14 +18,21 @@ window.addEventListener('vite:preloadError', () => {
     window.location.reload()
   }
 })
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false, 
       retry: 1, 
       staleTime: 5 * 60 * 1000, 
+      gcTime: 24 * 60 * 60 * 1000, // 24 hours
     },
   },
+})
+
+const queryClientPersister = createAsyncStoragePersister({
+  storage: localforage,
+  key: 'INBOX_QUERY_OFFLINE_CACHE',
 })
 
 if ('serviceWorker' in navigator) {
@@ -40,12 +50,12 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '1234567890-pl
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      <QueryClientProvider client={queryClient}>
+      <PersistQueryClientProvider client={queryClient} persistOptions={{ persister: queryClientPersister }}>
         <ThemeProvider>
           <App />
           <Toaster richColors position="top-right" expand={true} visibleToasts={5} />
         </ThemeProvider>
-      </QueryClientProvider>
+      </PersistQueryClientProvider>
     </GoogleOAuthProvider>
   </StrictMode>,
 )
