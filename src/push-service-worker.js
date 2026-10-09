@@ -1,3 +1,7 @@
+import { precacheAndRoute } from 'workbox-precaching'
+
+precacheAndRoute(self.__WB_MANIFEST)
+
 importScripts('https://unpkg.com/localforage@1.10.0/dist/localforage.min.js')
 
 self.addEventListener('install', (event) => {
