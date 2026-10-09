@@ -27,6 +27,7 @@ import {
 } from '../../services/api/userApi'
 import type { AuthUser } from '../../services/api/authApi'
 import { ConfirmDialog, type ConfirmDialogState } from '../ui/ConfirmDialog'
+import { TwoFactorSettings } from './TwoFactorSettings'
 import { useTranslation } from 'react-i18next'
 
 type SettingsPageProps = {
@@ -568,8 +569,11 @@ export function SettingsPage({
           <button className={`sp-nav-item${activeSection === 'password' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('password')}>
             <KeyRound size={15} /> {t('navPassword')}
           </button>
+          <button className={`sp-nav-item${activeSection === 'two-factor' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('two-factor')}>
+            <ShieldCheck size={15} /> Xác thực 2 bước
+          </button>
           <button className={`sp-nav-item${activeSection === 'sessions' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('sessions')}>
-            <ShieldCheck size={15} /> {t('navSessions')}
+            <Laptop size={15} /> {t('navSessions')}
           </button>
           <div className="sp-nav-divider" />
           <button className={`sp-nav-item sp-nav-item--danger${activeSection === 'delete-account' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('delete-account')}>
@@ -739,6 +743,28 @@ export function SettingsPage({
                 {passwordErrors.confirmNewPassword && <span className="sp-field-error">{passwordErrors.confirmNewPassword}</span>}
               </div>
             </form>
+          </Card>
+
+          <Card
+            id="two-factor"
+            icon={<ShieldCheck size={16} />}
+            title="Xác thực 2 bước (2FA)"
+            description="Tăng cường bảo mật cho tài khoản của bạn."
+          >
+            <TwoFactorSettings
+              isEnabled={!!currentUser?.twoFactorEnabled}
+              onEnabled={() => {
+                if (currentUser) {
+                  onUserChange({ ...currentUser, twoFactorEnabled: true })
+                }
+              }}
+              onDisabled={() => {
+                if (currentUser) {
+                  onUserChange({ ...currentUser, twoFactorEnabled: false })
+                }
+              }}
+              pushToast={pushToast}
+            />
           </Card>
 
           <section id="sessions" className="sp-card" aria-labelledby="sessions-title">

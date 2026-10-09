@@ -14,6 +14,7 @@ import {
   login,
   loginWithGoogle,
   loginWithFacebook,
+  login2FA,
   logout,
   register,
   type AuthUser,
@@ -206,6 +207,7 @@ export function App() {
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [authError, setAuthError] = useState<string>('')
+  const [twoFactorToken, setTwoFactorToken] = useState<string | null>(null)
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(
     storedAuthSession?.user ?? null,
   )
@@ -327,7 +329,29 @@ export function App() {
         recaptchaToken: payload.recaptchaToken,
       })
 
+      if (response.requires2FA) {
+        setTwoFactorToken(response.tempToken!)
+        return
+      }
+
       handleAuthSuccess(response, payload.rememberLogin === 'true')
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : t('loginErr')
+      setAuthError(message)
+      pushToast(message, 'error')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  async function handleLogin2FA(code: string) {
+    if (!twoFactorToken) return
+    setIsSubmitting(true)
+    setAuthError('')
+    try {
+      const response = await login2FA({ tempToken: twoFactorToken, token: code })
+      setTwoFactorToken(null)
+      handleAuthSuccess(response, true)
     } catch (error) {
       const message = error instanceof ApiError ? error.message : t('loginErr')
       setAuthError(message)
@@ -476,6 +500,9 @@ export function App() {
           setAuthError('')
           navigateAuth('forgot-password')
         }}
+        twoFactorToken={twoFactorToken}
+        onLogin2FA={handleLogin2FA}
+        onCancel2FA={() => setTwoFactorToken(null)}
       />
     )
   })()

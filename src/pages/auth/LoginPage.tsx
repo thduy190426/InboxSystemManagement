@@ -12,6 +12,9 @@ import loginBg from '../../bg-images/LoginBG.jpg'
 
 type LoginPageProps = AuthPageProps & {
   onForgotPassword?: () => void
+  twoFactorToken?: string | null
+  onLogin2FA?: (code: string) => void
+  onCancel2FA?: () => void
 }
 
 export function LoginPage({
@@ -22,6 +25,9 @@ export function LoginPage({
   onGoogleLogin,
   onFacebookLogin,
   onForgotPassword,
+  twoFactorToken,
+  onLogin2FA,
+  onCancel2FA,
 }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [isFormFilled, setIsFormFilled] = useState(false)
@@ -105,6 +111,36 @@ export function LoginPage({
           </div>
         ) : null}
 
+        {twoFactorToken ? (
+          <form className="auth-form" onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            const code = String(formData.get('code') ?? '').trim();
+            if (code && onLogin2FA) onLogin2FA(code);
+          }}>
+            <label className="auth-field" htmlFor="login-2fa-code">
+              <span>Mã xác thực 2 bước (hoặc mã dự phòng)</span>
+              <div className="auth-input-row">
+                <Lock size={18} />
+                <input
+                  id="login-2fa-code"
+                  name="code"
+                  placeholder="Nhập mã 6 số"
+                  required
+                  type="text"
+                  minLength={6}
+                />
+              </div>
+            </label>
+            <button className="primary-action-button" disabled={isSubmitting} type="submit">
+              <span>Xác nhận</span>
+              <ArrowRight size={18} />
+            </button>
+            <button className="secondary-action-button" disabled={isSubmitting} type="button" onClick={onCancel2FA} style={{ marginTop: '12px', background: 'transparent', color: 'var(--text-color)', border: '1px solid var(--border-color)' }}>
+              Hủy
+            </button>
+          </form>
+        ) : (
         <form className="auth-form" onChange={handleFormChange} onSubmit={handleSubmit}>
           <label className="auth-field" htmlFor="login-email">
             <span>{t('login.emailLabel')}</span>
@@ -178,10 +214,13 @@ export function LoginPage({
             <ArrowRight size={18} />
           </button>
         </form>
+        )}
 
-        <div className="auth-divider">
-          <span>{t('login.or')}</span>
-        </div>
+        {!twoFactorToken && (
+          <>
+            <div className="auth-divider">
+              <span>{t('login.or')}</span>
+            </div>
 
         <button 
           className="auth-google-btn" 
@@ -224,6 +263,8 @@ export function LoginPage({
             </button>
           )}
         />
+        </>
+        )}
 
         <p className="auth-switch">
           {t('login.noAccount')}

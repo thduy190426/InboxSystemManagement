@@ -63,8 +63,7 @@ export function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
       try {
         const res = await resetPassword({ email, token: resetCode, password: newPassword, confirmPassword: confirmNewPassword })
         toast.success(res.message)
-        
-        // Return to login automatically after success
+
         setTimeout(() => {
           onBackToLogin()
         }, 1500)

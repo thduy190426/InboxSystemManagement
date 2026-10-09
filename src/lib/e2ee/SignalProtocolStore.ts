@@ -7,9 +7,6 @@ import type {
 } from '@privacyresearch/libsignal-protocol-typescript'
 import { SignalProtocolAddress } from '@privacyresearch/libsignal-protocol-typescript'
 
-/**
- * An implementation of the Signal Protocol Store interface backed by localforage (IndexedDB).
- */
 export class IndexedDBSignalProtocolStore implements StorageType {
   private store: LocalForage
 
@@ -20,7 +17,6 @@ export class IndexedDBSignalProtocolStore implements StorageType {
     })
   }
 
-  // Helper methods for typed storage
   private async get<T>(key: string): Promise<T | undefined> {
     const value = await this.store.getItem<T>(key)
     if (value === null) return undefined
@@ -35,7 +31,6 @@ export class IndexedDBSignalProtocolStore implements StorageType {
     await this.store.removeItem(key)
   }
 
-  // Identity Keys
   async getIdentityKeyPair(): Promise<any> {
     return this.get('identityKey')
   }
@@ -90,7 +85,6 @@ export class IndexedDBSignalProtocolStore implements StorageType {
     }
   }
 
-  // PreKeys
   async loadPreKey(keyId: string | number): Promise<KeyPairType | undefined> {
     let res = await this.get<KeyPairType>('25519KeypreKey' + keyId)
     if (res !== undefined) {
@@ -107,7 +101,6 @@ export class IndexedDBSignalProtocolStore implements StorageType {
     return this.remove('25519KeypreKey' + keyId)
   }
 
-  // Signed PreKeys
   async loadSignedPreKey(keyId: string | number): Promise<KeyPairType | undefined> {
     let res = await this.get<KeyPairType>('25519KeysignedKey' + keyId)
     if (res !== undefined) {
@@ -124,7 +117,6 @@ export class IndexedDBSignalProtocolStore implements StorageType {
     return this.remove('25519KeysignedKey' + keyId)
   }
 
-  // Sessions
   async loadSession(identifier: string): Promise<SessionRecordType | undefined> {
     return this.get<SessionRecordType>('session' + identifier)
   }

@@ -29,12 +29,11 @@ export function LinkPreview({ url }: LinkPreviewProps) {
   }
 
   if (isError || !preview) {
-    return null // Fallback to URL text in message
+    return null 
   }
 
   const { title, description, images, siteName, mediaType, favicons } = preview
 
-  // Use the first image if available
   const image = images?.[0]
   const favicon = favicons?.[0]
   
@@ -57,7 +56,6 @@ export function LinkPreview({ url }: LinkPreviewProps) {
     Icon = FileText
   }
 
-  // Determine layout style based on image presence
   const isLargeImage = mediaType === 'video' || url.includes('youtube.com')
 
   return (

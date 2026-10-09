@@ -11,6 +11,9 @@ const profileColumns = [
   { name: 'address', definition: 'VARCHAR(255) NULL' },
   { name: 'birth_date', definition: 'DATE NULL' },
   { name: 'show_activity_status', definition: 'TINYINT(1) NOT NULL DEFAULT 1' },
+  { name: 'two_factor_secret', definition: 'VARCHAR(128) NULL' },
+  { name: 'two_factor_enabled', definition: 'TINYINT(1) NOT NULL DEFAULT 0' },
+  { name: 'two_factor_backup_codes', definition: 'TEXT NULL' },
 ]
 
 let userProfileColumnsReady = null

@@ -18,6 +18,7 @@ export type AuthUser = {
   role: string
   presence: string
   isEmailVerified: boolean
+  twoFactorEnabled?: boolean
   lastSeenAt: string | null
   onlineSince?: string | null
   showActivityStatus: boolean
@@ -36,6 +37,8 @@ export type AuthUser = {
 export type AuthResponse = {
   message: string
   user: AuthUser
+  requires2FA?: boolean
+  tempToken?: string
   session?: {
     refreshToken: string
     expiresAt: string
@@ -205,4 +208,20 @@ export function loginWithGoogle(token: string) {
 
 export function loginWithFacebook(token: string) {
   return requestAuthJson<AuthResponse>('/auth/facebook', { token } as any)
+}
+
+export function login2FA(payload: { tempToken: string, token: string }) {
+  return requestAuthJson<AuthResponse>('/auth/login-2fa', payload as any)
+}
+
+export function setup2FA() {
+  return requestJson<{success: boolean, secret: string, qrCodeUrl: string}>('/auth/2fa/setup', { auth: true, method: 'POST' })
+}
+
+export function verifySetup2FA(payload: { secret: string, token: string }) {
+  return requestJson<{success: boolean, message: string, backupCodes: string[]}>('/auth/2fa/verify-setup', { auth: true, method: 'POST', body: JSON.stringify(payload) })
+}
+
+export function disable2FA(payload: { token: string, password: string }) {
+  return requestJson<{success: boolean, message: string}>('/auth/2fa/disable', { auth: true, method: 'POST', body: JSON.stringify(payload) })
 }

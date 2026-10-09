@@ -23,14 +23,12 @@ export class E2EEKeyManager {
       return
     }
 
-    // Generate keys
     const registrationId = KeyHelper.generateRegistrationId()
     const identityKeyPair = await KeyHelper.generateIdentityKeyPair()
 
     await this.store.putLocalRegistrationId(registrationId)
     await this.store.putIdentityKeyPair(identityKeyPair)
 
-    // Generate PreKeys
     const preKeyIdStart = 1
     const preKeyCount = 100
     const preKeys = await Promise.all(
@@ -43,7 +41,6 @@ export class E2EEKeyManager {
       await this.store.storePreKey(preKey.keyId, preKey.keyPair)
     }
 
-    // Generate Signed PreKey
     const signedPreKeyId = 1
     const signedPreKey = await KeyHelper.generateSignedPreKey(
       identityKeyPair,
@@ -51,10 +48,8 @@ export class E2EEKeyManager {
     )
     await this.store.storeSignedPreKey(signedPreKeyId, signedPreKey.keyPair)
 
-    // Upload keys to server
-    const deviceId = 1 // In a real multi-device setup, this should be generated uniquely per login
+    const deviceId = 1 
     
-    // Convert ArrayBuffers to base64 for transport
     const toBase64 = (buffer: ArrayBuffer) => {
       const bytes = new Uint8Array(buffer)
       let binary = ''

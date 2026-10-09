@@ -102,6 +102,9 @@ async function getUserByEmail(email) {
       presence,
       is_email_verified,
       is_active,
+      two_factor_secret,
+      two_factor_enabled,
+      two_factor_backup_codes,
       last_seen_at,
       online_since,
       show_activity_status,
@@ -412,6 +415,17 @@ async function login(request, response, next) {
       })
     }
 
+
+    if (user.two_factor_enabled) {
+      const tempToken = require('crypto').randomBytes(32).toString('hex')
+      twoFactorLoginCache.set(tempToken, { userId: user.id, timestamp: Date.now() })
+      return response.json({
+        success: true,
+        requires2FA: true,
+        tempToken,
+        message: 'Yêu cầu xác thực 2 bước.'
+      })
+    }
 
     const session = await createUserSession(user.id, request)
 
@@ -890,3 +904,78 @@ async function facebookLogin(req, res, next) {
     next(error);
   }
 }
+
+const { authenticator } = require('otplib');
+const qrcode = require('qrcode');
+const twoFactorLoginCache = new Map();
+
+async function setup2FA(req, res, next) {
+  try {
+    const user = req.user;
+    const secret = authenticator.generateSecret();
+    const otpauth = authenticator.keyuri(user.email, 'InboxSystem', secret);
+    const qrCodeUrl = await qrcode.toDataURL(otpauth);
+    res.json({ success: true, secret, qrCodeUrl });
+  } catch(e) { next(e); }
+}
+
+async function verifySetup2FA(req, res, next) {
+  try {
+    const { secret, token } = req.body;
+    const isValid = authenticator.verify({ token, secret });
+    if (!isValid) return res.status(400).json({ success: false, message: 'Mã xác thực không đúng!' });
+    const backupCodes = Array.from({length: 8}, () => require('crypto').randomBytes(4).toString('hex'));
+    await pool.execute('UPDATE users SET two_factor_secret = ?, two_factor_enabled = 1, two_factor_backup_codes = ? WHERE id = ?', [secret, JSON.stringify(backupCodes), req.user.id]);
+    res.json({ success: true, message: 'Đã bật 2FA thành công!', backupCodes });
+  } catch(e) { next(e); }
+}
+
+async function disable2FA(req, res, next) {
+  try {
+    const { token, password } = req.body;
+    const user = await getUserById(req.user.id);
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    if (!isPasswordValid) return res.status(401).json({ success: false, message: 'Mật khẩu không đúng!' });
+    const [secretRow] = await pool.execute('SELECT two_factor_secret FROM users WHERE id = ?', [user.id]);
+    const secret = secretRow[0]?.two_factor_secret;
+    if (secret && !authenticator.verify({ token, secret })) return res.status(400).json({ success: false, message: 'Mã xác thực không đúng!' });
+    await pool.execute('UPDATE users SET two_factor_secret = NULL, two_factor_enabled = 0, two_factor_backup_codes = NULL WHERE id = ?', [user.id]);
+    res.json({ success: true, message: 'Đã tắt 2FA thành công!' });
+  } catch(e) { next(e); }
+}
+
+async function login2FA(req, res, next) {
+  try {
+    const { tempToken, token } = req.body;
+    const cached = twoFactorLoginCache.get(tempToken);
+    if (!cached || Date.now() - cached.timestamp > 5 * 60 * 1000) return res.status(401).json({ message: 'Phiên đăng nhập đã hết hạn!' });
+    const [userRow] = await pool.execute('SELECT * FROM users WHERE id = ?', [cached.userId]);
+    const user = userRow[0];
+    if (!user || !user.two_factor_enabled) return res.status(400).json({ message: 'Lỗi xác thực!' });
+    
+    let isValid = false;
+    if (token.length === 6) {
+      isValid = authenticator.verify({ token, secret: user.two_factor_secret });
+    } else {
+      const backupCodes = JSON.parse(user.two_factor_backup_codes || '[]');
+      if (backupCodes.includes(token)) {
+        isValid = true;
+        const newBackup = backupCodes.filter(c => c !== token);
+        await pool.execute('UPDATE users SET two_factor_backup_codes = ? WHERE id = ?', [JSON.stringify(newBackup), user.id]);
+      }
+    }
+    if (!isValid) return res.status(400).json({ message: 'Mã xác thực không đúng!' });
+    
+    twoFactorLoginCache.delete(tempToken);
+    const session = await createUserSession(user.id, req);
+    await pool.execute("UPDATE users SET presence = 'online', last_seen_at = CURRENT_TIMESTAMP, online_since = COALESCE(online_since, CURRENT_TIMESTAMP), updated_at = CURRENT_TIMESTAMP WHERE id = ?", [user.id]);
+    await emitPresenceChanged(user.id, 'online');
+    res.json({
+      message: 'Đăng nhập thành công!',
+      user: toPublicUser({ ...user, presence: 'online', online_since: user.online_since || new Date() }),
+      session: { refreshToken: session.refreshToken, expiresAt: session.expiresAt }
+    });
+  } catch(e) { next(e); }
+}
+
+module.exports = { register, login, googleLogin, facebookLogin, verifyAccount, resendVerification, forgotPassword, resetPassword, touchPresence, logout, setup2FA, verifySetup2FA, disable2FA, login2FA };
