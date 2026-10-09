@@ -906,6 +906,7 @@ async function facebookLogin(req, res, next) {
 }
 
 const { authenticator } = require('otplib');
+authenticator.options = { window: 1 };
 const qrcode = require('qrcode');
 const twoFactorLoginCache = new Map();
 

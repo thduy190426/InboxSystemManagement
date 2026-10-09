@@ -105,11 +105,14 @@ export function TwoFactorSettings({
           />
           <input
             type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             placeholder={t('twoFactor.codePlaceholder')}
             className="sp-input"
             value={disableToken}
-            onChange={(e) => setDisableToken(e.target.value)}
+            onChange={(e) => setDisableToken(e.target.value.replace(/\D/g, ''))}
             required
+            maxLength={6}
             style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-color)' }}
           />
           <div style={{ display: 'flex', gap: '12px' }}>
@@ -144,9 +147,11 @@ export function TwoFactorSettings({
         <p>{t('twoFactor.step2')}</p>
         <input
           type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
           placeholder={t('twoFactor.codePlaceholder')}
           value={verifyCode}
-          onChange={(e) => setVerifyCode(e.target.value)}
+          onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, ''))}
           required
           maxLength={6}
           style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-color)', textAlign: 'center', fontSize: '18px', letterSpacing: '4px' }}
