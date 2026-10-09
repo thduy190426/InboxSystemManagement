@@ -27,4 +27,19 @@ export default defineConfig({
       }
     })
   ],
+  build: {
+    rollupOptions: {
+      output: {
+          manualChunks: (id) => {
+            if (id.includes('node_modules')) {
+              if (id.includes('react') || id.includes('react-dom')) return 'react-vendor'
+              if (id.includes('@tanstack/react-query')) return 'tanstack'
+              if (id.includes('emoji-picker-react')) return 'emoji'
+              if (id.includes('@mediapipe/tasks-vision')) return 'mediapipe'
+              return 'vendor'
+            }
+          }
+      }
+    }
+  }
 });

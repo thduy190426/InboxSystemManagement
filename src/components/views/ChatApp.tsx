@@ -1582,7 +1582,23 @@ export function ChatApp({
     try {
       setIsUploadingAttachment(true)
 
-      const createdMessage = await uploadMessageAttachment(activeConversation.id, file)
+      let uploadFile = file
+      if (file.type.startsWith('image/')) {
+        const imageCompression = (await import('browser-image-compression')).default
+        const options = {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 1920,
+          useWebWorker: true
+        }
+        try {
+          const compressedFile = await imageCompression(file, options)
+          uploadFile = new File([compressedFile], file.name, { type: compressedFile.type })
+        } catch (e) {
+          console.warn('Image compression failed', e)
+        }
+      }
+
+      const createdMessage = await uploadMessageAttachment(activeConversation.id, uploadFile)
 
       setMessagesByConversation((current) => ({
         ...current,

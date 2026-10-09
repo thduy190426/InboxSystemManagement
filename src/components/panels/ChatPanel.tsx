@@ -1132,7 +1132,7 @@ export function ChatPanel({
             title={attachment.name}
             type="button"
           >
-            <img alt={attachment.name} src={attachment.url} />
+            <img alt={attachment.name} src={attachment.url} loading="lazy" />
           </button>
         </div>
       )
@@ -1241,7 +1241,7 @@ export function ChatPanel({
             title={img.name}
             type="button"
           >
-            <img alt={img.name} src={img.url} />
+            <img alt={img.name} src={img.url} loading="lazy" />
           </button>
         ))}
       </div>
