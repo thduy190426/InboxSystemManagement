@@ -570,7 +570,7 @@ export function SettingsPage({
             <KeyRound size={15} /> {t('navPassword')}
           </button>
           <button className={`sp-nav-item${activeSection === 'two-factor' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('two-factor')}>
-            <ShieldCheck size={15} /> Xác thực 2 bước
+            <ShieldCheck size={15} /> {t('navTwoFactor', { defaultValue: 'Xác thực 2 bước' })}
           </button>
           <button className={`sp-nav-item${activeSection === 'sessions' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('sessions')}>
             <Laptop size={15} /> {t('navSessions')}
