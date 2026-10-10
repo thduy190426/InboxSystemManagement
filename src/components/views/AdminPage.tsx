@@ -1,3 +1,5 @@
+import { USER_ROLES, USER_STATUSES, USER_GENDERS, type UserGenderFilter, formatNumber, getErrorMessage, formatReportTime, getReportStatusLabel, getStatusLabel, getGenderLabel } from './admin/AdminUtils';
+import { AdminUsersTab } from './admin/AdminUsersTab';
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ModerationPanel } from '../panels/ModerationPanel'
 import {
@@ -87,10 +89,6 @@ const USER_PAGE_SIZE = 20
 const REPORT_PAGE_SIZE = 10
 const EDIT_EXIT_DURATION_MS = 140
 const REPORT_STATUSES: Array<MessageReportStatus | 'all'> = ['pending', 'reviewed', 'dismissed', 'all']
-const USER_ROLES: Array<AdminUserRole | 'all'> = ['all', 'user', 'agent', 'owner']
-const USER_STATUSES: Array<AdminUserStatus | 'all'> = ['all', 'active', 'inactive', 'suspended']
-const USER_GENDERS = ['all', 'male', 'female', 'other', 'prefer_not_to_say', 'unknown'] as const
-type UserGenderFilter = typeof USER_GENDERS[number]
 
 const emptyStats: AdminStats = {
   totalUsers: 0,
@@ -113,13 +111,7 @@ const emptyCreateUser: CreateUserState = {
   role: 'user',
 }
 
-function getErrorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback
-}
 
-function formatNumber(value: number) {
-  return new Intl.NumberFormat('vi-VN').format(value)
-}
 
 function formatChartLabel(label: string, t: any) {
   const labels: Record<string, string> = {
@@ -265,85 +257,13 @@ function DistributionChart({
   )
 }
 
-function formatLastLogin(value: string | null, t: any) {
-  if (!value) {
-    return t('notLoggedIn')
-  }
 
-  const date = new Date(value)
 
-  if (Number.isNaN(date.getTime())) {
-    return t('unknownTime')
-  }
 
-  const hh = date.getHours().toString().padStart(2, '0')
-  const mm = date.getMinutes().toString().padStart(2, '0')
-  const ss = date.getSeconds().toString().padStart(2, '0')
-  const dd = date.getDate().toString().padStart(2, '0')
-  const MM = (date.getMonth() + 1).toString().padStart(2, '0')
-  const yyyy = date.getFullYear()
 
-  return `${hh}:${mm}:${ss} | ${dd}/${MM}/${yyyy}`
-}
 
-function formatReportTime(value: string, t: any) {
-  const date = new Date(value)
 
-  if (Number.isNaN(date.getTime())) {
-    return t('unknownTime')
-  }
 
-  return new Intl.DateTimeFormat('vi-VN', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(date)
-}
-
-function getReportStatusLabel(status: MessageReportStatus, t: any) {
-  if (status === 'reviewed') {
-    return t('statusReviewed')
-  }
-
-  if (status === 'dismissed') {
-    return t('statusDismissed')
-  }
-
-  return t('statusPending')
-}
-
-function getStatusLabel(status: AdminUserStatus, t: any) {
-  if (status === 'suspended') {
-    return t('statusSuspended')
-  }
-
-  return t('statusNormal')
-}
-
-function getGenderLabel(gender: string | null | undefined, t: any) {
-  if (gender === 'male') return t('genderMale')
-  if (gender === 'female') return t('genderFemale')
-  if (gender === 'other') return t('genderOther')
-  if (gender === 'prefer_not_to_say') return t('genderHidden')
-  return t('genderUnknown')
-}
-
-function getRoleLabel(role: AdminUserRole | 'all', t: any) {
-  if (role === 'all') return t('filterAllRoles')
-  return formatChartLabel(role, t)
-}
-
-function getUserStatusFilterLabel(status: AdminUserStatus | 'all', t: any) {
-  if (status === 'all') return t('filterAllAccounts')
-  if (status === 'suspended') return t('filterLockedAccounts')
-  if (status === 'inactive') return t('filterOfflineAccounts')
-  return t('filterUnlockedAccounts')
-}
-
-function getGenderFilterLabel(gender: UserGenderFilter, t: any) {
-  if (gender === 'all') return t('filterAllGenders')
-  if (gender === 'unknown') return t('genderUnknown')
-  return getGenderLabel(gender, t)
-}
 
 function createEditState(user: AdminUser): EditUserState {
   return {
@@ -742,117 +662,6 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
     ))
   }, [busyReportId, isReportsLoading, reportStatus, reports])
 
-  const tableContent = useMemo(() => {
-    if (isUsersLoading) {
-      return Array.from({ length: 5 }).map((_, i) => (
-        <tr key={i} className="skeleton-row">
-          <td data-label={t('selectUserLabel')}><div className="skeleton skeleton-icon"></div></td>
-          <td data-label={t('colUser')}>
-            <div className="user-cell">
-              <div className="skeleton skeleton-avatar"></div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div className="skeleton skeleton-text" style={{ width: '120px', height: '16px' }}></div>
-                <div className="skeleton skeleton-text" style={{ width: '160px', height: '12px' }}></div>
-              </div>
-            </div>
-          </td>
-          <td data-label={t('colRole')}><div className="skeleton skeleton-text" style={{ width: '80px', height: '24px', borderRadius: '12px' }}></div></td>
-          <td data-label={t('colAccount')}><div className="skeleton skeleton-text" style={{ width: '100px', height: '24px', borderRadius: '12px' }}></div></td>
-          <td data-label={t('colGender')}><div className="skeleton skeleton-text" style={{ width: '60px', height: '16px' }}></div></td>
-          <td data-label={t('colCreatedAt')}><div className="skeleton skeleton-text" style={{ width: '120px', height: '16px' }}></div></td>
-          <td data-label={t('colLastLogin')}><div className="skeleton skeleton-text" style={{ width: '140px', height: '16px' }}></div></td>
-          <td data-label={t('colActions')}>
-            <div className="action-buttons">
-              <div className="skeleton skeleton-icon"></div>
-              <div className="skeleton skeleton-icon"></div>
-              <div className="skeleton skeleton-icon"></div>
-            </div>
-          </td>
-        </tr>
-      ))
-    }
-
-    if (users.length === 0) {
-      return (
-        <tr>
-          <td colSpan={8}>
-            <div className="admin-empty-row">
-              {debouncedSearch ? t('noMatchingUsers') : t('noUsers')}
-            </div>
-          </td>
-        </tr>
-      )
-    }
-
-    return users.map((user) => {
-      const isLocked = !user.isActive
-      const isLockBusy = busyLockUserId === user.id
-
-      return (
-        <tr key={user.id}>
-          <td className="admin-select-cell" data-label={t('selectUserLabel')}>
-            <input
-              aria-label={t('selectUserAria', { name: user.name })}
-              checked={selectedUserIds.has(user.id)}
-              type="checkbox"
-              onChange={(event) => toggleUserSelection(user.id, event.target.checked)}
-            />
-          </td>
-          <td data-label={t('colUser')}>
-            <div className="user-cell">
-              <AvatarFallback className="user-avatar" name={user.fullName} src={user.avatarUrl} />
-              <div>
-                <strong>{user.name}</strong>
-                <span>{user.email}</span>
-              </div>
-            </div>
-          </td>
-          <td data-label={t('colRole')}>
-            <span className={`role-badge role-${user.role}`}>
-              {user.role}
-            </span>
-          </td>
-          <td data-label={t('colAccount')}>
-            <span className={`status-badge status-${user.status}`}>
-              {isLocked ? <Lock size={12} /> : <CheckCircle2 size={12} />}
-              {getStatusLabel(user.status, t)}
-            </span>
-          </td>
-          <td data-label={t('colGender')}>{getGenderLabel(user.gender, t)}</td>
-          <td className="text-muted" data-label={t('colCreatedAt')}>{user.createdAt ? formatLastLogin(user.createdAt, t) : t('na')}</td>
-          <td className="text-muted" data-label={t('colLastLogin')}>{formatLastLogin(user.lastLogin, t)}</td>
-          <td data-label={t('colActions')}>
-            <div className="action-buttons">
-              <button
-                title={t('editTitle')}
-                type="button"
-                onClick={() => setEditUser(createEditState(user))}
-              >
-                <Edit2 size={16} />
-              </button>
-              <button
-                className={isLocked ? 'text-success' : 'text-warning'}
-                disabled={isLockBusy}
-                title={isLocked ? t('unlockAccountTitle') : t('lockAccountTitle')}
-                type="button"
-                onClick={() => openLockDialog(user)}
-              >
-                {isLockBusy ? <Loader2 size={16} /> : isLocked ? <Unlock size={16} /> : <Lock size={16} />}
-              </button>
-              <button
-                title={t('deleteTitle')}
-                className="text-danger"
-                type="button"
-                onClick={() => openDeleteDialog(user)}
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-          </td>
-        </tr>
-      )
-    })
-  }, [busyLockUserId, debouncedSearch, isUsersLoading, selectedUserIds, users])
 
   async function refreshStats() {
     try {
@@ -1358,143 +1167,43 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
         </div>
       </div>
 
-      <div className="admin-content-section">
-        <div className="section-header">
-          <h2>{t('userListSection')}</h2>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button className="btn-secondary" disabled={isUsersLoading} onClick={() => void refreshUsers(true)} type="button" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--surface-hover)', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', color: 'var(--text)', cursor: 'pointer' }}>
-              {isUsersLoading ? <Loader2 size={15} /> : <Users size={15} />}
-              {t('refreshBtn')}
-            </button>
-            <button className="btn-secondary" onClick={handleExportUsers} type="button" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--surface-hover)', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', color: 'var(--text)', cursor: 'pointer' }}>
-              <Download size={15} />
-              {selectedUsers.length > 0 ? t('exportSelectedBtn') : t('exportCSVBtn')}
-            </button>
-            <button className="btn-primary" onClick={() => setCreateUser(emptyCreateUser)} type="button">
-              <Plus size={16} />
-              {t('addUserBtn')}
-            </button>
-          </div>
-        </div>
-
-        <div className="admin-user-toolbar">
-          <div className="admin-user-filters">
-            <label>
-              <span>{t('roleFilterLabel')}</span>
-              <select
-                value={roleFilter}
-                onChange={(event) => handleUserFilterChange(setRoleFilter, event.target.value as AdminUserRole | 'all')}
-              >
-                {USER_ROLES.map((role) => (
-                  <option key={role} value={role}>{getRoleLabel(role, t)}</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span>{t('accountFilterLabel')}</span>
-              <select
-                value={statusFilter}
-                onChange={(event) => handleUserFilterChange(setStatusFilter, event.target.value as AdminUserStatus | 'all')}
-              >
-                {USER_STATUSES.map((status) => (
-                  <option key={status} value={status}>{getUserStatusFilterLabel(status, t)}</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span>{t('genderFilterLabel')}</span>
-              <select
-                value={genderFilter}
-                onChange={(event) => handleUserFilterChange(setGenderFilter, event.target.value as UserGenderFilter)}
-              >
-                {USER_GENDERS.map((gender) => (
-                  <option key={gender} value={gender}>{getGenderFilterLabel(gender, t)}</option>
-                ))}
-              </select>
-            </label>
-            <button
-              disabled={!hasUserFilters}
-              type="button"
-              onClick={() => {
-                setRoleFilter('all')
-                setStatusFilter('all')
-                setGenderFilter('all')
-                setPage(1)
-              }}
-            >
-              <X size={14} />
-              {t('clearFiltersBtn')}
-            </button>
-          </div>
-
-          <div className="admin-bulk-actions">
-            <span>{t('selectedUsersCount', { count: selectedUsers.length })}</span>
-            <button disabled={selectedUsers.length === 0 || Boolean(busyBulkAction)} type="button" onClick={() => openBulkLockDialog(true)}>
-              {busyBulkAction === 'lock' ? <Loader2 size={14} /> : <Lock size={14} />}
-              {t('lockSelectedBtn')}
-            </button>
-            <button disabled={selectedUsers.length === 0 || Boolean(busyBulkAction)} type="button" onClick={() => openBulkLockDialog(false)}>
-              {busyBulkAction === 'unlock' ? <Loader2 size={14} /> : <Unlock size={14} />}
-              {t('unlockSelectedBtn')}
-            </button>
-            <button className="is-danger" disabled={selectedUsers.length === 0 || Boolean(busyBulkAction)} type="button" onClick={openBulkDeleteDialog}>
-              {busyBulkAction === 'delete' ? <Loader2 size={14} /> : <Trash2 size={14} />}
-              {t('deleteSelectedBtn')}
-            </button>
-          </div>
-        </div>
-
-        <div className="admin-table-wrapper">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th className="admin-select-cell">
-                  <input
-                    aria-label={t('selectAllUsersAria')}
-                    checked={isAllCurrentPageSelected}
-                    disabled={users.length === 0}
-                    type="checkbox"
-                    onChange={(event) => toggleCurrentPageSelection(event.target.checked)}
-                  />
-                </th>
-                <th>{t('colUser')}</th>
-                <th>{t('colRole')}</th>
-                <th>{t('colAccount')}</th>
-                <th>{t('colGender')}</th>
-                <th>{t('colCreatedAt')}</th>
-                <th>{t('colLastLogin')}</th>
-                <th>{t('colActions')}</th>
-              </tr>
-            </thead>
-            <tbody>{tableContent}</tbody>
-          </table>
-        </div>
-
-        <div className="admin-pagination">
-          <span>
-            {isLoading ? t('loadingTxt') : t('usersCount', { count: formatNumber(pagination.total) })}
-          </span>
-          <div>
-            <button
-              disabled={isUsersLoading || page <= 1}
-              type="button"
-              onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
-            >
-              {t('prevBtn')}
-            </button>
-            <span>
-              {t('pageIndicator', { page: pagination.page, totalPages: pagination.totalPages })}
-            </span>
-            <button
-              disabled={isUsersLoading || page >= pagination.totalPages}
-              type="button"
-              onClick={() => setPage((currentPage) => currentPage + 1)}
-            >
-              {t('nextBtn')}
-            </button>
-          </div>
-        </div>
-      </div>
+      <AdminUsersTab 
+        users={users}
+        isUsersLoading={isUsersLoading}
+        selectedUsers={selectedUsers}
+        selectedUserIds={selectedUserIds}
+        selectableUserIds={selectableUserIds}
+        isAllCurrentPageSelected={isAllCurrentPageSelected}
+        roleFilter={roleFilter}
+        statusFilter={statusFilter}
+        genderFilter={genderFilter}
+        hasUserFilters={hasUserFilters}
+        pagination={pagination}
+        page={page}
+        busyBulkAction={busyBulkAction}
+        busyLockUserId={busyLockUserId}
+        debouncedSearch={debouncedSearch}
+        setRoleFilter={setRoleFilter}
+        setStatusFilter={setStatusFilter}
+        setGenderFilter={setGenderFilter}
+        setPage={setPage}
+        refreshUsers={refreshUsers}
+        handleExportUsers={handleExportUsers}
+        setCreateUser={setCreateUser}
+        emptyCreateUser={emptyCreateUser}
+        handleUserFilterChange={handleUserFilterChange}
+        openBulkLockDialog={openBulkLockDialog}
+        openBulkDeleteDialog={openBulkDeleteDialog}
+        toggleCurrentPageSelection={toggleCurrentPageSelection}
+        toggleUserSelection={toggleUserSelection}
+        setEditUser={setEditUser}
+        createEditState={createEditState}
+        openLockDialog={openLockDialog}
+        openDeleteDialog={openDeleteDialog}
+        isLoading={isLoading}
+        t={t}
+        formatNumber={formatNumber}
+      />
 
       {createUser ? (
         <div className="admin-edit-backdrop" role="presentation">
