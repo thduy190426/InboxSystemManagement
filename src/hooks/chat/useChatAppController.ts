@@ -66,7 +66,7 @@ function appendChatQueryParams(path: string, params: { query: string; filter: Co
   return queryString ? `${path}?${queryString}` : path
 }
 
-export function useChatAppController({ currentUser }: ChatAppProps) {
+export function useChatAppController({ currentUser, onLogout }: ChatAppProps) {
   const initialRoute = readAppRouteFromLocation()
   const initialChatQueryParams = readChatQueryParams()
   const { applyModerationToText, isFileBlocked } = useModerationSettings()
