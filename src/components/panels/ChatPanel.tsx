@@ -247,7 +247,7 @@ export function ChatPanel(props: ChatPanelProps) {
   return (
     <ChatStateContext.Provider value={{
       activeConversation, currentUserId, members: members as any, searchMatches,
-      activeSearchMessageId, focusedMessageId, editingMessageId, busyMessageId,
+      activeSearchMessageId: activeSearchMessageId as string, focusedMessageId: focusedMessageId as string, editingMessageId: editingMessageId as string, busyMessageId: busyMessageId as string,
       editingText, openActionMenuId, openReactionPickerId
     }}>
       <MessageActionContext.Provider value={{
@@ -363,9 +363,9 @@ export function ChatPanel(props: ChatPanelProps) {
         </div>
       </header>
 
-      {pinnedMessages.length > 0 ? (
+      {(pinnedMessages || []).length > 0 ? (
         <div className="chat-pinned-messages" aria-label={t('pinnedMessagesAria')}>
-          {pinnedMessages.slice(0, 3).map((message) => (
+          {(pinnedMessages || []).slice(0, 3).map((message) => (
             <button
               className="chat-pinned-message"
               disabled={Boolean(busyMessageId)}
@@ -388,14 +388,14 @@ export function ChatPanel(props: ChatPanelProps) {
               </span>
             </button>
           ))}
-          {pinnedMessages.length > 3 ? (
+          {(pinnedMessages || []).length > 3 ? (
             <button
               className="chat-pinned-more"
               onClick={() => setIsPinnedModalOpen(true)}
               title={t('viewAllPinned')}
               type="button"
             >
-              +{pinnedMessages.length - 3}
+              +{(pinnedMessages || []).length - 3}
             </button>
           ) : null}
         </div>
@@ -485,14 +485,14 @@ export function ChatPanel(props: ChatPanelProps) {
 
       <ChatInputContext.Provider value={{
         onSubmit,
-        replyingTo,
+        replyingTo: replyingTo ?? null,
         getReplyAuthorLabel,
         getReplyText,
         onCancelReply,
-        isUploadingAttachment,
+        isUploadingAttachment: isUploadingAttachment ?? false,
         locationError,
         attachmentError,
-        isBlocked,
+        isBlocked: isBlocked ?? false,
         mentionSuggestions,
         insertMention,
         handleAttachmentChange,
@@ -562,7 +562,7 @@ export function ChatPanel(props: ChatPanelProps) {
           <PinnedMessagesDrawer
             isPinnedModalOpen={isPinnedModalOpen}
             setIsPinnedModalOpen={setIsPinnedModalOpen}
-            pinnedMessages={pinnedMessages}
+            pinnedMessages={pinnedMessages || []}
             pinnedSearchQuery={pinnedSearchQuery}
             setPinnedSearchQuery={setPinnedSearchQuery}
             getReplyText={getReplyText}

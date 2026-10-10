@@ -70,54 +70,6 @@ function validateDeleteForm(form: DeleteAccountPayload, t: any) {
   return errors
 }
 
-function formatDateTime(value: string | null, t: any) {
-  if (!value) return t('notAvailable')
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return new Intl.DateTimeFormat('vi-VN', {
-    hour: '2-digit', minute: '2-digit',
-    day: '2-digit', month: '2-digit', year: 'numeric',
-  }).format(date)
-}
-
-function getSessionTitle(session: UserSession, t: any) {
-  if (session.deviceName) return session.deviceName
-  if (!session.userAgent) return t('sessionUnknown')
-  if (/Mobile|Android|iPhone|iPad/i.test(session.userAgent)) return t('sessionMobile')
-  return t('sessionWeb')
-}
-
-type ToggleRowProps = {
-  label: string
-  description?: string
-  checked: boolean
-  disabled?: boolean
-  onChange: (value: boolean) => void
-}
-
-
-type CardProps = {
-  icon: React.ReactNode
-  iconVariant?: 'default' | 'neutral' | 'danger'
-  title: string
-  description: string
-  children: React.ReactNode
-  footer?: React.ReactNode
-  dangerBorder?: boolean
-  id?: string
-}
-
-
-type SessionItemProps = {
-  session: SessionViewModel
-  isRevoking: boolean
-  showAllSessions: boolean
-  onRevoke: (session: UserSession) => void
-  t: any
-}
-
-
-
 import type { SettingsPageProps } from '../../components/views/SettingsPage'
 
 export function useSettingsPageController(props: SettingsPageProps) {

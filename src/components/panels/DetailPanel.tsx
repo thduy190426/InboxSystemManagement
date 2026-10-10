@@ -292,7 +292,7 @@ export function DetailPanel(props: DetailPanelProps) {
                 <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <Settings2 size={16} /> {t('advancedAdminTitle')}
                 </h3>
-                <span>{t('requestsCount', { count: joinRequests.length })}</span>
+                <span>{t('requestsCount', { count: (joinRequests || []).length })}</span>
               </div>
 
               <div className="group-invite-row">
@@ -323,9 +323,9 @@ export function DetailPanel(props: DetailPanelProps) {
                 </button>
               </div>
 
-              {joinRequests.length > 0 ? (
+              {(joinRequests || []).length > 0 ? (
                 <div className="group-join-request-stack">
-                  {joinRequests.map((joinRequest) => (
+                  {(joinRequests || []).map((joinRequest) => (
                     <div className="group-join-request" key={joinRequest.id}>
                       <AvatarFallback
                         name={joinRequest.user.fullName}
@@ -905,7 +905,7 @@ export function DetailPanel(props: DetailPanelProps) {
                 </div>
                 <div>
                   <h2 style={{ margin: 0, fontSize: '18px' }}>{t('restrictedAccTitle')}</h2>
-                  <p style={{ margin: 0, marginTop: '4px', color: 'var(--muted)', fontSize: '14px' }}>{t('restrictedAccCount', { count: restrictedContacts.length })}</p>
+                  <p style={{ margin: 0, marginTop: '4px', color: 'var(--muted)', fontSize: '14px' }}>{t('restrictedAccCount', { count: (restrictedContacts || []).length })}</p>
                 </div>
               </div>
               <button className="icon-button" onClick={closeRestrictedModal} type="button" title={t('closeModal')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--subtle)' }}>
@@ -917,7 +917,7 @@ export function DetailPanel(props: DetailPanelProps) {
               <p style={{ fontSize: '13px', color: 'var(--subtle)', marginBottom: '16px', lineHeight: 1.5 }}>
                 {t('restrictedAccDesc')}
               </p>
-              {restrictedContacts.map((contact) => (
+              {(restrictedContacts || []).map((contact) => (
                 <div className="group-detail-member" key={contact.id} style={{ position: 'relative' }}>
                   <AvatarFallback name={contact.fullName} src={contact.avatarUrl} />
                   <div className="group-member-body">
@@ -938,7 +938,7 @@ export function DetailPanel(props: DetailPanelProps) {
                   </button>
                 </div>
               ))}
-              {restrictedContacts.length === 0 && (
+              {(restrictedContacts || []).length === 0 && (
                 <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--subtle)' }}>
                   {t('noRestrictedAcc')}
                 </div>
