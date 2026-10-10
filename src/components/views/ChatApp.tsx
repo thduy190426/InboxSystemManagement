@@ -1,7 +1,6 @@
 import { useModerationSettings } from '../../hooks/useModerationSettings'
 import { keyManager } from '../../lib/e2ee/KeyManager'
 
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { FormEvent } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
 import type { AuthUser } from '../../services/api/authApi'
@@ -25,10 +24,6 @@ import {
   markConversationRead,
   requestGroupJoin,
   updateTypingStatus, fetchMessagesPage } from '../../services/api/chatApi'
-import {
-  fetchFriends,
-  fetchIncomingRequests,
-} from '../../services/api/contactApi'
 import { startRealtimeCall } from '../../services/realtime/callRealtime'
 import {
   fetchNotifications,
@@ -51,6 +46,7 @@ import type {
   Message,
 } from '../../types'
 import { useOfflineQueue } from '../../hooks/chat/useOfflineQueue'
+import { useChatData } from '../../hooks/chat/useChatData'
 import { useGroupManagement } from '../../hooks/chat/useGroupManagement'
 import { useConversationActions } from '../../hooks/chat/useConversationActions'
 import { useChatMessageActions } from '../../hooks/chat/useChatMessageActions'
@@ -150,55 +146,9 @@ export function ChatApp({
       !initialRoute.conversationId,
   )
   const [isDetailOpen, setIsDetailOpen] = useState(false)
-  const queryClient = useQueryClient()
-  const { t } = useTranslation('chatapp')
+    const { t } = useTranslation('chatapp')
 
-  const { data: conversations = [], isLoading: isConversationsLoading } = useQuery<Conversation[]>({
-    queryKey: ['conversations'],
-    queryFn: () => fetchConversations(),
-    refetchInterval: 30000,
-  })
-
-  const setConversations = useCallback((updater: React.SetStateAction<any>) => {
-    queryClient.setQueryData(['conversations'], updater)
-  }, [queryClient])
-
-  const { data: archivedConversations = [] } = useQuery<Conversation[]>({
-    queryKey: ['archivedConversations'],
-    queryFn: () => fetchConversations({ archived: true }),
-  })
-
-  const setArchivedConversations = useCallback((updater: React.SetStateAction<any>) => {
-    queryClient.setQueryData(['archivedConversations'], updater)
-  }, [queryClient])
-
-  const { data: friends = [] } = useQuery<ContactUser[]>({
-    queryKey: ['friends'],
-    queryFn: () => fetchFriends(),
-  })
-
-  const setFriends = useCallback((updater: React.SetStateAction<any>) => {
-    queryClient.setQueryData(['friends'], updater)
-  }, [queryClient])
-
-  const { data: friendRequests = [] } = useQuery<ContactUser[]>({
-    queryKey: ['friendRequests'],
-    queryFn: () => fetchIncomingRequests(),
-  })
-
-  const setFriendRequests = useCallback((updater: React.SetStateAction<any>) => {
-    queryClient.setQueryData(['friendRequests'], updater)
-  }, [queryClient])
-
-  const { data: notifications = [] } = useQuery<AppNotification[]>({
-    queryKey: ['notifications'],
-    queryFn: () => fetchNotifications(),
-    refetchInterval: 60000,
-  })
-
-  const setNotifications = useCallback((updater: React.SetStateAction<any>) => {
-    queryClient.setQueryData(['notifications'], updater)
-  }, [queryClient])
+    const { conversations, isConversationsLoading, setConversations, archivedConversations, setArchivedConversations, friends, setFriends, friendRequests, setFriendRequests, notifications, setNotifications } = useChatData()
 
   const isLoading = isConversationsLoading
 
