@@ -35,6 +35,8 @@ import { getRealtimeSocket } from '../../services/realtime/realtime'
 import type { ContactUser } from '../../types'
 import { AvatarFallback } from '../ui/AvatarFallback'
 import { ConfirmDialog, type ConfirmDialogState } from '../ui/ConfirmDialog'
+import { MutualFriendsBadge } from '../ui/MutualFriendsBadge'
+import { MutualFriendsModal, clearMutualFriendsCache } from '../ui/MutualFriendsModal'
 
 type ContactsPanelProps = {
   contactToOpen?: ContactUser | null
@@ -83,9 +85,10 @@ type ContactProfileProps = {
   user: ContactUser
   isClosing: boolean
   onClose: () => void
+  onOpenMutualModal?: (targetUserId: string, targetName: string) => void
 }
 
-export function ContactProfile({ user, isClosing, onClose }: ContactProfileProps) {
+export function ContactProfile({ user, isClosing, onClose, onOpenMutualModal }: ContactProfileProps) {
   const { t } = useTranslation('panels')
   const safePresence = ['online', 'away', 'busy'].includes(user.presence) ? user.presence : 'offline'
   const presenceLabel =
@@ -178,6 +181,21 @@ export function ContactProfile({ user, isClosing, onClose }: ContactProfileProps
               <span>{formatProfileDate(user.contactCreatedAt) || t('notFriendsYet')}</span>
             </div>
           </div>
+          {Boolean(user.mutualCount && user.mutualCount > 0) && (
+            <div className="cp-info-row">
+              <span className="cp-info-icon"><Users size={14} /></span>
+              <div className="cp-info-text">
+                <small>{t('mutualFriends', { defaultValue: 'Bạn chung' })}</small>
+                <MutualFriendsBadge
+                  mutualCount={user.mutualCount}
+                  mutualPreviews={user.mutualPreviews}
+                  targetUserId={user.id}
+                  targetName={user.fullName}
+                  onOpenModal={onOpenMutualModal}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {user.showBio !== false && (
@@ -197,9 +215,10 @@ type ContactCardProps = {
   onProfile: (user: ContactUser) => void
   onMessage: (user: ContactUser) => void
   action: React.ReactNode
+  onOpenMutualModal?: (targetUserId: string, targetName: string) => void
 }
 
-function ContactCard({ user, busyId, onProfile, onMessage, action }: ContactCardProps) {
+function ContactCard({ user, busyId, onProfile, onMessage, action, onOpenMutualModal }: ContactCardProps) {
   const { t } = useTranslation('panels')
   const safePresence = ['online', 'away', 'busy'].includes(user.presence) ? user.presence : 'offline'
   return (
@@ -211,6 +230,13 @@ function ContactCard({ user, busyId, onProfile, onMessage, action }: ContactCard
       <div className="cp-card-info">
         <strong>{user.nickname || user.fullName}</strong>
         <span className="cp-card-handle">{getGenderLabel(user.gender, t)}</span>
+        <MutualFriendsBadge
+          mutualCount={user.mutualCount}
+          mutualPreviews={user.mutualPreviews}
+          targetUserId={user.id}
+          targetName={user.fullName}
+          onOpenModal={onOpenMutualModal}
+        />
         <small className="cp-card-bio">{user.address || t('addressEmptyCompact')}</small>
       </div>
       <div className="cp-card-actions">
@@ -281,8 +307,13 @@ export function ContactsPanel({
   const [isProfileClosing, setIsProfileClosing] = useState(false)
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null)
   const [isConfirming, setIsConfirming] = useState(false)
+  const [mutualModalUser, setMutualModalUser] = useState<{ id: string; name: string } | null>(null)
   const pendingContactActionsRef = useRef(new Set<string>())
   const queryRef = useRef(query)
+
+  function openMutualModal(userId: string, name: string) {
+    setMutualModalUser({ id: userId, name })
+  }
 
   useEffect(() => { queryRef.current = query }, [query])
 
@@ -335,6 +366,7 @@ export function ContactsPanel({
     const socket = getRealtimeSocket()
     if (!socket) return
     function handleRealtimeContactsChanged() {
+      clearMutualFriendsCache()
       loadDirectoryAndCurrentSearch().catch(() => undefined)
     }
     socket.on('contacts:changed', handleRealtimeContactsChanged)
@@ -564,6 +596,7 @@ export function ContactsPanel({
               busyId={busyId}
               onProfile={openContactProfile}
               onMessage={handleMessageUser}
+              onOpenMutualModal={openMutualModal}
               action={
                 <button
                   className={`cp-btn cp-btn--sm ${user.friendshipStatus === 'pending' && user.requestDirection === 'outgoing' ? 'cp-btn--ghost' : 'cp-btn--primary'}`}
@@ -593,6 +626,7 @@ export function ContactsPanel({
               busyId={busyId}
               onProfile={openContactProfile}
               onMessage={handleMessageUser}
+              onOpenMutualModal={openMutualModal}
               action={
                 <button
                   className={`cp-btn cp-btn--sm ${user.friendshipStatus === 'pending' && user.requestDirection === 'outgoing' ? 'cp-btn--ghost' : 'cp-btn--primary'}`}
@@ -623,6 +657,13 @@ export function ContactsPanel({
               <div className="cp-card-info">
                 <strong>{request.fullName}</strong>
                 <span className="cp-card-handle">{getGenderLabel(request.gender, t)}</span>
+                <MutualFriendsBadge
+                  mutualCount={request.mutualCount}
+                  mutualPreviews={request.mutualPreviews}
+                  targetUserId={request.id}
+                  targetName={request.fullName}
+                  onOpenModal={openMutualModal}
+                />
                 <small className="cp-card-bio">{request.address || t('addressEmptyCompact')}</small>
               </div>
               <div className="cp-card-actions">
@@ -643,7 +684,23 @@ export function ContactsPanel({
       </div>
 
       {selectedUser && (
-        <ContactProfile user={selectedUser} isClosing={isProfileClosing} onClose={closeContactProfile} />
+        <ContactProfile
+          user={selectedUser}
+          isClosing={isProfileClosing}
+          onClose={closeContactProfile}
+          onOpenMutualModal={openMutualModal}
+        />
+      )}
+
+      {mutualModalUser && (
+        <MutualFriendsModal
+          targetUserId={mutualModalUser.id}
+          targetName={mutualModalUser.name}
+          isOpen={Boolean(mutualModalUser)}
+          onClose={() => setMutualModalUser(null)}
+          onMessage={handleMessageUser}
+          onProfile={openContactProfile}
+        />
       )}
 
       <ConfirmDialog

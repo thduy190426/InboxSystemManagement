@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { X, Eye, Trash2, Loader2, AlertTriangle } from 'lucide-react'
 import { storyApi } from '../../services/api/storyApi'
 import { AvatarFallback } from '../ui/AvatarFallback'
+import { MutualFriendsBadge } from '../ui/MutualFriendsBadge'
 import { useTranslation } from 'react-i18next'
 import type { StoryViewerItem } from '../../types'
 
@@ -129,6 +130,15 @@ export function StoryViewerDrawer({
                   <AvatarFallback name={viewer.full_name} src={viewer.avatar_url} />
                   <div className="drawer-viewer-name">
                     <strong>{viewer.display_name || viewer.full_name}</strong>
+                    {Boolean(viewer.mutualCount && viewer.mutualCount > 0) && (
+                      <MutualFriendsBadge
+                        size="sm"
+                        mutualCount={viewer.mutualCount}
+                        mutualPreviews={viewer.mutualPreviews}
+                        targetUserId={viewer.id}
+                        targetName={viewer.display_name || viewer.full_name}
+                      />
+                    )}
                     <small>
                       {new Date(viewer.viewed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {new Date(viewer.viewed_at).toLocaleDateString()}
                     </small>
