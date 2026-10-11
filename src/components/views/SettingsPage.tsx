@@ -45,11 +45,12 @@ type SessionViewModel = UserSession & {
 
 
 
-function formatDateTime(value: string | null, t: any) {
+function formatDateTime(value: string | null, t: any, lng?: string) {
   if (!value) return t('notAvailable')
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
-  return new Intl.DateTimeFormat('vi-VN', {
+  const locale = lng?.startsWith('en') ? 'en-US' : 'vi-VN'
+  return new Intl.DateTimeFormat(locale, {
     hour: '2-digit', minute: '2-digit',
     day: '2-digit', month: '2-digit', year: 'numeric',
   }).format(date)
@@ -126,9 +127,10 @@ type SessionItemProps = {
   showAllSessions: boolean
   onRevoke: (session: UserSession) => void
   t: any
+  lng?: string
 }
 
-function SessionItem({ session, isRevoking, showAllSessions, onRevoke, t }: SessionItemProps) {
+function SessionItem({ session, isRevoking, showAllSessions, onRevoke, t, lng }: SessionItemProps) {
   const classNames = [
     'sp-session-item',
     session.revokedAt ? 'sp-session-item--revoked' : '',
@@ -148,8 +150,8 @@ function SessionItem({ session, isRevoking, showAllSessions, onRevoke, t }: Sess
         </div>
         <div className="sp-session-meta">
           <span>{t('ip')}: {session.ipAddress || t('sessionUnknown')}</span>
-          <span>{t('createdAt')}: {formatDateTime(session.createdAt, t)}</span>
-          <span>{t('expiresAt')}: {formatDateTime(session.expiresAt, t)}</span>
+          <span>{t('createdAt')}: {formatDateTime(session.createdAt, t, lng)}</span>
+          <span>{t('expiresAt')}: {formatDateTime(session.expiresAt, t, lng)}</span>
         </div>
       </div>
       <button
@@ -248,7 +250,7 @@ export function SettingsPage(props: SettingsPageProps) {
             <Laptop size={15} /> {t('navDevice')}
           </button>
           <button className={`sp-nav-item${activeSection === 'app-settings' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('app-settings')}>
-            <Settings size={15} /> {t('appTitle', { defaultValue: 'Cài đặt Ứng dụng' })}
+            <Settings size={15} /> {t('appTitle')}
           </button>
           <button className={`sp-nav-item${activeSection === 'privacy-profile' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('privacy-profile')}>
             <IdCard size={15} /> {t('navProfile')}
@@ -257,13 +259,13 @@ export function SettingsPage(props: SettingsPageProps) {
             <KeyRound size={15} /> {t('navPassword')}
           </button>
           <button className={`sp-nav-item${activeSection === 'two-factor' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('two-factor')}>
-            <ShieldCheck size={15} /> {t('navTwoFactor', { defaultValue: 'Xác thực 2 bước' })}
+            <ShieldCheck size={15} /> {t('navTwoFactor')}
           </button>
           <button className={`sp-nav-item${activeSection === 'sessions' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('sessions')}>
             <Laptop size={15} /> {t('navSessions')}
           </button>
           <button className={`sp-nav-item${activeSection === 'tutorial-settings' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('tutorial-settings')}>
-            <Compass size={15} /> {t('tutorial.helpSection.cardTitle', { defaultValue: 'Hướng dẫn & Trợ giúp' })}
+            <Compass size={15} /> {t('navTutorial')}
           </button>
           <div className="sp-nav-divider" />
           <button className={`sp-nav-item sp-nav-item--danger${activeSection === 'delete-account' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('delete-account')}>
@@ -341,7 +343,7 @@ export function SettingsPage(props: SettingsPageProps) {
                 <div className="sp-toggle-select">
                   <select
                     className="sp-select"
-                    value={i18n.language}
+                    value={i18n.language?.startsWith('vi') ? 'vi' : 'en'}
                     onChange={(e) => {
                       i18n.changeLanguage(e.target.value)
                       localStorage.setItem('language', e.target.value)
@@ -519,6 +521,7 @@ export function SettingsPage(props: SettingsPageProps) {
                     showAllSessions={showAllSessions}
                     onRevoke={confirmRevokeSession}
                     t={t}
+                    lng={i18n.language}
                   />
                 ))}
 
@@ -538,6 +541,7 @@ export function SettingsPage(props: SettingsPageProps) {
                           showAllSessions={showAllSessions}
                           onRevoke={confirmRevokeSession}
                           t={t}
+                          lng={i18n.language}
                         />
                       ))}
                     </div>
@@ -551,8 +555,8 @@ export function SettingsPage(props: SettingsPageProps) {
             id="tutorial-settings"
             dataTour="settings-tutorial-replay"
             icon={<Compass size={16} />}
-            title={t('tutorial.helpSection.cardTitle', { defaultValue: 'Hướng dẫn sử dụng & Khám phá (Product Tour)' })}
-            description={t('tutorial.helpSection.cardDesc', { defaultValue: 'Trải nghiệm lại các bước hướng dẫn trực quan hoặc đặt lại trạng thái khám phá của hệ thống.' })}
+            title={t('tutorial.cardTitle')}
+            description={t('tutorial.cardDesc')}
           >
             <div className="tutorial-replay-actions" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
@@ -561,12 +565,12 @@ export function SettingsPage(props: SettingsPageProps) {
                   className="sp-btn sp-btn--ghost"
                   style={{ justifyContent: 'flex-start', padding: '10px 14px', borderRadius: '10px' }}
                   onClick={() => {
-                    props.pushToast?.(t('tutorial.helpSection.launchingChat', { defaultValue: 'Đang mở hướng dẫn Chat...' }), 'info')
+                    props.pushToast?.(t('tutorial.launchingChat'), 'info')
                     startTour('chat', { force: true })
                   }}
                 >
                   <MessageSquare size={16} />
-                  <span>{t('tutorial.helpSection.replayChat', { defaultValue: 'Hướng dẫn Chat' })}</span>
+                  <span>{t('tutorial.replayChat')}</span>
                 </button>
                 <button
                   type="button"
@@ -575,7 +579,7 @@ export function SettingsPage(props: SettingsPageProps) {
                   onClick={() => startTour('story', { force: true })}
                 >
                   <Sparkles size={16} />
-                  <span>{t('tutorial.helpSection.replayStory', { defaultValue: 'Hướng dẫn Story' })}</span>
+                  <span>{t('tutorial.replayStory')}</span>
                 </button>
                 <button
                   type="button"
@@ -584,7 +588,7 @@ export function SettingsPage(props: SettingsPageProps) {
                   onClick={() => startTour('profile', { force: true })}
                 >
                   <UserRound size={16} />
-                  <span>{t('tutorial.helpSection.replayProfile', { defaultValue: 'Hướng dẫn Hồ sơ' })}</span>
+                  <span>{t('tutorial.replayProfile')}</span>
                 </button>
                 <button
                   type="button"
@@ -593,7 +597,7 @@ export function SettingsPage(props: SettingsPageProps) {
                   onClick={() => startTour('settings', { force: true })}
                 >
                   <Settings size={16} />
-                  <span>{t('tutorial.helpSection.replaySettings', { defaultValue: 'Hướng dẫn Cài đặt' })}</span>
+                  <span>{t('tutorial.replaySettings')}</span>
                 </button>
               </div>
 
@@ -604,11 +608,11 @@ export function SettingsPage(props: SettingsPageProps) {
                   style={{ padding: '8px 14px', fontSize: '0.85rem' }}
                   onClick={() => {
                     useTutorialStore.getState().resetAllTours()
-                    props.pushToast?.(t('tutorial.helpSection.resetSuccess', { defaultValue: 'Đã đặt lại trạng thái hướng dẫn thành công!' }), 'info')
+                    props.pushToast?.(t('tutorial.resetSuccess'), 'info')
                   }}
                 >
                   <RotateCcw size={14} />
-                  <span>{t('tutorial.helpSection.resetAll', { defaultValue: 'Đặt lại tất cả hướng dẫn' })}</span>
+                  <span>{t('tutorial.resetAll')}</span>
                 </button>
               </div>
             </div>
