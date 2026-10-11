@@ -8,6 +8,7 @@ import type { EmojiStyle, Theme } from 'emoji-picker-react'
 import { PollMessage } from './PollMessage'
 import { useTranslation } from 'react-i18next'
 import { LinkPreview } from '../ui/LinkPreview'
+import { StoryReplyCard } from '../chat/StoryReplyCard'
 const EmojiPicker = lazy(() => import('emoji-picker-react'))
 
 export type MessageItemProps = {
@@ -241,6 +242,7 @@ export function MessageItem(props: MessageItemProps) {
                               </span>
                             ) : null}
                             {message.replyTo ? renderReplyPreview(message.replyTo) : null}
+                            <StoryReplyCard message={message} />
                             {message.type === 'poll' && message.poll ? (
                               <PollMessage 
                                 message={message}

@@ -1,143 +1,369 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { X, ChevronLeft, ChevronRight, Heart } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Heart, Eye, Star, Volume2, VolumeX } from 'lucide-react'
 import type { UserStoryGroup } from '../../types'
 import { AvatarFallback } from '../ui/AvatarFallback'
+import { storyApi } from '../../services/api/storyApi'
+import { getStoredAuthSession } from '../../services/storage/authStorage'
 import { useTranslation } from 'react-i18next'
+import { StoryReactionSelector } from './StoryReactionSelector'
+import { StoryViewerDrawer } from './StoryViewerDrawer'
 
 type StoryViewerOverlayProps = {
   initialGroup: UserStoryGroup
   allGroups: UserStoryGroup[]
   onClose: () => void
-  onReply: (userId: number, text: string) => void
+  onReply?: (userId: number, text: string, storyId?: string) => void
+  onStoryDeleted?: (storyId: string) => void
+  pushToast?: (text: string, tone?: 'info' | 'error') => void
   isClosing?: boolean
 }
 
-const QUICK_REACTIONS = ['❤️', '😂', '😮', '😢', '👍', '🔥']
+export function StoryViewerOverlay({
+  initialGroup,
+  allGroups,
+  onClose,
+  onReply,
+  onStoryDeleted,
+  pushToast,
+  isClosing,
+}: StoryViewerOverlayProps) {
+  const currentUser = getStoredAuthSession()?.user
+  const { t } = useTranslation('story')
 
-export function StoryViewerOverlay({ initialGroup, allGroups, onClose, onReply, isClosing }: StoryViewerOverlayProps) {
-  const [currentGroupIndex, setCurrentGroupIndex] = useState(() => allGroups.findIndex(g => g.user_id === initialGroup.user_id))
+  const [currentGroupIndex, setCurrentGroupIndex] = useState(() => {
+    const idx = allGroups.findIndex(g => String(g.user_id) === String(initialGroup.user_id))
+    return idx >= 0 ? idx : 0
+  })
   const [currentItemIndex, setCurrentItemIndex] = useState(0)
   const [progress, setProgress] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
   const [replyText, setReplyText] = useState('')
   const [showReactions, setShowReactions] = useState(false)
-  const [reactions, setReactions] = useState<Record<string, string>>({})
+  const [reactions, setReactions] = useState<Record<string, string | null>>({})
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isMuted, setIsMuted] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const { t } = useTranslation('story')
+
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const progressStartTimeRef = useRef<number>(Date.now())
+  const elapsedBeforePauseRef = useRef<number>(0)
+  const animationFrameRef = useRef<number | null>(null)
+  const viewRecordedRef = useRef<Record<string, boolean>>({})
 
   const currentGroup = allGroups[currentGroupIndex]
   const currentItem = currentGroup?.items[currentItemIndex]
-  const currentReaction = currentItem ? reactions[currentItem.id] : null
+  const isAuthor = String(currentUser?.id) === String(currentGroup?.user_id)
+
+  const currentReaction = currentItem ? (reactions[currentItem.id] ?? currentItem.my_reaction ?? null) : null
 
   useEffect(() => {
     setMounted(true)
     return () => setMounted(false)
   }, [])
 
+  // Preloading next media
   useEffect(() => {
-    if (!currentItem) return
-    const isVideo = currentItem.media_type === 'video'
-    const duration = isVideo ? 15000 : 5000
-    
-    let start = Date.now()
-    let animationFrame: number
+    if (!currentGroup) return
 
-    const tick = () => {
-      const elapsed = Date.now() - start
-      if (elapsed >= duration) {
-        handleNext()
-      } else {
-        setProgress((elapsed / duration) * 100)
-        animationFrame = requestAnimationFrame(tick)
-      }
+    let nextItem = currentGroup.items[currentItemIndex + 1]
+    if (!nextItem && currentGroupIndex < allGroups.length - 1) {
+      nextItem = allGroups[currentGroupIndex + 1]?.items[0]
     }
 
-    animationFrame = requestAnimationFrame(tick)
+    if (nextItem && nextItem.media_url) {
+      if (nextItem.media_type === 'image') {
+        const img = new Image()
+        img.src = nextItem.media_url
+      }
+    }
+  }, [currentGroupIndex, currentItemIndex, currentGroup, allGroups])
 
-    return () => cancelAnimationFrame(animationFrame)
-  }, [currentGroupIndex, currentItemIndex, currentItem])
+  // Record view after 800ms
+  useEffect(() => {
+    if (!currentItem || isAuthor || viewRecordedRef.current[currentItem.id]) return
 
-  const handleNext = () => {
+    const timer = setTimeout(() => {
+      viewRecordedRef.current[currentItem.id] = true
+      storyApi.recordView(currentItem.id).catch(err => {
+        console.warn('Failed to record story view:', err)
+      })
+    }, 800)
+
+    return () => clearTimeout(timer)
+  }, [currentItem?.id, isAuthor])
+
+  const handleNext = useCallback(() => {
+    if (!currentGroup) return
     if (currentItemIndex < currentGroup.items.length - 1) {
       setCurrentItemIndex(prev => prev + 1)
       setProgress(0)
+      elapsedBeforePauseRef.current = 0
     } else if (currentGroupIndex < allGroups.length - 1) {
       setCurrentGroupIndex(prev => prev + 1)
       setCurrentItemIndex(0)
       setProgress(0)
+      elapsedBeforePauseRef.current = 0
     } else {
       onClose()
     }
-  }
+  }, [currentItemIndex, currentGroup, currentGroupIndex, allGroups.length, onClose])
 
-  const handlePrev = () => {
+  const handlePrev = useCallback(() => {
     if (currentItemIndex > 0) {
       setCurrentItemIndex(prev => prev - 1)
       setProgress(0)
+      elapsedBeforePauseRef.current = 0
     } else if (currentGroupIndex > 0) {
+      const prevGroup = allGroups[currentGroupIndex - 1]
       setCurrentGroupIndex(prev => prev - 1)
-      setCurrentItemIndex(allGroups[currentGroupIndex - 1].items.length - 1)
+      setCurrentItemIndex(prevGroup.items.length - 1)
       setProgress(0)
+      elapsedBeforePauseRef.current = 0
+    }
+  }, [currentItemIndex, currentGroupIndex, allGroups])
+
+  // Progress animation ticker
+  useEffect(() => {
+    if (!currentItem || isPaused || isDrawerOpen) {
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
+      if (videoRef.current && !videoRef.current.paused) {
+        videoRef.current.pause()
+      }
+      return
+    }
+
+    if (videoRef.current && videoRef.current.paused) {
+      videoRef.current.play().catch(() => {})
+    }
+
+    const isVideo = currentItem.media_type === 'video'
+    const duration = isVideo ? (videoRef.current?.duration ? videoRef.current.duration * 1000 : 15000) : 5000
+
+    progressStartTimeRef.current = Date.now() - elapsedBeforePauseRef.current
+
+    const tick = () => {
+      const elapsed = Date.now() - progressStartTimeRef.current
+      elapsedBeforePauseRef.current = elapsed
+
+      if (elapsed >= duration) {
+        setProgress(100)
+        handleNext()
+      } else {
+        setProgress((elapsed / duration) * 100)
+        animationFrameRef.current = requestAnimationFrame(tick)
+      }
+    }
+
+    animationFrameRef.current = requestAnimationFrame(tick)
+
+    return () => {
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
+    }
+  }, [currentGroupIndex, currentItemIndex, currentItem, isPaused, isDrawerOpen, handleNext])
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isDrawerOpen) return
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+
+      if (e.key === 'ArrowRight') {
+        handleNext()
+      } else if (e.key === 'ArrowLeft') {
+        handlePrev()
+      } else if (e.key === ' ') {
+        e.preventDefault()
+        setIsPaused(prev => !prev)
+      } else if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleNext, handlePrev, isDrawerOpen, onClose])
+
+  const handlePointerDown = () => {
+    setIsPaused(true)
+  }
+
+  const handlePointerUp = () => {
+    setIsPaused(false)
+  }
+
+  const handleMediaAreaClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const clickX = e.clientX - rect.left
+    const width = rect.width
+
+    if (clickX < width * 0.35) {
+      handlePrev()
+    } else {
+      handleNext()
     }
   }
 
-  const handleSendReply = () => {
-    if (replyText.trim()) {
-      onReply(currentGroup.user_id, `${t('replyPrefix')}${replyText}`)
-      setReplyText('')
-      pushToast(t('replySent'))
-    }
-  }
-
-  const handleReact = (emoji: string) => {
+  const handleReact = async (emoji: string) => {
     if (!currentItem) return
-    setReactions(prev => ({ ...prev, [currentItem.id]: emoji }))
-    onReply(currentGroup.user_id, `${t('reactPrefix')}${emoji}`)
+    const isRemoving = currentReaction === emoji
+    const nextEmoji = isRemoving ? null : emoji
+
+    // Optimistic UI update
+    setReactions(prev => ({ ...prev, [currentItem.id]: nextEmoji }))
     setShowReactions(false)
-    pushToast(t('reactSent', { emoji }))
+
+    try {
+      await storyApi.reactToStory(currentItem.id, emoji)
+      if (pushToast) {
+        pushToast(isRemoving ? 'Đã gỡ cảm xúc' : t('reactSent', { emoji }), 'info')
+      }
+
+      // Gửi vào tin nhắn trò chuyện 1-1 nếu tác giả là người khác và thả emoji mới
+      if (!isRemoving && !isAuthor) {
+        storyApi.replyToStory(currentItem.id, '', emoji).catch(err => {
+          console.warn('Failed to bridge reaction to chat:', err)
+        })
+      }
+    } catch (err) {
+      console.error('Failed to react:', err)
+      // Rollback
+      setReactions(prev => ({ ...prev, [currentItem.id]: currentReaction }))
+    }
+  }
+
+  const handleSendReply = async () => {
+    if (!currentItem || !replyText.trim()) return
+    const textToSend = replyText.trim()
+    setReplyText('')
+
+    try {
+      if (onReply) {
+        onReply(currentGroup.user_id, textToSend, currentItem.id)
+      }
+      await storyApi.replyToStory(currentItem.id, textToSend)
+      if (pushToast) pushToast(t('replySent'), 'info')
+    } catch (err: any) {
+      console.error('Failed to send reply:', err)
+      if (pushToast) pushToast(err?.message || 'Không thể gửi phản hồi', 'error')
+    }
+  }
+
+  const handleDeleteStory = async () => {
+    if (!currentItem) return
+    setIsDeleting(true)
+    try {
+      await storyApi.deleteStory(currentItem.id)
+      if (pushToast) pushToast(t('deleteStorySuccess'), 'info')
+      if (onStoryDeleted) onStoryDeleted(currentItem.id)
+
+      setIsDrawerOpen(false)
+      // Chuyển sang story tiếp theo hoặc đóng viewer
+      if (currentGroup.items.length > 1) {
+        handleNext()
+      } else {
+        onClose()
+      }
+    } catch (err: any) {
+      console.error('Failed to delete story:', err)
+      if (pushToast) pushToast(err?.message || t('deleteStoryError'), 'error')
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   if (!currentItem || !mounted || typeof document === 'undefined') return null
+
+  const isCloseFriendStory = currentItem.is_close_friend || currentItem.privacy === 'close_friends'
 
   return createPortal(
     <div className={`story-viewer-overlay ${isClosing ? 'is-closing' : ''}`}>
       <div className="story-viewer-backdrop" onClick={onClose} />
       
-      <button className="story-nav-btn prev" onClick={handlePrev}>
+      {/* Prev Navigation Button */}
+      <button 
+        className="story-nav-btn prev" 
+        onClick={handlePrev}
+        type="button"
+        title="Quay lại"
+      >
         <ChevronLeft size={32} />
       </button>
 
       <div className="story-viewer-content">
+        {/* Progress Bars */}
         <div className="story-progress-container">
           {currentGroup.items.map((item, idx) => (
             <div key={item.id} className="story-progress-bar">
               <div 
                 className="story-progress-fill" 
                 style={{ 
-                  width: idx < currentItemIndex ? '100%' : idx === currentItemIndex ? `${progress}%` : '0%' 
+                  width: idx < currentItemIndex ? '100%' : idx === currentItemIndex ? `${progress}%` : '0%',
+                  background: isCloseFriendStory ? '#10b981' : '#ffffff'
                 }} 
               />
             </div>
           ))}
         </div>
 
+        {/* Header */}
         <header className="story-viewer-header">
           <div className="story-user-info">
             <AvatarFallback name={currentGroup.full_name} src={currentGroup.avatar_url} />
             <div className="story-meta">
-              <strong>{currentGroup.display_name || currentGroup.full_name}</strong>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <strong>{currentGroup.display_name || currentGroup.full_name}</strong>
+                {isCloseFriendStory && (
+                  <span style={{ color: '#10b981', display: 'inline-flex', alignItems: 'center', gap: '2px', fontSize: '0.78rem', fontWeight: 600 }}>
+                    <Star size={12} fill="#10b981" />
+                    <span>{t('closeFriends')}</span>
+                  </span>
+                )}
+              </div>
               <small>{new Date(currentItem.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>
             </div>
           </div>
-          <button className="story-close-btn" onClick={onClose}><X size={24} /></button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {currentItem.media_type === 'video' && (
+              <button
+                className="story-action-icon-btn"
+                onClick={() => setIsMuted(prev => !prev)}
+                type="button"
+                style={{ color: '#fff' }}
+              >
+                {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+              </button>
+            )}
+            <button className="story-close-btn" onClick={onClose} type="button">
+              <X size={24} />
+            </button>
+          </div>
         </header>
 
-        <div className="story-media-container" onClick={handleNext}>
+        {/* Media Container with gestures */}
+        <div 
+          className="story-media-container"
+          onClick={handleMediaAreaClick}
+          onPointerDown={handlePointerDown}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          title={t('holdToPause')}
+        >
           {currentItem.media_type === 'video' ? (
-            <video src={currentItem.media_url} autoPlay playsInline className="story-media" />
+            <video 
+              ref={videoRef}
+              src={currentItem.media_url} 
+              autoPlay 
+              playsInline 
+              muted={isMuted}
+              className="story-media" 
+            />
           ) : (
             <img src={currentItem.media_url} alt="Story" className="story-media" />
           )}
+
           {currentItem.text_content && (
             <div className="story-text-overlay">
               {currentItem.text_content}
@@ -145,108 +371,97 @@ export function StoryViewerOverlay({ initialGroup, allGroups, onClose, onReply, 
           )}
         </div>
 
-        <footer className="story-viewer-footer">
-          <input 
-            type="text" 
-            className="story-reply-input" 
-            placeholder={t('replyPlaceholder')} 
-            value={replyText}
-            onChange={e => setReplyText(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter') {
-                e.stopPropagation()
-                handleSendReply()
-              }
-            }}
-            onClick={e => e.stopPropagation()}
-          />
-          <div 
-            className="story-reaction-wrapper"
-            onMouseEnter={() => setShowReactions(true)}
-            onMouseLeave={() => setShowReactions(false)}
-            onClick={e => e.stopPropagation()}
-            style={{ position: 'relative', display: 'flex', alignItems: 'center' }}
+        {/* Author Viewer Button */}
+        {isAuthor && (
+          <button 
+            type="button"
+            className="story-viewers-btn"
+            onClick={() => setIsDrawerOpen(true)}
           >
-            {showReactions && (
-              <div 
-                className="story-reaction-bar"
-                style={{
-                  position: 'absolute',
-                  bottom: '100%',
-                  right: '0',
-                  marginBottom: '10px',
-                  display: 'flex',
-                  gap: '8px',
-                  background: 'rgba(0,0,0,0.75)',
-                  padding: '8px 12px',
-                  borderRadius: '24px',
-                  backdropFilter: 'blur(8px)',
-                  zIndex: 10
-                }}
-              >
-                {QUICK_REACTIONS.map(emoji => (
-                  <button 
-                    key={emoji} 
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleReact(emoji)
-                    }}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      fontSize: '24px',
-                      cursor: 'pointer',
-                      padding: '4px',
-                      transform: currentReaction === emoji ? 'scale(1.2)' : 'scale(1)',
-                      transition: 'transform 0.2s',
-                    }}
-                    title={t('reactTooltip', { emoji })}
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-            )}
-            <button 
-              className="story-reaction-btn"
-              onClick={(e) => {
-                e.stopPropagation()
-                if (currentReaction) {
-                   setReactions(prev => {
-                     const next = {...prev}
-                     delete next[currentItem.id]
-                     return next
-                   })
-                } else {
-                   handleReact('❤️')
+            <Eye size={18} />
+            <span>{currentItem.views_count ?? 0} {t('viewers')}</span>
+          </button>
+        )}
+
+        {/* Footer for non-author */}
+        {!isAuthor && (
+          <footer className="story-viewer-footer">
+            <input 
+              type="text" 
+              className="story-reply-input" 
+              placeholder={t('replyPlaceholder')} 
+              value={replyText}
+              onChange={e => setReplyText(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.stopPropagation()
+                  handleSendReply()
                 }
               }}
-              style={{
-                fontSize: currentReaction ? '24px' : 'inherit',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: currentReaction ? 'inherit' : 'var(--text-secondary, white)'
-              }}
+              onClick={e => e.stopPropagation()}
+            />
+
+            <div 
+              className="story-reaction-wrapper"
+              onClick={e => e.stopPropagation()}
             >
-              {currentReaction ? <span>{currentReaction}</span> : <Heart size={24} />}
-            </button>
-          </div>
-        </footer>
+              <StoryReactionSelector
+                isOpen={showReactions}
+                currentReaction={currentReaction}
+                onReact={handleReact}
+              />
+
+              <button 
+                type="button"
+                className="story-reaction-btn"
+                onMouseEnter={() => setShowReactions(true)}
+                onClick={() => {
+                  if (currentReaction) {
+                    handleReact(currentReaction)
+                  } else {
+                    handleReact('❤️')
+                  }
+                }}
+                style={{
+                  fontSize: currentReaction ? '24px' : 'inherit',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: currentReaction ? 'inherit' : '#ffffff'
+                }}
+                title={currentReaction ? 'Gỡ cảm xúc' : 'Thả cảm xúc'}
+              >
+                {currentReaction ? <span>{currentReaction}</span> : <Heart size={24} />}
+              </button>
+            </div>
+          </footer>
+        )}
       </div>
 
-      <button className="story-nav-btn next" onClick={handleNext}>
+      {/* Next Navigation Button */}
+      <button 
+        className="story-nav-btn next" 
+        onClick={handleNext}
+        type="button"
+        title="Tiếp theo"
+      >
         <ChevronRight size={32} />
       </button>
+
+      {/* Author Analytics Drawer */}
+      {isAuthor && (
+        <StoryViewerDrawer
+          storyId={currentItem.id}
+          isOpen={isDrawerOpen}
+          onClose={() => setIsDrawerOpen(false)}
+          onDelete={handleDeleteStory}
+          isDeleting={isDeleting}
+        />
+      )}
     </div>,
     document.body
   )
 }
-
-function pushToast(text: string) {
-  alert(text)
-}
-

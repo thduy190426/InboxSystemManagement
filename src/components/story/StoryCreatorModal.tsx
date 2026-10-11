@@ -99,6 +99,7 @@ export function StoryCreatorModal({ onClose, onSuccess, pushToast, isClosing }: 
                 <select value={privacy} onChange={e => setPrivacy(e.target.value)}>
                   <option value="public">{t('privacyPublic')}</option>
                   <option value="friends">{t('privacyFriends')}</option>
+                  <option value="close_friends">⭐ {t('privacyCloseFriends')}</option>
                   <option value="only_me">{t('privacyOnlyMe')}</option>
                 </select>
               </div>

@@ -888,9 +888,16 @@ export function InboxPanel({
         <StoryViewerOverlay
           initialGroup={viewingStoryGroup}
           allGroups={allStoryGroups}
-          onClose={handleCloseStoryViewer} isClosing={isStoryViewerClosing}
-          onReply={(userId, text) => {
-            console.log('Reply to', userId, text)
+          onClose={handleCloseStoryViewer}
+          isClosing={isStoryViewerClosing}
+          pushToast={pushToast}
+          onStoryDeleted={(deletedStoryId) => {
+            setAllStoryGroups(prev =>
+              prev.map(g => ({
+                ...g,
+                items: g.items.filter(it => it.id !== deletedStoryId),
+              })).filter(g => g.items.length > 0)
+            )
           }}
         />
       )}
