@@ -10,9 +10,6 @@ function getClientIp(request) {
   return request.ip || request.socket?.remoteAddress || 'unknown'
 }
 
-/**
- * Dọn dẹp các bucket hết hạn để tránh rò rỉ bộ nhớ (Memory Leak)
- */
 function cleanupExpiredBuckets(maxIdleTimeMs = 15 * 60 * 1000) {
   const now = Date.now()
   for (const [key, timestamps] of buckets.entries()) {
@@ -28,7 +25,6 @@ function cleanupExpiredBuckets(maxIdleTimeMs = 15 * 60 * 1000) {
   }
 }
 
-// Chạy dọn dẹp định kỳ mỗi 5 phút một lần
 const cleanupInterval = setInterval(() => {
   cleanupExpiredBuckets()
 }, 5 * 60 * 1000)
@@ -82,7 +78,6 @@ const authRateLimitKey = (request) => `ip:${getClientIp(request)}`
 const userRateLimitKey = (request) =>
   request.user?.id ? `user:${request.user.id}` : `ip:${getClientIp(request)}`
 
-// --- 1. XÁC THỰC & BẢO MẬT (AUTH) ---
 const loginRateLimit = createRateLimiter({
   keyPrefix: 'auth:login',
   keyGenerator: authRateLimitKey,
@@ -155,7 +150,6 @@ const presenceRateLimit = createRateLimiter({
   message: 'Cập nhật trạng thái trực tuyến quá thường xuyên!',
 })
 
-// --- 2. BẢN TIN / STORY (HEAVY MEDIA) ---
 const createStoryRateLimit = createRateLimiter({
   keyPrefix: 'stories:create',
   keyGenerator: userRateLimitKey,
@@ -164,7 +158,6 @@ const createStoryRateLimit = createRateLimiter({
   message: 'Bạn đăng story quá nhanh. Vui lòng chờ vài phút rồi thử lại!',
 })
 
-// --- 3. TIN NHẮN & HỘI THOẠI (CONVERSATIONS) ---
 const sendMessageRateLimit = createRateLimiter({
   keyPrefix: 'messages:create',
   keyGenerator: userRateLimitKey,
@@ -229,7 +222,6 @@ const groupInviteRateLimit = createRateLimiter({
   message: 'Thao tác mời hoặc tham gia nhóm quá nhanh. Vui lòng thử lại sau!',
 })
 
-// --- 4. DANH BẠ & TÌM KIẾM (CONTACTS & SEARCH) ---
 const friendRequestRateLimit = createRateLimiter({
   keyPrefix: 'contacts:friend-request',
   keyGenerator: userRateLimitKey,
@@ -246,7 +238,6 @@ const searchRateLimit = createRateLimiter({
   message: 'Tìm kiếm quá nhiều lần. Vui lòng chậm lại một chút!',
 })
 
-// --- 5. TÀI KHOẢN & NGƯỜI DÙNG (USER & SETTINGS) ---
 const changePasswordRateLimit = createRateLimiter({
   keyPrefix: 'user:change-password',
   keyGenerator: userRateLimitKey,
@@ -271,7 +262,6 @@ const updateProfileRateLimit = createRateLimiter({
   message: 'Cập nhật hồ sơ quá nhiều lần. Vui lòng chậm lại!',
 })
 
-// --- 6. TIỆN ÍCH NGOẠI VI (LINK PREVIEW) ---
 const linkPreviewRateLimit = createRateLimiter({
   keyPrefix: 'utils:link-preview',
   keyGenerator: userRateLimitKey,
@@ -280,7 +270,6 @@ const linkPreviewRateLimit = createRateLimiter({
   message: 'Tải trước liên kết quá nhanh. Vui lòng thử lại sau!',
 })
 
-// --- 7. TOÀN CỤC (GLOBAL) ---
 const globalRateLimit = createRateLimiter({
   keyPrefix: 'global',
   keyGenerator: (request) => `ip:${getClientIp(request)}`,
@@ -293,7 +282,6 @@ module.exports = {
   createRateLimiter,
   cleanupExpiredBuckets,
   _buckets: buckets,
-  // Auth
   loginRateLimit,
   registerRateLimit,
   oauthRateLimit,
@@ -303,9 +291,7 @@ module.exports = {
   resendVerificationRateLimit,
   verify2FASetupRateLimit,
   presenceRateLimit,
-  // Story
   createStoryRateLimit,
-  // Conversations
   sendMessageRateLimit,
   attachmentUploadRateLimit,
   createConversationRateLimit,
@@ -314,15 +300,11 @@ module.exports = {
   reactionRateLimit,
   reportMessageRateLimit,
   groupInviteRateLimit,
-  // Contacts & Search
   friendRequestRateLimit,
   searchRateLimit,
-  // User & Settings
   changePasswordRateLimit,
   uploadAvatarRateLimit,
   updateProfileRateLimit,
-  // Utilities
   linkPreviewRateLimit,
-  // Global
   globalRateLimit,
 }
