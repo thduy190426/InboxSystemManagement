@@ -18,7 +18,6 @@ export function enableTourScrollLock() {
 
   const preventScrollEvent = (e: Event) => {
     const target = e.target as HTMLElement | null
-    // Cho phép cuộn nội dung bên trong popover nếu nội dung quá dài
     if (target?.closest('.driver-popover')) {
       return
     }
@@ -77,7 +76,6 @@ export function disableTourScrollLock() {
   }
 }
 
-// Đồng bộ tự động với trạng thái isRunningTour trong Zustand store
 useTutorialStore.subscribe((state, prevState) => {
   if (state.isRunningTour && !prevState.isRunningTour) {
     enableTourScrollLock()
@@ -95,7 +93,6 @@ export async function startTour(tourKey: TourKey, options: { force?: boolean } =
   const defs = TOUR_DEFINITIONS[tourKey]
   if (!defs || defs.length === 0) return
 
-  // Filter only elements that are present in the DOM
   const validSteps = defs
     .filter((def) => {
       const el = document.querySelector(def.element)
@@ -116,7 +113,6 @@ export async function startTour(tourKey: TourKey, options: { force?: boolean } =
   }
 
   try {
-    // Dynamic import Driver.js & css
     const { driver } = await import('driver.js')
     await import('driver.js/dist/driver.css')
 

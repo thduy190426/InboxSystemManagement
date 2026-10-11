@@ -22,7 +22,6 @@ export function useAutoTour(
     if (!isActive || !userId || isRunningTour) return
     if (isTourCompleted(tourKey)) return
 
-    // Allow DOM to stabilize before starting tour
     const timer = window.setTimeout(() => {
       startTour(tourKey)
     }, 700)

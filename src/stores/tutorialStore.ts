@@ -104,7 +104,6 @@ export const useTutorialStore = create<TutorialState>((set, get) => ({
   currentTourKey: null,
 
   initForUser: (userId) => {
-    // Only reload if user changed or uninitialized
     if (get().userId === userId) return
     const loaded = loadStateFromStorage(userId)
     set({

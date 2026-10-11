@@ -1254,11 +1254,8 @@ export function useChatAppController({ currentUser, onLogout }: ChatAppProps) {
     activeConversation, messages, activeMessagePagination, hasOlderMessages, isLoadingOlderMessages, pinnedMessages, activeMembers, activeGroupInviteToken, activeGroupJoinRequests, activeMemberRole, canManageActiveGroup,
     isLoading, notificationBadgeCount,
     handleAcceptedFriend, handleEnableBrowserNotifications, handleChangeView, handleOpenContacts, handleOpenActiveContactProfile, closeContactProfile, handleSelectConversation, handleOpenNotification, handleDraftChange, handleSubmit, handleConfirmDialog, handleOpenPinnedMessage, handleStartCall, handleLogout, handleResizerMouseDown, pushToast,
-    // Returned from useGroupManagement
     handleUpdateGroup, handleAddMember, handleRemoveMember, handleUpdateMemberNickname, handleUpdateMemberRole, handleTransferOwner, handleCopyGroupInviteLink, handleResetGroupInviteLink, handleReviewGroupJoinRequest, handleLeaveGroup, handleDisbandGroup,
-    // Returned from useConversationActions
     handleDeleteConversation, handleRestoreConversation, handleArchiveConversation, handleStartDirectMessage, handleTogglePinConversation, handleToggleMuted, handleToggleBlocked, handleCreateGroup, handleUpdateContactNickname, handleTogglePinned, handleUpdateBackground, handleUpdateQuickEmoji,
-    // Returned from useChatMessageActions
     handleDeleteMessage, handleRecallMessage, handleEditMessage, handleForwardMessage, handleReportMessage, handleSendGif, handleToggleMessagePin, handleRemoveMessageReaction, handleRetryMessage, handleLoadOlderMessages, handleSendQuickMessage, handleSendPoll, handleVotePoll, handleToggleMessageReaction, handleUploadAttachment, handleSearchMessages, handleJumpToMessage, handleSendSticker, sendActiveConversationMessage,
     t
   }

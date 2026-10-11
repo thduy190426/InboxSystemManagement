@@ -1,4 +1,3 @@
-/* Custom Driver.js Popover & Spotlight Styling */
 .driver-popover.inbox-tour-popover {
   background: var(--bg-surface, #ffffff);
   color: var(--text-primary, #1e293b);
@@ -99,7 +98,6 @@
   font-size: 1.1rem;
 }
 
-/* Feature Badge Pulse & New Tag */
 .feature-badge-new {
   display: inline-flex;
   align-items: center;
@@ -130,7 +128,6 @@
   }
 }
 
-/* Khóa cuộn trang khi đang trong quá trình diễn ra Product Tour */
 body.tour-scroll-locked,
 html:has(body.tour-scroll-locked),
 body.driver-active.driver-no-scroll {
