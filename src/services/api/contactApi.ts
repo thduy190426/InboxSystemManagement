@@ -1,6 +1,11 @@
-import type { ContactUser } from '../../types'
+import type { ContactUser, MutualFriendDetail } from '../../types'
 import { requestJson } from './apiClient'
 import i18n from '../../i18n'
+
+type MutualFriendsResponse = {
+  totalCount: number
+  mutualFriends: MutualFriendDetail[]
+}
 
 type SearchResponse = {
   users: ContactUser[]
@@ -109,3 +114,8 @@ export function unfriend(contactId: string) {
     method: 'DELETE',
   })
 }
+
+export async function fetchMutualFriends(userId: string) {
+  return request<MutualFriendsResponse>(`/contacts/${encodeURIComponent(userId)}/mutual-friends`)
+}
+

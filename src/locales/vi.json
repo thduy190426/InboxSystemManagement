@@ -647,6 +647,18 @@
     "copyNewLinkErr": "Không thể sao chép link mới!"
   },
   "panels": {
+    "mutualFriendsCount": "{{count}} bạn chung",
+    "mutualFriendsCount_one": "{{count}} bạn chung",
+    "mutualFriendsCount_other": "{{count}} bạn chung",
+    "viewMutualFriends": "Xem bạn chung",
+    "mutualFriendsModalTitle": "Bạn chung với {{name}}",
+    "searchMutualFriendsPlaceholder": "Tìm kiếm bạn chung...",
+    "noMutualFriendsFound": "Không tìm thấy bạn chung nào",
+    "noMutualFriends": "Không có bạn chung nào",
+    "loadingMutualFriends": "Đang tải danh sách bạn chung...",
+    "mutualFriendsTotal": "{{count}} người bạn chung",
+    "mutualFriendsTotal_one": "{{count}} người bạn chung",
+    "mutualFriendsTotal_other": "{{count}} người bạn chung",
     "searchGlobalErr": "Không thể tìm kiếm!",
     "groupNameReqErr": "Vui lòng nhập tên nhóm (2-50 ký tự) và chọn ít nhất 2 thành viên!",
     "unknownUser": "Người dùng không xác định",

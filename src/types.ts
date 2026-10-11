@@ -257,6 +257,29 @@ export type ContactUser = {
   updatedAt?: string | null
   contactCreatedAt?: string | null
   contactUpdatedAt?: string | null
+  mutualCount?: number
+  mutualPreviews?: MutualFriendPreview[]
+}
+
+export type MutualFriendPreview = {
+  id: string
+  userId?: number
+  fullName: string
+  avatarUrl: string | null
+  handle?: string | null
+}
+
+export type MutualFriendDetail = {
+  id: string
+  userId: number
+  fullName: string
+  avatarUrl: string | null
+  handle?: string | null
+  statusMessage?: string | null
+  bio?: string | null
+  presence: 'online' | 'away' | 'busy' | 'offline'
+  createdAt?: string
+  friendSince?: string
 }
 
 export type AuthPageProps = {
@@ -290,6 +313,8 @@ export type StoryViewerItem = {
   avatar_url?: string
   viewed_at: string
   reaction?: string | null
+  mutualCount?: number
+  mutualPreviews?: MutualFriendPreview[]
 }
 
 export type CloseFriendItem = {

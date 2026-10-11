@@ -647,6 +647,18 @@
     "copyNewLinkErr": "Cannot copy new link!"
   },
   "panels": {
+    "mutualFriendsCount": "{{count}} mutual friends",
+    "mutualFriendsCount_one": "{{count}} mutual friend",
+    "mutualFriendsCount_other": "{{count}} mutual friends",
+    "viewMutualFriends": "View mutual friends",
+    "mutualFriendsModalTitle": "Mutual friends with {{name}}",
+    "searchMutualFriendsPlaceholder": "Search mutual friends...",
+    "noMutualFriendsFound": "No mutual friends found",
+    "noMutualFriends": "No mutual friends",
+    "loadingMutualFriends": "Loading mutual friends...",
+    "mutualFriendsTotal": "{{count}} mutual friends",
+    "mutualFriendsTotal_one": "{{count}} mutual friend",
+    "mutualFriendsTotal_other": "{{count}} mutual friends",
     "searchGlobalErr": "Cannot search!",
     "groupNameReqErr": "Please enter a group name (2-50 characters) and select at least 2 members!",
     "unknownUser": "Unknown User",
