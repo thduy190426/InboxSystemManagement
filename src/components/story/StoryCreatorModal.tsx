@@ -41,8 +41,8 @@ export function StoryCreatorModal({ onClose, onSuccess, pushToast, isClosing }: 
       await storyApi.createStory(file, privacy, textContent)
       pushToast(t('postSuccess'), 'info')
       onSuccess()
-    } catch (err) {
-      pushToast(t('postError'), 'error')
+    } catch (err: any) {
+      pushToast(err?.message || t('postError'), 'error')
     } finally {
       setIsUploading(false)
     }
