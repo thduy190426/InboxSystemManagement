@@ -1,23 +1,19 @@
 import { apiFetch, ApiRequestError, requestJson } from './apiClient'
-import type { UserStoryGroup } from '../../types'
+import type { UserStoryGroup, StoryViewerItem, CloseFriendItem } from '../../types'
 
 export const storyApi = {
   createStory: async (file: File, privacy: string, textContent: string = '') => {
-    console.log('[storyApi] createStory called with:', { fileName: file.name, fileSize: file.size, privacy, textContent })
     const formData = new FormData()
     formData.append('media', file)
     formData.append('privacy', privacy)
     formData.append('text_content', textContent)
     
-    console.log('[storyApi] Sending POST request to /stories...')
     try {
       const response = await apiFetch('/stories', {
         method: 'POST',
         body: formData,
       })
-      console.log('[storyApi] Received response status:', response.status)
       const data = await response.json()
-      console.log('[storyApi] Response data:', data)
 
       if (!response.ok) {
         const retryAfterHeader = response.headers.get('Retry-After')
@@ -38,7 +34,7 @@ export const storyApi = {
 
       return data
     } catch (err) {
-      console.error('[storyApi] Error in apiFetch:', err)
+      console.error('[storyApi] Error in createStory:', err)
       throw err
     }
   },
@@ -46,5 +42,48 @@ export const storyApi = {
   getActiveStories: async (): Promise<{ success: boolean; data: UserStoryGroup[] }> => {
     return requestJson<{ success: boolean; data: UserStoryGroup[] }>('/stories')
   },
-}
 
+  recordView: async (storyId: string): Promise<{ success: boolean; storyId: string; views_count: number; isNewView: boolean }> => {
+    return requestJson<{ success: boolean; storyId: string; views_count: number; isNewView: boolean }>(`/stories/${storyId}/view`, {
+      method: 'POST',
+    })
+  },
+
+  reactToStory: async (storyId: string, reaction: string): Promise<{ success: boolean; storyId: string; action: string; reaction: string | null; reactions_count: number }> => {
+    return requestJson<{ success: boolean; storyId: string; action: string; reaction: string | null; reactions_count: number }>(`/stories/${storyId}/react`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reaction }),
+    })
+  },
+
+  replyToStory: async (storyId: string, message: string = '', reaction: string | null = null): Promise<{ success: boolean; message: string; data: { conversationId: number; message: any } }> => {
+    return requestJson<{ success: boolean; message: string; data: { conversationId: number; message: any } }>(`/stories/${storyId}/reply`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, reaction }),
+    })
+  },
+
+  getStoryViewers: async (storyId: string): Promise<{ success: boolean; data: StoryViewerItem[] }> => {
+    return requestJson<{ success: boolean; data: StoryViewerItem[] }>(`/stories/${storyId}/viewers`)
+  },
+
+  deleteStory: async (storyId: string): Promise<{ success: boolean; message: string }> => {
+    return requestJson<{ success: boolean; message: string }>(`/stories/${storyId}`, {
+      method: 'DELETE',
+    })
+  },
+
+  getCloseFriends: async (): Promise<{ success: boolean; data: CloseFriendItem[] }> => {
+    return requestJson<{ success: boolean; data: CloseFriendItem[] }>('/stories/close-friends')
+  },
+
+  toggleCloseFriend: async (friendId: number): Promise<{ success: boolean; friend_id: number; isCloseFriend: boolean }> => {
+    return requestJson<{ success: boolean; friend_id: number; isCloseFriend: boolean }>('/stories/close-friends/toggle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ friend_id: friendId }),
+    })
+  },
+}

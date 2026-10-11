@@ -273,9 +273,32 @@ export type Story = {
   media_url: string
   media_type: 'image' | 'video'
   text_content: string | null
-  privacy: string
+  privacy: 'public' | 'friends' | 'close_friends' | 'only_me' | string
+  views_count?: number
+  reactions_count?: number
+  has_viewed?: boolean
+  my_reaction?: string | null
+  is_close_friend?: boolean
   expires_at: string
   created_at: string
+}
+
+export type StoryViewerItem = {
+  id: number
+  full_name: string
+  display_name?: string
+  avatar_url?: string
+  viewed_at: string
+  reaction?: string | null
+}
+
+export type CloseFriendItem = {
+  id: number
+  full_name: string
+  display_name?: string
+  avatar_url?: string
+  email?: string
+  created_at?: string
 }
 
 export type UserStoryGroup = {
@@ -284,6 +307,7 @@ export type UserStoryGroup = {
   full_name: string
   display_name: string
   avatar_url: string
+  is_close_friend?: boolean
   items: Story[]
 }
 
