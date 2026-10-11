@@ -29,7 +29,7 @@
 - Consumes: MySQL Connection Pool từ `backend/src/config/db.js`.
 - Produces: Bảng `story_views`, `story_reactions`, `story_close_friends`, và mở rộng bảng `stories` với `views_count`, `reactions_count`, enum `privacy`.
 
-- [ ] **Step 1: Viết script migration MySQL cho Story Phase 1**
+- [x] **Step 1: Viết script migration MySQL cho Story Phase 1**
 
 Tạo file `backend/migrations/20261011_story_phase1_schema.js`:
 ```javascript
@@ -129,7 +129,7 @@ async function runMigration() {
 runMigration();
 ```
 
-- [ ] **Step 2: Viết test kiểm tra schema migration**
+- [x] **Step 2: Viết test kiểm tra schema migration**
 
 Tạo file `backend/migrations/test_story_phase1_schema.js`:
 ```javascript
@@ -162,14 +162,14 @@ verifySchema().catch(err => {
 });
 ```
 
-- [ ] **Step 3: Chạy migration và xác nhận test pass**
+- [x] **Step 3: Chạy migration và xác nhận test pass**
 
 Chạy: `node backend/migrations/20261011_story_phase1_schema.js`
 Expected: `[Migration] Story Phase 1 migration completed successfully!`
 Chạy: `node backend/migrations/test_story_phase1_schema.js`
 Expected: `PASS: All Story Phase 1 tables and columns verified successfully.`
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 ```bash
 git add backend/migrations/20261011_story_phase1_schema.js backend/migrations/test_story_phase1_schema.js
 git commit -m "feat(backend): add story views reactions and close friends database migration"
@@ -187,7 +187,7 @@ git commit -m "feat(backend): add story views reactions and close friends databa
 - Consumes: `pool` từ `db.js`, `getIO` từ `socket.js`, `uploadBufferToCloudinary`.
 - Produces: Endpoints `GET /stories`, `POST /stories`, `POST /stories/:id/view`, `POST /stories/:id/react`, `GET /stories/:id/viewers`, `DELETE /stories/:id`, `GET /stories/close-friends`, `POST /stories/close-friends/toggle`.
 
-- [ ] **Step 1: Mở rộng `story.controller.js`**
+- [x] **Step 1: Mở rộng `story.controller.js`**
 
 Cập nhật `backend/src/controllers/core/story.controller.js`:
 - `getActiveStories`:
@@ -215,7 +215,7 @@ Cập nhật `backend/src/controllers/core/story.controller.js`:
   - Body: `{ friend_id: number }`.
   - Nếu đã tồn tại -> Xóa; Nếu chưa -> Thêm mới.
 
-- [ ] **Step 2: Cập nhật `story.routes.js`**
+- [x] **Step 2: Cập nhật `story.routes.js`**
 
 Khai báo các route tương ứng trong `backend/src/routes/core/story.routes.js`:
 ```javascript
@@ -230,11 +230,11 @@ router.get('/close-friends', storyController.getCloseFriends);
 router.post('/close-friends/toggle', storyController.toggleCloseFriend);
 ```
 
-- [ ] **Step 3: Viết test kiểm tra syntax và endpoints backend**
+- [x] **Step 3: Viết test kiểm tra syntax và endpoints backend**
 Chạy: `node -c backend/src/controllers/core/story.controller.js && node -c backend/src/routes/core/story.routes.js`
 Expected: Cú pháp hợp lệ không có lỗi syntax.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 ```bash
 git add backend/src/controllers/core/story.controller.js backend/src/routes/core/story.routes.js
 git commit -m "feat(backend): implement views reactions viewers list and close friends endpoints"
@@ -252,7 +252,7 @@ git commit -m "feat(backend): implement views reactions viewers list and close f
 - Consumes: `pool`, `getIO` từ `socket.js`.
 - Produces: `replyToStory`: Tự động tìm/tạo cuộc trò chuyện 1-1 giữa viewer và author, tạo tin nhắn dạng `story_reply` chứa metadata (story thumbnail, text reply, hoặc emoji reaction), phát socket `message:new`.
 
-- [ ] **Step 1: Triển khai logic `replyToStory` trong `story.controller.js`**
+- [x] **Step 1: Triển khai logic `replyToStory` trong `story.controller.js`**
 
 ```javascript
 exports.replyToStory = async (req, res, next) => {
@@ -352,11 +352,11 @@ exports.replyToStory = async (req, res, next) => {
 };
 ```
 
-- [ ] **Step 2: Chạy kiểm tra cú pháp**
+- [x] **Step 2: Chạy kiểm tra cú pháp**
 Chạy: `node -c backend/src/controllers/core/story.controller.js`
 Expected: Cú pháp hợp lệ.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 ```bash
 git add backend/src/controllers/core/story.controller.js
 git commit -m "feat(backend): implement story reply direct chat bridge"
@@ -374,7 +374,7 @@ git commit -m "feat(backend): implement story reply direct chat bridge"
 - Consumes: `apiFetch`, `requestJson` từ `src/services/api/apiClient.ts`.
 - Produces: Các method `storyApi.recordView`, `storyApi.reactToStory`, `storyApi.replyToStory`, `storyApi.getStoryViewers`, `storyApi.deleteStory`, `storyApi.getCloseFriends`, `storyApi.toggleCloseFriend`.
 
-- [ ] **Step 1: Cập nhật Type definitions trong `src/types/index.ts`**
+- [x] **Step 1: Cập nhật Type definitions trong `src/types/index.ts`**
 
 Mở rộng `StoryItem` và `UserStoryGroup`:
 ```typescript
@@ -403,7 +403,7 @@ export type StoryViewerItem = {
 }
 ```
 
-- [ ] **Step 2: Bổ sung các phương thức vào `src/services/api/storyApi.ts`**
+- [x] **Step 2: Bổ sung các phương thức vào `src/services/api/storyApi.ts`**
 
 Thêm các hàm gọi API:
 - `recordView(storyId: string)`
@@ -414,11 +414,11 @@ Thêm các hàm gọi API:
 - `getCloseFriends()`
 - `toggleCloseFriend(friendId: number)`
 
-- [ ] **Step 3: Kiểm tra TypeScript compiler**
+- [x] **Step 3: Kiểm tra TypeScript compiler**
 Chạy: `npm run build` hoặc `npx tsc --noEmit`
 Expected: Không có lỗi type.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 ```bash
 git add src/types/index.ts src/services/api/storyApi.ts
 git commit -m "feat(frontend): extend story types and API client methods"
@@ -436,17 +436,17 @@ git commit -m "feat(frontend): extend story types and API client methods"
 - Consumes: File từ khóa ngôn ngữ i18next `story`.
 - Produces: Các khóa i18n mới: `closeFriends`, `manageCloseFriends`, `viewers`, `viewsCount`, `noViewersYet`, `replyStory`, `reactStory`, `deleteStoryConfirm`, `deleteStorySuccess`, `swipeUpToViewDetails`.
 
-- [ ] **Step 1: Bổ sung từ khóa vào `src/locales/vi.json`**
+- [x] **Step 1: Bổ sung từ khóa vào `src/locales/vi.json`**
 Thêm các key về bạn thân, người xem, cảm xúc, cử chỉ vào namespace `story`.
 
-- [ ] **Step 2: Bổ sung từ khóa tương ứng vào `src/locales/en.json`**
+- [x] **Step 2: Bổ sung từ khóa tương ứng vào `src/locales/en.json`**
 Thêm các key bản dịch tiếng Anh chuẩn.
 
-- [ ] **Step 3: Chạy build kiểm tra JSON parsing**
+- [x] **Step 3: Chạy build kiểm tra JSON parsing**
 Chạy: `npm run build`
 Expected: Build thành công, file JSON hợp lệ.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 ```bash
 git add src/locales/vi.json src/locales/en.json
 git commit -m "feat(i18n): add comprehensive translations for story phase 1"
@@ -467,7 +467,7 @@ git commit -m "feat(i18n): add comprehensive translations for story phase 1"
 - Consumes: `storyApi.getCloseFriends`, `storyApi.toggleCloseFriend`, danh sách bạn bè từ `contactApi`.
 - Produces: Modal quản lý bạn thân, viền xanh lá (Green ring) cho Story Bạn Thân trên `StoryFeed`, badge ngôi sao xanh nhận diện.
 
-- [ ] **Step 1: Tạo `src/styles/story.css` định nghĩa hiệu ứng Green Ring & Styling Story mới**
+- [x] **Step 1: Tạo `src/styles/story.css` định nghĩa hiệu ứng Green Ring & Styling Story mới**
 Bao gồm:
 - `.story-circle.is-close-friend .story-avatar-wrap` với viền gradient emerald/lime (`#10b981`, `#84cc16`).
 - `.story-circle.is-viewed` với viền xám mờ tinh tế.
@@ -475,21 +475,21 @@ Bao gồm:
 - Hoạt ảnh nảy pop-in cho reaction.
 - Bottom sheet slide-up animation cho viewer drawer.
 
-- [ ] **Step 2: Xây dựng `CloseFriendsModal.tsx`**
+- [x] **Step 2: Xây dựng `CloseFriendsModal.tsx`**
 Cung cấp danh sách bạn bè với ô tìm kiếm nhanh, nút toggle thêm/bớt bạn thân, lưu trực tiếp qua `storyApi.toggleCloseFriend`.
 
-- [ ] **Step 3: Nâng cấp `StoryCreatorModal.tsx`**
+- [x] **Step 3: Nâng cấp `StoryCreatorModal.tsx`**
 Thêm tùy chọn quyền riêng tư: "Bạn thân (Close Friends)" có biểu tượng ngôi sao xanh lá.
 
-- [ ] **Step 4: Nâng cấp `StoryFeed.tsx`**
+- [x] **Step 4: Nâng cấp `StoryFeed.tsx`**
 - Thêm nút quản lý Bạn Thân (icon Star hoặc UserCheck cạnh Tạo story).
 - Áp dụng class `is-close-friend` và `is-viewed` dựa trên metadata của từng group.
 
-- [ ] **Step 5: Kiểm tra TypeScript build**
+- [x] **Step 5: Kiểm tra TypeScript build**
 Chạy: `npm run build`
 Expected: Build pass không lỗi.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 ```bash
 git add src/styles/story.css src/style.css src/components/story/CloseFriendsModal.tsx src/components/story/StoryFeed.tsx src/components/story/StoryCreatorModal.tsx
 git commit -m "feat(frontend): add close friends modal and green ring story feed indicator"
@@ -506,22 +506,22 @@ git commit -m "feat(frontend): add close friends modal and green ring story feed
 - Consumes: `UserStoryGroup`, `storyApi.recordView`, `storyApi.deleteStory`.
 - Produces: Trải nghiệm xem Story mượt mà: Chạm trái (quay lại), chạm phải (tiếp tục), giữ tay/chuột (Pause timer & video), phím mũi tên / Spacebar, preloading ngầm ảnh/video tiếp theo.
 
-- [ ] **Step 1: Triển khai bộ điều khiển cử chỉ (Pointer / Touch Gestures)**
+- [x] **Step 1: Triển khai bộ điều khiển cử chỉ (Pointer / Touch Gestures)**
 - Thêm `handlePointerDown`: Dừng animationFrame timer, pause video thẻ `HTMLVideoElement`.
 - Thêm `handlePointerUp`: Tiếp tục chạy timer và video.
 - Thêm phím điều hướng `keydown` (`ArrowLeft`, `ArrowRight`, `Space`, `Escape`).
 
-- [ ] **Step 2: Triển khai Preloading Media ngầm**
+- [x] **Step 2: Triển khai Preloading Media ngầm**
 - Tạo helper tải trước ảnh `new Image().src = nextItem.media_url` hoặc tạo video pre-fetch link để khi người dùng bấm chuyển sang story tiếp theo, hình ảnh/video xuất hiện ngay lập tức không chớp giật.
 
-- [ ] **Step 3: Ghi nhận lượt xem qua API `recordView`**
+- [x] **Step 3: Ghi nhận lượt xem qua API `recordView`**
 - Khi story được hiển thị > 800ms, tự động gọi `storyApi.recordView(currentItem.id)` để ghi nhận lượt xem vào database và kích hoạt realtime socket.
 
-- [ ] **Step 4: Kiểm tra build TypeScript**
+- [x] **Step 4: Kiểm tra build TypeScript**
 Chạy: `npm run build`
 Expected: Build pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add src/components/story/StoryViewerOverlay.tsx
 git commit -m "feat(frontend): implement gestures keyboard controls and media preloading in story viewer"
@@ -539,22 +539,22 @@ git commit -m "feat(frontend): implement gestures keyboard controls and media pr
 - Consumes: 6 emoji chuẩn Messenger: `['❤️', '😂', '😮', '😢', '😡', '👍']`.
 - Produces: Floating Reaction Bar với hiệu ứng nảy (pop animation); logic đổi reaction mượt mà hoặc bấm lại để gỡ bỏ.
 
-- [ ] **Step 1: Tạo `StoryReactionSelector.tsx`**
+- [x] **Step 1: Tạo `StoryReactionSelector.tsx`**
 Component thanh cảm xúc nổi:
 - Hiển thị popover với 6 emoji lớn khi hover hoặc click.
 - Đánh dấu emoji hiện tại của người dùng.
 - Hoạt ảnh CSS pop-up phóng to 1.25x khi hover từng emoji.
 
-- [ ] **Step 2: Tích hợp vào `StoryViewerOverlay.tsx`**
+- [x] **Step 2: Tích hợp vào `StoryViewerOverlay.tsx`**
 - Gọi `storyApi.reactToStory(currentItem.id, emoji)`.
 - Cập nhật state nội bộ ngay lập tức (optimistic UI update): Nếu chọn emoji khác -> đổi emoji; nếu bấm lại emoji hiện tại -> hủy reaction.
 - Đồng thời gửi thông báo qua `storyApi.replyToStory` nếu muốn đẩy tin nhắn reaction vào chat 1-1.
 
-- [ ] **Step 3: Kiểm tra build**
+- [x] **Step 3: Kiểm tra build**
 Chạy: `npm run build`
 Expected: PASS.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 ```bash
 git add src/components/story/StoryReactionSelector.tsx src/components/story/StoryViewerOverlay.tsx
 git commit -m "feat(frontend): implement floating reaction selector with single-reaction constraint"
@@ -572,25 +572,25 @@ git commit -m "feat(frontend): implement floating reaction selector with single-
 - Consumes: `storyApi.getStoryViewers(storyId)`, `storyApi.deleteStory(storyId)`.
 - Produces: Bottom Sheet trượt từ cạnh dưới cho tác giả Story: Hiển thị tổng lượt xem, tabs lọc theo từng reaction, danh sách người xem kèm thời gian và icon cảm xúc, nút xóa Story.
 
-- [ ] **Step 1: Tạo `StoryViewerDrawer.tsx`**
+- [x] **Step 1: Tạo `StoryViewerDrawer.tsx`**
 Bottom Sheet component:
 - Header: Hiển thị icon mắt + số lượng người xem + nút đóng.
 - Tabs lọc: `Tất cả (${viewers.length})`, các tab cảm xúc có người thả (ví dụ `❤️ ${count}`, `😂 ${count}`).
 - Danh sách: Avatar, tên hiển thị, thời gian đã xem, badge emoji reaction.
 - Footer: Nút Xóa Story có dialog xác nhận ("Bạn có chắc chắn muốn xóa story này?").
 
-- [ ] **Step 2: Tích hợp Drawer vào `StoryViewerOverlay.tsx`**
+- [x] **Step 2: Tích hợp Drawer vào `StoryViewerOverlay.tsx`**
 - Nếu người xem là chủ sở hữu (`user.id === currentGroup.user_id`):
   - Hiển thị nút biểu tượng con mắt + số lượt xem ở góc dưới bên trái.
   - Khi click nút hoặc vuốt từ dưới lên: Mở `StoryViewerDrawer`, đồng thời tự động tạm dừng bộ đếm thời gian của Story.
   - Khi đóng Drawer: Tiếp tục phát Story.
   - Khi xóa Story thành công: Đóng Drawer, gọi `onStoryDeleted(storyId)` để xóa khỏi danh sách items hoặc đóng Viewer nếu đã hết story.
 
-- [ ] **Step 3: Kiểm tra build**
+- [x] **Step 3: Kiểm tra build**
 Chạy: `npm run build`
 Expected: PASS.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 ```bash
 git add src/components/story/StoryViewerDrawer.tsx src/components/story/StoryViewerOverlay.tsx
 git commit -m "feat(frontend): add viewer analytics bottom sheet with reaction filters and story deletion"
@@ -609,26 +609,26 @@ git commit -m "feat(frontend): add viewer analytics bottom sheet with reaction f
 - Consumes: Message type `story_reply` với metadata trích dẫn story.
 - Produces: Khung hiển thị thẻ trích dẫn Story trong tin nhắn hội thoại 1-1; chức năng gửi bình luận trực tiếp từ Viewer đẩy vào cuộc trò chuyện 1-1.
 
-- [ ] **Step 1: Xây dựng `StoryReplyCard.tsx`**
+- [x] **Step 1: Xây dựng `StoryReplyCard.tsx`**
 Hiển thị thẻ trích dẫn tin nhắn Story trong chat:
 - Thumbnail thu nhỏ của Story (ảnh hoặc icon video).
 - Tiêu đề: "Đã phản hồi story của bạn" hoặc "Đã thả cảm xúc ❤️ vào story".
 - Nội dung văn bản người xem đã gửi.
 - Bấm vào thumbnail mở modal xem lại ảnh/video Story.
 
-- [ ] **Step 2: Cập nhật `InboxPanel.tsx` kết nối `onReply`**
+- [x] **Step 2: Cập nhật `InboxPanel.tsx` kết nối `onReply`**
 Trong `InboxPanel.tsx`, khi `StoryViewerOverlay` kích hoạt `onReply`:
 - Gọi `storyApi.replyToStory(storyId, text)` thay vì chỉ `console.log`.
 - Hiển thị toast thông báo "Đã gửi phản hồi".
 
-- [ ] **Step 3: Kiểm tra hiển thị trong luồng chat**
+- [x] **Step 3: Kiểm tra hiển thị trong luồng chat**
 Đảm bảo tin nhắn `story_reply` render đúng `StoryReplyCard` và không phá vỡ giao diện chat hiện có.
 
-- [ ] **Step 4: Kiểm tra build**
+- [x] **Step 4: Kiểm tra build**
 Chạy: `npm run build`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add src/components/chat/StoryReplyCard.tsx src/components/panels/InboxPanel.tsx src/components/story/StoryViewerOverlay.tsx
 git commit -m "feat(frontend): integrate story reply card into chat and connect story reply api"
@@ -645,7 +645,7 @@ git commit -m "feat(frontend): integrate story reply card into chat and connect 
 - Consumes: Toàn bộ REST endpoints của Story và frontend build scripts.
 - Produces: Báo cáo kiểm thử xác thực end-to-end hoạt động ổn định của Story Phase 1.
 
-- [ ] **Step 1: Viết kịch bản kiểm thử API Backend E2E**
+- [x] **Step 1: Viết kịch bản kiểm thử API Backend E2E**
 Tạo file `backend/migrations/verify_story_core_e2e.js` kiểm tra:
 1. Tạo story với quyền `friends` và `close_friends`.
 2. Ghi nhận lượt xem chống trùng lặp.
@@ -653,15 +653,15 @@ Tạo file `backend/migrations/verify_story_core_e2e.js` kiểm tra:
 4. Lấy danh sách viewers với tư cách chủ story -> Trả về đúng danh sách; Với tư cách người khác -> 403 Forbidden.
 5. Thêm/xóa bạn thân trong `story_close_friends`.
 
-- [ ] **Step 2: Chạy kiểm thử Backend E2E**
+- [x] **Step 2: Chạy kiểm thử Backend E2E**
 Chạy: `node backend/migrations/verify_story_core_e2e.js`
 Expected: Toàn bộ assertions pass (exit code 0).
 
-- [ ] **Step 3: Chạy toàn bộ build kiểm thử Frontend**
+- [x] **Step 3: Chạy toàn bộ build kiểm thử Frontend**
 Chạy: `npm run build`
 Expected: Vite build thành công không có bất kỳ warning/error nào.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 ```bash
 git add backend/migrations/verify_story_core_e2e.js
 git commit -m "test(story): add comprehensive e2e verification script for story core platform"
