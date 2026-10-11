@@ -43,28 +43,38 @@ const {
   updateConversationBackground,
 } = require('../../controllers/core/conversation.controller')
 const { avatarUpload, messageUpload, backgroundUpload } = require('../../config/upload')
-const { sendMessageRateLimit } = require('../../middleware/rateLimit.middleware')
+const {
+  attachmentUploadRateLimit,
+  createConversationRateLimit,
+  createGroupRateLimit,
+  groupInviteRateLimit,
+  reactionRateLimit,
+  reportMessageRateLimit,
+  searchRateLimit,
+  sendMessageRateLimit,
+  typingRateLimit,
+} = require('../../middleware/rateLimit.middleware')
 
 const router = express.Router()
 
 router.get('/', listConversations)
-router.post('/direct', createDirectConversation)
-router.post('/groups', avatarUpload.single('avatar'), createGroupConversation)
+router.post('/direct', createConversationRateLimit, createDirectConversation)
+router.post('/groups', createGroupRateLimit, avatarUpload.single('avatar'), createGroupConversation)
 router.get('/:conversationId/calls', listConversationCalls)
 router.get('/:conversationId/invite', getGroupInvite)
 router.get('/:conversationId/join-requests', listGroupJoinRequests)
 router.get('/:conversationId/members', getConversationMembers)
-router.get('/:conversationId/messages/search', searchConversationMessages)
+router.get('/:conversationId/messages/search', searchRateLimit, searchConversationMessages)
 router.get('/:conversationId/messages', getMessages)
 router.get('/:conversationId/typing', getTypingStatus)
 router.post('/:conversationId/members', addGroupMember)
-router.post('/join/:token', requestGroupJoin)
-router.post('/:conversationId/invite/reset', resetGroupInvite)
+router.post('/join/:token', groupInviteRateLimit, requestGroupJoin)
+router.post('/:conversationId/invite/reset', groupInviteRateLimit, resetGroupInvite)
 router.post('/:conversationId/join-requests/:requestId/review', reviewGroupJoinRequest)
 router.post('/:conversationId/messages', sendMessageRateLimit, createMessage)
 router.post(
   '/:conversationId/messages/attachments',
-  sendMessageRateLimit,
+  attachmentUploadRateLimit,
   messageUpload.single('attachment'),
   createAttachmentMessage,
 )
@@ -73,9 +83,9 @@ router.post('/:conversationId/read', markConversationRead)
 router.post('/:conversationId/delivered', markConversationDelivered)
 router.post('/:conversationId/messages/:messageId/forward', sendMessageRateLimit, forwardMessage)
 router.post('/:conversationId/messages/:messageId/pin', toggleMessagePin)
-router.post('/:conversationId/messages/:messageId/report', reportMessage)
-router.post('/:conversationId/messages/:messageId/reactions', toggleMessageReaction)
-router.post('/:conversationId/typing', updateTypingStatus)
+router.post('/:conversationId/messages/:messageId/report', reportMessageRateLimit, reportMessage)
+router.post('/:conversationId/messages/:messageId/reactions', reactionRateLimit, toggleMessageReaction)
+router.post('/:conversationId/typing', typingRateLimit, updateTypingStatus)
 router.post('/:conversationId/archive', archiveConversation)
 router.post('/:conversationId/unarchive', unarchiveConversation)
 router.post('/:conversationId/leave', leaveGroupConversation)

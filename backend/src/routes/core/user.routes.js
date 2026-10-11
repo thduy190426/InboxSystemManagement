@@ -1,6 +1,10 @@
 const express = require('express')
 const { avatarUpload } = require('../../config/upload')
-const { uploadAvatarRateLimit } = require('../../middleware/rateLimit.middleware')
+const {
+  changePasswordRateLimit,
+  updateProfileRateLimit,
+  uploadAvatarRateLimit,
+} = require('../../middleware/rateLimit.middleware')
 const {
   changePassword,
   deleteAccount,
@@ -16,8 +20,8 @@ const {
 const router = express.Router()
 
 router.get('/me', getProfile)
-router.patch('/me', updateProfile)
-router.patch('/me/password', changePassword)
+router.patch('/me', updateProfileRateLimit, updateProfile)
+router.patch('/me/password', changePasswordRateLimit, changePassword)
 router.patch('/me/privacy', updatePrivacy)
 router.patch('/me/avatar', uploadAvatarRateLimit, avatarUpload.single('avatar'), updateAvatar)
 router.get('/me/sessions', listSessions)

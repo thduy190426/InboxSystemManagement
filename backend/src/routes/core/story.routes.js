@@ -10,8 +10,9 @@ const upload = multer({
 });
 
 const storyController = require('../../controllers/core/story.controller');
+const { createStoryRateLimit } = require('../../middleware/rateLimit.middleware');
 
-router.post('/', upload.single('media'), storyController.createStory);
+router.post('/', createStoryRateLimit, upload.single('media'), storyController.createStory);
 router.get('/', storyController.getActiveStories);
 
 module.exports = router;
