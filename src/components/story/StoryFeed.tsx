@@ -74,7 +74,7 @@ export function StoryFeed({ onCreateClick, onStoryClick, pushToast }: StoryFeedP
   return (
     <div className="story-feed" data-tour="story-feed">
       <div className="story-feed-scroll">
-        {/* Your Story button */}
+        {}
         <button 
           className={`story-circle create-story ${myStoryGroup ? 'has-story' : ''}`}
           data-tour="create-story-btn"
@@ -102,7 +102,7 @@ export function StoryFeed({ onCreateClick, onStoryClick, pushToast }: StoryFeedP
           </span>
         </button>
 
-        {/* Other Story Groups */}
+        {}
         {otherStoryGroups.map((group) => {
           const isCloseFriend = group.is_close_friend || group.items.some(it => it.is_close_friend || it.privacy === 'close_friends')
           const isAllViewed = group.items.length > 0 && group.items.every(it => it.has_viewed)
@@ -134,7 +134,7 @@ export function StoryFeed({ onCreateClick, onStoryClick, pushToast }: StoryFeedP
           )
         })}
 
-        {/* Manage Close Friends quick button */}
+        {}
         <button
           className="story-circle manage-close-friends-btn"
           onClick={() => setShowCloseFriendsModal(true)}

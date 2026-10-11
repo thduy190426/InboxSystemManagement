@@ -9,6 +9,7 @@ type TutorialState = {
   interactedFeatures: Record<FeatureKey, boolean>
   isRunningTour: boolean
   currentTourKey: TourKey | null
+  pendingTourKey: TourKey | null
 
   initForUser: (userId: string | number) => void
   completeTour: (key: TourKey) => void
@@ -18,6 +19,7 @@ type TutorialState = {
   isTourCompleted: (key: TourKey) => boolean
   isFeatureInteracted: (key: FeatureKey) => boolean
   setRunningTour: (isRunning: boolean, key?: TourKey | null) => void
+  setPendingTour: (key: TourKey | null) => void
 }
 
 const STORAGE_PREFIX = 'inbox_tutorial_state_'
@@ -102,6 +104,8 @@ export const useTutorialStore = create<TutorialState>((set, get) => ({
   },
   isRunningTour: false,
   currentTourKey: null,
+  pendingTourKey: null,
+  setPendingTour: (key: TourKey | null) => set({ pendingTourKey: key }),
 
   initForUser: (userId) => {
     if (get().userId === userId) return

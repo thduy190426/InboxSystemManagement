@@ -20,7 +20,7 @@ export function InteractivePollWidget({
   const [stats, setStats] = useState<PollStats | null>(null)
   const [isVoting, setIsVoting] = useState(false)
 
-  // Fetch initial poll stats in viewer
+  
   useEffect(() => {
     if (!storyId || isStudioPreview) return
     storyApi.getPollStats(storyId)
@@ -60,7 +60,7 @@ export function InteractivePollWidget({
       </div>
 
       <div className="story-interactive-poll-options">
-        {/* Option A */}
+        {}
         <button
           type="button"
           className={`story-poll-option-btn ${stats?.myVote === 0 ? 'is-my-choice' : ''}`}
@@ -82,7 +82,7 @@ export function InteractivePollWidget({
           )}
         </button>
 
-        {/* Option B */}
+        {}
         <button
           type="button"
           className={`story-poll-option-btn ${stats?.myVote === 1 ? 'is-my-choice' : ''}`}
@@ -152,7 +152,7 @@ export function InteractiveSliderWidget({
     setIsDragging(false)
     if (isStudioPreview || !storyId) return
 
-    // Trigger emoji particle burst
+    
     setShowBurst(true)
     setTimeout(() => setShowBurst(false), 1500)
 
@@ -175,7 +175,7 @@ export function InteractiveSliderWidget({
       </div>
 
       <div className="story-interactive-slider-track-wrap">
-        {/* Floating Emoji Particles Burst */}
+        {}
         {showBurst && (
           <div className="story-slider-burst-container">
             <span className="story-slider-particle p1">{emoji}</span>
@@ -200,7 +200,7 @@ export function InteractiveSliderWidget({
           }}
         />
 
-        {/* Floating emoji on slider thumb */}
+        {}
         <div
           className={`story-slider-thumb-emoji ${isDragging ? 'is-dragging' : ''}`}
           style={{
@@ -210,7 +210,7 @@ export function InteractiveSliderWidget({
           {emoji}
         </div>
 
-        {/* Community Average Indicator (if voted) */}
+        {}
         {stats && stats.average !== undefined && (
           <div
             className="story-slider-average-marker"

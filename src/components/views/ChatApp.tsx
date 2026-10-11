@@ -159,6 +159,7 @@ export function ChatApp(props: ChatAppProps) {
             onLogout={ctrl.handleLogout}
             onUserChange={props.onUserChange}
             pushToast={ctrl.pushToast}
+            onChangeView={ctrl.handleChangeView}
           />
         </Suspense>
         {renderCallOverlay()}

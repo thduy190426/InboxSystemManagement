@@ -73,7 +73,7 @@ export function StoryCameraViewfinder({
     setFacingMode(prev => (prev === 'user' ? 'environment' : 'user'))
   }
 
-  // Chụp ảnh snapshot
+  
   const handleTakePhoto = () => {
     if (!videoRef.current) return
     const video = videoRef.current
@@ -83,7 +83,7 @@ export function StoryCameraViewfinder({
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Lật ngược ảnh nếu dùng camera trước
+    
     if (facingMode === 'user') {
       ctx.translate(canvas.width, 0)
       ctx.scale(-1, 1)
@@ -99,7 +99,7 @@ export function StoryCameraViewfinder({
     }, 'image/jpeg', 0.92)
   }
 
-  // Bắt đầu quay video
+  
   const startRecording = () => {
     if (!streamRef.current) return
     recordedChunksRef.current = []
@@ -167,7 +167,7 @@ export function StoryCameraViewfinder({
 
   return (
     <div className="story-camera-viewfinder-overlay">
-      {/* Top Header Buttons */}
+      {}
       <header className="story-camera-header">
         <button 
           className="story-camera-circle-btn" 
@@ -197,7 +197,7 @@ export function StoryCameraViewfinder({
         )}
       </header>
 
-      {/* Main Viewfinder / Fallback */}
+      {}
       <div className="story-camera-viewport">
         {hasPermission === false ? (
           <div className="story-camera-fallback">
@@ -225,7 +225,7 @@ export function StoryCameraViewfinder({
         )}
       </div>
 
-      {/* Hidden File Input */}
+      {}
       <input 
         type="file" 
         ref={fileInputRef} 
@@ -234,9 +234,9 @@ export function StoryCameraViewfinder({
         hidden 
       />
 
-      {/* Bottom Controls */}
+      {}
       <footer className="story-camera-footer">
-        {/* Upload file from device button */}
+        {}
         <button 
           className="story-camera-side-btn" 
           onClick={() => fileInputRef.current?.click()}
@@ -247,7 +247,7 @@ export function StoryCameraViewfinder({
           <Upload size={22} />
         </button>
 
-        {/* Primary Action Button (Photo snapshot or Video record) */}
+        {}
         {hasPermission !== false && (
           <div className="story-camera-shutter-wrap">
             {isRecording ? (
@@ -272,7 +272,6 @@ export function StoryCameraViewfinder({
           </div>
         )}
 
-        {/* Start Record Video toggle button */}
         {hasPermission !== false && (
           <button 
             className={`story-camera-side-btn ${isRecording ? 'is-active-rec' : ''}`}

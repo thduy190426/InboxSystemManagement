@@ -95,9 +95,6 @@ export const storyApi = {
     })
   },
 
-  // ==========================================
-  // INTERACTIVE STICKERS (PHASE 3)
-  // ==========================================
   votePoll: async (storyId: string, optionIdx: 0 | 1): Promise<{ success: boolean; pollStats: PollStats }> => {
     return requestJson<{ success: boolean; pollStats: PollStats }>(`/stories/${storyId}/poll-vote`, {
       method: 'POST',
@@ -122,9 +119,6 @@ export const storyApi = {
     return requestJson<{ success: boolean; sliderStats: SliderStats }>(`/stories/${storyId}/slider-stats`)
   },
 
-  // ==========================================
-  // STORY ARCHIVE & HIGHLIGHTS (PHASE 3)
-  // ==========================================
   getStoryArchive: async (): Promise<{ success: boolean; data: Story[] }> => {
     return requestJson<{ success: boolean; data: Story[] }>('/stories/archive')
   },

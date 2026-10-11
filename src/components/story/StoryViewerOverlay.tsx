@@ -75,7 +75,7 @@ export function StoryViewerOverlay({
 
   const currentReaction = currentItem ? (reactions[currentItem.id] ?? currentItem.my_reaction ?? null) : null
 
-  // Phân tích metadata lớp phủ (nếu có)
+  
   const storyMetadata = parseStoryMetadata(currentItem?.text_content)
   const currentFilterClass = storyMetadata?.filter
     ? STORY_FILTERS.find(f => f.id === storyMetadata.filter)?.className || 'story-filter-normal'
@@ -92,7 +92,7 @@ export function StoryViewerOverlay({
     }
   }, [])
 
-  // Quản lý phát nhạc nền
+  
   useEffect(() => {
     const musicUrl = storyMetadata?.music?.url
 
@@ -123,7 +123,7 @@ export function StoryViewerOverlay({
     }
   }, [currentItem?.id, storyMetadata?.music?.url, isMuted, isDrawerOpen])
 
-  // Đồng bộ tạm dừng/phát nhạc theo trạng thái pause của Story
+  
   useEffect(() => {
     if (!audioMusicRef.current || !storyMetadata?.music?.url) return
     if (isPaused || isDrawerOpen) {
@@ -133,7 +133,7 @@ export function StoryViewerOverlay({
     }
   }, [isPaused, isDrawerOpen, storyMetadata?.music?.url])
 
-  // Preloading next media
+  
   useEffect(() => {
     if (!currentGroup) return
 
@@ -150,7 +150,7 @@ export function StoryViewerOverlay({
     }
   }, [currentGroupIndex, currentItemIndex, currentGroup, allGroups])
 
-  // Record view after 800ms
+  
   useEffect(() => {
     if (!currentItem || isAuthor || viewRecordedRef.current[currentItem.id]) return
 
@@ -194,7 +194,7 @@ export function StoryViewerOverlay({
     }
   }, [currentItemIndex, currentGroupIndex, allGroups])
 
-  // Progress animation ticker
+  
   useEffect(() => {
     if (!currentItem || isPaused || isDrawerOpen) {
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
@@ -233,7 +233,7 @@ export function StoryViewerOverlay({
     }
   }, [currentGroupIndex, currentItemIndex, currentItem, isPaused, isDrawerOpen, handleNext])
 
-  // Keyboard navigation
+  
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isDrawerOpen) return
@@ -280,7 +280,7 @@ export function StoryViewerOverlay({
     const isRemoving = currentReaction === emoji
     const nextEmoji = isRemoving ? null : emoji
 
-    // Optimistic UI update
+    
     setReactions(prev => ({ ...prev, [currentItem.id]: nextEmoji }))
     setShowReactions(false)
 
@@ -290,7 +290,7 @@ export function StoryViewerOverlay({
         pushToast(isRemoving ? 'Đã gỡ cảm xúc' : t('reactSent', { emoji }), 'info')
       }
 
-      // Gửi vào tin nhắn trò chuyện 1-1 nếu tác giả là người khác và thả emoji mới
+      
       if (!isRemoving && !isAuthor) {
         storyApi.replyToStory(currentItem.id, '', emoji).catch(err => {
           console.warn('Failed to bridge reaction to chat:', err)
@@ -298,7 +298,7 @@ export function StoryViewerOverlay({
       }
     } catch (err) {
       console.error('Failed to react:', err)
-      // Rollback
+      
       setReactions(prev => ({ ...prev, [currentItem.id]: currentReaction }))
     }
   }
@@ -329,7 +329,7 @@ export function StoryViewerOverlay({
       if (onStoryDeleted) onStoryDeleted(currentItem.id)
 
       setIsDrawerOpen(false)
-      // Chuyển sang story tiếp theo hoặc đóng viewer
+      
       if (currentGroup.items.length > 1) {
         handleNext()
       } else {
@@ -351,7 +351,7 @@ export function StoryViewerOverlay({
     <div className={`story-viewer-overlay ${isClosing ? 'is-closing' : ''}`}>
       <div className="story-viewer-backdrop" onClick={onClose} />
       
-      {/* Prev Navigation Button */}
+      {}
       <button 
         className="story-nav-btn prev" 
         onClick={handlePrev}
@@ -362,7 +362,7 @@ export function StoryViewerOverlay({
       </button>
 
       <div className="story-viewer-content">
-        {/* Progress Bars */}
+        {}
         <div className="story-progress-container">
           {currentGroup.items.map((item, idx) => (
             <div key={item.id} className="story-progress-bar">
@@ -377,7 +377,7 @@ export function StoryViewerOverlay({
           ))}
         </div>
 
-        {/* Header */}
+        {}
         <header className="story-viewer-header">
           <div className="story-user-info">
             <AvatarFallback name={currentGroup.full_name} src={currentGroup.avatar_url} />
@@ -396,7 +396,7 @@ export function StoryViewerOverlay({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {/* Nút bật/tắt âm thanh (hỗ trợ cả video và nhạc nền) */}
+            {}
             {(currentItem.media_type === 'video' || storyMetadata?.music) && (
               <button
                 className="story-action-icon-btn"
@@ -414,7 +414,7 @@ export function StoryViewerOverlay({
           </div>
         </header>
 
-        {/* Media Container with gestures */}
+        {}
         <div 
           className="story-media-container"
           onClick={handleMediaAreaClick}
@@ -423,7 +423,7 @@ export function StoryViewerOverlay({
           onPointerCancel={handlePointerUp}
           title={t('holdToPause')}
         >
-          {/* Media Player with Filter */}
+          {}
           {currentItem.media_type === 'video' ? (
             <video 
               ref={videoRef}
@@ -441,7 +441,7 @@ export function StoryViewerOverlay({
             />
           )}
 
-          {/* Music badge if story has background music */}
+          {}
           {storyMetadata?.music && (
             <div className="story-viewer-music-badge">
               <div className="story-spinning-disc" />
@@ -449,7 +449,7 @@ export function StoryViewerOverlay({
             </div>
           )}
 
-          {/* Overlays Rendering (v2 JSON metadata) */}
+          {}
           {storyMetadata?.overlays && storyMetadata.overlays.length > 0 ? (
             storyMetadata.overlays.map(item => {
               let background = 'transparent'
@@ -528,7 +528,7 @@ export function StoryViewerOverlay({
               )
             })
           ) : (
-            /* Fallback cho Story text thô cũ */
+            
             currentItem.text_content && (
               <div className="story-text-overlay">
                 {currentItem.text_content}
@@ -537,7 +537,7 @@ export function StoryViewerOverlay({
           )}
         </div>
 
-        {/* Author Viewer Button */}
+        {}
         {isAuthor && (
           <button 
             type="button"
@@ -549,7 +549,7 @@ export function StoryViewerOverlay({
           </button>
         )}
 
-        {/* Footer for non-author */}
+        {}
         {!isAuthor && (
           <footer className="story-viewer-footer">
             <input 
@@ -607,7 +607,7 @@ export function StoryViewerOverlay({
         )}
       </div>
 
-      {/* Next Navigation Button */}
+      {}
       <button 
         className="story-nav-btn next" 
         onClick={handleNext}
@@ -617,7 +617,7 @@ export function StoryViewerOverlay({
         <ChevronRight size={32} />
       </button>
 
-      {/* Author Analytics Drawer */}
+      {}
       {isAuthor && (
         <StoryViewerDrawer
           storyId={currentItem.id}

@@ -9,7 +9,6 @@ export interface StoryMusicTrack {
   url: string
 }
 
-// Danh sách nhạc mẫu không bản quyền (Royalty-free CDN audio samples)
 export const DEFAULT_MUSIC_TRACKS: StoryMusicTrack[] = [
   {
     id: 'lofi-chill',
@@ -60,7 +59,6 @@ export function StoryMusicPicker({
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Dừng preview audio khi unmount
   useEffect(() => {
     return () => {
       if (audioRef.current) {
@@ -103,7 +101,6 @@ export function StoryMusicPicker({
 
   const handleSelectTrack = (track: StoryMusicTrack) => {
     if (selectedMusic?.id === track.id) {
-      // Đã chọn bài này thì bỏ chọn
       onSelectMusic(null)
     } else {
       onSelectMusic(track)
@@ -145,7 +142,6 @@ export function StoryMusicPicker({
         </button>
       </div>
 
-      {/* Upload button and clear music action */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
         <button
           type="button"

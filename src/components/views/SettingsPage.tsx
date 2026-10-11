@@ -24,8 +24,9 @@ import type { AuthUser } from '../../services/api/authApi'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { TwoFactorSettings } from './TwoFactorSettings'
 import { useAutoTour } from '../../hooks/tutorial/useAutoTour'
-import { startTour } from '../../services/tutorial/tourService'
+import { navigateToTour } from '../../services/tutorial/tourService'
 import { useTutorialStore } from '../../stores/tutorialStore'
+import type { AppView } from '../../types'
 
 export type SettingsPageProps = {
   currentUser: AuthUser | null
@@ -33,6 +34,7 @@ export type SettingsPageProps = {
   onLogout?: () => void
   onUserChange: (user: AuthUser) => void
   pushToast: (text: string, tone?: 'info' | 'error') => void
+  onChangeView?: (view: AppView) => void
 }
 
 type SessionViewModel = UserSession & {
@@ -566,7 +568,7 @@ export function SettingsPage(props: SettingsPageProps) {
                   style={{ justifyContent: 'flex-start', padding: '10px 14px', borderRadius: '10px' }}
                   onClick={() => {
                     props.pushToast?.(t('tutorial.launchingChat'), 'info')
-                    startTour('chat', { force: true })
+                    navigateToTour('chat', props.onChangeView)
                   }}
                 >
                   <MessageSquare size={16} />
@@ -576,7 +578,10 @@ export function SettingsPage(props: SettingsPageProps) {
                   type="button"
                   className="sp-btn sp-btn--ghost"
                   style={{ justifyContent: 'flex-start', padding: '10px 14px', borderRadius: '10px' }}
-                  onClick={() => startTour('story', { force: true })}
+                  onClick={() => {
+                    props.pushToast?.(t('tutorial.launchingStory'), 'info')
+                    navigateToTour('story', props.onChangeView)
+                  }}
                 >
                   <Sparkles size={16} />
                   <span>{t('tutorial.replayStory')}</span>
@@ -585,7 +590,10 @@ export function SettingsPage(props: SettingsPageProps) {
                   type="button"
                   className="sp-btn sp-btn--ghost"
                   style={{ justifyContent: 'flex-start', padding: '10px 14px', borderRadius: '10px' }}
-                  onClick={() => startTour('profile', { force: true })}
+                  onClick={() => {
+                    props.pushToast?.(t('tutorial.launchingProfile'), 'info')
+                    navigateToTour('profile', props.onChangeView)
+                  }}
                 >
                   <UserRound size={16} />
                   <span>{t('tutorial.replayProfile')}</span>
@@ -594,7 +602,10 @@ export function SettingsPage(props: SettingsPageProps) {
                   type="button"
                   className="sp-btn sp-btn--ghost"
                   style={{ justifyContent: 'flex-start', padding: '10px 14px', borderRadius: '10px' }}
-                  onClick={() => startTour('settings', { force: true })}
+                  onClick={() => {
+                    props.pushToast?.(t('tutorial.launchingSettings'), 'info')
+                    navigateToTour('settings', props.onChangeView)
+                  }}
                 >
                   <Settings size={16} />
                   <span>{t('tutorial.replaySettings')}</span>

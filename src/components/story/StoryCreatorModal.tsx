@@ -48,7 +48,7 @@ export function StoryCreatorModal({
     try {
       let fileToUpload = file
 
-      // Nén ảnh nếu là định dạng ảnh và dung lượng lớn hơn 1MB
+      
       if (file.type.startsWith('image/') && file.size > 1024 * 1024) {
         try {
           fileToUpload = await imageCompression(file, {
@@ -74,7 +74,7 @@ export function StoryCreatorModal({
 
   if (!mounted || typeof document === 'undefined') return null
 
-  // 1. Nếu đang mở camera viewfinder
+  
   if (showCamera) {
     return createPortal(
       <StoryCameraViewfinder
@@ -86,7 +86,7 @@ export function StoryCreatorModal({
     )
   }
 
-  // 2. Nếu đã có file media -> Mở Story Studio Editor
+  
   if (file) {
     return createPortal(
       <>
@@ -122,7 +122,7 @@ export function StoryCreatorModal({
     )
   }
 
-  // 3. Màn hình chọn phương thức khởi tạo Story (Camera hoặc Tải tệp từ thiết bị)
+  
   return createPortal(
     <div className={`story-creator-overlay ${isClosing ? 'is-closing' : ''}`}>
       <div className={`story-creator-modal ${isClosing ? 'is-closing' : ''}`}>
@@ -135,7 +135,7 @@ export function StoryCreatorModal({
 
         <div className="story-creator-body">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', padding: '16px 0' }}>
-            {/* Tùy chọn 1: Mở Camera WebRTC */}
+            {}
             <button
               type="button"
               className="upload-placeholder"
@@ -165,7 +165,7 @@ export function StoryCreatorModal({
               </span>
             </button>
 
-            {/* Tùy chọn 2: Tải lên từ thư viện thiết bị */}
+            {}
             <button
               type="button"
               className="upload-placeholder"

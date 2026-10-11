@@ -10,10 +10,10 @@ export interface StoryOverlayItem {
   color?: string
   bgColor?: string
   font?: string
-  x: number // Tọa độ % (0 -> 100)
-  y: number // Tọa độ % (0 -> 100)
+  x: number 
+  y: number 
   scale?: number
-  // Phase 3 additions:
+  
   pollData?: {
     question: string
     options: [string, string]
@@ -50,21 +50,21 @@ export function StoryStickerPicker({ onAddOverlay, onClose }: StoryStickerPicker
   const { t } = useTranslation('story')
   const [activeTab, setActiveTab] = useState<'emoji' | 'poll' | 'slider' | 'countdown' | 'location' | 'hashtag' | 'mention'>('emoji')
 
-  // Inputs state
+  
   const [locationInput, setLocationInput] = useState('')
   const [hashtagInput, setHashtagInput] = useState('')
   const [mentionInput, setMentionInput] = useState('')
 
-  // Poll state
+  
   const [pollQuestion, setPollQuestion] = useState('')
   const [pollOptA, setPollOptA] = useState('Có')
   const [pollOptB, setPollOptB] = useState('Không')
 
-  // Slider state
+  
   const [sliderQuestion, setSliderQuestion] = useState('')
   const [selectedSliderEmoji, setSelectedSliderEmoji] = useState('😍')
 
-  // Countdown state
+  
   const [countdownTitle, setCountdownTitle] = useState('')
   const [countdownTarget, setCountdownTarget] = useState(() => {
     const d = new Date()
@@ -176,7 +176,7 @@ export function StoryStickerPicker({ onAddOverlay, onClose }: StoryStickerPicker
 
   return (
     <div className="story-picker-drawer">
-      {/* Header */}
+      {}
       <div className="story-picker-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Smile size={20} color="#ec4899" />
@@ -192,7 +192,7 @@ export function StoryStickerPicker({ onAddOverlay, onClose }: StoryStickerPicker
         </button>
       </div>
 
-      {/* Navigation Tabs */}
+      {}
       <div className="story-sticker-tabs" style={{ overflowX: 'auto', scrollbarWidth: 'none' }}>
         <button
           type="button"
@@ -245,7 +245,7 @@ export function StoryStickerPicker({ onAddOverlay, onClose }: StoryStickerPicker
         </button>
       </div>
 
-      {/* Tab 1: Emoji Grid */}
+      {}
       {activeTab === 'emoji' && (
         <div className="story-emoji-grid">
           {POPULAR_EMOJIS.map(emoji => (
@@ -261,7 +261,7 @@ export function StoryStickerPicker({ onAddOverlay, onClose }: StoryStickerPicker
         </div>
       )}
 
-      {/* Tab 2: Poll Sticker Creator */}
+      {}
       {activeTab === 'poll' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div>
@@ -317,7 +317,7 @@ export function StoryStickerPicker({ onAddOverlay, onClose }: StoryStickerPicker
         </div>
       )}
 
-      {/* Tab 3: Slider Sticker Creator */}
+      {}
       {activeTab === 'slider' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div>
@@ -373,7 +373,7 @@ export function StoryStickerPicker({ onAddOverlay, onClose }: StoryStickerPicker
         </div>
       )}
 
-      {/* Tab 4: Countdown Sticker Creator */}
+      {}
       {activeTab === 'countdown' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div>
@@ -415,7 +415,7 @@ export function StoryStickerPicker({ onAddOverlay, onClose }: StoryStickerPicker
         </div>
       )}
 
-      {/* Tab 5: Location Tag */}
+      {}
       {activeTab === 'location' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -458,7 +458,7 @@ export function StoryStickerPicker({ onAddOverlay, onClose }: StoryStickerPicker
         </div>
       )}
 
-      {/* Tab 6: Hashtag Tag */}
+      {}
       {activeTab === 'hashtag' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -500,7 +500,7 @@ export function StoryStickerPicker({ onAddOverlay, onClose }: StoryStickerPicker
         </div>
       )}
 
-      {/* Tab 7: Mention Tag */}
+      {}
       {activeTab === 'mention' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div style={{ display: 'flex', gap: '8px' }}>

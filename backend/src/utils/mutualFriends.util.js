@@ -11,7 +11,7 @@ async function attachMutualFriendsSummary(currentUserId, userRows) {
     return userRows || []
   }
 
-  // Extract distinct target user IDs (excluding current user itself)
+  
   const targetIdSet = new Set()
   for (const user of userRows) {
     const rawId = user.userId || user.user_id || (typeof user.id === 'number' ? user.id : null)
@@ -30,7 +30,7 @@ async function attachMutualFriendsSummary(currentUserId, userRows) {
   }
 
   try {
-    // Single indexed query joining current user's friends with targets' friends
+    
     const [rows] = await pool.query(
       `SELECT 
         c_target.owner_user_id AS target_user_id,
@@ -55,7 +55,7 @@ async function attachMutualFriendsSummary(currentUserId, userRows) {
       [currentUserId, targetIds, currentUserId],
     )
 
-    // Group mutual friends by target_user_id
+    
     const mutualMap = new Map()
     for (const row of rows) {
       const targetId = Number(row.target_user_id)
@@ -71,7 +71,7 @@ async function attachMutualFriendsSummary(currentUserId, userRows) {
       })
     }
 
-    // Attach to userRows
+    
     return userRows.map((user) => {
       const rawId = Number(user.userId || user.user_id || (typeof user.id === 'number' ? user.id : 0))
       const friends = mutualMap.get(rawId) || []
@@ -83,7 +83,7 @@ async function attachMutualFriendsSummary(currentUserId, userRows) {
     })
   } catch (error) {
     console.error('Lỗi khi tính toán bạn chung (attachMutualFriendsSummary):', error)
-    // Fallback gracefully without breaking the response
+    
     return userRows.map((user) => ({
       ...user,
       mutualCount: user.mutualCount || 0,

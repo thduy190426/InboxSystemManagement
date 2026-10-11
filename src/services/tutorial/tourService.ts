@@ -1,6 +1,8 @@
 import type { TourKey } from '../../stores/tutorialStore'
 import { useTutorialStore } from '../../stores/tutorialStore'
 import { TOUR_DEFINITIONS } from '../../features/tutorial/tourSteps'
+import { readAppRouteFromLocation, toAppPath } from '../core/appRoutes'
+import type { AppView } from '../../types'
 import i18n from '../../i18n'
 
 type ActiveDriverInstance = {
@@ -165,4 +167,77 @@ export function stopActiveTour() {
     activeDriverInstance = null
   }
   useTutorialStore.getState().setRunningTour(false, null)
+}
+
+export const TOUR_VIEW_MAP: Record<TourKey, AppView> = {
+  chat: 'chat',
+  story: 'chat',
+  profile: 'profile',
+  settings: 'settings',
+}
+
+function waitForTourElements(selectors: string[], timeout = 4000): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (!selectors.length) return resolve(false)
+
+    if (selectors.some((sel) => document.querySelector(sel) !== null)) {
+      return resolve(true)
+    }
+
+    const startTime = Date.now()
+    const checkInterval = setInterval(() => {
+      if (selectors.some((sel) => document.querySelector(sel) !== null)) {
+        clearInterval(checkInterval)
+        resolve(true)
+      } else if (Date.now() - startTime > timeout) {
+        clearInterval(checkInterval)
+        resolve(false)
+      }
+    }, 50)
+  })
+}
+
+export async function navigateToTour(
+  tourKey: TourKey,
+  navigate?: (view: AppView) => void,
+  options: { force?: boolean } = { force: true },
+) {
+  const targetView = TOUR_VIEW_MAP[tourKey]
+  const currentRoute = readAppRouteFromLocation()
+  const isCurrentViewTarget = currentRoute.view === targetView
+
+  useTutorialStore.getState().setPendingTour(tourKey)
+
+  if (!isCurrentViewTarget) {
+    if (navigate) {
+      navigate(targetView)
+    } else {
+      window.history.pushState(null, '', toAppPath({ view: targetView }))
+      window.dispatchEvent(new PopStateEvent('popstate'))
+    }
+  }
+
+  const defs = TOUR_DEFINITIONS[tourKey]
+  const selectors = defs ? defs.map((d) => d.element) : []
+
+  const isReady = await waitForTourElements(selectors, 4000)
+  if (!isReady) {
+    console.warn(`[Tour] Elements for tour '${tourKey}' did not mount in time.`)
+    useTutorialStore.getState().setPendingTour(null)
+    return false
+  }
+
+  // Allow component render and animations to settle
+  await new Promise((resolve) => setTimeout(resolve, 250))
+
+  // Scroll first element into view smoothly if applicable
+  const firstEl = document.querySelector(selectors[0])
+  if (firstEl) {
+    firstEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    await new Promise((resolve) => setTimeout(resolve, 250))
+  }
+
+  await startTour(tourKey, options)
+  useTutorialStore.getState().setPendingTour(null)
+  return true
 }

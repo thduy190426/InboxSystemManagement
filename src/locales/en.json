@@ -403,6 +403,9 @@
       "cardTitle": "User Guide & Product Tour",
       "cardDesc": "Replay visual walkthrough steps or reset discovery state across the system.",
       "launchingChat": "Launching Chat tutorial...",
+      "launchingStory": "Navigating to Chat & launching Story tutorial...",
+      "launchingProfile": "Navigating to Profile & launching tutorial...",
+      "launchingSettings": "Launching Settings tutorial...",
       "replayChat": "Chat Tutorial",
       "replayStory": "Story Tutorial",
       "replayProfile": "Profile Tutorial",
@@ -413,6 +416,9 @@
         "cardTitle": "User Guide & Product Tour",
         "cardDesc": "Replay visual walkthrough steps or reset discovery state across the system.",
         "launchingChat": "Launching Chat tutorial...",
+        "launchingStory": "Navigating to Chat & launching Story tutorial...",
+        "launchingProfile": "Navigating to Profile & launching tutorial...",
+        "launchingSettings": "Launching Settings tutorial...",
         "replayChat": "Chat Tutorial",
         "replayStory": "Story Tutorial",
         "replayProfile": "Profile Tutorial",
@@ -1289,7 +1295,10 @@
       "replaySettings": "Settings Tour",
       "resetAll": "Reset All Tutorials",
       "resetSuccess": "All tutorial statuses have been reset!",
-      "launchingChat": "Opening Chat tour..."
+      "launchingChat": "Opening Chat tour...",
+      "launchingStory": "Navigating to Chat & opening Story tour...",
+      "launchingProfile": "Navigating to Profile & opening tour...",
+      "launchingSettings": "Opening Settings tour..."
     }
   }
 }

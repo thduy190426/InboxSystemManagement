@@ -54,7 +54,6 @@ export function StoryViewerDrawer({
     }
   }
 
-  // Reaction statistics breakdown
   const reactionBreakdown = useMemo(() => {
     const counts: Record<string, number> = {}
     for (const v of viewers) {

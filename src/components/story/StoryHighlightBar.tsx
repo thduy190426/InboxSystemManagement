@@ -54,7 +54,7 @@ export function StoryHighlightBar({
     }
   }
 
-  // If not own profile and no highlights, hide the bar completely
+  
   if (!isOwnProfile && highlights.length === 0 && !isLoading) {
     return null
   }
@@ -62,7 +62,7 @@ export function StoryHighlightBar({
   return (
     <div className="story-highlights-bar-container">
       <div className="story-highlights-bar">
-        {/* Nút "+ Mới" cho chủ sở hữu profile */}
+        {}
         {isOwnProfile && (
           <button
             type="button"
@@ -79,7 +79,7 @@ export function StoryHighlightBar({
           </button>
         )}
 
-        {/* Danh sách highlights */}
+        {}
         {highlights.map(hl => {
           const isLoadingThis = loadingHighlightId === hl.id
           return (
@@ -122,14 +122,14 @@ export function StoryHighlightBar({
         )}
       </div>
 
-      {/* Modal tạo Highlight mới */}
+      {}
       <StoryHighlightModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={loadHighlights}
       />
 
-      {/* Viewer Overlay xem phát lại highlight */}
+      {}
       {activeStoryGroup && (
         <StoryViewerOverlay
           initialGroup={activeStoryGroup}

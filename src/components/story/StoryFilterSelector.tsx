@@ -31,7 +31,6 @@ export function StoryFilterSelector({
 }: StoryFilterSelectorProps) {
   const { t } = useTranslation('story')
 
-  // Sample fallback image for filter thumbnail if no media preview provided
   const fallbackThumb =
     'https://images.unsplash.com/photo-1518791841217-8f162f1e1131?auto=format&fit=crop&w=150&q=80'
 

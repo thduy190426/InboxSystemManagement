@@ -403,6 +403,9 @@
       "cardTitle": "Hướng dẫn sử dụng & Khám phá (Product Tour)",
       "cardDesc": "Trải nghiệm lại các bước hướng dẫn trực quan hoặc đặt lại trạng thái khám phá của hệ thống.",
       "launchingChat": "Đang mở hướng dẫn Chat...",
+      "launchingStory": "Đang chuyển đến Chat & mở hướng dẫn Story...",
+      "launchingProfile": "Đang chuyển đến Hồ sơ & mở hướng dẫn...",
+      "launchingSettings": "Đang mở hướng dẫn Cài đặt...",
       "replayChat": "Hướng dẫn Chat",
       "replayStory": "Hướng dẫn Story",
       "replayProfile": "Hướng dẫn Hồ sơ",
@@ -413,6 +416,9 @@
         "cardTitle": "Hướng dẫn sử dụng & Khám phá (Product Tour)",
         "cardDesc": "Trải nghiệm lại các bước hướng dẫn trực quan hoặc đặt lại trạng thái khám phá của hệ thống.",
         "launchingChat": "Đang mở hướng dẫn Chat...",
+        "launchingStory": "Đang chuyển đến Chat & mở hướng dẫn Story...",
+        "launchingProfile": "Đang chuyển đến Hồ sơ & mở hướng dẫn...",
+        "launchingSettings": "Đang mở hướng dẫn Cài đặt...",
         "replayChat": "Hướng dẫn Chat",
         "replayStory": "Hướng dẫn Story",
         "replayProfile": "Hướng dẫn Hồ sơ",
@@ -1289,7 +1295,10 @@
       "replaySettings": "Hướng dẫn Cài đặt",
       "resetAll": "Đặt lại tất cả hướng dẫn",
       "resetSuccess": "Đã đặt lại trạng thái hướng dẫn thành công!",
-      "launchingChat": "Đang mở hướng dẫn Chat..."
+      "launchingChat": "Đang mở hướng dẫn Chat...",
+      "launchingStory": "Đang chuyển đến Chat & mở hướng dẫn Story...",
+      "launchingProfile": "Đang chuyển đến Hồ sơ & mở hướng dẫn...",
+      "launchingSettings": "Đang mở hướng dẫn Cài đặt..."
     }
   }
 }

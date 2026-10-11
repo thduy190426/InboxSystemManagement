@@ -11,7 +11,7 @@ async function ensureStorySchema() {
 
   storySchemaReadyPromise = (async () => {
     try {
-      // 1. Ensure story_views table
+      
       await pool.execute(`
         CREATE TABLE IF NOT EXISTS story_views (
           id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -27,7 +27,7 @@ async function ensureStorySchema() {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
       `);
 
-      // 2. Ensure story_reactions table
+      
       await pool.execute(`
         CREATE TABLE IF NOT EXISTS story_reactions (
           id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -45,7 +45,7 @@ async function ensureStorySchema() {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
       `);
 
-      // 3. Ensure story_close_friends table
+      
       await pool.execute(`
         CREATE TABLE IF NOT EXISTS story_close_friends (
           id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -61,7 +61,7 @@ async function ensureStorySchema() {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
       `);
 
-      // 4. Ensure story_poll_votes table
+      
       await pool.execute(`
         CREATE TABLE IF NOT EXISTS story_poll_votes (
           id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -78,7 +78,7 @@ async function ensureStorySchema() {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
       `);
 
-      // 5. Ensure story_slider_votes table
+      
       await pool.execute(`
         CREATE TABLE IF NOT EXISTS story_slider_votes (
           id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -95,7 +95,7 @@ async function ensureStorySchema() {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
       `);
 
-      // 6. Ensure story_highlights table
+      
       await pool.execute(`
         CREATE TABLE IF NOT EXISTS story_highlights (
           id CHAR(36) NOT NULL,
@@ -110,7 +110,7 @@ async function ensureStorySchema() {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
       `);
 
-      // 7. Ensure story_highlight_items table
+      
       await pool.execute(`
         CREATE TABLE IF NOT EXISTS story_highlight_items (
           id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -127,7 +127,7 @@ async function ensureStorySchema() {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
       `);
 
-      // 4. Alter stories if missing columns
+      
       try {
         await pool.execute('ALTER TABLE stories ADD COLUMN views_count INT UNSIGNED NOT NULL DEFAULT 0');
       } catch (e) {
@@ -155,7 +155,7 @@ async function ensureStorySchema() {
   return storySchemaReadyPromise;
 }
 
-// Trigger initialization safely
+
 ensureStorySchema().catch(() => {});
 
 exports.createStory = async (req, res, next) => {
@@ -237,12 +237,6 @@ exports.getActiveStories = async (req, res, next) => {
     await ensureStorySchema();
     const userId = req.user.id;
 
-    // Lọc theo quyền riêng tư:
-    // 1. Story của chính mình: luôn xem được
-    // 2. Story 'public': xem được
-    // 3. Story 'close_friends': chỉ xem được nếu requester là bạn thân của tác giả
-    // 4. Story 'friends': xem được nếu requester là bạn bè (contacts)
-    // 5. Story 'only_me': chỉ tác giả xem được
     const [stories] = await pool.query(
       `SELECT s.id, s.user_id, s.media_url, s.media_type, s.text_content, s.privacy, 
               s.views_count, s.reactions_count, s.expires_at, s.created_at,
@@ -421,7 +415,7 @@ exports.reactToStory = async (req, res, next) => {
     let currentReaction = reaction;
 
     if (existing.length > 0 && existing[0].reaction === reaction) {
-      // Bấm lại emoji cũ -> Gỡ bỏ reaction
+      
       await pool.query(
         'DELETE FROM story_reactions WHERE story_id = ? AND user_id = ?',
         [storyId, userId]
@@ -433,7 +427,7 @@ exports.reactToStory = async (req, res, next) => {
       action = 'removed';
       currentReaction = null;
     } else {
-      // Đổi sang emoji khác hoặc thả mới
+      
       const isNew = existing.length === 0;
       await pool.query(
         `INSERT INTO story_reactions (story_id, user_id, reaction)
@@ -505,7 +499,7 @@ exports.replyToStory = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Message or reaction is required' });
     }
 
-    // 1. Tìm thông tin story
+    
     const [storyRows] = await pool.query(
       'SELECT id, user_id, media_url, media_type, text_content FROM stories WHERE id = ?',
       [storyId]
@@ -520,7 +514,7 @@ exports.replyToStory = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Cannot reply to your own story' });
     }
 
-    // 2. Tìm hoặc tạo cuộc trò chuyện 1-1 giữa viewer và author
+    
     let conversationId = null;
     const [existingConv] = await pool.query(
       `SELECT c.id FROM conversations c
@@ -544,7 +538,7 @@ exports.replyToStory = async (req, res, next) => {
       );
     }
 
-    // 3. Chuẩn bị nội dung và metadata story
+    
     const content = message || (reaction ? `Đã thả cảm xúc ${reaction} vào story của bạn` : '');
     const metadata = JSON.stringify({
       type: 'story_reply',
@@ -555,7 +549,7 @@ exports.replyToStory = async (req, res, next) => {
       reaction: reaction || null,
     });
 
-    // 4. Tạo tin nhắn story_reply
+    
     const [msgResult] = await pool.query(
       `INSERT INTO messages (conversation_id, sender_id, type, content, metadata, created_at)
        VALUES (?, ?, 'story_reply', ?, ?, NOW())`,
@@ -744,11 +738,6 @@ exports.toggleCloseFriend = async (req, res, next) => {
   }
 };
 
-/* ==========================================================================
-   INTERACTIVE STICKERS (PHASE 3)
-   ========================================================================== */
-
-// 1. Vote on Poll Sticker (0 = A, 1 = B)
 exports.votePoll = async (req, res, next) => {
   try {
     await ensureStorySchema();
@@ -787,7 +776,7 @@ exports.votePoll = async (req, res, next) => {
   }
 };
 
-// 2. Get Poll Stats
+
 exports.getPollStats = async (req, res, next) => {
   try {
     await ensureStorySchema();
@@ -823,7 +812,7 @@ exports.getPollStats = async (req, res, next) => {
   }
 };
 
-// 3. Vote on Emoji Slider
+
 exports.voteSlider = async (req, res, next) => {
   try {
     await ensureStorySchema();
@@ -855,7 +844,7 @@ exports.voteSlider = async (req, res, next) => {
   }
 };
 
-// 4. Get Slider Stats
+
 exports.getSliderStats = async (req, res, next) => {
   try {
     await ensureStorySchema();
@@ -889,7 +878,7 @@ exports.getSliderStats = async (req, res, next) => {
    STORY ARCHIVE & HIGHLIGHTS (PHASE 3)
    ========================================================================== */
 
-// 5. Get User Story Archive (Tất cả tin trong quá khứ)
+
 exports.getStoryArchive = async (req, res, next) => {
   try {
     await ensureStorySchema();
@@ -913,7 +902,7 @@ exports.getStoryArchive = async (req, res, next) => {
   }
 };
 
-// 6. Get User Highlights list
+
 exports.getHighlights = async (req, res, next) => {
   try {
     await ensureStorySchema();
@@ -940,7 +929,7 @@ exports.getHighlights = async (req, res, next) => {
   }
 };
 
-// 7. Create Highlight
+
 exports.createHighlight = async (req, res, next) => {
   try {
     await ensureStorySchema();
@@ -989,7 +978,7 @@ exports.createHighlight = async (req, res, next) => {
   }
 };
 
-// 8. Get Highlight Details (format UserStoryGroup for Viewer)
+
 exports.getHighlightById = async (req, res, next) => {
   try {
     await ensureStorySchema();
@@ -1046,7 +1035,7 @@ exports.getHighlightById = async (req, res, next) => {
   }
 };
 
-// 9. Delete Highlight
+
 exports.deleteHighlight = async (req, res, next) => {
   try {
     await ensureStorySchema();

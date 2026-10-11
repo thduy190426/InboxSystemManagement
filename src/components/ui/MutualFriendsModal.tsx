@@ -14,7 +14,6 @@ type MutualFriendsModalProps = {
   onProfile?: (user: ContactUser) => void
 }
 
-// Client-side cache to avoid redundant requests during active session (TTL 2 minutes)
 const mutualCache = new Map<string, { data: MutualFriendDetail[]; timestamp: number }>()
 const CACHE_TTL = 2 * 60 * 1000
 
@@ -72,7 +71,6 @@ export function MutualFriendsModal({
     }
   }, [isOpen, targetUserId])
 
-  // Keyboard navigation: Close on Escape
   useEffect(() => {
     if (!isOpen) return
     const handleKeyDown = (e: KeyboardEvent) => {

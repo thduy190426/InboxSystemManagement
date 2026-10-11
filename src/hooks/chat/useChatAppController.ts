@@ -23,6 +23,7 @@ import type { ConfirmDialogState } from '../../components/ui/ConfirmDialog'
 import type { ConversationFilter } from '../../components/panels/InboxPanel'
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
+import { useTutorialStore } from '../../stores/tutorialStore'
 
 type ChatAppProps = {
   currentUser: AuthUser | null
@@ -934,6 +935,10 @@ export function useChatAppController({ currentUser, onLogout }: ChatAppProps) {
     }
 
     if (view === 'chat') {
+      const pendingTour = useTutorialStore.getState().pendingTourKey
+      if (pendingTour === 'story') {
+        setIsInboxOpen(true)
+      }
       const conversationId = activeId || conversations[0]?.id || ''
 
       setActiveId(conversationId)

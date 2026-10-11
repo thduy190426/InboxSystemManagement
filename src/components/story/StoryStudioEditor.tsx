@@ -70,7 +70,7 @@ export function StoryStudioEditor({
   const [mediaUrl, setMediaUrl] = useState<string>('')
   const isVideo = mediaFile.type.startsWith('video/')
 
-  // Studio Elements State
+  
   const [selectedFilter, setSelectedFilter] = useState('normal')
   const [selectedMusic, setSelectedMusic] = useState<StoryMusicTrack | null>(null)
   const [overlays, setOverlays] = useState<StoryOverlayItem[]>([])
@@ -78,23 +78,23 @@ export function StoryStudioEditor({
   const [privacy, setPrivacy] = useState<'public' | 'friends' | 'close_friends' | 'only_me'>(initialPrivacy)
   const [showPrivacyDropdown, setShowPrivacyDropdown] = useState(false)
 
-  // Drawers / Sub-views
+  
   const [activeDrawer, setActiveDrawer] = useState<'none' | 'text' | 'stickers' | 'music' | 'filters' | 'preview'>('none')
 
-  // Text editor sub-state
+  
   const [textDraft, setTextDraft] = useState('')
   const [textColor, setTextColor] = useState('#ffffff')
   const [textBgStyle, setTextBgStyle] = useState<'none' | 'box' | 'solid'>('box')
   const [textFont, setTextFont] = useState('modern')
   const [editingOverlayId, setEditingOverlayId] = useState<string | null>(null)
 
-  // Dragging state
+  
   const canvasRef = useRef<HTMLDivElement>(null)
   const [draggingOverlayId, setDraggingOverlayId] = useState<string | null>(null)
   const [isOverTrash, setIsOverTrash] = useState(false)
   const dragStartPosRef = useRef<{ clientX: number; clientY: number; itemX: number; itemY: number } | null>(null)
 
-  // Background preview music player
+  
   const audioPreviewRef = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
@@ -109,7 +109,7 @@ export function StoryStudioEditor({
     }
   }, [mediaFile])
 
-  // Play background music if in Preview mode
+  
   useEffect(() => {
     if (activeDrawer === 'preview' && selectedMusic) {
       if (!audioPreviewRef.current) {
@@ -122,17 +122,17 @@ export function StoryStudioEditor({
     }
   }, [activeDrawer, selectedMusic])
 
-  // Lấy class filter hiện tại
+  
   const currentFilterClass =
     STORY_FILTERS.find(f => f.id === selectedFilter)?.className || 'story-filter-normal'
 
-  // Thêm overlay mới từ sticker picker
+  
   const handleAddOverlay = (newItem: StoryOverlayItem) => {
     setOverlays(prev => [...prev, newItem])
     setActiveOverlayId(newItem.id)
   }
 
-  // Mở trình soạn thảo văn bản
+  
   const handleOpenTextEditor = (existingItem?: StoryOverlayItem) => {
     if (existingItem) {
       setEditingOverlayId(existingItem.id)
@@ -150,7 +150,7 @@ export function StoryStudioEditor({
     setActiveDrawer('text')
   }
 
-  // Lưu text overlay
+  
   const handleSaveTextOverlay = () => {
     const trimmed = textDraft.trim()
     if (!trimmed) {
@@ -193,13 +193,13 @@ export function StoryStudioEditor({
     setActiveDrawer('none')
   }
 
-  // Xóa overlay
+  
   const handleDeleteOverlay = (id: string) => {
     setOverlays(prev => prev.filter(item => item.id !== id))
     if (activeOverlayId === id) setActiveOverlayId(null)
   }
 
-  // Xử lý kéo thả bằng Pointer Events (chuột & cảm ứng điện thoại)
+  
   const handlePointerDown = (e: React.PointerEvent, item: StoryOverlayItem) => {
     e.stopPropagation()
     setActiveOverlayId(item.id)
@@ -227,7 +227,7 @@ export function StoryStudioEditor({
       prev.map(item => (item.id === draggingOverlayId ? { ...item, x: newX, y: newY } : item))
     )
 
-    // Nếu kéo xuống sát đáy (> 82%) thì kích hoạt vùng thùng rác
+    
     setIsOverTrash(newY > 82)
   }
 
@@ -243,7 +243,7 @@ export function StoryStudioEditor({
     dragStartPosRef.current = null
   }
 
-  // Gửi bài đăng
+  
   const handlePublishClick = () => {
     const metadata: StoryStudioMetadata = {
       version: 2,
@@ -255,7 +255,7 @@ export function StoryStudioEditor({
     onPublish(metadata, privacy)
   }
 
-  // Render text overlay theo styles
+  
   const renderTextOverlayStyle = (item: StoryOverlayItem) => {
     let background = 'transparent'
     let color = item.color || '#fff'
@@ -279,7 +279,7 @@ export function StoryStudioEditor({
   return (
     <div className="story-studio-modal-overlay">
       <div className="story-studio-container">
-        {/* Top Action Toolbar */}
+        {}
         <header className="story-studio-top-toolbar">
           <button
             type="button"
@@ -292,7 +292,7 @@ export function StoryStudioEditor({
           </button>
 
           <div className="story-studio-tools-group">
-            {/* Thêm chữ Text */}
+            {}
             <button
               type="button"
               className={`story-studio-tool-btn ${activeDrawer === 'text' ? 'is-active' : ''}`}
@@ -302,7 +302,7 @@ export function StoryStudioEditor({
               <Type size={18} />
             </button>
 
-            {/* Sticker / Emoji */}
+            {}
             <button
               type="button"
               className={`story-studio-tool-btn ${activeDrawer === 'stickers' ? 'is-active' : ''}`}
@@ -312,7 +312,7 @@ export function StoryStudioEditor({
               <Smile size={18} />
             </button>
 
-            {/* Nhạc nền */}
+            {}
             <button
               type="button"
               className={`story-studio-tool-btn ${selectedMusic ? 'is-active' : ''}`}
@@ -322,7 +322,7 @@ export function StoryStudioEditor({
               <Music size={18} />
             </button>
 
-            {/* Bộ lọc CSS */}
+            {}
             <button
               type="button"
               className={`story-studio-tool-btn ${selectedFilter !== 'normal' ? 'is-active' : ''}`}
@@ -332,7 +332,7 @@ export function StoryStudioEditor({
               <Sliders size={18} />
             </button>
 
-            {/* Xem trước */}
+            {}
             <button
               type="button"
               className={`story-studio-tool-btn ${activeDrawer === 'preview' ? 'is-active' : ''}`}
@@ -344,7 +344,7 @@ export function StoryStudioEditor({
           </div>
         </header>
 
-        {/* Studio Canvas Area (9:16) */}
+        {}
         <div
           ref={canvasRef}
           className="story-studio-canvas-area"
@@ -352,7 +352,7 @@ export function StoryStudioEditor({
           onPointerUp={handlePointerUp}
           onClick={() => setActiveOverlayId(null)}
         >
-          {/* Media Player / Image with Filter */}
+          {}
           {isVideo ? (
             <video
               src={mediaUrl}
@@ -370,7 +370,7 @@ export function StoryStudioEditor({
             />
           )}
 
-          {/* Music badge preview inside canvas if selected */}
+          {}
           {selectedMusic && (
             <div className="story-viewer-music-badge">
               <div className="story-spinning-disc" />
@@ -378,7 +378,7 @@ export function StoryStudioEditor({
             </div>
           )}
 
-          {/* Overlays Rendering */}
+          {}
           {overlays.map(item => {
             const isSelected = activeOverlayId === item.id
 
@@ -445,7 +445,7 @@ export function StoryStudioEditor({
             )
           })}
 
-          {/* Trash Can Drop Target (visible when dragging) */}
+          {}
           {draggingOverlayId && (
             <div className={`story-studio-trash-zone ${isOverTrash ? 'is-hovering' : ''}`}>
               <Trash2 size={24} />
@@ -453,7 +453,7 @@ export function StoryStudioEditor({
           )}
         </div>
 
-        {/* Filter Slider (if filter drawer open) */}
+        {}
         {activeDrawer === 'filters' && (
           <div style={{ position: 'absolute', bottom: '80px', left: 0, right: 0, zIndex: 40, background: 'linear-gradient(to top, rgba(0,0,0,0.95), transparent)' }}>
             <StoryFilterSelector
@@ -464,7 +464,7 @@ export function StoryStudioEditor({
           </div>
         )}
 
-        {/* Music Picker Drawer */}
+        {}
         {activeDrawer === 'music' && (
           <StoryMusicPicker
             selectedMusic={selectedMusic}
@@ -473,7 +473,7 @@ export function StoryStudioEditor({
           />
         )}
 
-        {/* Sticker Picker Drawer */}
+        {}
         {activeDrawer === 'stickers' && (
           <StoryStickerPicker
             onAddOverlay={handleAddOverlay}
@@ -481,11 +481,11 @@ export function StoryStudioEditor({
           />
         )}
 
-        {/* Text Editor Fullscreen Sheet */}
+        {}
         {activeDrawer === 'text' && (
           <div className="story-text-editor-overlay">
             <div className="story-text-editor-top">
-              {/* Font toggle */}
+              {}
               <button
                 type="button"
                 className="cp-btn cp-btn--secondary"
@@ -499,7 +499,7 @@ export function StoryStudioEditor({
                 {FONT_OPTIONS.find(f => f.id === textFont)?.label}
               </button>
 
-              {/* Background style toggle */}
+              {}
               <button
                 type="button"
                 className="cp-btn cp-btn--secondary"
@@ -513,7 +513,7 @@ export function StoryStudioEditor({
                 Nền chữ: {textBgStyle === 'box' ? 'Mờ' : textBgStyle === 'solid' ? 'Đặc' : 'Trong suốt'}
               </button>
 
-              {/* Done button */}
+              {}
               <button
                 type="button"
                 className="cp-btn cp-btn--primary"
@@ -524,7 +524,7 @@ export function StoryStudioEditor({
               </button>
             </div>
 
-            {/* Input textarea */}
+            {}
             <textarea
               className={`story-text-editor-input story-font-${textFont}`}
               style={{
@@ -540,7 +540,7 @@ export function StoryStudioEditor({
               rows={3}
             />
 
-            {/* Color palette */}
+            {}
             <div className="story-text-editor-bottom">
               <div className="story-color-palette">
                 {TEXT_COLORS.map(color => (
@@ -557,9 +557,9 @@ export function StoryStudioEditor({
           </div>
         )}
 
-        {/* Bottom Studio Controls */}
+        {}
         <footer className="story-studio-bottom-bar">
-          {/* Privacy Selector Dropdown */}
+          {}
           <div style={{ position: 'relative' }}>
             <button
               type="button"
@@ -641,7 +641,7 @@ export function StoryStudioEditor({
             )}
           </div>
 
-          {/* Publish Story Button */}
+          {}
           <button
             type="button"
             className="cp-btn cp-btn--primary"
