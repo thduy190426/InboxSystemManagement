@@ -129,3 +129,34 @@
     box-shadow: 0 4px 14px rgba(236, 72, 153, 0.6);
   }
 }
+
+/* Khóa cuộn trang khi đang trong quá trình diễn ra Product Tour */
+body.tour-scroll-locked,
+html:has(body.tour-scroll-locked),
+body.driver-active.driver-no-scroll {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+
+body.tour-scroll-locked .app-shell,
+body.tour-scroll-locked main,
+body.tour-scroll-locked .chat-main,
+body.tour-scroll-locked .chat-scroll-area,
+body.tour-scroll-locked .settings-page-container,
+body.tour-scroll-locked .profile-container,
+body.tour-scroll-locked .admin-page-container {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+
+body.tour-scroll-locked * {
+  touch-action: none !important;
+}
+
+body.tour-scroll-locked .driver-popover,
+body.tour-scroll-locked .driver-popover *,
+body.tour-scroll-locked .driver-active-element,
+body.tour-scroll-locked .driver-active-element * {
+  touch-action: manipulation !important;
+}
+
