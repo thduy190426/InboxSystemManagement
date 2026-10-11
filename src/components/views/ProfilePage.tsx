@@ -2,8 +2,9 @@ import type { ChangeEvent, FormEvent } from 'react'
 import { useEffect, useState, lazy, Suspense } from 'react'
 import {
   AlignLeft, AtSign, CalendarDays, Camera, IdCard, MapPin,
-  MessageSquare, Phone, Save, Shield, User, Users,
+  MessageSquare, Phone, Save, Shield, Sparkles, User, Users,
 } from 'lucide-react'
+import { StoryHighlightBar } from '../story/StoryHighlightBar'
 import type { AuthUser } from '../../services/api/authApi'
 import {
   fetchProfile,
@@ -329,6 +330,13 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
               <input accept="image/*" disabled={isUploading} onChange={handleAvatarChange} type="file" />
             </label>
           </div>
+        </ProfileSection>
+
+        <ProfileSection icon={<Sparkles size={15} />} title={t('storyHighlights', { defaultValue: 'Tin nổi bật' })}>
+          <StoryHighlightBar
+            userId={currentUser ? Number(currentUser.id) : undefined}
+            isOwnProfile={true}
+          />
         </ProfileSection>
 
         <ProfileSection icon={<AlignLeft size={15} />} title={t('bioSection')}>

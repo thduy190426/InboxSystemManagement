@@ -1275,6 +1275,21 @@
       "vivid": "Rực rỡ",
       "cyberpunk": "Cyber",
       "dreamy": "Mơ mộng"
-    }
+    },
+    "poll": "Bình chọn",
+    "slider": "Cảm xúc",
+    "countdown": "Đếm ngược",
+    "highlights": "Tin nổi bật",
+    "storyHighlights": "Tin nổi bật",
+    "createHighlightTitle": "Tạo Tin Nổi Bật Mới",
+    "addNewHighlight": "Thêm Tin nổi bật mới",
+    "newHighlight": "Mới",
+    "highlightNameLabel": "Tên Tin nổi bật:",
+    "highlightNamePlaceholder": "Nhập tên bộ sưu tập (ví dụ: Du lịch, Kỷ niệm)...",
+    "selectArchivedStories": "Chọn Story từ kho lưu trữ:",
+    "selected": "đã chọn",
+    "noArchivedStories": "Bạn chưa có tin nào trong kho lưu trữ để tạo Tin nổi bật.",
+    "createHighlightAction": "Tạo Tin Nổi Bật",
+    "cancel": "Hủy"
   }
 }

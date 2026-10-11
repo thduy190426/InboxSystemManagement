@@ -20,6 +20,11 @@ import { StoryMusicPicker } from './StoryMusicPicker'
 import type { StoryMusicTrack } from './StoryMusicPicker'
 import { StoryStickerPicker } from './StoryStickerPicker'
 import type { StoryOverlayItem } from './StoryStickerPicker'
+import {
+  InteractivePollWidget,
+  InteractiveSliderWidget,
+  InteractiveCountdownWidget,
+} from './StoryInteractiveWidgets'
 
 export interface StoryStudioMetadata {
   version: 2
@@ -423,6 +428,18 @@ export function StoryStudioEditor({
                   <div className="story-mention-tag">
                     <span>{item.text}</span>
                   </div>
+                )}
+
+                {item.type === 'poll' && item.pollData && (
+                  <InteractivePollWidget pollData={item.pollData} isStudioPreview={true} />
+                )}
+
+                {item.type === 'slider' && item.sliderData && (
+                  <InteractiveSliderWidget sliderData={item.sliderData} isStudioPreview={true} />
+                )}
+
+                {item.type === 'countdown' && item.countdownData && (
+                  <InteractiveCountdownWidget countdownData={item.countdownData} />
                 )}
               </div>
             )

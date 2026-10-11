@@ -10,6 +10,11 @@ import { StoryReactionSelector } from './StoryReactionSelector'
 import { StoryViewerDrawer } from './StoryViewerDrawer'
 import type { StoryStudioMetadata } from './StoryStudioEditor'
 import { STORY_FILTERS } from './StoryFilterSelector'
+import {
+  InteractivePollWidget,
+  InteractiveSliderWidget,
+  InteractiveCountdownWidget,
+} from './StoryInteractiveWidgets'
 
 type StoryViewerOverlayProps = {
   initialGroup: UserStoryGroup
@@ -498,6 +503,26 @@ export function StoryViewerOverlay({
                     <div className="story-mention-tag">
                       <span>{item.text}</span>
                     </div>
+                  )}
+
+                  {item.type === 'poll' && item.pollData && (
+                    <InteractivePollWidget
+                      storyId={currentItem.id}
+                      pollData={item.pollData}
+                    />
+                  )}
+
+                  {item.type === 'slider' && item.sliderData && (
+                    <InteractiveSliderWidget
+                      storyId={currentItem.id}
+                      sliderData={item.sliderData}
+                    />
+                  )}
+
+                  {item.type === 'countdown' && item.countdownData && (
+                    <InteractiveCountdownWidget
+                      countdownData={item.countdownData}
+                    />
                   )}
                 </div>
               )

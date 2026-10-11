@@ -1275,6 +1275,21 @@
       "vivid": "Vivid",
       "cyberpunk": "Cyberpunk",
       "dreamy": "Dreamy"
-    }
+    },
+    "poll": "Poll",
+    "slider": "Emoji Slider",
+    "countdown": "Countdown",
+    "highlights": "Highlights",
+    "storyHighlights": "Story Highlights",
+    "createHighlightTitle": "Create New Highlight",
+    "addNewHighlight": "Add New Highlight",
+    "newHighlight": "New",
+    "highlightNameLabel": "Highlight Name:",
+    "highlightNamePlaceholder": "Enter highlight title (e.g., Travel, Memories)...",
+    "selectArchivedStories": "Select Stories from Archive:",
+    "selected": "selected",
+    "noArchivedStories": "You do not have any archived stories yet to create Highlights.",
+    "createHighlightAction": "Create Highlight",
+    "cancel": "Cancel"
   }
 }

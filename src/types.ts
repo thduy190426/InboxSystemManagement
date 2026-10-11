@@ -311,3 +311,28 @@ export type UserStoryGroup = {
   items: Story[]
 }
 
+export type StoryHighlightSummary = {
+  id: string
+  user_id: number
+  title: string
+  cover_url: string | null
+  story_count: number
+  created_at: string
+  updated_at: string
+}
+
+export type PollStats = {
+  countA: number
+  countB: number
+  percentA: number
+  percentB: number
+  total: number
+  myVote: number | null
+}
+
+export type SliderStats = {
+  average: number
+  myValue: number | null
+  total: number
+}
+

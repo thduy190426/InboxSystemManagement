@@ -48,7 +48,6 @@ export function CloseFriendsModal({ onClose, pushToast }: CloseFriendsModalProps
 
   const handleToggle = async (friendId: number) => {
     setTogglingId(friendId)
-    // Optimistic UI update
     const wasCloseFriend = closeFriendIds.has(friendId)
     setCloseFriendIds(prev => {
       const next = new Set(prev)
@@ -69,7 +68,6 @@ export function CloseFriendsModal({ onClose, pushToast }: CloseFriendsModalProps
       }
     } catch (err) {
       console.error('Failed to toggle close friend:', err)
-      // Rollback
       setCloseFriendIds(prev => {
         const next = new Set(prev)
         if (wasCloseFriend) next.add(friendId)

@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { X, Smile, MapPin, Plus } from 'lucide-react'
+import { X, Smile, MapPin, Plus, Vote, SlidersHorizontal, Hourglass } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 export interface StoryOverlayItem {
   id: string
-  type: 'text' | 'emoji' | 'location' | 'hashtag' | 'mention'
+  type: 'text' | 'emoji' | 'location' | 'hashtag' | 'mention' | 'poll' | 'slider' | 'countdown'
   text?: string
   value?: string
   color?: string
@@ -13,6 +13,19 @@ export interface StoryOverlayItem {
   x: number // Tọa độ % (0 -> 100)
   y: number // Tọa độ % (0 -> 100)
   scale?: number
+  // Phase 3 additions:
+  pollData?: {
+    question: string
+    options: [string, string]
+  }
+  sliderData?: {
+    question: string
+    emoji: string
+  }
+  countdownData?: {
+    title: string
+    targetDate: string
+  }
 }
 
 interface StoryStickerPickerProps {
@@ -31,14 +44,34 @@ const POPULAR_EMOJIS = [
 
 const QUICK_LOCATIONS = ['Hà Nội', 'TP. Hồ Chí Minh', 'Đà Nẵng', 'Đà Lạt', 'Phú Quốc', 'Nha Trang']
 const QUICK_HASHTAGS = ['#weekend', '#travel', '#chill', '#foodie', '#vibe', '#daily']
+const SLIDER_EMOJIS = ['😍', '🔥', '❤️', '👏', '🥳', '🥺', '☕', '🌟']
 
 export function StoryStickerPicker({ onAddOverlay, onClose }: StoryStickerPickerProps) {
   const { t } = useTranslation('story')
-  const [activeTab, setActiveTab] = useState<'emoji' | 'location' | 'hashtag' | 'mention'>('emoji')
+  const [activeTab, setActiveTab] = useState<'emoji' | 'poll' | 'slider' | 'countdown' | 'location' | 'hashtag' | 'mention'>('emoji')
 
+  // Inputs state
   const [locationInput, setLocationInput] = useState('')
   const [hashtagInput, setHashtagInput] = useState('')
   const [mentionInput, setMentionInput] = useState('')
+
+  // Poll state
+  const [pollQuestion, setPollQuestion] = useState('')
+  const [pollOptA, setPollOptA] = useState('Có')
+  const [pollOptB, setPollOptB] = useState('Không')
+
+  // Slider state
+  const [sliderQuestion, setSliderQuestion] = useState('')
+  const [selectedSliderEmoji, setSelectedSliderEmoji] = useState('😍')
+
+  // Countdown state
+  const [countdownTitle, setCountdownTitle] = useState('')
+  const [countdownTarget, setCountdownTarget] = useState(() => {
+    const d = new Date()
+    d.setDate(d.getDate() + 1)
+    d.setMinutes(0, 0, 0)
+    return d.toISOString().slice(0, 16)
+  })
 
   const handlePickEmoji = (emoji: string) => {
     onAddOverlay({
@@ -47,6 +80,51 @@ export function StoryStickerPicker({ onAddOverlay, onClose }: StoryStickerPicker
       value: emoji,
       x: 50,
       y: 50,
+      scale: 1,
+    })
+    onClose()
+  }
+
+  const handleAddPoll = () => {
+    onAddOverlay({
+      id: `overlay-poll-${Date.now()}`,
+      type: 'poll',
+      pollData: {
+        question: pollQuestion.trim() || 'Bạn nghĩ thế nào?',
+        options: [pollOptA.trim() || 'Có', pollOptB.trim() || 'Không'],
+      },
+      x: 50,
+      y: 45,
+      scale: 1,
+    })
+    onClose()
+  }
+
+  const handleAddSlider = () => {
+    onAddOverlay({
+      id: `overlay-slider-${Date.now()}`,
+      type: 'slider',
+      sliderData: {
+        question: sliderQuestion.trim() || 'Mức độ yêu thích?',
+        emoji: selectedSliderEmoji,
+      },
+      x: 50,
+      y: 50,
+      scale: 1,
+    })
+    onClose()
+  }
+
+  const handleAddCountdown = () => {
+    onAddOverlay({
+      id: `overlay-countdown-${Date.now()}`,
+      type: 'countdown',
+      countdownData: {
+        title: countdownTitle.trim() || 'Sự kiện sắp tới 🎉',
+        targetDate: new Date(countdownTarget).toISOString(),
+      },
+      x: 50,
+      y: 45,
       scale: 1,
     })
     onClose()
@@ -115,13 +193,34 @@ export function StoryStickerPicker({ onAddOverlay, onClose }: StoryStickerPicker
       </div>
 
       {/* Navigation Tabs */}
-      <div className="story-sticker-tabs">
+      <div className="story-sticker-tabs" style={{ overflowX: 'auto', scrollbarWidth: 'none' }}>
         <button
           type="button"
           className={`story-sticker-tab-btn ${activeTab === 'emoji' ? 'is-active' : ''}`}
           onClick={() => setActiveTab('emoji')}
         >
           Emoji
+        </button>
+        <button
+          type="button"
+          className={`story-sticker-tab-btn ${activeTab === 'poll' ? 'is-active' : ''}`}
+          onClick={() => setActiveTab('poll')}
+        >
+          Bình chọn
+        </button>
+        <button
+          type="button"
+          className={`story-sticker-tab-btn ${activeTab === 'slider' ? 'is-active' : ''}`}
+          onClick={() => setActiveTab('slider')}
+        >
+          Cảm xúc
+        </button>
+        <button
+          type="button"
+          className={`story-sticker-tab-btn ${activeTab === 'countdown' ? 'is-active' : ''}`}
+          onClick={() => setActiveTab('countdown')}
+        >
+          Đếm ngược
         </button>
         <button
           type="button"
@@ -142,7 +241,7 @@ export function StoryStickerPicker({ onAddOverlay, onClose }: StoryStickerPicker
           className={`story-sticker-tab-btn ${activeTab === 'mention' ? 'is-active' : ''}`}
           onClick={() => setActiveTab('mention')}
         >
-          Nhắc tên (@)
+          Nhắc tên
         </button>
       </div>
 
@@ -162,7 +261,161 @@ export function StoryStickerPicker({ onAddOverlay, onClose }: StoryStickerPicker
         </div>
       )}
 
-      {/* Tab 2: Location Tag */}
+      {/* Tab 2: Poll Sticker Creator */}
+      {activeTab === 'poll' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div>
+            <label style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', marginBottom: '4px', display: 'block' }}>
+              Câu hỏi bình chọn:
+            </label>
+            <input
+              type="text"
+              className="cp-input"
+              placeholder="Đặt câu hỏi (ví dụ: Tối nay ăn gì?)..."
+              value={pollQuestion}
+              onChange={e => setPollQuestion(e.target.value)}
+              autoFocus
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div>
+              <label style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', marginBottom: '4px', display: 'block' }}>
+                Lựa chọn 1:
+              </label>
+              <input
+                type="text"
+                className="cp-input"
+                placeholder="Có"
+                value={pollOptA}
+                onChange={e => setPollOptA(e.target.value)}
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', marginBottom: '4px', display: 'block' }}>
+                Lựa chọn 2:
+              </label>
+              <input
+                type="text"
+                className="cp-input"
+                placeholder="Không"
+                value={pollOptB}
+                onChange={e => setPollOptB(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="cp-btn cp-btn--primary"
+            style={{ marginTop: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+            onClick={handleAddPoll}
+          >
+            <Vote size={16} />
+            <span>Thêm Bình Chọn vào Story</span>
+          </button>
+        </div>
+      )}
+
+      {/* Tab 3: Slider Sticker Creator */}
+      {activeTab === 'slider' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div>
+            <label style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', marginBottom: '4px', display: 'block' }}>
+              Câu hỏi cảm xúc:
+            </label>
+            <input
+              type="text"
+              className="cp-input"
+              placeholder="Hỏi cảm xúc (ví dụ: Bạn thấy thế nào?)..."
+              value={sliderQuestion}
+              onChange={e => setSliderQuestion(e.target.value)}
+              autoFocus
+            />
+          </div>
+
+          <div>
+            <label style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', marginBottom: '6px', display: 'block' }}>
+              Chọn Emoji thanh trượt:
+            </label>
+            <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '4px 0' }}>
+              {SLIDER_EMOJIS.map(emoji => (
+                <button
+                  key={emoji}
+                  type="button"
+                  style={{
+                    fontSize: '1.6rem',
+                    background: selectedSliderEmoji === emoji ? 'rgba(99, 102, 241, 0.3)' : 'rgba(255, 255, 255, 0.08)',
+                    border: selectedSliderEmoji === emoji ? '2px solid #6366f1' : '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '12px',
+                    padding: '6px 10px',
+                    cursor: 'pointer',
+                    transform: selectedSliderEmoji === emoji ? 'scale(1.15)' : 'none',
+                    transition: 'all 0.2s',
+                  }}
+                  onClick={() => setSelectedSliderEmoji(emoji)}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="cp-btn cp-btn--primary"
+            style={{ marginTop: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+            onClick={handleAddSlider}
+          >
+            <SlidersHorizontal size={16} />
+            <span>Thêm Thanh Trượt Cảm Xúc</span>
+          </button>
+        </div>
+      )}
+
+      {/* Tab 4: Countdown Sticker Creator */}
+      {activeTab === 'countdown' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div>
+            <label style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', marginBottom: '4px', display: 'block' }}>
+              Tên sự kiện đếm ngược:
+            </label>
+            <input
+              type="text"
+              className="cp-input"
+              placeholder="Tên sự kiện (ví dụ: Sinh nhật, Ra mắt sản phẩm)..."
+              value={countdownTitle}
+              onChange={e => setCountdownTitle(e.target.value)}
+              autoFocus
+            />
+          </div>
+
+          <div>
+            <label style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', marginBottom: '4px', display: 'block' }}>
+              Thời điểm kết thúc:
+            </label>
+            <input
+              type="datetime-local"
+              className="cp-input"
+              value={countdownTarget}
+              onChange={e => setCountdownTarget(e.target.value)}
+              style={{ colorScheme: 'dark' }}
+            />
+          </div>
+
+          <button
+            type="button"
+            className="cp-btn cp-btn--primary"
+            style={{ marginTop: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+            onClick={handleAddCountdown}
+          >
+            <Hourglass size={16} />
+            <span>Thêm Đồng Hồ Đếm Ngược</span>
+          </button>
+        </div>
+      )}
+
+      {/* Tab 5: Location Tag */}
       {activeTab === 'location' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -205,7 +458,7 @@ export function StoryStickerPicker({ onAddOverlay, onClose }: StoryStickerPicker
         </div>
       )}
 
-      {/* Tab 3: Hashtag Tag */}
+      {/* Tab 6: Hashtag Tag */}
       {activeTab === 'hashtag' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -247,7 +500,7 @@ export function StoryStickerPicker({ onAddOverlay, onClose }: StoryStickerPicker
         </div>
       )}
 
-      {/* Tab 4: Mention Tag */}
+      {/* Tab 7: Mention Tag */}
       {activeTab === 'mention' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div style={{ display: 'flex', gap: '8px' }}>

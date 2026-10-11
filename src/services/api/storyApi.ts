@@ -1,5 +1,13 @@
 import { apiFetch, ApiRequestError, requestJson } from './apiClient'
-import type { UserStoryGroup, StoryViewerItem, CloseFriendItem } from '../../types'
+import type {
+  UserStoryGroup,
+  StoryViewerItem,
+  CloseFriendItem,
+  StoryHighlightSummary,
+  PollStats,
+  SliderStats,
+  Story,
+} from '../../types'
 
 export const storyApi = {
   createStory: async (file: File, privacy: string, textContent: string = '') => {
@@ -86,4 +94,62 @@ export const storyApi = {
       body: JSON.stringify({ friend_id: friendId }),
     })
   },
+
+  // ==========================================
+  // INTERACTIVE STICKERS (PHASE 3)
+  // ==========================================
+  votePoll: async (storyId: string, optionIdx: 0 | 1): Promise<{ success: boolean; pollStats: PollStats }> => {
+    return requestJson<{ success: boolean; pollStats: PollStats }>(`/stories/${storyId}/poll-vote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ optionIdx }),
+    })
+  },
+
+  getPollStats: async (storyId: string): Promise<{ success: boolean; pollStats: PollStats }> => {
+    return requestJson<{ success: boolean; pollStats: PollStats }>(`/stories/${storyId}/poll-stats`)
+  },
+
+  voteSlider: async (storyId: string, value: number): Promise<{ success: boolean; sliderStats: SliderStats }> => {
+    return requestJson<{ success: boolean; sliderStats: SliderStats }>(`/stories/${storyId}/slider-vote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value }),
+    })
+  },
+
+  getSliderStats: async (storyId: string): Promise<{ success: boolean; sliderStats: SliderStats }> => {
+    return requestJson<{ success: boolean; sliderStats: SliderStats }>(`/stories/${storyId}/slider-stats`)
+  },
+
+  // ==========================================
+  // STORY ARCHIVE & HIGHLIGHTS (PHASE 3)
+  // ==========================================
+  getStoryArchive: async (): Promise<{ success: boolean; data: Story[] }> => {
+    return requestJson<{ success: boolean; data: Story[] }>('/stories/archive')
+  },
+
+  getHighlights: async (userId?: number): Promise<{ success: boolean; data: StoryHighlightSummary[] }> => {
+    const query = userId ? `?userId=${userId}` : ''
+    return requestJson<{ success: boolean; data: StoryHighlightSummary[] }>(`/stories/highlights${query}`)
+  },
+
+  createHighlight: async (payload: { title: string; coverUrl?: string; storyIds: string[] }): Promise<{ success: boolean; data: StoryHighlightSummary }> => {
+    return requestJson<{ success: boolean; data: StoryHighlightSummary }>('/stories/highlights', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+  },
+
+  getHighlightById: async (id: string): Promise<{ success: boolean; data: { highlight: StoryHighlightSummary; storyGroup: UserStoryGroup } }> => {
+    return requestJson<{ success: boolean; data: { highlight: StoryHighlightSummary; storyGroup: UserStoryGroup } }>(`/stories/highlights/${id}`)
+  },
+
+  deleteHighlight: async (id: string): Promise<{ success: boolean; message: string }> => {
+    return requestJson<{ success: boolean; message: string }>(`/stories/highlights/${id}`, {
+      method: 'DELETE',
+    })
+  },
 }
+

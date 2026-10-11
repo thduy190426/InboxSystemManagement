@@ -60,6 +60,72 @@ async function ensureStorySchema() {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
       `);
 
+      // 4. Ensure story_poll_votes table
+      await pool.execute(`
+        CREATE TABLE IF NOT EXISTS story_poll_votes (
+          id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+          story_id CHAR(36) NOT NULL,
+          user_id BIGINT UNSIGNED NOT NULL,
+          option_idx TINYINT UNSIGNED NOT NULL DEFAULT 0,
+          created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (id),
+          UNIQUE KEY uq_story_user_poll (story_id, user_id),
+          KEY idx_poll_story (story_id),
+          KEY idx_poll_user (user_id),
+          CONSTRAINT fk_poll_votes_story FOREIGN KEY (story_id) REFERENCES stories (id) ON DELETE CASCADE,
+          CONSTRAINT fk_poll_votes_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      `);
+
+      // 5. Ensure story_slider_votes table
+      await pool.execute(`
+        CREATE TABLE IF NOT EXISTS story_slider_votes (
+          id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+          story_id CHAR(36) NOT NULL,
+          user_id BIGINT UNSIGNED NOT NULL,
+          value FLOAT NOT NULL DEFAULT 50,
+          created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (id),
+          UNIQUE KEY uq_story_user_slider (story_id, user_id),
+          KEY idx_slider_story (story_id),
+          KEY idx_slider_user (user_id),
+          CONSTRAINT fk_slider_votes_story FOREIGN KEY (story_id) REFERENCES stories (id) ON DELETE CASCADE,
+          CONSTRAINT fk_slider_votes_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      `);
+
+      // 6. Ensure story_highlights table
+      await pool.execute(`
+        CREATE TABLE IF NOT EXISTS story_highlights (
+          id CHAR(36) NOT NULL,
+          user_id BIGINT UNSIGNED NOT NULL,
+          title VARCHAR(100) NOT NULL,
+          cover_url VARCHAR(255) NULL,
+          created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          PRIMARY KEY (id),
+          KEY idx_highlights_user (user_id),
+          CONSTRAINT fk_highlights_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      `);
+
+      // 7. Ensure story_highlight_items table
+      await pool.execute(`
+        CREATE TABLE IF NOT EXISTS story_highlight_items (
+          id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+          highlight_id CHAR(36) NOT NULL,
+          story_id CHAR(36) NOT NULL,
+          order_index INT UNSIGNED NOT NULL DEFAULT 0,
+          created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (id),
+          UNIQUE KEY uq_highlight_story (highlight_id, story_id),
+          KEY idx_highlight_items_hl (highlight_id),
+          KEY idx_highlight_items_st (story_id),
+          CONSTRAINT fk_highlight_items_hl FOREIGN KEY (highlight_id) REFERENCES story_highlights (id) ON DELETE CASCADE,
+          CONSTRAINT fk_highlight_items_st FOREIGN KEY (story_id) REFERENCES stories (id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      `);
+
       // 4. Alter stories if missing columns
       try {
         await pool.execute('ALTER TABLE stories ADD COLUMN views_count INT UNSIGNED NOT NULL DEFAULT 0');
@@ -674,3 +740,333 @@ exports.toggleCloseFriend = async (req, res, next) => {
     next(error);
   }
 };
+
+/* ==========================================================================
+   INTERACTIVE STICKERS (PHASE 3)
+   ========================================================================== */
+
+// 1. Vote on Poll Sticker (0 = A, 1 = B)
+exports.votePoll = async (req, res, next) => {
+  try {
+    await ensureStorySchema();
+    const userId = req.user.id;
+    const storyId = req.params.id;
+    const { optionIdx } = req.body;
+    const chosenOption = Number(optionIdx) === 1 ? 1 : 0;
+
+    await pool.query(
+      `INSERT INTO story_poll_votes (story_id, user_id, option_idx) 
+       VALUES (?, ?, ?) 
+       ON DUPLICATE KEY UPDATE option_idx = VALUES(option_idx)`,
+      [storyId, userId, chosenOption]
+    );
+
+    const [statsRows] = await pool.query(
+      `SELECT option_idx, COUNT(*) as count FROM story_poll_votes WHERE story_id = ? GROUP BY option_idx`,
+      [storyId]
+    );
+    let countA = 0, countB = 0;
+    statsRows.forEach(r => {
+      if (r.option_idx === 0) countA = Number(r.count);
+      else if (r.option_idx === 1) countB = Number(r.count);
+    });
+    const total = countA + countB;
+    const percentA = total > 0 ? Math.round((countA / total) * 100) : 0;
+    const percentB = total > 0 ? (100 - percentA) : 0;
+
+    res.json({
+      success: true,
+      pollStats: { countA, countB, percentA, percentB, total, myVote: chosenOption }
+    });
+  } catch (error) {
+    console.error('[story.controller] Error in votePoll:', error);
+    next(error);
+  }
+};
+
+// 2. Get Poll Stats
+exports.getPollStats = async (req, res, next) => {
+  try {
+    await ensureStorySchema();
+    const userId = req.user.id;
+    const storyId = req.params.id;
+
+    const [statsRows] = await pool.query(
+      `SELECT option_idx, COUNT(*) as count FROM story_poll_votes WHERE story_id = ? GROUP BY option_idx`,
+      [storyId]
+    );
+    let countA = 0, countB = 0;
+    statsRows.forEach(r => {
+      if (r.option_idx === 0) countA = Number(r.count);
+      else if (r.option_idx === 1) countB = Number(r.count);
+    });
+    const total = countA + countB;
+    const percentA = total > 0 ? Math.round((countA / total) * 100) : 0;
+    const percentB = total > 0 ? (100 - percentA) : 0;
+
+    const [myVoteRows] = await pool.query(
+      `SELECT option_idx FROM story_poll_votes WHERE story_id = ? AND user_id = ?`,
+      [storyId, userId]
+    );
+    const myVote = myVoteRows.length > 0 ? myVoteRows[0].option_idx : null;
+
+    res.json({
+      success: true,
+      pollStats: { countA, countB, percentA, percentB, total, myVote }
+    });
+  } catch (error) {
+    console.error('[story.controller] Error in getPollStats:', error);
+    next(error);
+  }
+};
+
+// 3. Vote on Emoji Slider
+exports.voteSlider = async (req, res, next) => {
+  try {
+    await ensureStorySchema();
+    const userId = req.user.id;
+    const storyId = req.params.id;
+    const value = Math.max(0, Math.min(100, Number(req.body.value) || 50));
+
+    await pool.query(
+      `INSERT INTO story_slider_votes (story_id, user_id, value) 
+       VALUES (?, ?, ?) 
+       ON DUPLICATE KEY UPDATE value = VALUES(value)`,
+      [storyId, userId, value]
+    );
+
+    const [rows] = await pool.query(
+      `SELECT AVG(value) as avg_val, COUNT(*) as count FROM story_slider_votes WHERE story_id = ?`,
+      [storyId]
+    );
+    const average = rows[0]?.avg_val ? Math.round(Number(rows[0].avg_val)) : Math.round(value);
+    const total = rows[0]?.count ? Number(rows[0].count) : 1;
+
+    res.json({
+      success: true,
+      sliderStats: { average, myValue: Math.round(value), total }
+    });
+  } catch (error) {
+    console.error('[story.controller] Error in voteSlider:', error);
+    next(error);
+  }
+};
+
+// 4. Get Slider Stats
+exports.getSliderStats = async (req, res, next) => {
+  try {
+    await ensureStorySchema();
+    const userId = req.user.id;
+    const storyId = req.params.id;
+
+    const [rows] = await pool.query(
+      `SELECT AVG(value) as avg_val, COUNT(*) as count FROM story_slider_votes WHERE story_id = ?`,
+      [storyId]
+    );
+    const average = rows[0]?.avg_val ? Math.round(Number(rows[0].avg_val)) : 50;
+    const total = rows[0]?.count ? Number(rows[0].count) : 0;
+
+    const [myRows] = await pool.query(
+      `SELECT value FROM story_slider_votes WHERE story_id = ? AND user_id = ?`,
+      [storyId, userId]
+    );
+    const myValue = myRows.length > 0 ? Math.round(Number(myRows[0].value)) : null;
+
+    res.json({
+      success: true,
+      sliderStats: { average, myValue, total }
+    });
+  } catch (error) {
+    console.error('[story.controller] Error in getSliderStats:', error);
+    next(error);
+  }
+};
+
+/* ==========================================================================
+   STORY ARCHIVE & HIGHLIGHTS (PHASE 3)
+   ========================================================================== */
+
+// 5. Get User Story Archive (Tất cả tin trong quá khứ)
+exports.getStoryArchive = async (req, res, next) => {
+  try {
+    await ensureStorySchema();
+    const userId = req.user.id;
+
+    const [stories] = await pool.query(
+      `SELECT id, user_id, media_url, media_type, text_content, privacy, views_count, reactions_count, created_at
+       FROM stories
+       WHERE user_id = ?
+       ORDER BY created_at DESC`,
+      [userId]
+    );
+
+    res.json({
+      success: true,
+      data: stories,
+    });
+  } catch (error) {
+    console.error('[story.controller] Error in getStoryArchive:', error);
+    next(error);
+  }
+};
+
+// 6. Get User Highlights list
+exports.getHighlights = async (req, res, next) => {
+  try {
+    await ensureStorySchema();
+    const targetUserId = req.query.userId ? Number(req.query.userId) : req.user.id;
+
+    const [highlights] = await pool.query(
+      `SELECT sh.id, sh.user_id, sh.title, sh.cover_url, sh.created_at, sh.updated_at,
+              COUNT(shi.id) as story_count
+       FROM story_highlights sh
+       LEFT JOIN story_highlight_items shi ON sh.id = shi.highlight_id
+       WHERE sh.user_id = ?
+       GROUP BY sh.id
+       ORDER BY sh.updated_at DESC`,
+      [targetUserId]
+    );
+
+    res.json({
+      success: true,
+      data: highlights,
+    });
+  } catch (error) {
+    console.error('[story.controller] Error in getHighlights:', error);
+    next(error);
+  }
+};
+
+// 7. Create Highlight
+exports.createHighlight = async (req, res, next) => {
+  try {
+    await ensureStorySchema();
+    const userId = req.user.id;
+    const { title, coverUrl, storyIds = [] } = req.body;
+
+    if (!title || !title.trim()) {
+      return res.status(400).json({ success: false, message: 'Tiêu đề không được để trống' });
+    }
+    if (!Array.isArray(storyIds) || storyIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'Vui lòng chọn ít nhất 1 story' });
+    }
+
+    const highlightId = crypto.randomUUID();
+    let finalCover = coverUrl;
+    if (!finalCover) {
+      const [firstStory] = await pool.query('SELECT media_url FROM stories WHERE id = ?', [storyIds[0]]);
+      finalCover = firstStory[0]?.media_url || null;
+    }
+
+    await pool.query(
+      'INSERT INTO story_highlights (id, user_id, title, cover_url) VALUES (?, ?, ?, ?)',
+      [highlightId, userId, title.trim(), finalCover]
+    );
+
+    for (let i = 0; i < storyIds.length; i++) {
+      await pool.query(
+        'INSERT INTO story_highlight_items (highlight_id, story_id, order_index) VALUES (?, ?, ?)',
+        [highlightId, storyIds[i], i]
+      );
+    }
+
+    res.json({
+      success: true,
+      data: {
+        id: highlightId,
+        user_id: userId,
+        title: title.trim(),
+        cover_url: finalCover,
+        story_count: storyIds.length,
+      },
+    });
+  } catch (error) {
+    console.error('[story.controller] Error in createHighlight:', error);
+    next(error);
+  }
+};
+
+// 8. Get Highlight Details (format UserStoryGroup for Viewer)
+exports.getHighlightById = async (req, res, next) => {
+  try {
+    await ensureStorySchema();
+    const highlightId = req.params.id;
+    const currentUserId = req.user.id;
+
+    const [hlRows] = await pool.query(
+      `SELECT sh.*, u.full_name, u.display_name, u.avatar_url
+       FROM story_highlights sh
+       JOIN users u ON sh.user_id = u.id
+       WHERE sh.id = ?`,
+      [highlightId]
+    );
+
+    if (hlRows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy tin nổi bật' });
+    }
+    const hl = hlRows[0];
+
+    const [items] = await pool.query(
+      `SELECT s.*,
+              sr.reaction as my_reaction
+       FROM story_highlight_items shi
+       JOIN stories s ON shi.story_id = s.id
+       LEFT JOIN story_reactions sr ON s.id = sr.story_id AND sr.user_id = ?
+       WHERE shi.highlight_id = ?
+       ORDER BY shi.order_index ASC`,
+      [currentUserId, highlightId]
+    );
+
+    const userStoryGroup = {
+      user_id: hl.user_id,
+      full_name: hl.full_name,
+      display_name: hl.title,
+      avatar_url: hl.cover_url || hl.avatar_url,
+      has_unread: false,
+      has_close_friends_story: false,
+      items: items.map(s => ({
+        ...s,
+        is_close_friend: s.privacy === 'close_friends',
+      })),
+    };
+
+    res.json({
+      success: true,
+      data: {
+        highlight: hl,
+        storyGroup: userStoryGroup,
+      },
+    });
+  } catch (error) {
+    console.error('[story.controller] Error in getHighlightById:', error);
+    next(error);
+  }
+};
+
+// 9. Delete Highlight
+exports.deleteHighlight = async (req, res, next) => {
+  try {
+    await ensureStorySchema();
+    const highlightId = req.params.id;
+    const userId = req.user.id;
+
+    const [existing] = await pool.query(
+      'SELECT id FROM story_highlights WHERE id = ? AND user_id = ?',
+      [highlightId, userId]
+    );
+    if (existing.length === 0) {
+      return res.status(404).json({ success: false, message: 'Tin nổi bật không tồn tại hoặc không có quyền xóa' });
+    }
+
+    await pool.query('DELETE FROM story_highlights WHERE id = ?', [highlightId]);
+
+    res.json({
+      success: true,
+      message: 'Đã xóa tin nổi bật thành công',
+    });
+  } catch (error) {
+    console.error('[story.controller] Error in deleteHighlight:', error);
+    next(error);
+  }
+};
+
