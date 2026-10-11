@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const { pool } = require('../../config/db');
 const { uploadBufferToCloudinary } = require('../../config/upload');
 const { getIO } = require('../../realtime/socket');
+const { attachMutualFriendsSummary } = require('../../utils/mutualFriends.util');
 
 let storySchemaReadyPromise = null;
 
@@ -630,9 +631,11 @@ exports.getStoryViewers = async (req, res, next) => {
       [storyId]
     );
 
+    const enrichedViewers = await attachMutualFriendsSummary(userId, viewers);
+
     res.json({
       success: true,
-      data: viewers,
+      data: enrichedViewers,
     });
   } catch (error) {
     console.error('[story.controller] Error in getStoryViewers:', error);

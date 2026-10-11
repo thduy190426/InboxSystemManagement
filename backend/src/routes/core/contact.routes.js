@@ -6,6 +6,7 @@ const {
   declineFriendRequest,
   listFriends,
   listIncomingRequests,
+  listMutualFriends,
   listSuggestions,
   searchUsers,
   sendFriendRequest,
@@ -21,6 +22,7 @@ router.get('/search', searchRateLimit, searchUsers)
 router.get('/friends', listFriends)
 router.get('/requests', listIncomingRequests)
 router.get('/suggestions', listSuggestions)
+router.get('/:userId/mutual-friends', listMutualFriends)
 router.post('/request', friendRequestRateLimit, sendFriendRequest)
 router.post('/:contactId/accept', acceptFriendRequest)
 router.post('/:contactId/decline', declineFriendRequest)

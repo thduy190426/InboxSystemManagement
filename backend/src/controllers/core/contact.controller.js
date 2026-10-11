@@ -2,6 +2,7 @@ const { randomUUID } = require('crypto')
 const { pool } = require('../../config/db')
 const { emitToUsers } = require('../../realtime/socket')
 const { sendWebPushToUsers } = require('../../services/push.service')
+const { attachMutualFriendsSummary, getMutualFriendsList } = require('../../utils/mutualFriends.util')
 
 function pushWebNotificationToUsers(userIds, payload) {
   sendWebPushToUsers(userIds, payload).catch((error) => {
@@ -36,6 +37,8 @@ function toContactUser(row) {
     updatedAt: row.updated_at || null,
     contactCreatedAt: row.contact_created_at || null,
     contactUpdatedAt: row.contact_updated_at || null,
+    mutualCount: typeof row.mutualCount === 'number' ? row.mutualCount : (row.mutual_count || 0),
+    mutualPreviews: Array.isArray(row.mutualPreviews) ? row.mutualPreviews : [],
   }
 }
 
@@ -125,8 +128,10 @@ async function searchUsers(request, response, next) {
       [currentUserId, currentUserId, currentUserId, likeKeyword, likeKeyword, likeKeyword, likeKeyword],
     )
 
+    const enrichedRows = await attachMutualFriendsSummary(currentUserId, rows)
+
     response.json({
-      users: rows.map(toContactUser),
+      users: enrichedRows.map(toContactUser),
     })
   } catch (error) {
     next(error)
@@ -171,8 +176,10 @@ async function listIncomingRequests(request, response, next) {
       [currentUserId, currentUserId],
     )
 
+    const enrichedRows = await attachMutualFriendsSummary(currentUserId, rows)
+
     response.json({
-      requests: rows.map(toContactUser),
+      requests: enrichedRows.map(toContactUser),
     })
   } catch (error) {
     next(error)
@@ -279,8 +286,10 @@ async function listSuggestions(request, response, next) {
       [currentUserId, currentUserId, currentUserId, currentUserId],
     )
 
+    const enrichedRows = await attachMutualFriendsSummary(currentUserId, rows)
+
     response.json({
-      suggestions: rows.map(toContactUser),
+      suggestions: enrichedRows.map(toContactUser),
     })
   } catch (error) {
     next(error)
@@ -824,6 +833,30 @@ async function unfriend(request, response, next) {
   }
 }
 
+async function listMutualFriends(request, response, next) {
+  try {
+    const currentUserId = request.user.id
+    const targetIdParam = request.params.userId
+
+    let targetUserId = Number(targetIdParam)
+    if (Number.isNaN(targetUserId)) {
+      const [uRows] = await pool.execute('SELECT id FROM users WHERE public_id = ? LIMIT 1', [targetIdParam])
+      if (!uRows[0]) {
+        return response.status(404).json({ message: 'Không tìm thấy người dùng!' })
+      }
+      targetUserId = uRows[0].id
+    }
+
+    const mutualFriends = await getMutualFriendsList(currentUserId, targetUserId)
+    response.json({
+      totalCount: mutualFriends.length,
+      mutualFriends,
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
 module.exports = {
   acceptFriendRequest,
   blockContact,
@@ -831,6 +864,7 @@ module.exports = {
   declineFriendRequest,
   listFriends,
   listIncomingRequests,
+  listMutualFriends,
   listSuggestions,
   searchUsers,
   sendFriendRequest,
