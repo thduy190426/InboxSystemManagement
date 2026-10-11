@@ -205,7 +205,8 @@
     "profileSaved": "Profile saved!",
     "profileSaveFailed": "Failed to save profile!",
     "profileLoadFailed": "Failed to load profile!",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "storyHighlights": "Story Highlights"
   },
   "notfound": {
     "kicker": "Error 404 - Not Found",
@@ -336,7 +337,12 @@
     "selected": "selected",
     "noArchivedStories": "You do not have any archived stories yet to create Highlights.",
     "createHighlightAction": "Create Highlight",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "loadingHighlights": "Loading highlights...",
+    "storiesCount": "stories",
+    "loadArchiveError": "Failed to load story archive.",
+    "loadingArchive": "Loading archived stories...",
+    "close": "Close"
   },
   "nav": {
     "chat": "Chat",

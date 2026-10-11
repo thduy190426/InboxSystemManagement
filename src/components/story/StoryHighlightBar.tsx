@@ -89,7 +89,7 @@ export function StoryHighlightBar({
               className="story-highlight-bubble-wrap"
               onClick={() => handleOpenHighlight(hl)}
               disabled={isLoadingThis}
-              title={`${hl.title} (${hl.story_count} tin)`}
+              title={`${hl.title} (${hl.story_count} ${t('storiesCount', { defaultValue: 'tin' })})`}
             >
               <div className="story-highlight-ring">
                 {isLoadingThis ? (
@@ -117,7 +117,7 @@ export function StoryHighlightBar({
         {isLoading && highlights.length === 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '16px 8px', color: 'rgba(255,255,255,0.5)', fontSize: '0.82rem' }}>
             <Loader2 size={16} className="story-spinner" />
-            <span>Đang tải tin nổi bật...</span>
+            <span>{t('loadingHighlights', { defaultValue: 'Đang tải tin nổi bật...' })}</span>
           </div>
         )}
       </div>

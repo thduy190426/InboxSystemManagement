@@ -40,7 +40,7 @@ export function StoryHighlightModal({
       })
       .catch(err => {
         console.warn('[StoryHighlightModal] Error loading archive:', err)
-        setErrorMsg('Không thể tải kho lưu trữ story.')
+        setErrorMsg(t('loadArchiveError', { defaultValue: 'Không thể tải kho lưu trữ story.' }))
       })
       .finally(() => {
         setIsLoading(false)
@@ -192,7 +192,7 @@ export function StoryHighlightModal({
               {isLoading ? (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '36px', gap: '8px', color: 'rgba(255,255,255,0.6)' }}>
                   <Loader2 size={20} className="story-spinner" />
-                  <span>Đang tải tin lưu trữ...</span>
+                  <span>{t('loadingArchive', { defaultValue: 'Đang tải tin lưu trữ...' })}</span>
                 </div>
               ) : archiveStories.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '30px 16px', background: 'rgba(255,255,255,0.03)', borderRadius: '14px', color: 'rgba(255,255,255,0.5)', fontSize: '0.88rem' }}>

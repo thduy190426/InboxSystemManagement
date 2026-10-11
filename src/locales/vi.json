@@ -205,7 +205,8 @@
     "profileSaved": "Đã lưu hồ sơ!",
     "profileSaveFailed": "Không thể lưu hồ sơ!",
     "profileLoadFailed": "Không thể tải hồ sơ!",
-    "loading": "Đang tải..."
+    "loading": "Đang tải...",
+    "storyHighlights": "Tin nổi bật"
   },
   "notfound": {
     "kicker": "Lỗi 404 - Không tìm thấy",
@@ -336,7 +337,12 @@
     "selected": "đã chọn",
     "noArchivedStories": "Bạn chưa có tin nào trong kho lưu trữ để tạo Tin nổi bật.",
     "createHighlightAction": "Tạo Tin Nổi Bật",
-    "cancel": "Hủy"
+    "cancel": "Hủy",
+    "loadingHighlights": "Đang tải tin nổi bật...",
+    "storiesCount": "tin",
+    "loadArchiveError": "Không thể tải kho lưu trữ story.",
+    "loadingArchive": "Đang tải tin lưu trữ...",
+    "close": "Đóng"
   },
   "nav": {
     "chat": "Tin nhắn",

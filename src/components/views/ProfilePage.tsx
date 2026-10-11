@@ -332,7 +332,7 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
           </div>
         </ProfileSection>
 
-        <ProfileSection icon={<Sparkles size={15} />} title={t('storyHighlights', { defaultValue: 'Tin nổi bật' })}>
+        <ProfileSection icon={<Sparkles size={15} />} title={t('storyHighlights')}>
           <StoryHighlightBar
             userId={currentUser ? Number(currentUser.id) : undefined}
             isOwnProfile={true}
