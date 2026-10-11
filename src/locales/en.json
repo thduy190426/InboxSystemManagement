@@ -1235,5 +1235,46 @@
       "resetSuccess": "All tutorial statuses have been reset!",
       "launchingChat": "Opening Chat tour..."
     }
+  },
+  "story": {
+    "feedTitle": "Story",
+    "createStory": "Create Story",
+    "yourStory": "Your Story",
+    "allStories": "All Stories",
+    "closeFriends": "Close Friends",
+    "manageCloseFriends": "Close Friends List",
+    "closeFriendsTitle": "Close Friends",
+    "closeFriendsDesc": "Only people in this list can view your green-ring stories.",
+    "searchFriends": "Search friends...",
+    "noFriendsFound": "No matching users found",
+    "openCamera": "Camera Capture",
+    "cameraDesc": "Take a photo or record 15s video live",
+    "uploadFromDevice": "Device Gallery",
+    "uploadDesc": "Choose photo or video from computer",
+    "uploading": "Uploading...",
+    "postSuccess": "Story posted successfully!",
+    "postError": "Failed to post story",
+    "publishStory": "Share to Story",
+    "holdToPause": "Hold to pause",
+    "viewers": "viewers",
+    "replyPlaceholder": "Reply to story...",
+    "replySent": "Sent reply to chat",
+    "reactSent": "Reacted {{emoji}}",
+    "deleteStorySuccess": "Story deleted successfully",
+    "deleteStoryError": "Failed to delete story",
+    "musicTitle": "Background Music",
+    "uploadAudio": "Upload Audio",
+    "removeMusic": "Remove Music",
+    "stickersTitle": "Stickers & Widgets",
+    "filters": {
+      "normal": "Normal",
+      "warm": "Warm",
+      "cool": "Cool",
+      "vintage": "Vintage",
+      "noir": "Noir",
+      "vivid": "Vivid",
+      "cyberpunk": "Cyberpunk",
+      "dreamy": "Dreamy"
+    }
   }
 }

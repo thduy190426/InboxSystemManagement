@@ -8,6 +8,8 @@ import { getStoredAuthSession } from '../../services/storage/authStorage'
 import { useTranslation } from 'react-i18next'
 import { StoryReactionSelector } from './StoryReactionSelector'
 import { StoryViewerDrawer } from './StoryViewerDrawer'
+import type { StoryStudioMetadata } from './StoryStudioEditor'
+import { STORY_FILTERS } from './StoryFilterSelector'
 
 type StoryViewerOverlayProps = {
   initialGroup: UserStoryGroup
@@ -17,6 +19,15 @@ type StoryViewerOverlayProps = {
   onStoryDeleted?: (storyId: string) => void
   pushToast?: (text: string, tone?: 'info' | 'error') => void
   isClosing?: boolean
+}
+
+function parseStoryMetadata(textContent?: string | null): StoryStudioMetadata | null {
+  if (!textContent) return null
+  try {
+    const data = JSON.parse(textContent)
+    if (data && data.version === 2) return data
+  } catch (e) {}
+  return null
 }
 
 export function StoryViewerOverlay({
@@ -47,6 +58,7 @@ export function StoryViewerOverlay({
   const [mounted, setMounted] = useState(false)
 
   const videoRef = useRef<HTMLVideoElement>(null)
+  const audioMusicRef = useRef<HTMLAudioElement | null>(null)
   const progressStartTimeRef = useRef<number>(Date.now())
   const elapsedBeforePauseRef = useRef<number>(0)
   const animationFrameRef = useRef<number | null>(null)
@@ -58,10 +70,63 @@ export function StoryViewerOverlay({
 
   const currentReaction = currentItem ? (reactions[currentItem.id] ?? currentItem.my_reaction ?? null) : null
 
+  // Phân tích metadata lớp phủ (nếu có)
+  const storyMetadata = parseStoryMetadata(currentItem?.text_content)
+  const currentFilterClass = storyMetadata?.filter
+    ? STORY_FILTERS.find(f => f.id === storyMetadata.filter)?.className || 'story-filter-normal'
+    : 'story-filter-normal'
+
   useEffect(() => {
     setMounted(true)
-    return () => setMounted(false)
+    return () => {
+      setMounted(false)
+      if (audioMusicRef.current) {
+        audioMusicRef.current.pause()
+        audioMusicRef.current.src = ''
+      }
+    }
   }, [])
+
+  // Quản lý phát nhạc nền
+  useEffect(() => {
+    const musicUrl = storyMetadata?.music?.url
+
+    if (!musicUrl || isDrawerOpen) {
+      if (audioMusicRef.current) {
+        audioMusicRef.current.pause()
+        audioMusicRef.current.src = ''
+      }
+      return
+    }
+
+    if (!audioMusicRef.current) {
+      audioMusicRef.current = new Audio()
+    }
+
+    audioMusicRef.current.src = musicUrl
+    audioMusicRef.current.muted = isMuted
+    audioMusicRef.current.loop = true
+
+    if (!isPaused) {
+      audioMusicRef.current.play().catch(e => console.warn('Story music playback error:', e))
+    }
+
+    return () => {
+      if (audioMusicRef.current) {
+        audioMusicRef.current.pause()
+      }
+    }
+  }, [currentItem?.id, storyMetadata?.music?.url, isMuted, isDrawerOpen])
+
+  // Đồng bộ tạm dừng/phát nhạc theo trạng thái pause của Story
+  useEffect(() => {
+    if (!audioMusicRef.current || !storyMetadata?.music?.url) return
+    if (isPaused || isDrawerOpen) {
+      audioMusicRef.current.pause()
+    } else {
+      audioMusicRef.current.play().catch(() => {})
+    }
+  }, [isPaused, isDrawerOpen, storyMetadata?.music?.url])
 
   // Preloading next media
   useEffect(() => {
@@ -326,12 +391,14 @@ export function StoryViewerOverlay({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {currentItem.media_type === 'video' && (
+            {/* Nút bật/tắt âm thanh (hỗ trợ cả video và nhạc nền) */}
+            {(currentItem.media_type === 'video' || storyMetadata?.music) && (
               <button
                 className="story-action-icon-btn"
                 onClick={() => setIsMuted(prev => !prev)}
                 type="button"
                 style={{ color: '#fff' }}
+                title={isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}
               >
                 {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
               </button>
@@ -351,6 +418,7 @@ export function StoryViewerOverlay({
           onPointerCancel={handlePointerUp}
           title={t('holdToPause')}
         >
+          {/* Media Player with Filter */}
           {currentItem.media_type === 'video' ? (
             <video 
               ref={videoRef}
@@ -358,16 +426,89 @@ export function StoryViewerOverlay({
               autoPlay 
               playsInline 
               muted={isMuted}
-              className="story-media" 
+              className={`story-media ${currentFilterClass}`} 
             />
           ) : (
-            <img src={currentItem.media_url} alt="Story" className="story-media" />
+            <img 
+              src={currentItem.media_url} 
+              alt="Story" 
+              className={`story-media ${currentFilterClass}`} 
+            />
           )}
 
-          {currentItem.text_content && (
-            <div className="story-text-overlay">
-              {currentItem.text_content}
+          {/* Music badge if story has background music */}
+          {storyMetadata?.music && (
+            <div className="story-viewer-music-badge">
+              <div className="story-spinning-disc" />
+              <span>{storyMetadata.music.title}</span>
             </div>
+          )}
+
+          {/* Overlays Rendering (v2 JSON metadata) */}
+          {storyMetadata?.overlays && storyMetadata.overlays.length > 0 ? (
+            storyMetadata.overlays.map(item => {
+              let background = 'transparent'
+              let color = item.color || '#fff'
+
+              if (item.bgColor === 'box') {
+                background = 'rgba(0, 0, 0, 0.65)'
+                if (item.color === '#000000') background = 'rgba(255, 255, 255, 0.75)'
+              } else if (item.bgColor === 'solid') {
+                background = item.color || '#fff'
+                color = item.color === '#000000' ? '#fff' : '#000'
+              }
+
+              return (
+                <div
+                  key={item.id}
+                  className="story-studio-overlay-item"
+                  style={{
+                    left: `${item.x}%`,
+                    top: `${item.y}%`,
+                    cursor: 'default',
+                  }}
+                >
+                  {item.type === 'text' && (
+                    <div
+                      className={`story-text-overlay story-font-${item.font || 'modern'}`}
+                      style={{ color, background }}
+                    >
+                      {item.text}
+                    </div>
+                  )}
+
+                  {item.type === 'emoji' && (
+                    <span className="story-sticker-overlay">{item.value}</span>
+                  )}
+
+                  {item.type === 'location' && (
+                    <div className="story-location-tag">
+                      <span style={{ color: '#ef4444' }}>📍</span>
+                      <span>{item.text}</span>
+                    </div>
+                  )}
+
+                  {item.type === 'hashtag' && (
+                    <div className="story-hashtag-tag">
+                      <span>{item.text}</span>
+                    </div>
+                  )}
+
+                  {item.type === 'mention' && (
+                    <div className="story-mention-tag">
+                      <span>{item.text}</span>
+                    </div>
+                  )}
+                </div>
+              )
+            })
+          ) : (
+            /* Fallback cho Story text thô cũ */
+            currentItem.text_content && (
+              <div className="story-text-overlay">
+                {currentItem.text_content}
+              </div>
+            )
           )}
         </div>
 

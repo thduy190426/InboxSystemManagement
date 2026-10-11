@@ -1235,5 +1235,46 @@
       "resetSuccess": "Đã đặt lại trạng thái hướng dẫn thành công!",
       "launchingChat": "Đang mở hướng dẫn Chat..."
     }
+  },
+  "story": {
+    "feedTitle": "Story",
+    "createStory": "Tạo tin mới",
+    "yourStory": "Tin của bạn",
+    "allStories": "Tất cả tin",
+    "closeFriends": "Bạn thân",
+    "manageCloseFriends": "Danh sách Bạn thân",
+    "closeFriendsTitle": "Bạn thân (Close Friends)",
+    "closeFriendsDesc": "Chỉ những người trong danh sách này mới có thể nhìn thấy Story viền xanh lá của bạn.",
+    "searchFriends": "Tìm kiếm bạn bè...",
+    "noFriendsFound": "Không tìm thấy người dùng phù hợp",
+    "openCamera": "Chụp / Quay Camera",
+    "cameraDesc": "Chụp ảnh hoặc quay video 15s trực tiếp",
+    "uploadFromDevice": "Thư viện thiết bị",
+    "uploadDesc": "Chọn ảnh hoặc video từ máy",
+    "uploading": "Đang tải lên...",
+    "postSuccess": "Đã đăng tin mới thành công!",
+    "postError": "Đăng tin thất bại",
+    "publishStory": "Chia sẻ lên Story",
+    "holdToPause": "Giữ để tạm dừng",
+    "viewers": "người xem",
+    "replyPlaceholder": "Gửi tin nhắn phản hồi story...",
+    "replySent": "Đã gửi phản hồi vào tin nhắn chat",
+    "reactSent": "Đã thả cảm xúc {{emoji}}",
+    "deleteStorySuccess": "Đã xóa tin thành công",
+    "deleteStoryError": "Không thể xóa tin",
+    "musicTitle": "Nhạc nền Story",
+    "uploadAudio": "Tải nhạc từ máy",
+    "removeMusic": "Gỡ nhạc",
+    "stickersTitle": "Nhãn dán & Tiện ích",
+    "filters": {
+      "normal": "Gốc",
+      "warm": "Ấm áp",
+      "cool": "Tươi mát",
+      "vintage": "Cổ điển",
+      "noir": "Đen trắng",
+      "vivid": "Rực rỡ",
+      "cyberpunk": "Cyber",
+      "dreamy": "Mơ mộng"
+    }
   }
 }
