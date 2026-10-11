@@ -1,4 +1,4 @@
-﻿import { apiFetch, requestJson } from './apiClient'
+import { apiFetch, ApiRequestError, requestJson } from './apiClient'
 import type { UserStoryGroup } from '../../types'
 
 export const storyApi = {
@@ -18,6 +18,24 @@ export const storyApi = {
       console.log('[storyApi] Received response status:', response.status)
       const data = await response.json()
       console.log('[storyApi] Response data:', data)
+
+      if (!response.ok) {
+        const retryAfterHeader = response.headers.get('Retry-After')
+        const retryAfterSeconds =
+          typeof data?.retryAfterSeconds === 'number'
+            ? data.retryAfterSeconds
+            : retryAfterHeader
+              ? Number.parseInt(retryAfterHeader, 10)
+              : undefined
+
+        throw new ApiRequestError(
+          data?.message || 'Không thể đăng story!',
+          response.status,
+          data?.errors,
+          retryAfterSeconds,
+        )
+      }
+
       return data
     } catch (err) {
       console.error('[storyApi] Error in apiFetch:', err)

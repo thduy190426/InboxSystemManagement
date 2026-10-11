@@ -8,6 +8,7 @@ export const SESSION_EXPIRED_EVENT = 'auth:session-expired'
 type ApiErrorBody = {
   message?: string
   errors?: Record<string, string>
+  retryAfterSeconds?: number
 }
 
 type ApiFetchOptions = RequestInit & {
@@ -17,12 +18,19 @@ type ApiFetchOptions = RequestInit & {
 export class ApiRequestError extends Error {
   status: number
   errors?: Record<string, string>
+  retryAfterSeconds?: number
 
-  constructor(message: string, status: number, errors?: Record<string, string>) {
+  constructor(
+    message: string,
+    status: number,
+    errors?: Record<string, string>,
+    retryAfterSeconds?: number,
+  ) {
     super(message)
     this.name = 'ApiRequestError'
     this.status = status
     this.errors = errors
+    this.retryAfterSeconds = retryAfterSeconds
   }
 }
 
@@ -78,11 +86,33 @@ export async function requestJson<T>(
 
   if (!response.ok) {
     const errorBody = body as ApiErrorBody
+    const retryAfterHeader = response.headers.get('Retry-After')
+    const retryAfterSeconds =
+      typeof errorBody.retryAfterSeconds === 'number'
+        ? errorBody.retryAfterSeconds
+        : retryAfterHeader
+          ? Number.parseInt(retryAfterHeader, 10)
+          : undefined
+
+    let message = errorBody.message ?? defaultErrorMessage
+    if (response.status === 429) {
+      if (retryAfterSeconds) {
+        message = i18n.t('api.rateLimitWithWait', {
+          defaultValue: `Bạn thao tác quá nhanh. Vui lòng thử lại sau ${retryAfterSeconds} giây!`,
+          seconds: retryAfterSeconds,
+        })
+      } else {
+        message = i18n.t('api.rateLimitDefault', {
+          defaultValue: 'Bạn đã gửi quá nhiều yêu cầu. Vui lòng chờ trong giây lát!',
+        })
+      }
+    }
 
     throw new ApiRequestError(
-      errorBody.message ?? defaultErrorMessage,
+      message,
       response.status,
       errorBody.errors,
+      retryAfterSeconds,
     )
   }
 

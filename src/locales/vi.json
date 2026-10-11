@@ -11,6 +11,11 @@
     "facebookLoginErr": "Không thể đăng nhập bằng Facebook!",
     "registerErr": "Không thể đăng ký!"
   },
+  "api": {
+    "genericError": "Không thể xử lý yêu cầu!",
+    "rateLimitWithWait": "Bạn thao tác quá nhanh. Vui lòng thử lại sau {{seconds}} giây!",
+    "rateLimitDefault": "Bạn đã gửi quá nhiều yêu cầu. Vui lòng chờ trong giây lát!"
+  },
   "auth": {
     "login": {
       "title": "Chào mừng trở lại!",

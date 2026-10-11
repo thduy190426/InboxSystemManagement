@@ -11,6 +11,11 @@
     "facebookLoginErr": "Cannot log in with Facebook!",
     "registerErr": "Cannot register!"
   },
+  "api": {
+    "genericError": "Unable to process the request!",
+    "rateLimitWithWait": "You are performing actions too quickly. Please retry after {{seconds}} seconds!",
+    "rateLimitDefault": "Too many requests. Please wait a moment!"
+  },
   "auth": {
     "login": {
       "title": "Welcome back!",
