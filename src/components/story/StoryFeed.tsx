@@ -6,6 +6,7 @@ import type { UserStoryGroup } from '../../types'
 import { getRealtimeSocket } from '../../services/realtime/realtime'
 import { getStoredAuthSession } from '../../services/storage/authStorage'
 import { useTranslation } from 'react-i18next'
+import { FeatureBadge } from '../ui/FeatureBadge'
 
 type StoryFeedProps = {
   onCreateClick: () => void
@@ -62,10 +63,11 @@ export function StoryFeed({ onCreateClick, onStoryClick, pushToast }: StoryFeedP
   const otherStoryGroups = storyGroups.filter(g => String(g.user_id) !== String(user?.id) && Array.isArray(g.items) && g.items.length > 0)
 
   return (
-    <div className="story-feed">
+    <div className="story-feed" data-tour="story-feed">
       <div className="story-feed-scroll">
         <button 
           className="story-circle create-story"
+          data-tour="create-story-btn"
           onClick={() => {
             if (myStoryGroup) {
               onStoryClick(myStoryGroup, storyGroups)
@@ -83,7 +85,10 @@ export function StoryFeed({ onCreateClick, onStoryClick, pushToast }: StoryFeedP
               </span>
             )}
           </div>
-          <span className="story-name">{t('yourStory')}</span>
+          <span className="story-name" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+            {t('yourStory')}
+            <FeatureBadge featureId="story" />
+          </span>
         </button>
 
         {otherStoryGroups.map((group) => (
