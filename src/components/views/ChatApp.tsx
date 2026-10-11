@@ -14,6 +14,8 @@ import { NotificationsPanel } from '../panels/NotificationsPanel'
 const ProfilePage = lazy(() => import('./ProfilePage').then(m => ({ default: m.ProfilePage })))
 const SettingsPage = lazy(() => import('./SettingsPage').then(m => ({ default: m.SettingsPage })))
 
+import { useAutoTour } from '../../hooks/tutorial/useAutoTour'
+
 type ChatAppProps = {
   currentUser: AuthUser | null
   onAccountDeleted: () => void
@@ -24,6 +26,7 @@ type ChatAppProps = {
 
 export function ChatApp(props: ChatAppProps) {
   const ctrl = useChatAppController(props)
+  useAutoTour('chat', ctrl.activeView === 'chat' && !ctrl.isLoading, props.currentUser?.id)
   
   function renderNavRail() {
     return (

@@ -332,7 +332,7 @@ export function ChatPanel(props: ChatPanelProps) {
           }}
         />
 
-        <div className="header-actions">
+        <div className="header-actions" data-tour="chat-header-actions">
           <button
             className="icon-button"
             disabled={isBlocked || activeConversation.restricted}

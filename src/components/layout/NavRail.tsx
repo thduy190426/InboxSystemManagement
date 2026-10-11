@@ -121,6 +121,7 @@ export function NavRail({
     <aside
       ref={asideRef}
       className={isOpen ? 'nav-rail is-open' : 'nav-rail'}
+      data-tour="nav-rail"
       aria-label={t('mainNav')}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}

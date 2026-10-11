@@ -453,7 +453,7 @@ export function InboxPanel({
         </div>
       </header>
 
-      <label className="search-field">
+      <label className="search-field" data-tour="inbox-search-filter">
         <Search size={18} />
         <input
           aria-label={t('searchConvLabel')}
@@ -648,7 +648,7 @@ export function InboxPanel({
         </button>
       </div>
 
-      <div className="conversation-list">
+      <div className="conversation-list" data-tour="inbox-conversation-list">
         {conversations.map((conversation) => (
           <button
             className={

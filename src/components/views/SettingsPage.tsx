@@ -1,16 +1,21 @@
 import {
   AlertTriangle,
   ChevronDown,
+  Compass,
   Eye,
   EyeOff,
   IdCard,
   KeyRound,
   Laptop,
   LogOut,
+  MessageSquare,
   RefreshCw,
+  RotateCcw,
   Settings,
   ShieldCheck,
+  Sparkles,
   Trash2,
+  UserRound,
 } from 'lucide-react'
 import {
   type UserSession,
@@ -18,6 +23,9 @@ import {
 import type { AuthUser } from '../../services/api/authApi'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { TwoFactorSettings } from './TwoFactorSettings'
+import { useAutoTour } from '../../hooks/tutorial/useAutoTour'
+import { startTour } from '../../services/tutorial/tourService'
+import { useTutorialStore } from '../../stores/tutorialStore'
 
 export type SettingsPageProps = {
   currentUser: AuthUser | null
@@ -93,11 +101,12 @@ type CardProps = {
   footer?: React.ReactNode
   dangerBorder?: boolean
   id?: string
+  dataTour?: string
 }
 
-function Card({ id, icon, iconVariant = 'default', title, description, children, footer, dangerBorder }: CardProps) {
+function Card({ id, icon, iconVariant = 'default', title, description, children, footer, dangerBorder, dataTour }: CardProps) {
   return (
-    <div id={id} className={`sp-card${dangerBorder ? ' sp-card--danger' : ''}`}>
+    <div id={id} data-tour={dataTour} className={`sp-card${dangerBorder ? ' sp-card--danger' : ''}`}>
       <div className="sp-card-header">
         <div className={`sp-card-icon sp-card-icon--${iconVariant}`}>{icon}</div>
         <div className="sp-card-header-text">
@@ -214,6 +223,8 @@ export function SettingsPage(props: SettingsPageProps) {
     t
   } = useSettingsPageController(props)
 
+  useAutoTour('settings', true, props.currentUser?.id)
+
   const {
     currentUser, onUserChange, pushToast
   } = props
@@ -250,6 +261,9 @@ export function SettingsPage(props: SettingsPageProps) {
           </button>
           <button className={`sp-nav-item${activeSection === 'sessions' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('sessions')}>
             <Laptop size={15} /> {t('navSessions')}
+          </button>
+          <button className={`sp-nav-item${activeSection === 'tutorial-settings' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('tutorial-settings')}>
+            <Compass size={15} /> {t('tutorial.helpSection.cardTitle', { defaultValue: 'Hướng dẫn & Trợ giúp' })}
           </button>
           <div className="sp-nav-divider" />
           <button className={`sp-nav-item sp-nav-item--danger${activeSection === 'delete-account' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('delete-account')}>
@@ -313,6 +327,7 @@ export function SettingsPage(props: SettingsPageProps) {
 
           <Card
             id="app-settings"
+            dataTour="settings-theme"
             icon={<Settings size={16} />}
             title={t('appTitle')}
             description={t('appDesc')}
@@ -423,6 +438,7 @@ export function SettingsPage(props: SettingsPageProps) {
 
           <Card
             id="two-factor"
+            dataTour="settings-security-2fa"
             icon={<ShieldCheck size={16} />}
             title={t('twoFactor.title')}
             description={t('twoFactor.description')}
@@ -443,7 +459,7 @@ export function SettingsPage(props: SettingsPageProps) {
             />
           </Card>
 
-          <section id="sessions" className="sp-card" aria-labelledby="sessions-title">
+          <section id="sessions" data-tour="settings-sessions" className="sp-card" aria-labelledby="sessions-title">
             <div className="sp-card-header">
               <div className="sp-card-icon sp-card-icon--default">
                 <ShieldCheck size={16} />
@@ -530,6 +546,73 @@ export function SettingsPage(props: SettingsPageProps) {
               </div>
             </div>
           </section>
+
+          <Card
+            id="tutorial-settings"
+            dataTour="settings-tutorial-replay"
+            icon={<Compass size={16} />}
+            title={t('tutorial.helpSection.cardTitle', { defaultValue: 'Hướng dẫn sử dụng & Khám phá (Product Tour)' })}
+            description={t('tutorial.helpSection.cardDesc', { defaultValue: 'Trải nghiệm lại các bước hướng dẫn trực quan hoặc đặt lại trạng thái khám phá của hệ thống.' })}
+          >
+            <div className="tutorial-replay-actions" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+                <button
+                  type="button"
+                  className="sp-btn sp-btn--ghost"
+                  style={{ justifyContent: 'flex-start', padding: '10px 14px', borderRadius: '10px' }}
+                  onClick={() => {
+                    props.pushToast?.(t('tutorial.helpSection.launchingChat', { defaultValue: 'Đang mở hướng dẫn Chat...' }), 'info')
+                    startTour('chat', { force: true })
+                  }}
+                >
+                  <MessageSquare size={16} />
+                  <span>{t('tutorial.helpSection.replayChat', { defaultValue: 'Hướng dẫn Chat' })}</span>
+                </button>
+                <button
+                  type="button"
+                  className="sp-btn sp-btn--ghost"
+                  style={{ justifyContent: 'flex-start', padding: '10px 14px', borderRadius: '10px' }}
+                  onClick={() => startTour('story', { force: true })}
+                >
+                  <Sparkles size={16} />
+                  <span>{t('tutorial.helpSection.replayStory', { defaultValue: 'Hướng dẫn Story' })}</span>
+                </button>
+                <button
+                  type="button"
+                  className="sp-btn sp-btn--ghost"
+                  style={{ justifyContent: 'flex-start', padding: '10px 14px', borderRadius: '10px' }}
+                  onClick={() => startTour('profile', { force: true })}
+                >
+                  <UserRound size={16} />
+                  <span>{t('tutorial.helpSection.replayProfile', { defaultValue: 'Hướng dẫn Hồ sơ' })}</span>
+                </button>
+                <button
+                  type="button"
+                  className="sp-btn sp-btn--ghost"
+                  style={{ justifyContent: 'flex-start', padding: '10px 14px', borderRadius: '10px' }}
+                  onClick={() => startTour('settings', { force: true })}
+                >
+                  <Settings size={16} />
+                  <span>{t('tutorial.helpSection.replaySettings', { defaultValue: 'Hướng dẫn Cài đặt' })}</span>
+                </button>
+              </div>
+
+              <div style={{ marginTop: '4px', paddingTop: '12px', borderTop: '1px solid var(--border-color, rgba(255,255,255,0.08))' }}>
+                <button
+                  type="button"
+                  className="sp-btn sp-btn--danger"
+                  style={{ padding: '8px 14px', fontSize: '0.85rem' }}
+                  onClick={() => {
+                    useTutorialStore.getState().resetAllTours()
+                    props.pushToast?.(t('tutorial.helpSection.resetSuccess', { defaultValue: 'Đã đặt lại trạng thái hướng dẫn thành công!' }), 'info')
+                  }}
+                >
+                  <RotateCcw size={14} />
+                  <span>{t('tutorial.helpSection.resetAll', { defaultValue: 'Đặt lại tất cả hướng dẫn' })}</span>
+                </button>
+              </div>
+            </div>
+          </Card>
 
           <Card
             id="delete-account"

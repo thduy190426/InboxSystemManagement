@@ -14,6 +14,7 @@ import {
 import { AvatarCropper } from '../ui/AvatarCropper'
 import { AvatarFallback } from '../ui/AvatarFallback'
 import { useTranslation } from 'react-i18next'
+import { useAutoTour } from '../../hooks/tutorial/useAutoTour'
 import type { EmojiClickData, EmojiStyle, Theme } from 'emoji-picker-react'
 const EmojiPicker = lazy(() => import('emoji-picker-react'))
 
@@ -117,11 +118,12 @@ type ProfileSectionProps = {
   icon: React.ReactNode
   title: string
   children: React.ReactNode
+  dataTour?: string
 }
 
-function ProfileSection({ icon, title, children }: ProfileSectionProps) {
+function ProfileSection({ icon, title, children, dataTour }: ProfileSectionProps) {
   return (
-    <section className="pp-section">
+    <section className="pp-section" data-tour={dataTour}>
       <div className="pp-section-header">
         <span className="pp-section-icon">{icon}</span>
         <h2>{title}</h2>
@@ -155,6 +157,7 @@ function ProfileField({ label, icon, error, wide, children }: ProfileFieldProps)
 }
 
 export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePageProps) {
+  useAutoTour('profile', true, currentUser?.id)
   const [fullName, setFullName] = useState(currentUser?.fullName ?? '')
   const [form, setForm] = useState<ProfilePayload>(() => createInitialForm(currentUser))
   const [initialForm, setInitialForm] = useState<ProfilePayload>(() => createInitialForm(currentUser))
@@ -297,7 +300,7 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
 
       <form className="pp-form-wrapper" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <div className="pp-grid">
-          <ProfileSection icon={<Camera size={15} />} title={t('avatarSection')}>
+          <ProfileSection icon={<Camera size={15} />} title={t('avatarSection')} dataTour="profile-avatar-cover">
           <div className="pp-avatar-card">
             <div className="pp-avatar-wrap">
               <AvatarFallback
@@ -349,7 +352,7 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
           </div>
         </ProfileSection>
 
-        <ProfileSection icon={<IdCard size={15} />} title={t('basicInfoSection')}>
+        <ProfileSection icon={<IdCard size={15} />} title={t('basicInfoSection')} dataTour="profile-info-fields">
             <div className="pp-fields">
 
               <ProfileField label={t('displayNameLabel')} icon={<IdCard size={14} />} error={profileErrors.displayName}>
@@ -420,7 +423,7 @@ export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePag
             </div>
           </ProfileSection>
 
-          <ProfileSection icon={<MapPin size={15} />} title={t('additionalInfoSection')}>
+          <ProfileSection icon={<MapPin size={15} />} title={t('additionalInfoSection')} dataTour="profile-privacy-toggles">
             <div className="pp-fields">
               <ProfileField label={t('addressLabel')} icon={<MapPin size={14} />} error={profileErrors.address} wide>
                 <input
