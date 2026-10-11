@@ -1132,5 +1132,61 @@
   "stopShare": "Stop sharing",
   "shareScreen": "Share screen",
   "endCall": "End",
-  "resize": "Resize"
+  "resize": "Resize",
+  "tutorial": {
+    "badge": "✨ New",
+    "buttons": {
+      "next": "Next",
+      "prev": "Back",
+      "done": "Done",
+      "skip": "Skip"
+    },
+    "chat": {
+      "navRailTitle": "Navigation Bar",
+      "navRailDesc": "Quickly switch between Messages, Contacts, Profile, Settings, and Notifications.",
+      "searchFilterTitle": "Search & Filters",
+      "searchFilterDesc": "Instantly search conversations, contacts, and filter by Unread or Pinned.",
+      "conversationListTitle": "Conversations List",
+      "conversationListDesc": "Browse recent conversations, pinned chats, and view your friends' active status.",
+      "headerActionsTitle": "Chat Controls",
+      "headerActionsDesc": "Start voice calls, high-definition video calls, or pin and inspect conversation details.",
+      "messageInputTitle": "Compose & Attach",
+      "messageInputDesc": "Type messages, attach photos/files, pick emojis, and create group polls."
+    },
+    "story": {
+      "feedTitle": "Friends Stories (24h)",
+      "feedDesc": "Explore moments and updates shared by your friends in the past 24 hours.",
+      "createBtnTitle": "Create Story",
+      "createBtnDesc": "Share photos, text stories, and custom backgrounds with your friends."
+    },
+    "profile": {
+      "avatarCoverTitle": "Avatar & Cover",
+      "avatarCoverDesc": "Personalize your profile with an avatar photo and a cover image.",
+      "infoFieldsTitle": "Personal Details",
+      "infoFieldsDesc": "Update your display name, biography, birthdate, and contact phone number.",
+      "privacyTitle": "Privacy Settings",
+      "privacyDesc": "Control online status visibility, personal details sharing, and read receipts."
+    },
+    "settings": {
+      "themeTitle": "Appearance & Language",
+      "themeDesc": "Switch between Light and Dark mode, and choose your preferred app language.",
+      "securityTitle": "Two-Factor Auth (2FA)",
+      "securityDesc": "Enable two-factor authentication and change your password for enhanced protection.",
+      "sessionsTitle": "Active Sessions",
+      "sessionsDesc": "Review and manage all devices currently logged into your account.",
+      "replayTitle": "Help & Product Tour",
+      "replayDesc": "Replay any tour or reset the guided walkthrough state anytime."
+    },
+    "helpSection": {
+      "cardTitle": "Quick Tutorial & Product Tour",
+      "cardDesc": "Explore guided walkthroughs for major features or reset tutorial completion status.",
+      "replayChat": "Chat Tour",
+      "replayStory": "Story Tour",
+      "replayProfile": "Profile Tour",
+      "replaySettings": "Settings Tour",
+      "resetAll": "Reset All Tutorials",
+      "resetSuccess": "All tutorial statuses have been reset!",
+      "launchingChat": "Opening Chat tour..."
+    }
+  }
 }

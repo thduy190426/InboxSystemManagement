@@ -1132,5 +1132,61 @@
   "stopShare": "Dừng chia sẻ",
   "shareScreen": "Chia sẻ màn hình",
   "endCall": "Kết thúc",
-  "resize": "Thay đổi kích thước"
+  "resize": "Thay đổi kích thước",
+  "tutorial": {
+    "badge": "✨ New",
+    "buttons": {
+      "next": "Tiếp tục",
+      "prev": "Quay lại",
+      "done": "Hoàn tất",
+      "skip": "Bỏ qua"
+    },
+    "chat": {
+      "navRailTitle": "Thanh Điều Hướng Nhanh",
+      "navRailDesc": "Chuyển đổi tức thì giữa các phân hệ: Tin nhắn, Danh bạ bạn bè, Hồ sơ cá nhân, Cài đặt và Thông báo hệ thống.",
+      "searchFilterTitle": "Tìm Kiếm & Bộ Lọc",
+      "searchFilterDesc": "Tìm nhanh người dùng, tin nhắn và lọc theo trạng thái: Chưa đọc hoặc Đã ghim.",
+      "conversationListTitle": "Danh Sách Trò Chuyện",
+      "conversationListDesc": "Xem tin nhắn mới nhất, ghim hội thoại quan trọng và trạng thái hoạt động của bạn bè.",
+      "headerActionsTitle": "Tương Tác Cuộc Trò Chuyện",
+      "headerActionsDesc": "Thực hiện cuộc gọi thoại, gọi video chất lượng cao hoặc ghim và xem thông tin hội thoại.",
+      "messageInputTitle": "Soạn Thảo & Đính Kèm",
+      "messageInputDesc": "Gửi tin nhắn, đính kèm file/hình ảnh, chọn Emoji cảm xúc và tạo cuộc bình chọn (Poll) nhóm."
+    },
+    "story": {
+      "feedTitle": "Story Bạn Bè (24 Giờ)",
+      "feedDesc": "Khám phá các khoảnh khắc và cập nhật mới nhất từ bạn bè của bạn trong vòng 24 giờ qua.",
+      "createBtnTitle": "Tạo Story Mới",
+      "createBtnDesc": "Chia sẻ khoảnh khắc với ảnh, văn bản và màu nền độc đáo với bạn bè."
+    },
+    "profile": {
+      "avatarCoverTitle": "Ảnh Đại Diện & Ảnh Bìa",
+      "avatarCoverDesc": "Cập nhật ảnh đại diện và ảnh bìa để tạo dấu ấn cá nhân trong cộng đồng.",
+      "infoFieldsTitle": "Thông Tin Cá Nhân",
+      "infoFieldsDesc": "Chỉnh sửa tên hiển thị, tiểu sử, ngày sinh và số điện thoại liên hệ.",
+      "privacyTitle": "Quyền Riêng Tư",
+      "privacyDesc": "Kiểm soát việc hiển thị trạng thái online, thông tin cá nhân và thông báo đã xem."
+    },
+    "settings": {
+      "themeTitle": "Giao Diện & Ngôn Ngữ",
+      "themeDesc": "Lựa chọn chế độ Sáng / Tối và thay đổi ngôn ngữ hiển thị của ứng dụng.",
+      "securityTitle": "Bảo Mật Hai Lớp (2FA)",
+      "securityDesc": "Bật xác thực hai yếu tố (2FA) và đổi mật khẩu để bảo vệ tài khoản tối đa.",
+      "sessionsTitle": "Quản Lý Phiên Đăng Nhập",
+      "sessionsDesc": "Theo dõi danh sách thiết bị đang đăng nhập và đăng xuất từ xa khi cần.",
+      "replayTitle": "Hướng Dẫn & Trợ Giúp",
+      "replayDesc": "Xem lại hướng dẫn cho từng trang hoặc đặt lại toàn bộ trạng thái hướng dẫn bất kỳ lúc nào."
+    },
+    "helpSection": {
+      "cardTitle": "Hướng dẫn sử dụng & Khám phá (Product Tour)",
+      "cardDesc": "Trải nghiệm lại các bước hướng dẫn trực quan hoặc đặt lại trạng thái khám phá của hệ thống.",
+      "replayChat": "Hướng dẫn Chat",
+      "replayStory": "Hướng dẫn Story",
+      "replayProfile": "Hướng dẫn Hồ sơ",
+      "replaySettings": "Hướng dẫn Cài đặt",
+      "resetAll": "Đặt lại tất cả hướng dẫn",
+      "resetSuccess": "Đã đặt lại trạng thái hướng dẫn thành công!",
+      "launchingChat": "Đang mở hướng dẫn Chat..."
+    }
+  }
 }
