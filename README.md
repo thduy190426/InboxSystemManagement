@@ -1,4 +1,4 @@
-# Inbox System Management (Nền Tảng Trò Chuyện & Mạng Xã Hội Trực Tuyến)
+# Inbox System Management (Real-Time Communication & Social Platform)
 
 ![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![Vite](https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E)
@@ -10,299 +10,300 @@
 ![WebRTC](https://img.shields.io/badge/WebRTC-333333?style=for-the-badge&logo=webrtc&logoColor=white)
 ![PWA](https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)
 
-**Inbox System Management** là nền tảng giao tiếp và mạng xã hội trực tuyến toàn diện, cung cấp trải nghiệm nhắn tin thời gian thực, gọi thoại/video chất lượng cao, tính năng Story 24h tương tự Facebook/Messenger/Instagram, mã hóa đầu cuối E2EE, cùng bảng điều khiển quản trị chuyên sâu. Hệ thống sở hữu giao diện người dùng cao cấp với phong cách Glassmorphism hiện đại, hỗ trợ Progressive Web App (PWA) và đa ngôn ngữ hoàn chỉnh.
+**Inbox System Management** is a full-featured real-time communication and social media platform that delivers instant messaging, high-fidelity WebRTC voice & video calling, an Instagram/Facebook-grade 24-hour Story ecosystem, Signal-protocol End-to-End Encryption (E2EE), and a comprehensive administrative management dashboard. Built with a modern Glassmorphism visual language, smooth micro-interactions, full Progressive Web App (PWA) offline support, and bilingual internationalization (i18n).
 
 ---
 
-## Mục Tiêu & Tổng Quan Hệ Thống
+## System Overview & Objectives
 
-Dự án được xây dựng với mục tiêu mang lại một môi trường kết nối an toàn, mượt mà và giàu tương tác cho người dùng cá nhân lẫn đội nhóm. Ứng dụng tích hợp kiến trúc micro-features với WebSocket hai chiều, cơ chế tự phục hồi schema cơ sở dữ liệu (Self-healing DB Migration), hệ thống kiểm duyệt nội dung tự động, cùng khả năng phân quyền đa cấp bậc.
+The system is architected to provide an enterprise-ready, fluid, and highly interactive communication hub for individuals, teams, and communities. It combines a reactive micro-feature frontend with persistent two-way WebSockets, self-healing database schema migrations, automated real-time content moderation, granular role-based access control, and hardware-accelerated media streaming.
 
 ---
 
-## Rà Soát Chi Tiết Chức Năng Theo Từng Trang & Phân Hệ
+## Comprehensive Feature Audit by Page & Module
 
-### 1. Trang Đăng Nhập & Xác Thực (`LoginPage.tsx`)
-- **Đăng nhập cơ bản:** Hỗ trợ đăng nhập bằng Email và Mật khẩu với cơ chế kiểm tra dữ liệu đầu vào chuẩn xác.
-- **Xác thực mạng xã hội (OAuth 2.0):** Đăng nhập nhanh 1-chạm thông qua tài khoản **Google** và **Facebook**.
-- **Xác thực 2 lớp (2FA TOTP):** Tự động phát hiện tài khoản đã bật 2FA và hiển thị giao diện nhập mã OTP 6 số từ Google Authenticator / Authy trước khi cấp quyền truy cập.
-- **Ghi nhớ đăng nhập (Remember Me):** Lưu trữ phiên làm việc an toàn trên LocalStorage hoặc SessionStorage.
-- **Bảo vệ chống Bot (Google reCAPTCHA):** Ngăn chặn các cuộc tấn công tự động và brute-force đăng nhập.
-- **Chuyển hướng thông minh:** Tự động điều hướng người dùng quay lại trang trước đó sau khi đăng nhập thành công.
+### 1. Authentication & Login Page (`LoginPage.tsx`)
+- **Standard Authentication:** Secure login using Email and Password with real-time input validation.
+- **Social OAuth 2.0 Sign-In:** One-click single sign-on via **Google** and **Facebook**.
+- **Two-Factor Authentication (2FA TOTP):** Automatic detection of 2FA-enabled accounts, rendering a secure 6-digit TOTP verification view for Google Authenticator / Authy before granting session tokens.
+- **Persistent Session (Remember Me):** Secure token storage management across LocalStorage and SessionStorage.
+- **Bot Defense (Google reCAPTCHA):** Shielding authentication endpoints from brute-force and automated credential-stuffing attacks.
+- **Intelligent Redirects:** Automatically redirects authenticated users back to their intended route after successful sign-in.
 
-### 2. Trang Đăng Ký Tài Khoản (`RegisterPage.tsx`)
-- **Biểu mẫu đăng ký đầy đủ:** Nhập Họ tên, Email, Số điện thoại, Mật khẩu và Xác nhận mật khẩu.
-- **Đo lường độ mạnh mật khẩu:** Đánh giá độ an toàn của mật khẩu theo thời gian thực (độ dài, ký tự đặc biệt, chữ hoa, số).
-- **Điều khoản & Chính sách:** Tích hợp liên kết trực tiếp đến trang Điều khoản dịch vụ và Chính sách bảo mật.
-- **Tự động kích hoạt tài khoản:** Tạo tài khoản ngay lập tức và gửi thông báo chào mừng.
+### 2. User Registration Page (`RegisterPage.tsx`)
+- **Complete Onboarding Form:** Captures Full Name, Email, Phone Number, Password, and Password Confirmation.
+- **Real-Time Password Strength Meter:** Evaluates password resilience dynamically across length, case variation, numbers, and special symbols.
+- **Legal Compliance:** In-app links to the Terms of Service and Privacy Policy agreements.
+- **Instant Activation:** Creates account credentials instantly and triggers welcome notifications.
 
-### 3. Trang Quên Mật Khẩu & Khôi Phục (`ForgotPasswordPage.tsx`)
-- **Gửi mã xác minh OTP:** Gửi mã xác thực dùng một lần (OTP) về Email người dùng qua dịch vụ Resend hoặc Mailtrap.
-- **Đếm ngược thời gian OTP:** Cơ chế đếm ngược gửi lại mã tránh lạm dụng yêu cầu.
-- **Đặt lại mật khẩu an toàn:** Nhập mã OTP hợp lệ và đổi mật khẩu mới trực tiếp không cần đăng nhập lại.
+### 3. Password Recovery & Reset Page (`ForgotPasswordPage.tsx`)
+- **Email OTP Verification:** Dispatches secure single-use 6-digit OTP tokens to user email addresses via Resend API / Mailtrap.
+- **Resend Cooldown Timer:** Prevents email flooding with an automated countdown before a new OTP can be requested.
+- **Direct Password Reset:** Allows users to set a new password immediately upon successful token validation without requiring re-authentication.
 
-### 4. Trang Pháp Lý & Lỗi Điều Hướng (`TermsPage.tsx`, `PrivacyPolicyPage.tsx`, `NotFoundPage.tsx`)
-- **Điều khoản sử dụng (`/terms`):** Quy định rõ ràng quyền hạn, trách nhiệm tài khoản và chuẩn mực giao tiếp trong hệ thống.
-- **Chính sách bảo mật (`/privacy`):** Minh bạch về cách thức thu thập, lưu trữ, mã hóa và bảo vệ dữ liệu cá nhân.
-- **Trang 404 Không tìm thấy (`NotFoundPage.tsx`):** Giao diện thân thiện khi đường dẫn không tồn tại, hỗ trợ nút "Quay lại trang trước" hoặc "Về hộp thư chính".
+### 4. Legal & Error Navigation Pages (`TermsPage.tsx`, `PrivacyPolicyPage.tsx`, `NotFoundPage.tsx`)
+- **Terms of Service (`/terms`):** Detailed guidelines on user rights, account responsibilities, communication standards, and acceptable use policies.
+- **Privacy Policy (`/privacy`):** Transparent disclosures regarding data collection, encryption, cookie handling, and personal data retention.
+- **Custom 404 Error Page (`NotFoundPage.tsx`):** Friendly, interactive fallback page offering quick actions to "Return to previous page" or "Navigate to Inbox".
 
-### 5. Phân Hệ Trò Chuyện & Nhắn Tin Thời Gian Thực (`ChatApp.tsx`, `InboxPanel.tsx`, `ChatPanel.tsx`, `DetailPanel.tsx`)
-#### a. Quản lý danh sách hội thoại (Inbox Panel):
-- **Phân loại Tab thông minh:** 
-  - *Tất cả (All):* Toàn bộ cuộc trò chuyện.
-  - *Chưa đọc (Unread):* Lọc nhanh tin nhắn mới chưa xem.
-  - *Chờ / Lời mời (Requests):* Tin nhắn từ người lạ chưa kết bạn.
-  - *Nhóm (Group):* Các nhóm chat đang tham gia.
-  - *Lưu trữ (Archived):* Các cuộc trò chuyện đã ẩn/lưu trữ.
-- **Ghim hội thoại (Pin / Unpin):** Ghim các cuộc trò chuyện quan trọng lên vị trí đầu tiên.
-- **Tìm kiếm toàn cục (Global Search):** Tìm kiếm tức thì người dùng, bạn bè và nội dung tin nhắn.
-- **Tùy biến kích thước danh sách:** Thanh kéo giãn (Resizer) cho phép tùy chỉnh độ rộng danh sách chat từ 320px đến 45vw, hoặc thu gọn thành dạng mini icon (100px).
-- **Huy hiệu hoạt động:** Hiển thị chấm trạng thái online và thời lượng trực tuyến (`OnlineDurationBadge`).
+### 5. Real-Time Chat & Instant Messaging (`ChatApp.tsx`, `InboxPanel.tsx`, `ChatPanel.tsx`, `DetailPanel.tsx`)
 
-#### b. Nhắn tin 1-1 & Trò chuyện nhóm (Direct & Group Chat):
-- **Tạo nhóm chat nâng cao:** Đặt tên nhóm, tải ảnh đại diện nhóm, tìm kiếm và thêm thành viên với kiểm tra số lượng tối thiểu.
-- **Phân quyền trong nhóm:** Trưởng nhóm (Owner) và Thành viên (Member); kiểm duyệt yêu cầu tham gia (Join Requests), liên kết mời vào nhóm (Invite Link), đổi tên nhóm, đổi avatar, đặt biệt danh (Nicknames).
-- **Giải tán & Rời nhóm:** Trưởng nhóm có quyền chuyển nhượng hoặc giải tán nhóm; thành viên có thể rời nhóm bất kỳ lúc nào.
-- **Nội dung tin nhắn đa dạng:**
-  - Tin nhắn văn bản định dạng rõ ràng, phát hiện liên kết URL tự động.
-  - Kho biểu tượng cảm xúc Emoji (`emoji-picker-react`).
-  - Kho ảnh động GIF (`GIPHY API`) tìm kiếm theo từ khóa.
-  - Thư viện nhãn dán Sticker tĩnh và động phong phú.
-  - Đính kèm tệp tin: Hình ảnh, video, âm thanh, tài liệu (hỗ trợ kéo thả Drag & Drop và dán từ Clipboard `Ctrl + V`).
-  - Ghi âm và gửi tin nhắn thoại (Voice Message) trực tiếp từ microphone.
-- **Trạng thái gửi tin thời gian thực:** Đang gửi (Sending), Đã gửi (Sent), Đã nhận (Delivered), Đã xem (Seen) kèm hiển thị avatar người đã xem.
-- **Chỉ báo soạn thảo ("Typing..."):** Hiển thị thời gian thực khi đối phương đang gõ tin nhắn.
-- **Tương tác với tin nhắn (Message Context Menu):**
-  - Trả lời tin nhắn (Quote Reply).
-  - Chuyển tiếp tin nhắn (Forward Message Modal) đến người dùng hoặc nhóm khác.
-  - Ghim tin nhắn trong đoạn chat (`PinnedMessagesDrawer`).
-  - Thu hồi / Xóa tin nhắn ở cả hai phía hoặc chỉ phía bản thân.
-  - Chỉnh sửa nội dung tin nhắn đã gửi.
-  - Báo cáo tin nhắn vi phạm (Report Message) gửi đến ban quản trị.
-  - Thả cảm xúc Emoji: Reaction đa dạng kèm hiệu ứng bão cảm xúc ("Reaction Storm") tràn màn hình khi nhấn giữ.
-- **Cuộc bình chọn nhóm (Group Polls):**
-  - Tạo câu hỏi bình chọn (`CreatePollModal.tsx`) với nhiều phương án.
-  - Tùy chọn cho phép chọn nhiều mục, bình chọn ẩn danh.
-  - Hiển thị thanh tỷ lệ phần trăm và số lượng người bình chọn cập nhật thời gian thực (`PollMessage.tsx`).
-- **Mã hóa đầu cuối (E2EE Secret Chat):** Tích hợp công nghệ mã hóa Signal Protocol (`E2EEEngine.ts` với khóa Curve25519) cho các cuộc trò chuyện bí mật.
+#### a. Conversation List & Inbox Management (Inbox Panel):
+- **Smart Category Filtering:**
+  - *All:* Complete list of active conversations.
+  - *Unread:* Quick filter for conversations containing unread messages.
+  - *Requests:* Message requests from non-contacts.
+  - *Groups:* Direct filter for joined group channels.
+  - *Archived:* Vault for hidden or archived conversation threads.
+- **Conversation Pinning (Pin / Unpin):** Priority pinning of vital chats to the top of the conversation list.
+- **Global Search:** Instant searching across contacts, users, and message history with highlighted matching terms.
+- **Custom Resizable Sidebar:** Interactive divider handle allowing users to resize the conversation panel from 320px up to 45vw, or collapse it into a space-efficient Mini Icon bar (100px).
+- **Online Presence Indicator:** Live online status dot coupled with duration badges (`OnlineDurationBadge`).
 
-#### c. Bảng chi tiết cuộc trò chuyện (Detail Panel):
-- **Thông tin hội thoại:** Xem thông tin cá nhân đối phương, thành viên nhóm, biệt danh, trạng thái online.
-- **Kho lưu trữ phương tiện (Media Gallery):** Phân chia theo tab chuyên biệt:
-  - *Hình ảnh (Photos):* Xem toàn bộ ảnh đã gửi (tự động loại trừ ảnh GIF/Emoji).
-  - *Video:* Xem các video đã chia sẻ trong đoạn chat.
-  - *Tệp tin (Files):* Danh sách tài liệu đính kèm kèm kích thước và ngày gửi.
-  - *Liên kết (Links):* Danh sách các đường link đã chia sẻ.
-- **Trình xem ảnh/video phóng to (`GalleryViewer.tsx`):** Xem ảnh toàn màn hình, duyệt qua lại giữa các ảnh.
-- **Tùy biến hình nền (Chat Wallpaper):** Cài đặt hình nền riêng biệt cho từng cuộc trò chuyện, lưu trữ cục bộ.
+#### b. Direct Messaging & Group Collaboration (Chat Panel):
+- **Advanced Group Creation:** Custom group name, group avatar upload, member search, and minimum member validation.
+- **Group Governance & Permissions:** Role segregation between Owner and Members; join request moderation, group invite links, avatar/name updates, and individual member nicknames.
+- **Disbandment & Leaving:** Group owners can transfer ownership or disband groups; members can leave chats freely.
+- **Rich Message Types:**
+  - Standard formatted text with automated URL link preview and detection.
+  - Full Emoji library (`emoji-picker-react`).
+  - Animated GIF search powered by the **GIPHY API**.
+  - Static and animated sticker collections.
+  - File and media attachments: Images, videos, audio clips, and documents with Drag & Drop and Clipboard paste (`Ctrl + V`) support.
+  - Voice audio messaging recorded directly via microphone with waveform preview.
+- **Real-Time Delivery Lifecycle:** Visual status tags for *Sending*, *Sent*, *Delivered*, and *Seen* (with avatar indicators of who viewed the message).
+- **Typing Indicator:** Real-time animated indicator displaying when the other party is typing.
+- **Message Context Actions:**
+  - Reply with quote context.
+  - Message forwarding (`ForwardMessageModal.tsx`) to individuals or groups.
+  - Message pinning (`PinnedMessagesDrawer.tsx`) within the chat stream.
+  - Revoke / Delete messages for everyone or for oneself only.
+  - Edit sent message content inline.
+  - Flag and report inappropriate messages directly to administrators.
+  - Emoji Reactions with interactive **"Reaction Storm"** screen-filling animations on long-press.
+- **Interactive Group Polls:**
+  - Create custom polls (`CreatePollModal.tsx`) with multiple options.
+  - Configurable multiple selections and anonymous voting modes.
+  - Live vote distribution bar and percentage display updating in real-time (`PollMessage.tsx`).
+- **End-to-End Encryption (E2EE Secret Chat):** Integrated Curve25519 Signal Protocol engine (`E2EEEngine.ts`) guaranteeing zero-knowledge confidentiality for secret conversations.
 
-### 6. Phân Hệ Gọi Thoại & Gọi Video Trực Tuyến (`CallOverlay.tsx`, `callRealtime.ts`)
-- **Cuộc gọi WebRTC P2P:** Gọi âm thanh (Audio Call) và gọi hình ảnh (Video Call) chất lượng cao với độ trễ thấp.
-- **Giao diện Overlay linh hoạt:** Cho phép thu nhỏ cuộc gọi xuống góc màn hình để tiếp tục nhắn tin mà không bị ngắt kết nối.
-- **Điều khiển cuộc gọi:** Bật/tắt micro, chuyển đổi camera, bật/tắt camera, chia sẻ màn hình máy tính (Screen Sharing).
-- **Lịch sử cuộc gọi:** Ghi nhận và hiển thị chi tiết lịch sử cuộc gọi trong đoạn chat (thời gian gọi, thời lượng, cuộc gọi nhỡ).
+#### c. Conversation Details Panel (Detail Panel):
+- **Profile & Member Overview:** Inspect recipient contact details, group member rosters, custom nicknames, and presence.
+- **Categorized Media Vault:** Segmented tabs for convenient browsing:
+  - *Photos:* Filtered collection of shared images (automatically excludes GIF stickers and emojis).
+  - *Videos:* Dedicated player grid for shared video clips.
+  - *Files:* Document repository displaying file extensions, sizes, and timestamps.
+  - *Links:* Aggregated history of all shared external web URLs.
+- **Fullscreen Gallery Viewer (`GalleryViewer.tsx`):** Lightbox-style preview with image zooming, pan, and adjacent photo navigation.
+- **Custom Chat Wallpapers:** Set unique custom background wallpapers per conversation, persisted in local storage.
 
-### 7. Phân Hệ Danh Bạ & Bạn Bè (`ContactsPanel.tsx`)
-- **Tìm kiếm bạn bè:** Tìm kiếm người dùng trong toàn hệ thống theo tên, email, tên định danh (@handle).
-- **Quản lý quan hệ bạn bè:**
-  - Gửi lời mời kết bạn, hủy lời mời đã gửi.
-  - Danh sách lời mời kết bạn đã nhận: Chấp nhận hoặc Từ chối.
-  - Danh sách Bạn bè: Trực tiếp nhắn tin hoặc gọi điện.
-  - Danh sách Đã chặn (Blocked Users): Chặn và bỏ chặn người dùng.
-- **Biệt danh riêng tư:** Đặt biệt danh cá nhân hóa cho bạn bè.
-- **Hồ sơ nhanh (`ContactProfile`):** Xem chi tiết thông tin công khai của liên hệ trước khi kết bạn.
-- **Trạng thái hoạt động:** Cập nhật thời gian thực các trạng thái Online, Offline, Bận (Busy), Vắng mặt (Away).
+### 6. High-Definition Voice & Video Calling (`CallOverlay.tsx`, `callRealtime.ts`)
+- **Peer-to-Peer WebRTC Architecture:** Ultra-low latency Audio and Video calls directly between clients.
+- **Floating Call Overlay:** Minimize active calls into a movable picture-in-picture window to continue chatting without interrupting the stream.
+- **In-Call Stream Controls:** Toggle microphone mute, switch active camera devices, toggle video feed, and perform live Desktop Screen Sharing.
+- **Call Session Logging:** Automatic generation of call summary bubbles in the chat thread (call duration, timestamps, and missed call alerts).
 
-### 8. Hệ Thống Story (Tin 24h) Đầy Đủ Như Facebook & Messenger
-#### a. Bảng tin Story (`StoryFeed.tsx`):
-- Thanh Story hình tròn đặt ngay đầu danh sách chat Inbox.
-- Hiển thị nút "Tạo tin mới", story của chính mình và danh sách story bạn bè.
-- Phân biệt viền gradient hồng/tím rực rỡ cho story thông thường và **viền xanh lá đặc trưng** cho story chia sẻ chế độ "Bạn thân (Close Friends)".
-- Hiển thị trạng thái đã xem / chưa xem theo thời gian thực.
+### 7. Contacts & Social Graph Management (`ContactsPanel.tsx`)
+- **Global Directory Search:** Search users across the platform by display name, email, or `@handle`.
+- **Relationship Lifecycle:**
+  - Send and cancel pending friend requests.
+  - Review incoming friend requests: Accept or Decline.
+  - Friend roster with one-click direct messaging and calling shortcuts.
+  - Blocked users manager: Block and unblock users with instant access restriction.
+- **Private Nicknames:** Assign personalized private nicknames to friends.
+- **Quick Contact Profile Modal (`ContactProfile`):** View public user information before initiating contact requests.
+- **Multi-State Presence:** Live status updates reflecting *Online*, *Offline*, *Busy*, and *Away*.
+
+### 8. 24-Hour Story Ecosystem (Facebook / Instagram Grade)
+
+#### a. Story Feed (`StoryFeed.tsx`):
+- Circular avatar reel stationed prominently above the chat list.
+- Highlights "+ Add Story", user's active story, and friend stories.
+- Visual distinction with vibrant purple/pink gradient rings for standard stories, and **signature emerald green rings** for "Close Friends" posts.
+- Instant seen/unseen ring status synchronization via WebSockets.
 
 #### b. Story Creator Studio (`StoryStudioEditor.tsx`, `StoryCreatorModal.tsx`):
-- **Nguồn đăng tin:**
-  - Chụp ảnh hoặc quay video 15s trực tiếp từ Camera (`StoryCameraViewfinder.tsx`).
-  - Tải ảnh / video có sẵn từ thiết bị.
-  - Tạo Story dạng văn bản (Text Story) với nhiều kiểu màu nền đơn sắc và dải gradient nghệ thuật.
-- **Bộ lọc màu điện ảnh (Filters - `StoryFilterSelector.tsx`):** Normal, Warm, Cool, Vintage, Noir, Vivid, Cyberpunk, Dreamy.
-- **Nhạc nền Story (`StoryMusicPicker.tsx`):**
-  - Kho nhạc mẫu sẵn có, hiển thị sóng âm thanh động (Sound waves) chân thực.
-  - Hỗ trợ tải nhạc MP3/Audio từ máy tính lên story.
-  - Huy hiệu đĩa than quay động phát nhạc trong khi xem.
-- **Nhãn dán trang trí & Tiện ích (`StoryStickerPicker.tsx`):**
-  - Chèn Emoji tự do, hỗ trợ kéo thả định vị trên khung canvas 9:16.
-  - Thẻ địa điểm (Location Tag) với gợi ý nhanh các thành phố.
-  - Thẻ chủ đề (Hashtag Tag) định dạng `#hashtag`.
-  - Thẻ nhắc tên bạn bè (Mention Tag) định dạng `@username`.
+- **Flexible Content Sources:**
+  - Live 15-second photo/video capture through camera viewfinder (`StoryCameraViewfinder.tsx`).
+  - Device media upload (JPG, PNG, MP4, MOV).
+  - Text Story mode with curated solid colors and modern gradient backdrops.
+- **Cinematic Visual Filters (`StoryFilterSelector.tsx`):** Normal, Warm, Cool, Vintage, Noir, Vivid, Cyberpunk, and Dreamy.
+- **Story Music Soundtrack Picker (`StoryMusicPicker.tsx`):**
+  - Integrated music library with live animated audio soundwaves.
+  - Custom audio file upload (MP3/AAC).
+  - Spinning vinyl record badge displayed dynamically during playback.
+- **Stickers & Social Tags (`StoryStickerPicker.tsx`):**
+  - Draggable, resizable Emoji stickers on a 9:16 canvas.
+  - Interactive Location Tag with automated city autocomplete.
+  - Topical `#hashtag` sticker.
+  - User mention `@username` sticker.
 
-#### c. Nhãn dán tương tác (Interactive Stickers - `StoryInteractiveWidgets.tsx`):
-- **Bình chọn (Interactive Poll):** Tạo câu hỏi với 2 phương án bình chọn; người xem bấm bình chọn và xem tỷ lệ % kèm đánh dấu lựa chọn của mình ngay lập tức.
-- **Thanh trượt cảm xúc (Emoji Slider):** Người xem kéo thả Emoji yêu thích trên thanh trượt; kích hoạt hiệu ứng nổ hạt Emoji bay lên màn hình và hiển thị điểm trung bình cộng đồng.
-- **Đồng hồ đếm ngược (Interactive Countdown):** Đặt tên sự kiện và mốc thời gian kết thúc; hiển thị đồng hồ đếm ngược Ngày : Giờ : Phút : Giây thời gian thực.
+#### c. Interactive Stickers & Widgets (`StoryInteractiveWidgets.tsx`):
+- **Interactive Poll Widget:** Create two-option questions; viewers tap to cast votes and immediately inspect percentage distributions.
+- **Emoji Slider Widget:** Viewers drag their favorite emoji across a slider gradient, triggering animated floating emoji particles and calculating the community score.
+- **Live Event Countdown Widget:** Set event milestones with real-time Day : Hour : Minute : Second countdown timers.
 
-#### d. Trình phát Story toàn màn hình (`StoryViewerOverlay.tsx`):
-- Tỷ lệ khung hình chuẩn 9:16, thanh tiến trình (Progress Bar) tự động chuyển tiếp từng tin.
-- Nhấn giữ chuột/màn hình để tạm dừng xem tin.
-- Nhấp bên trái/phải để chuyển nhanh tin trước/sau.
-- Thanh tương tác nhanh: Thả cảm xúc Emoji, nhập phản hồi gửi thẳng vào cuộc trò chuyện 1-1 với tác giả.
-- Danh sách người xem (`StoryViewerDrawer.tsx`): Tác giả có thể xem danh sách ai đã xem tin của mình và cảm xúc họ thả.
-- Quyền xóa story của bản thân.
+#### d. Full-Screen Story Viewer (`StoryViewerOverlay.tsx`):
+- Standard 9:16 mobile/desktop viewport with automatic story segment progression bars.
+- Press-and-hold to pause playback; click left/right bounds to jump forward/backward.
+- Quick interactive reaction dock: Tap emojis or type direct responses routed straight to the creator's 1-on-1 chat.
+- Creator Viewers Drawer (`StoryViewerDrawer.tsx`): Displays viewer lists and reaction breakdowns for the author's stories.
+- Author management: Delete individual stories on demand.
 
-#### e. Bạn thân (Close Friends Modal - `CloseFriendsModal.tsx`):
-- Tìm kiếm và quản lý danh sách Bạn thân (Close Friends).
-- Tùy chọn quyền riêng tư linh hoạt khi đăng story: *Công khai (Public)*, *Bạn bè (Friends)*, *Bạn thân (Close Friends)*, *Chỉ mình tôi (Only me)*.
+#### e. Close Friends System (`CloseFriendsModal.tsx`):
+- Manage a curated list of Close Friends.
+- Flexible audience privacy tiers when publishing stories: *Public*, *Friends*, *Close Friends*, or *Only Me*.
 
-#### f. Tin nổi bật & Kho lưu trữ (Highlights & Archive - `StoryHighlightBar.tsx`, `StoryHighlightModal.tsx`):
-- **Kho lưu trữ tin (Story Archive):** Tự động lưu lại toàn bộ các story cũ đã quá 24h của người dùng.
-- **Tạo bộ sưu tập Tin nổi bật (Create Highlight):** Đặt tên bộ sưu tập, chọn ảnh bìa và chọn nhiều story từ kho lưu trữ.
-- **Hiển thị trên Trang cá nhân (`ProfilePage.tsx`):** Thanh bong bóng tròn viền gradient nổi bật, cho phép xem lại toàn bộ bộ sưu tập bằng trình phát Story Viewer.
+#### f. Story Highlights & Archive (`StoryHighlightBar.tsx`, `StoryHighlightModal.tsx`):
+- **Story Archive:** Automatically archives expired stories beyond the 24-hour window.
+- **Create Highlights:** Group archived stories into named highlight collections with custom cover images.
+- **Profile Integration (`ProfilePage.tsx`):** Circular highlight reels rendered directly on user profiles, playable anytime through the Story Viewer.
 
-### 9. Trang Hồ Sơ Cá Nhân (`ProfilePage.tsx`)
-- **Quản lý ảnh đại diện & ảnh bìa:** 
-  - Hỗ trợ ảnh động **GIF Avatar** giữ nguyên chuyển động sinh động.
-  - Công cụ cắt ảnh đại diện trực quan (`AvatarCropper`) cho ảnh tĩnh.
-- **Thông tin chi tiết:** Chỉnh sửa Tên hiển thị, Tên định danh (@handle), Số điện thoại, Giới tính, Địa chỉ, Ngày sinh, Tiểu sử (Bio).
-- **Trạng thái cá nhân (Custom Status):** Biểu tượng Emoji trạng thái kèm nội dung tin nhắn trạng thái; hỗ trợ đặt hạn giờ tự xóa trạng thái (1 giờ, 4 giờ, hết ngày, hết tuần hoặc không xóa).
-- **Khu vực Tin nổi bật (Story Highlights):** Nút "+ Mới" và danh sách các bộ sưu tập story đã lưu.
+### 9. User Profile Management (`ProfilePage.tsx`)
+- **Avatar & Cover Photo Customization:**
+  - Support for animated **GIF Avatars** with preserved motion loops.
+  - In-browser interactive image cropping tool (`AvatarCropper`) for static profile pictures.
+- **Detailed Identity Metadata:** Display Name, Username (`@handle`), Phone, Gender, Address, Birthdate, and Bio.
+- **Custom Status:** Custom emoji + text status with automatic expiration options (1 hour, 4 hours, end of day, end of week, or never).
+- **Story Highlights Section:** "+ New" creation button and interactive highlight albums with localized labels.
 
-### 10. Trang Cài Đặt & Bảo Mật (`SettingsPage.tsx`, `TwoFactorSettings.tsx`)
-- **Giao diện & Chủ đề:** Chuyển đổi Dark Mode / Light Mode siêu mượt với hệ thống biến CSS toàn cục.
-- **Đa ngôn ngữ (i18n):** Chuyển đổi ngôn ngữ Tiếng Việt và Tiếng Anh tức thì, đồng bộ toàn hệ thống.
-- **Bảo mật tài khoản:**
-  - Thay đổi mật khẩu tài khoản.
-  - Bật/tắt xác thực 2 lớp (2FA TOTP): Hiển thị mã QR để quét bằng ứng dụng Authenticator, xác minh mã OTP 6 số để kích hoạt.
-- **Quản lý phiên đăng nhập (Active Sessions):** Xem danh sách thiết bị và trình duyệt đang đăng nhập, địa chỉ IP, thời gian hoạt động; cho phép đăng xuất từ xa từng thiết bị hoặc đăng xuất tất cả thiết bị khác.
-- **Quyền riêng tư:** Tùy chọn ẩn/hiển thị trạng thái hoạt động trực tuyến, số điện thoại, ngày sinh, địa chỉ, giới tính, tiểu sử, và thông báo đã xem (Read Receipts).
-- **Trợ giúp & Khám phá (Product Tour):** Xem lại các chuyến tham quan hướng dẫn giao diện hoặc đặt lại toàn bộ trạng thái hướng dẫn.
-- **Xóa tài khoản vĩnh viễn:** Hỗ trợ tính năng tự hủy tài khoản kèm hộp thoại xác nhận bảo mật.
+### 10. Settings & Security (`SettingsPage.tsx`, `TwoFactorSettings.tsx`)
+- **Theme & Styling Engine:** Seamless Dark Mode / Light Mode switching via global CSS variable tokens.
+- **Internationalization (i18n):** Instant on-the-fly toggling between English and Vietnamese (`vi` / `en`).
+- **Account Security:**
+  - Password change management.
+  - 2FA TOTP configuration: Generates QR codes for authenticator apps and verifies 6-digit codes to enable/disable protection.
+- **Active Sessions Manager:** Inspect active device types, browsers, IP addresses, and session timestamps; supports remote single-session revocation or logging out all other devices.
+- **Privacy Controls:** Granular visibility toggles for online presence, phone number, birthday, location, gender, bio, and Read Receipts.
+- **Product Tour Controls:** Replay introductory tours or reset guide flags.
+- **Permanent Account Deletion:** Secure self-service account termination with confirmation safeguards.
 
-### 11. Trang Quản Trị Hệ Thống (`AdminPage.tsx`)
-- **Phân quyền quản trị đa cấp bậc:** Owner, Admin, Moderator, User.
-- **Biểu đồ thống kê trực quan:** Thống kê số lượng đăng ký mới và lượt truy cập trong 7 ngày gần nhất, tổng người dùng, số lượng người dùng đang hoạt động.
-- **Quản lý tài khoản người dùng:** Tìm kiếm, lọc theo vai trò/trạng thái, phân quyền quản trị, khóa (Ban) hoặc mở khóa (Unban) tài khoản.
-- **Kiểm duyệt nội dung (Content Moderation):**
-  - Quản lý danh sách từ khóa nhạy cảm / từ cấm (Banned Words) áp dụng trên toàn bộ chat.
-  - Quản lý danh sách phần mở rộng tệp tin bị chặn (Blocked File Extensions) nhằm ngăn phát tán mã độc (`.exe`, `.bat`, `.sh`...).
-- **Xử lý báo cáo vi phạm (Report Management):** Xem danh sách báo cáo từ người dùng, xem tin nhắn vi phạm trong ngữ cảnh hội thoại, phê duyệt xử phạt hoặc bác bỏ báo cáo.
-- **Cấu hình Rate Limit hệ thống:** Theo dõi và thiết lập giới hạn tần suất gửi yêu cầu để bảo vệ máy chủ khỏi tấn công DDoS và spam.
+### 11. Administration Dashboard (`AdminPage.tsx`)
+- **Hierarchical Role-Based Access Control:** Multi-level permissions (Owner, Admin, Moderator, User).
+- **Visual System Analytics:** 7-day registration and traffic trajectory charts, total users, and active concurrent counts.
+- **User Account Management:** Search, filter by role/status, adjust access privileges, ban, or unban user accounts.
+- **Automated Content Moderation:**
+  - System-wide Banned Words list with automatic message masking.
+  - Blocked File Extensions list to protect users from malicious payloads (`.exe`, `.bat`, `.sh`, `.vbs`, etc.).
+- **Incident & Report Handling:** Review user-flagged messages within conversational context; approve punitive actions or dismiss reports.
+- **System Rate Limiting Configuration:** Real-time monitoring and threshold configuration to safeguard endpoints from DDoS and API abuse.
 
-### 12. Phân Hệ Thông Báo & Web Push (`NotificationsPanel.tsx`)
-- **Trung tâm thông báo trong ứng dụng:** Thông báo tin nhắn mới, lời mời kết bạn, phản hồi story, cuộc gọi nhỡ theo thời gian thực.
-- **Đánh dấu & Lọc:** Phân loại thông báo đã đọc / chưa đọc, nút "Đánh dấu tất cả đã đọc" và xóa thông báo.
-- **Web Push Notifications:** Tích hợp Service Worker (`push-service-worker.js`) gửi thông báo đẩy đến máy tính/điện thoại ngay cả khi người dùng đóng tab trình duyệt.
+### 12. Notification Center & Web Push (`NotificationsPanel.tsx`)
+- **In-App Real-Time Alerts:** Live notifications for incoming messages, friend requests, story replies, and missed calls.
+- **Batch Actions:** Filter by Read/Unread, mark all as read, and bulk delete notifications.
+- **Web Push Notifications:** Standalone Service Worker (`push-service-worker.js`) delivering system notifications even when browser tabs are closed.
 
-### 13. Hệ Thống Tour Hướng Dẫn Sản Phẩm (Interactive Product Tour)
-- Dẫn dắt người dùng mới làm quen với giao diện ứng dụng thông qua Spotlight nổi bật từng thành phần:
-  - Tour Hướng dẫn Trò chuyện (Chat Tour).
-  - Tour Hướng dẫn Tính năng Story (Story Tour).
-  - Tour Hướng dẫn Trang Cá nhân (Profile Tour).
-  - Tour Hướng dẫn Cài đặt & Bảo mật (Settings Tour).
-- Tự động kích hoạt thông minh cho tài khoản mới (`useAutoTour.ts`), ghi nhớ trạng thái hoàn thành trên máy và cho phép xem lại bất cứ lúc nào trong trang Cài đặt.
+### 13. Interactive Product Tour (`useAutoTour.ts`)
+- Intelligent spotlight tours guiding new users through four critical platform journeys:
+  - Chat Experience Tour.
+  - Story Creation & Viewer Tour.
+  - User Profile Tour.
+  - Settings & Security Tour.
+- Automatically triggered for first-time sign-ins, with local completion persistence and manual replay support.
 
 ---
 
-## Kiến Trúc Công Nghệ
+## Technical Stack & Architecture
 
 ### Frontend
-- **Framework & Ngôn ngữ:** React 19, TypeScript
-- **Công cụ đóng gói (Bundler):** Vite (tối ưu hóa tốc độ dev HMR và build bundle phân mảnh siêu nhỏ)
-- **Kiến trúc Styling:** Vanilla CSS thuần kết hợp CSS Variables, hệ thống Design Tokens nhất quán, hiệu ứng Glassmorphism & Micro-animations
-- **Thư viện cốt lõi:**
-  - `lucide-react`: Bộ biểu tượng SVG sắc nét, hiện đại
-  - `emoji-picker-react`: Kho emoji trực quan
-  - `socket.io-client`: Kết nối WebSocket thời gian thực
-  - `i18next` & `react-i18next`: Hệ thống bản địa hóa đa ngôn ngữ song ngữ (vi/en)
-  - `react-easy-crop`: Công cụ cắt chỉnh ảnh đại diện in-browser
-  - `sonner`: Hệ thống thông báo Toast cao cấp
-  - `@privacyresearch/curve25519-typescript`: Mã hóa đầu cuối E2EE Signal Protocol
+- **Framework & Language:** React 19, TypeScript
+- **Build Tool:** Vite (optimized code-splitting, HMR, and ultra-fast bundle delivery)
+- **Styling Architecture:** Pure Vanilla CSS with CSS Variables, Design Token system, Glassmorphism aesthetics, and smooth micro-animations
+- **Core Dependencies:**
+  - `lucide-react`: Lightweight SVG icon set
+  - `emoji-picker-react`: Emoji selector
+  - `socket.io-client`: Low-latency bidirectional WebSocket client
+  - `i18next` & `react-i18next`: Internationalization engine
+  - `react-easy-crop`: In-browser canvas image cropper
+  - `sonner`: Toast notification framework
+  - `@privacyresearch/curve25519-typescript`: Curve25519 cryptographic primitives for Signal E2EE
 
 ### Backend
-- **Nền tảng & Framework:** Node.js, Express.js
-- **Cơ sở dữ liệu:** MySQL (sử dụng thư viện `mysql2` với Connection Pool)
-- **Tự động khởi tạo cấu trúc (Self-healing DB Migration):** Tự động phát hiện và tạo mới bảng/cột khi khởi động server mà không phụ thuộc file migration thủ công
-- **Động cơ thời gian thực:** Socket.IO (đồng bộ tin nhắn, trạng thái online, cuộc gọi, typing indicator, reactions, story replies)
-- **Giao thức gọi trực tuyến:** WebRTC Signaling Server
-- **Lưu trữ đám mây:** Cloudinary (tối ưu hóa, lưu trữ ảnh, video, âm thanh và tệp đính kèm an toàn)
-- **Dịch vụ Email & OTP:** Resend API / Nodemailer / Mailtrap
-- **Bảo mật & Tối ưu:**
-  - `web-push`: Web Push Notification chuẩn VAPID
-  - `bcryptjs`: Băm mật khẩu một chiều mạnh mẽ
-  - `speakeasy` & `qrcode`: Tạo và xác minh mã 2FA TOTP
-  - `helmet`, `cors`: Thiết lập HTTP Headers an toàn
-  - `rateLimit.middleware.js`: Bộ đệm giới hạn tần suất đa tầng bảo vệ toàn diện hệ thống
-  - `multer`: Xử lý upload tệp đa phương tiện
+- **Runtime & Framework:** Node.js, Express.js
+- **Database:** MySQL (managed with `mysql2` connection pooling)
+- **Self-Healing Schema Migration:** Automated runtime table and column discovery, ensuring schema consistency across server boots without manual intervention
+- **Real-Time Engine:** Socket.IO (message transport, presence sync, calling signals, typing indicators, reactions, story events)
+- **Signaling Layer:** WebRTC Signaling Server for peer-to-peer audio/video calling
+- **Cloud Media Storage:** Cloudinary (secure asset transformation, image/video optimization, and hosting)
+- **Email & Delivery Service:** Resend API / Nodemailer / Mailtrap
+- **Security & Optimization:**
+  - `web-push`: VAPID-compliant push notifications
+  - `bcryptjs`: One-way cryptographic password hashing
+  - `speakeasy` & `qrcode`: TOTP secret generation and QR encoding
+  - `helmet`, `cors`: HTTP security headers
+  - `rateLimit.middleware.js`: Multi-tiered rate limiters protecting against endpoint abuse
+  - `multer`: Multi-part stream upload handling
 
 ---
 
-## Cấu Trúc Thư Mục Dự Án
+## Project Directory Structure
 
 ```plaintext
 InboxSystemManagement/
-├── backend/                        # Mã nguồn Backend (Node.js & Express)
+├── backend/                        # Backend source (Node.js & Express)
 │   ├── src/
-│   │   ├── config/                 # Cấu hình Database, Cloudinary, WebPush, Mailer
-│   │   ├── controllers/            # Controller xử lý nghiệp vụ
-│   │   │   ├── core/               # Trò chuyện, Tin nhắn, Danh bạ, Story, E2EE
-│   │   │   └── system/             # Quản trị viên, Xác thực, Báo cáo
-│   │   ├── middleware/             # Middleware xác thực JWT, Rate Limit, Error Logger
-│   │   ├── realtime/               # Logic Socket.IO, WebRTC Signaling
-│   │   ├── routes/                 # Định tuyến API RESTful
-│   │   │   ├── communications/     # Routes thông báo, Web Push
-│   │   │   ├── core/               # Routes hội thoại, danh bạ, story, search
-│   │   │   └── system/             # Routes auth, admin
-│   │   ├── services/               # Dịch vụ gửi mail, upload Cloudinary, Push Notification
-│   │   └── utils/                  # Các hàm tiện ích
+│   │   ├── config/                 # Database, Cloudinary, WebPush, Mailer configs
+│   │   ├── controllers/            # Route business controllers
+│   │   │   ├── core/               # Chat, Messages, Contacts, Stories, E2EE
+│   │   │   └── system/             # Administration, Auth, Reports
+│   │   ├── middleware/             # JWT auth, Rate Limiting, Error handling
+│   │   ├── realtime/               # Socket.IO handlers, WebRTC Signaling
+│   │   ├── routes/                 # RESTful API route definitions
+│   │   │   ├── communications/     # Notifications, Web Push routes
+│   │   │   ├── core/               # Conversations, Contacts, Stories, Search
+│   │   │   └── system/             # Auth, Admin routes
+│   │   ├── services/               # Mailer, Cloudinary, WebPush services
+│   │   └── utils/                  # Helper utilities
 │   └── package.json
-├── database/                       # Kịch bản SQL khởi tạo cơ sở dữ liệu ban đầu
-├── public/                         # Tệp tĩnh (Favicon, Logo, PWA Manifest)
-├── src/                            # Mã nguồn Frontend (React & TypeScript)
-│   ├── components/                 # Các thành phần giao diện
-│   │   ├── chat/                   # Khung chat, nội dung tin nhắn, thanh công cụ
-│   │   ├── layout/                 # Thanh điều hướng (NavRail), Sidebar
-│   │   ├── media/                  # Giao diện cuộc gọi WebRTC Overlay
-│   │   ├── panels/                 # Các bảng Inbox, Danh bạ, Thông báo, Chi tiết, Bình chọn
-│   │   ├── story/                  # Toàn bộ phân hệ Story (Studio, Viewer, Widgets, Highlights)
+├── database/                       # Initial database SQL bootstrap scripts
+├── public/                         # Static assets (Favicons, Logo, PWA Manifest)
+├── src/                            # Frontend source (React & TypeScript)
+│   ├── components/                 # UI components
+│   │   ├── chat/                   # Message area, message items, toolbars
+│   │   ├── layout/                 # Navigation Rail (NavRail), Sidebar
+│   │   ├── media/                  # WebRTC Call Overlay
+│   │   ├── panels/                 # Inbox, Contacts, Notifications, Detail, Polls
+│   │   ├── story/                  # Story module (Studio, Viewer, Widgets, Highlights)
 │   │   ├── ui/                     # AvatarFallback, Cropper, Dialogs, Badges
-│   │   └── views/                  # Trang ChatApp, ProfilePage, SettingsPage, AdminPage
-│   ├── hooks/                      # Custom React Hooks theo domain
-│   ├── lib/                        # Thư viện thuật toán nội bộ (E2EE Signal Engine)
-│   ├── locales/                    # Tệp từ điển đa ngôn ngữ (vi.json, en.json)
-│   ├── pages/                      # Các trang độc lập (Auth, Error, Legal)
-│   ├── services/                   # Các dịch vụ gọi API và lưu trữ Storage
-│   ├── stores/                     # Quản lý trạng thái toàn cục (Zustand)
-│   ├── styles/                     # CSS module và Design Tokens (story.css, tour.css...)
-│   ├── types.ts                    # Khai báo kiểu TypeScript toàn hệ thống
-│   ├── main.tsx                    # Điểm khởi chạy ứng dụng React
-│   └── App.tsx                     # Điều hướng và xử lý phiên ứng dụng chính
-├── package.json                    # Quản lý thư viện phụ thuộc Frontend
-└── README.md                       # Tài liệu hướng dẫn dự án chi tiết
+│   │   └── views/                  # ChatApp, ProfilePage, SettingsPage, AdminPage
+│   ├── hooks/                      # Domain-specific React hooks
+│   ├── lib/                        # Internal cryptographic libraries (E2EE Signal Engine)
+│   ├── locales/                    # Multilingual dictionaries (vi.json, en.json)
+│   ├── pages/                      # Standalone routes (Auth, Legal, 404)
+│   ├── services/                   # API clients and browser storage services
+│   ├── stores/                     # Global state management (Zustand)
+│   ├── styles/                     # CSS stylesheets & Design Tokens (story.css, tour.css)
+│   ├── types.ts                    # Platform TypeScript type definitions
+│   ├── main.tsx                    # React client entry point
+│   └── App.tsx                     # Core application routing & session provider
+├── package.json                    # Frontend package dependencies
+└── README.md                       # Comprehensive platform documentation
 ```
 
 ---
 
-## Hướng Dẫn Cài Đặt & Khởi Chạy
+## Installation & Getting Started
 
-### Yêu Cầu Tiên Quyết
-Đảm bảo máy tính của bạn đã cài đặt các công cụ sau:
-- **Node.js** (Phiên bản v18.0.0 trở lên)
-- **MySQL Server** (Chạy trên cổng mặc định 3306 hoặc remote)
-- Tài khoản **Cloudinary** (lấy Cloud Name, API Key, API Secret)
-- Tài khoản **Resend** hoặc **Mailtrap** (để cấu hình gửi Email OTP)
-- Khóa **GIPHY API Key** (cho tính năng gửi ảnh GIF)
-- Khóa **Google Client ID** / **Facebook App ID** (cho đăng nhập mạng xã hội)
+### Prerequisites
+Make sure your environment meets the following requirements:
+- **Node.js** (v18.0.0 or higher)
+- **MySQL Server** (running locally on port 3306 or remote)
+- **Cloudinary Account** (Cloud Name, API Key, API Secret)
+- **Resend** or **Mailtrap Account** (for sending OTP emails)
+- **GIPHY API Key** (for animated GIF search)
+- **Google Client ID** / **Facebook App ID** (for social login)
 
-### Các Bước Cài Đặt
+### Setup Instructions
 
-1. **Khởi tạo Cơ sở Dữ liệu MySQL:**
-   - Mở MySQL Client / Workbench và tạo database mới:
+1. **Database Setup:**
+   - Open MySQL Client / Workbench and create the database:
      ```sql
      CREATE DATABASE inbox_system_management CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
      ```
-   - Chạy các script trong thư mục `database/` (hoặc hệ thống sẽ tự động khởi tạo bảng khi server chạy nhờ cơ chế `ensureSchema`).
+   - *Note:* The backend automatically creates necessary tables upon launch via its built-in schema engine (`ensureSchema`).
 
-2. **Cấu hình Biến Môi Trường (Environment Variables):**
-   - Tạo file `.env` bên trong thư mục `backend/`:
+2. **Environment Variables Configuration:**
+   - Create a `.env` file inside `backend/`:
      ```env
      PORT=5000
      DB_HOST=localhost
@@ -319,36 +320,36 @@ InboxSystemManagement/
      VAPID_PUBLIC_KEY=your_vapid_public_key
      VAPID_PRIVATE_KEY=your_vapid_private_key
      ```
-   - Tạo file `.env` tại thư mục gốc của dự án (Frontend):
+   - Create a `.env` file in the root project folder (Frontend):
      ```env
      VITE_GIPHY_API_KEY=your_giphy_api_key
      VITE_FACEBOOK_APP_ID=your_facebook_app_id
      VITE_GOOGLE_CLIENT_ID=your_google_client_id
      ```
 
-3. **Cài Đặt Thư Viện Phụ Thuộc (Dependencies):**
-   - Tại thư mục gốc:
+3. **Install Dependencies:**
+   - In the root folder:
      ```bash
      npm install
      ```
-   - Tại thư mục backend:
+   - In the `backend` folder:
      ```bash
      cd backend
      npm install
      cd ..
      ```
 
-4. **Khởi Chạy Ứng Dụng Đồng Thời:**
-   - Tại thư mục gốc, chạy lệnh:
+4. **Launch the Application Concurrently:**
+   - In the root folder, run:
      ```bash
      npm run dev:all
      ```
-   - Ứng dụng sẽ tự động khởi động:
-     - **Frontend:** `http://localhost:5173`
-     - **Backend API:** `http://localhost:5000`
+   - The application will automatically boot both services:
+     - **Frontend Application:** `http://localhost:5173`
+     - **Backend API Server:** `http://localhost:5000`
 
 ---
 
-## Giấy Phép & Bản Quyền
+## License & Attribution
 
-Dự án này được phát triển phục vụ mục đích học tập, nghiên cứu và quản lý nội bộ. Mọi quyền liên quan đến sao chép, chỉnh sửa thương mại và phân phối vui lòng tuân thủ quy định của tác giả.
+This project is developed for educational, research, and communication management purposes. All rights concerning commercial distribution or adaptation are reserved by the author.
