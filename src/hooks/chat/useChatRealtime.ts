@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { getRealtimeSocket } from '../../services/realtime/realtime'
-import { fetchConversations, fetchMessagesPage, fetchConversationMembers } from '../../services/api/chatApi'
+import { fetchConversations, fetchMessagesPage, fetchConversationMembers, markConversationRead } from '../../services/api/chatApi'
 import { mergeLatestMessages } from '../../services/core/offlineQueue'
 import { fetchFriends, fetchIncomingRequests } from '../../services/api/contactApi'
 import { fetchNotifications } from '../../services/api/notificationApi'
@@ -31,6 +31,7 @@ export type UseChatRealtimeProps = {
   notifyConversationUpdate: (conversationId: string, nextConversations: Conversation[]) => void
   notifyAppNotifications: (nextNotifications: AppNotification[]) => void
   showDedupedBrowserNotification: (key: string, title: string, options?: any) => void
+  setTypingByConversation?: React.Dispatch<React.SetStateAction<Record<string, boolean>>>
 }
 
 export function useChatRealtime({
@@ -55,6 +56,7 @@ export function useChatRealtime({
   notifyConversationUpdate,
   notifyAppNotifications,
   showDedupedBrowserNotification,
+  setTypingByConversation,
 }: UseChatRealtimeProps) {
   useEffect(() => {
     const socket = getRealtimeSocket()
@@ -88,6 +90,9 @@ export function useChatRealtime({
 
       if (nextMessagePage.messages.some((message) => message.author === 'them')) {
         syncDeliveredReceipts(conversationId).catch(() => undefined)
+        if (conversationId === activeIdRef.current && document.visibilityState === 'visible') {
+          markConversationRead(conversationId).catch(() => undefined)
+        }
       }
 
       const members = await fetchConversationMembers(conversationId)
@@ -151,6 +156,9 @@ export function useChatRealtime({
         (payload.eventType === 'message:created' || payload.eventType === 'message:forwarded')
       ) {
         syncDeliveredReceipts(conversationId).catch(() => undefined)
+        if (conversationId === activeIdRef.current && document.visibilityState === 'visible') {
+          markConversationRead(conversationId).catch(() => undefined)
+        }
       }
 
       if (
@@ -314,7 +322,44 @@ export function useChatRealtime({
     realtimeSocket.on('call:left', handleAcceptedCall)
     realtimeSocket.on('call:signal', handleCallSignal)
 
+    const typingTimeouts = new Map<string, number>()
+
+    function handleTyping(payload: { conversationId: string; userId: number | string; userName?: string; isTyping: boolean }) {
+      if (!payload?.conversationId || !setTypingByConversation) return
+      if (currentUserIdRef.current && String(payload.userId) === String(currentUserIdRef.current)) return
+
+      const convId = String(payload.conversationId)
+      const isTyping = Boolean(payload.isTyping)
+
+      const existingTimer = typingTimeouts.get(convId)
+      if (existingTimer) {
+        window.clearTimeout(existingTimer)
+        typingTimeouts.delete(convId)
+      }
+
+      setTypingByConversation((current) => ({
+        ...current,
+        [convId]: isTyping,
+      }))
+
+      if (isTyping) {
+        const timer = window.setTimeout(() => {
+          setTypingByConversation((current) => ({
+            ...current,
+            [convId]: false,
+          }))
+          typingTimeouts.delete(convId)
+        }, 3500)
+        typingTimeouts.set(convId, timer)
+      }
+    }
+
+    realtimeSocket.on('conversation:typing', handleTyping)
+
     return () => {
+      typingTimeouts.forEach((timer) => window.clearTimeout(timer))
+      typingTimeouts.clear()
+      realtimeSocket.off('conversation:typing', handleTyping)
       realtimeSocket.off('conversation:changed', handleConversationChanged)
       realtimeSocket.off('contacts:changed', handleContactsChanged)
       realtimeSocket.off('presence:changed', handlePresenceChanged)
@@ -351,5 +396,6 @@ export function useChatRealtime({
     notifyConversationUpdate,
     notifyAppNotifications,
     showDedupedBrowserNotification,
+    setTypingByConversation,
   ])
 }

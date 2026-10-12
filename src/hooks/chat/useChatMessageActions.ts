@@ -30,6 +30,7 @@ import {
 import { e2eeEngine } from '../../lib/e2ee/E2EEEngine'
 import type { AuthUser } from '../../services/api/authApi'
 import type { GifSearchResult } from '../../services/api/gifApi'
+import { emitTypingStop } from '../../services/realtime/realtime'
 
 function getAttachmentPreview(message: Message | undefined, t: any) {
   const attachment = message?.attachments?.[0]
@@ -316,6 +317,7 @@ export function useChatMessageActions({
         e2eeType
       )
       removeQueuedMessage(temporaryMessage.id)
+      emitTypingStop(activeConversation.id)
       updateTypingStatus(activeConversation.id, false).catch(() => undefined)
       lastSentTypingRef.current = {
         conversationId: activeConversation.id,

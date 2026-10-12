@@ -835,6 +835,29 @@ function initRealtime(server, corsOrigin) {
 
       socket.to(getConversationRoom(conversationId)).emit('call:signal', signalPayload)
     })
+
+    socket.on('typing:start', (payload = {}) => {
+      const conversationId = String(payload.conversationId || '')
+      if (!conversationId || !socket.user) return
+
+      socket.to(getConversationRoom(conversationId)).emit('conversation:typing', {
+        conversationId,
+        userId: socket.user.id,
+        userName: socket.user.full_name,
+        isTyping: true,
+      })
+    })
+
+    socket.on('typing:stop', (payload = {}) => {
+      const conversationId = String(payload.conversationId || '')
+      if (!conversationId || !socket.user) return
+
+      socket.to(getConversationRoom(conversationId)).emit('conversation:typing', {
+        conversationId,
+        userId: socket.user.id,
+        isTyping: false,
+      })
+    })
   })
 
   return io
@@ -845,9 +868,10 @@ function emitToUsers(userIds, eventName, payload = {}) {
     return
   }
 
-  ;[...new Set(userIds.filter(Boolean))].forEach((userId) => {
-    io.to(getUserRoom(userId)).emit(eventName, payload)
-  })
+  const rooms = [...new Set(userIds.filter(Boolean))].map(getUserRoom)
+  if (rooms.length > 0) {
+    io.to(rooms).emit(eventName, payload)
+  }
 }
 
 function emitToConversation(conversationId, eventName, payload = {}) {

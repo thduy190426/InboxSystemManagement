@@ -3495,6 +3495,12 @@ async function updateTypingStatus(request, response, next) {
       typingIndicators.delete(key)
     }
 
+    emitToConversation(conversationId, 'conversation:typing', {
+      conversationId: String(conversationId),
+      userId: currentUserId,
+      isTyping,
+    })
+
     response.json({
       isTyping,
     })

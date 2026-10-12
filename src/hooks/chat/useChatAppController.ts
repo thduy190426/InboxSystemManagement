@@ -6,10 +6,10 @@ import type { AuthUser } from '../../services/api/authApi'
 import { touchPresence } from '../../services/api/authApi'
 import { readAppRouteFromLocation, toAppPath } from '../../services/core/appRoutes'
 import { getBrowserNotificationPermission, registerWebPushSubscription, requestBrowserNotificationPermission, showBrowserNotification, type BrowserNotificationPermission } from '../../services/core/browserNotifications'
-import { fetchConversations, fetchConversationCalls, fetchConversationMembers, fetchGroupInvite, fetchGroupJoinRequests, fetchTypingStatus, markConversationDelivered, markConversationRead, requestGroupJoin, updateTypingStatus, fetchMessagesPage } from '../../services/api/chatApi'
+import { fetchConversations, fetchConversationCalls, fetchConversationMembers, fetchGroupInvite, fetchGroupJoinRequests, markConversationDelivered, markConversationRead, requestGroupJoin, updateTypingStatus, fetchMessagesPage } from '../../services/api/chatApi'
 import { startRealtimeCall } from '../../services/realtime/callRealtime'
 import { fetchNotifications, markAllNotificationsRead, markConversationNotificationsRead, markNotificationRead } from '../../services/api/notificationApi'
-import { disconnectRealtimeSocket } from '../../services/realtime/realtime'
+import { disconnectRealtimeSocket, emitTypingStart, emitTypingStop } from '../../services/realtime/realtime'
 import { playAlertSound, flashDocumentTitle, playCallRing } from '../../services/core/alertNotifier'
 import type { AppNotification, AppView, CallSession, CallType, ContactUser, Conversation, ConversationMember, GroupJoinRequest, Message } from '../../types'
 import { useOfflineQueue } from '../../hooks/chat/useOfflineQueue'
@@ -406,6 +406,7 @@ export function useChatAppController({ currentUser, onLogout }: ChatAppProps) {
     notifyConversationUpdate,
     notifyAppNotifications,
     showDedupedBrowserNotification,
+    setTypingByConversation,
   })
 
   useEffect(
@@ -415,6 +416,7 @@ export function useChatAppController({ currentUser, onLogout }: ChatAppProps) {
       }
 
       if (lastSentTypingRef.current?.isTyping) {
+        emitTypingStop(lastSentTypingRef.current.conversationId)
         updateTypingStatus(lastSentTypingRef.current.conversationId, false).catch(() => undefined)
       }
 
@@ -644,12 +646,13 @@ export function useChatAppController({ currentUser, onLogout }: ChatAppProps) {
   }
 
   useEffect(() => {
-    if (!activeConversation || activeConversation.type !== 'group') {
+    if (!activeConversation) {
       return
     }
 
     let isMounted = true
     const conversationId = activeConversation.id
+    const isGroup = activeConversation.type === 'group'
 
     async function loadMembers() {
       try {
@@ -662,7 +665,7 @@ export function useChatAppController({ currentUser, onLogout }: ChatAppProps) {
           }))
         }
       } catch (error) {
-        if (isMounted) {
+        if (isMounted && isGroup) {
           setPageErrorMessage(error instanceof Error ? error.message : t('loadMembersErr'))
         }
       }
@@ -738,29 +741,7 @@ export function useChatAppController({ currentUser, onLogout }: ChatAppProps) {
       return
     }
 
-    let isMounted = true
-
-    async function pollTypingStatus() {
-      try {
-        const isTyping = await fetchTypingStatus(activeId)
-
-        if (isMounted) {
-          setTypingByConversation((current) => ({
-            ...current,
-            [activeId]: isTyping,
-          }))
-        }
-      } catch {
-
-      }
-    }
-
-    pollTypingStatus()
-    const timer = window.setInterval(pollTypingStatus, 1500)
-
     return () => {
-      isMounted = false
-      window.clearInterval(timer)
       setTypingByConversation((current) => ({
         ...current,
         [activeId]: false,
@@ -821,6 +802,41 @@ export function useChatAppController({ currentUser, onLogout }: ChatAppProps) {
       isMounted = false
     }
   }, [activeId, activeView, conversations, readSyncKey])
+
+  useEffect(() => {
+    function handleVisibilityOrFocus() {
+      if (document.visibilityState === 'visible' && activeView === 'chat' && activeId) {
+        markConversationRead(activeId)
+          .then((response) => {
+            setMessagesByConversation((current) => ({
+              ...current,
+              [activeId]: mergeLatestMessages(current[activeId] ?? [], response.messages),
+            }))
+            setConversations((current: Conversation[] = []) =>
+              current.map((conversation) =>
+                conversation.id === activeId
+                  ? {
+                    ...conversation,
+                    unread: 0,
+                    unreadSenders: [],
+                  }
+                  : conversation,
+              ),
+            )
+            markConversationNotificationsReadLocally(activeId)
+          })
+          .catch(() => undefined)
+      }
+    }
+
+    window.addEventListener('focus', handleVisibilityOrFocus)
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus)
+
+    return () => {
+      window.removeEventListener('focus', handleVisibilityOrFocus)
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus)
+    }
+  }, [activeId, activeView])
 
   const filteredConversations = useMemo(() => {
     const keyword = query.trim().toLocaleLowerCase('vi-VN')
@@ -979,11 +995,8 @@ export function useChatAppController({ currentUser, onLogout }: ChatAppProps) {
   }
 
   function handleSelectConversation(conversationId: string) {
-    const selectedConversation = conversationsRef.current.find(
-      (conversation) => conversation.id === conversationId,
-    )
-
     if (lastSentTypingRef.current?.isTyping) {
+      emitTypingStop(lastSentTypingRef.current.conversationId)
       updateTypingStatus(lastSentTypingRef.current.conversationId, false).catch(() => undefined)
       lastSentTypingRef.current = null
     }
@@ -1010,16 +1023,14 @@ export function useChatAppController({ currentUser, onLogout }: ChatAppProps) {
       ),
     )
     markConversationNotificationsReadLocally(conversationId)
-    if ((selectedConversation?.unread ?? 0) > 0) {
-      markConversationRead(conversationId)
-        .then((response) => {
-          setMessagesByConversation((current) => ({
-            ...current,
-            [conversationId]: mergeLatestMessages(current[conversationId] ?? [], response.messages),
-          }))
-        })
-        .catch(() => undefined)
-    }
+    markConversationRead(conversationId)
+      .then((response) => {
+        setMessagesByConversation((current) => ({
+          ...current,
+          [conversationId]: mergeLatestMessages(current[conversationId] ?? [], response.messages),
+        }))
+      })
+      .catch(() => undefined)
     markConversationNotificationsRead(conversationId)
       .then(() => fetchNotifications().then(setNotifications))
       .catch(() => undefined)
@@ -1072,6 +1083,7 @@ export function useChatAppController({ currentUser, onLogout }: ChatAppProps) {
         conversationId: activeConversation.id,
         isTyping: true,
       }
+      emitTypingStart(activeConversation.id)
       updateTypingStatus(activeConversation.id, true).catch(() => undefined)
     }
 
@@ -1080,6 +1092,7 @@ export function useChatAppController({ currentUser, onLogout }: ChatAppProps) {
         conversationId: activeConversation.id,
         isTyping: false,
       }
+      emitTypingStop(activeConversation.id)
       updateTypingStatus(activeConversation.id, false).catch(() => undefined)
       return
     }
@@ -1089,8 +1102,9 @@ export function useChatAppController({ currentUser, onLogout }: ChatAppProps) {
         conversationId: activeConversation.id,
         isTyping: false,
       }
+      emitTypingStop(activeConversation.id)
       updateTypingStatus(activeConversation.id, false).catch(() => undefined)
-    }, 2000)
+    }, 2500)
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {

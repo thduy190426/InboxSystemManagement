@@ -36,3 +36,17 @@ export function disconnectRealtimeSocket() {
   socket?.disconnect()
   socket = null
 }
+
+export function emitTypingStart(conversationId: string) {
+  const currentSocket = getRealtimeSocket()
+  if (currentSocket?.connected) {
+    currentSocket.emit('typing:start', { conversationId })
+  }
+}
+
+export function emitTypingStop(conversationId: string) {
+  const currentSocket = getRealtimeSocket()
+  if (currentSocket?.connected) {
+    currentSocket.emit('typing:stop', { conversationId })
+  }
+}
