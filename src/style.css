@@ -13818,8 +13818,440 @@ html.dark .chat-panel .composer-input input::placeholder,
   color: rgba(255, 255, 255, 0.5) !important;
 }
 
+/* ==========================================================================
+   INBOX PANEL WHITE TEXT & DARK BACKGROUND OPTIMIZATION
+   ========================================================================== */
 
+/* Inbox Panel Base & Header */
+.inbox-panel,
+html.dark .inbox-panel {
+  background: var(--surface-soft);
+  color: #ffffff;
+}
 
+.inbox-panel .section-kicker,
+html.dark .inbox-panel .section-kicker {
+  color: #5eead4 !important;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
 
+.inbox-panel .section-kicker svg {
+  color: #5eead4 !important;
+}
 
+.inbox-panel .panel-title,
+.inbox-panel .inbox-brand-title,
+html.dark .inbox-panel .panel-title,
+html.dark .inbox-panel .inbox-brand-title {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.3px;
+}
 
+.inbox-panel .panel-header-actions .icon-button,
+html.dark .inbox-panel .panel-header-actions .icon-button {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+  transition: all 160ms ease;
+}
+
+.inbox-panel .panel-header-actions .icon-button:hover,
+html.dark .inbox-panel .panel-header-actions .icon-button:hover {
+  background: rgba(20, 184, 166, 0.22) !important;
+  border-color: rgba(20, 184, 166, 0.45) !important;
+  color: #5eead4 !important;
+  transform: translateY(-1px);
+}
+
+/* Search Field */
+.inbox-panel .search-field,
+html.dark .inbox-panel .search-field {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.inbox-panel .search-field:focus-within,
+html.dark .inbox-panel .search-field:focus-within {
+  border-color: rgba(20, 184, 166, 0.55) !important;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.18) !important;
+}
+
+.inbox-panel .search-field svg {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.inbox-panel .search-field input,
+html.dark .inbox-panel .search-field input {
+  color: #ffffff !important;
+}
+
+.inbox-panel .search-field input::placeholder,
+html.dark .inbox-panel .search-field input::placeholder {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+
+/* Story Feed */
+.inbox-panel .story-name,
+html.dark .story-name {
+  color: #ffffff !important;
+  font-weight: 500;
+}
+
+/* Global Search Overlay Panel */
+.inbox-panel .global-search-panel,
+html.dark .inbox-panel .global-search-panel {
+  background: rgba(24, 28, 36, 0.96) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.55) !important;
+  backdrop-filter: blur(16px) !important;
+}
+
+.inbox-panel .global-search-panel header strong,
+html.dark .inbox-panel .global-search-panel header strong {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+.inbox-panel .global-search-panel header button,
+html.dark .inbox-panel .global-search-panel header button {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.inbox-panel .global-search-panel header button:hover,
+html.dark .inbox-panel .global-search-panel header button:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+}
+
+.inbox-panel .global-search-section > span,
+html.dark .inbox-panel .global-search-section > span {
+  color: #5eead4 !important;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+}
+
+.inbox-panel .global-search-section button,
+html.dark .inbox-panel .global-search-section button {
+  color: #ffffff !important;
+  border-radius: 8px;
+  transition: background 140ms ease;
+}
+
+.inbox-panel .global-search-section button:hover,
+html.dark .inbox-panel .global-search-section button:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.inbox-panel .global-search-section button strong,
+html.dark .inbox-panel .global-search-section button strong {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+.inbox-panel .global-search-section button small,
+html.dark .inbox-panel .global-search-section button small {
+  color: rgba(255, 255, 255, 0.75) !important;
+}
+
+.inbox-panel .global-search-section button svg,
+html.dark .inbox-panel .global-search-section button svg {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.inbox-panel .global-search-state,
+html.dark .inbox-panel .global-search-state {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.inbox-panel .global-search-state svg {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.inbox-panel .global-search-state.is-error,
+html.dark .inbox-panel .global-search-state.is-error {
+  background: rgba(244, 63, 94, 0.12) !important;
+  color: #fb7185 !important;
+}
+
+/* Friend Status Strip */
+.inbox-panel .friend-status-card,
+html.dark .inbox-panel .friend-status-card {
+  color: rgba(255, 255, 255, 0.78) !important;
+}
+
+.inbox-panel .friend-status-card:hover,
+.inbox-panel .friend-status-card.is-active,
+html.dark .inbox-panel .friend-status-card:hover,
+html.dark .inbox-panel .friend-status-card.is-active {
+  color: #ffffff !important;
+}
+
+.inbox-panel .friend-status-card.is-unread,
+html.dark .inbox-panel .friend-status-card.is-unread {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+}
+
+.inbox-panel .friend-status-card > span:last-child,
+html.dark .inbox-panel .friend-status-card > span:last-child {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.inbox-panel .friend-status-card:hover > span:last-child,
+.inbox-panel .friend-status-card.is-active > span:last-child,
+html.dark .inbox-panel .friend-status-card:hover > span:last-child,
+html.dark .inbox-panel .friend-status-card.is-active > span:last-child {
+  color: #ffffff !important;
+}
+
+/* Quick Filters */
+.inbox-panel .quick-filters button,
+html.dark .inbox-panel .quick-filters button {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 8px;
+  transition: all 160ms ease;
+}
+
+.inbox-panel .quick-filters button:hover,
+html.dark .inbox-panel .quick-filters button:hover {
+  background: rgba(20, 184, 166, 0.18) !important;
+  border-color: rgba(20, 184, 166, 0.35) !important;
+  color: #5eead4 !important;
+}
+
+.inbox-panel .quick-filters button.is-active,
+html.dark .inbox-panel .quick-filters button.is-active {
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(20, 184, 166, 0.35) !important;
+}
+
+.inbox-panel .quick-filters button svg {
+  color: inherit !important;
+}
+
+/* Conversation Row & Items */
+.inbox-panel .conversation-row,
+html.dark .inbox-panel .conversation-row {
+  border: 1px solid transparent !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-radius: 10px;
+  transition: background 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.inbox-panel .conversation-row:hover,
+html.dark .inbox-panel .conversation-row:hover {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+}
+
+.inbox-panel .conversation-row.is-active,
+html.dark .inbox-panel .conversation-row.is-active {
+  background: rgba(20, 184, 166, 0.16) !important;
+  border-color: rgba(20, 184, 166, 0.45) !important;
+  box-shadow: inset 3px 0 0 var(--conversation-accent, var(--primary)), 0 6px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Conversation Name */
+.inbox-panel .conversation-topline strong,
+html.dark .inbox-panel .conversation-topline strong {
+  color: #ffffff !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.1px;
+}
+
+.inbox-panel .conversation-row.is-unread .conversation-topline strong,
+html.dark .inbox-panel .conversation-row.is-unread .conversation-topline strong {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+}
+
+/* Conversation Preview Snippet */
+.inbox-panel .conversation-preview,
+html.dark .inbox-panel .conversation-preview {
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+}
+
+.inbox-panel .conversation-row.is-unread .conversation-preview,
+html.dark .inbox-panel .conversation-row.is-unread .conversation-preview {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+.inbox-panel .conversation-row.is-active .conversation-preview,
+html.dark .inbox-panel .conversation-row.is-active .conversation-preview {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+/* Conversation Time */
+.inbox-panel .conversation-time,
+html.dark .inbox-panel .conversation-time {
+  color: rgba(255, 255, 255, 0.65) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+
+.inbox-panel .conversation-row.is-unread .conversation-time,
+html.dark .inbox-panel .conversation-row.is-unread .conversation-time {
+  color: #5eead4 !important;
+  font-weight: 700 !important;
+}
+
+/* Conversation Meta Icons */
+.inbox-panel .conversation-meta svg,
+html.dark .inbox-panel .conversation-meta svg {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.inbox-panel .conversation-meta [aria-label*="Ghim"],
+.inbox-panel .conversation-meta [aria-label*="Pin"],
+html.dark .inbox-panel .conversation-meta [aria-label*="Ghim"],
+html.dark .inbox-panel .conversation-meta [aria-label*="Pin"] {
+  color: #5eead4 !important;
+}
+
+.inbox-panel .conversation-muted-icon,
+html.dark .inbox-panel .conversation-muted-icon {
+  color: rgba(255, 255, 255, 0.55) !important;
+}
+
+.inbox-panel .conversation-sent-icon,
+html.dark .inbox-panel .conversation-sent-icon {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.inbox-panel .restore-chip,
+html.dark .inbox-panel .restore-chip {
+  background: rgba(20, 184, 166, 0.2) !important;
+  border: 1px solid rgba(20, 184, 166, 0.4) !important;
+  color: #5eead4 !important;
+  font-weight: 700 !important;
+}
+
+.inbox-panel .restore-chip span,
+html.dark .inbox-panel .restore-chip span {
+  color: #5eead4 !important;
+}
+
+/* Empty State */
+.inbox-panel .empty-state,
+html.dark .inbox-panel .empty-state {
+  color: rgba(255, 255, 255, 0.75) !important;
+}
+
+.inbox-panel .empty-state svg,
+html.dark .inbox-panel .empty-state svg {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.inbox-panel .empty-state span,
+html.dark .inbox-panel .empty-state span {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Context Menu */
+html.dark .conversation-context-menu {
+  background: rgba(24, 28, 36, 0.98) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+html.dark .conversation-context-menu button {
+  color: #ffffff !important;
+}
+
+html.dark .conversation-context-menu button:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+html.dark .conversation-context-menu button.is-danger {
+  color: #fb7185 !important;
+}
+
+html.dark .conversation-context-menu button.is-danger:hover {
+  background: rgba(244, 63, 94, 0.16) !important;
+}
+
+/* Group Modal Optimization */
+html.dark .group-modal {
+  background: rgba(24, 28, 36, 0.98) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(16px) !important;
+  color: #ffffff !important;
+}
+
+html.dark .group-modal h2 {
+  color: #ffffff !important;
+}
+
+html.dark .group-modal p {
+  color: rgba(255, 255, 255, 0.75) !important;
+}
+
+html.dark .group-field span {
+  color: #ffffff !important;
+}
+
+html.dark .group-field input {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  color: #ffffff !important;
+}
+
+html.dark .group-field input::placeholder {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+
+html.dark .group-avatar-picker {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px dashed rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+}
+
+html.dark .group-avatar-picker span {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html.dark .group-avatar-picker svg {
+  color: #5eead4 !important;
+}
+
+html.dark .group-member-title strong {
+  color: #ffffff !important;
+}
+
+html.dark .group-member-title span {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+html.dark .group-member-row {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+html.dark .group-member-row:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+html.dark .group-member-row strong {
+  color: #ffffff !important;
+}
+
+html.dark .group-member-row small {
+  color: rgba(255, 255, 255, 0.7) !important;
+}

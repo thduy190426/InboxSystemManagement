@@ -701,7 +701,7 @@ export function InboxPanel({
               <span className="conversation-topline">
                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0, flex: '1 1 auto', fontSize: 'inherit', color: 'inherit' }}>
                   <strong>{getResolvedConversationName(conversation)}</strong>
-                  {conversation.muted ? <BellOff size={14} aria-label={t('mutedAria')} style={{ flexShrink: 0, color: 'var(--subtle)' }} /> : null}
+                  {conversation.muted ? <BellOff size={14} aria-label={t('mutedAria')} className="conversation-muted-icon" style={{ flexShrink: 0 }} /> : null}
                 </span>
               </span>
               <span className="conversation-preview">{getConversationPreview(conversation)}</span>
@@ -725,7 +725,7 @@ export function InboxPanel({
                     src={conversation.avatar}
                   />
                 ) : (
-                  <Check size={14} className="conversation-sent-icon" style={{ color: 'var(--subtle)' }} />
+                  <Check size={14} className="conversation-sent-icon" />
                 )
               ) : null}
             </span>
