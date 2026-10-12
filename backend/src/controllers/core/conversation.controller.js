@@ -2,6 +2,7 @@ const { randomUUID } = require('crypto')
 const { pool } = require('../../config/db')
 const { emitToConversation, emitToUsers } = require('../../realtime/socket')
 const { sendWebPushToUsers } = require('../../services/push.service')
+const logger = require('../../utils/logger')
 
 const accentColors = ['#14b8a6', '#f97316', '#4f46e5', '#db2777', '#2563eb']
 const typingIndicators = new Map()
@@ -117,7 +118,7 @@ const messagePinsTableReady = pool
     })
   })
   .catch((error) => {
-    console.error('Không thể đảm bảo bảng message_pins:', error)
+    logger.error('Không thể đảm bảo bảng message_pins:', error)
     throw error
   })
 const messageHiddenEntriesTableReady = pool
@@ -132,7 +133,7 @@ const messageHiddenEntriesTableReady = pool
     )`,
   )
   .catch((error) => {
-    console.error('Không thể đảm bảo bảng message_hidden_entries:', error)
+    logger.error('Không thể đảm bảo bảng message_hidden_entries:', error)
     throw error
   })
 const messagePollsTablesReady = pool
@@ -149,7 +150,7 @@ const messagePollsTablesReady = pool
     )`,
   )
   .catch((error) => {
-    console.error('Không thể đảm bảo loại tin nhắn khảo sát:', error)
+    logger.error('Không thể đảm bảo loại tin nhắn khảo sát:', error)
     throw error
   })
   .then(async () => {
@@ -177,7 +178,7 @@ const messagePollsTablesReady = pool
     )
   })
   .catch((error) => {
-    console.error('Không thể đảm bảo bảng khảo sát tin nhắn:', error)
+    logger.error('Không thể đảm bảo bảng khảo sát tin nhắn:', error)
     throw error
   })
 const conversationParticipantHiddenAtReady = withSchemaLock('inbox:cp:hidden_at', async (connection) => {
@@ -189,7 +190,7 @@ const conversationParticipantHiddenAtReady = withSchemaLock('inbox:cp:hidden_at'
     )
   } catch (error) {
     if (error && error.code === 'ER_DUP_FIELDNAME') return
-    console.error('Không thể đảm bảo cột hidden_at cho người tham gia cuộc trò chuyện:', error)
+    logger.error('Không thể đảm bảo cột hidden_at cho người tham gia cuộc trò chuyện:', error)
     throw error
   }
 })
@@ -204,7 +205,7 @@ const messagesE2EEReady = withSchemaLock('inbox_system_management:messages:e2ee'
     )
   } catch (error) {
     if (error && error.code === 'ER_DUP_FIELDNAME') return
-    console.error('Không thể đảm bảo cột e2ee cho tin nhắn:', error)
+    logger.error('Không thể đảm bảo cột e2ee cho tin nhắn:', error)
     throw error
   } finally {
     await connection.execute('SET FOREIGN_KEY_CHECKS=1')
@@ -220,7 +221,7 @@ const conversationParticipantMessageRequestStatusReady = conversationParticipant
       )
     } catch (error) {
       if (error && error.code === 'ER_DUP_FIELDNAME') return
-      console.error('Không thể đảm bảo cột message_request_status cho người tham gia cuộc trò chuyện:', error)
+      logger.error('Không thể đảm bảo cột message_request_status cho người tham gia cuộc trò chuyện:', error)
       throw error
     }
   })
@@ -240,7 +241,7 @@ const groupInviteTokensTableReady = pool
     )`,
   )
   .catch((error) => {
-    console.error('Không thể đảm bảo bảng group_invite_tokens:', error)
+    logger.error('Không thể đảm bảo bảng group_invite_tokens:', error)
     throw error
   })
 const groupJoinRequestsTableReady = pool
@@ -262,7 +263,7 @@ const groupJoinRequestsTableReady = pool
     )`,
   )
   .catch((error) => {
-    console.error('Không thể đảm bảo bảng group_join_requests:', error)
+    logger.error('Không thể đảm bảo bảng group_join_requests:', error)
     throw error
   })
 
@@ -289,7 +290,7 @@ const messageReportsTableReady = pool
     )`,
   )
   .catch((error) => {
-    console.error('Không thể đảm bảo bảng message_reports:', error)
+    logger.error('Không thể đảm bảo bảng message_reports:', error)
     throw error
   })
 
@@ -682,7 +683,7 @@ async function emitConversationChanged(connection, conversationId, actorUserId, 
     emitToConversation(conversationId, 'conversation:changed', payload)
     emitToUsers(userIds, 'conversation:changed', payload)
   } catch (error) {
-    console.error('Không thể phát ra sự kiện thời gian thực của cuộc trò chuyện:', error)
+    logger.error('Không thể phát ra sự kiện thời gian thực của cuộc trò chuyện:', error)
   }
 }
 
@@ -701,7 +702,7 @@ async function loadConversationPushRecipientIds(connection, conversationId, acto
 
 function pushWebNotificationToUsers(userIds, payload) {
   sendWebPushToUsers(userIds, payload).catch((error) => {
-    console.error('Không thể gửi thông báo đẩy trên Web:', error)
+    logger.error('Không thể gửi thông báo đẩy trên Web:', error)
   })
 }
 
@@ -1063,27 +1064,31 @@ async function syncMentionNotifications(
     )
   }
 
-  for (const member of newMentionMembers) {
-    await connection.execute(
-      `INSERT INTO notifications (
-        user_id,
-        actor_id,
-        conversation_id,
-        message_id,
-        type,
-        title,
-        body
-      ) VALUES (?, ?, ?, ?, 'mention', ?, ?)`,
-      [
+    if (newMentionMembers.length > 0) {
+      const notificationPlaceholders = newMentionMembers
+        .map(() => '(?, ?, ?, ?, \'mention\', ?, ?)')
+        .join(', ')
+      const notificationValues = newMentionMembers.flatMap((member) => [
         member.userId,
         actorUserId,
         conversationId,
         messageId,
         `${actorName} đã nhắc đến bạn!`,
         text.slice(0, 500),
-      ],
-    )
-  }
+      ])
+      await connection.execute(
+        `INSERT INTO notifications (
+          user_id,
+          actor_id,
+          conversation_id,
+          message_id,
+          type,
+          title,
+          body
+        ) VALUES ${notificationPlaceholders}`,
+        notificationValues,
+      )
+    }
 
   const newMentionUserIds = newMentionMembers.map((member) => member.userId)
 
@@ -1659,91 +1664,99 @@ async function listConversations(request, response, next) {
     if (conversationIds.length > 0) {
       const placeholders = conversationIds.map(() => '?').join(',')
 
-      ;[attachmentRows] = await pool.execute(
-        `SELECT
-          messages.conversation_id,
-          message_attachments.original_name,
-          message_attachments.mime_type,
-          message_attachments.file_size_bytes,
-          message_attachments.storage_url
-        FROM message_attachments
-        INNER JOIN messages ON messages.id = message_attachments.message_id
-        LEFT JOIN message_hidden_entries
-          ON message_hidden_entries.message_id = messages.id
-          AND message_hidden_entries.user_id = ?
-        WHERE messages.conversation_id IN (${placeholders})
-          AND messages.deleted_at IS NULL
-          AND message_hidden_entries.id IS NULL
-        ORDER BY message_attachments.created_at DESC`,
-        [currentUserId, ...conversationIds],
-      )
+      const [
+        [batchAttachmentRows],
+        [batchUnreadRows],
+        [batchUnreadSenderRows],
+      ] = await Promise.all([
+        pool.execute(
+          `SELECT
+            messages.conversation_id,
+            message_attachments.original_name,
+            message_attachments.mime_type,
+            message_attachments.file_size_bytes,
+            message_attachments.storage_url
+          FROM message_attachments
+          INNER JOIN messages ON messages.id = message_attachments.message_id
+          LEFT JOIN message_hidden_entries
+            ON message_hidden_entries.message_id = messages.id
+            AND message_hidden_entries.user_id = ?
+          WHERE messages.conversation_id IN (${placeholders})
+            AND messages.deleted_at IS NULL
+            AND message_hidden_entries.id IS NULL
+          ORDER BY message_attachments.created_at DESC`,
+          [currentUserId, ...conversationIds],
+        ),
+        pool.execute(
+          `SELECT
+            conversation_participants.conversation_id,
+            COUNT(messages.id) AS unread_count
+          FROM conversation_participants
+          LEFT JOIN messages
+            ON messages.conversation_id = conversation_participants.conversation_id
+            AND messages.sender_id <> conversation_participants.user_id
+            AND messages.deleted_at IS NULL
+            AND (
+              conversation_participants.last_read_message_id IS NULL
+              OR messages.id > conversation_participants.last_read_message_id
+            )
+          LEFT JOIN message_hidden_entries
+            ON message_hidden_entries.message_id = messages.id
+            AND message_hidden_entries.user_id = conversation_participants.user_id
+          WHERE conversation_participants.user_id = ?
+            AND conversation_participants.conversation_id IN (${placeholders})
+            AND (messages.id IS NULL OR message_hidden_entries.id IS NULL)
+          GROUP BY conversation_participants.conversation_id`,
+          [currentUserId, ...conversationIds],
+        ),
+        pool.execute(
+          `SELECT
+            messages.conversation_id,
+            users.public_id,
+            users.full_name,
+            users.avatar_url,
+            CASE
+              WHEN users.show_activity_status = 1
+                AND users.presence = 'online'
+                AND users.last_seen_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 2 MINUTE)
+                THEN 'online'
+              WHEN users.show_activity_status = 1
+                AND users.presence IN ('away', 'busy') THEN users.presence
+              ELSE 'offline'
+            END AS presence,
+            MAX(messages.created_at) AS latest_unread_at
+          FROM conversation_participants
+          INNER JOIN messages
+            ON messages.conversation_id = conversation_participants.conversation_id
+            AND messages.sender_id <> conversation_participants.user_id
+            AND messages.deleted_at IS NULL
+            AND (
+              conversation_participants.last_read_message_id IS NULL
+              OR messages.id > conversation_participants.last_read_message_id
+            )
+          LEFT JOIN message_hidden_entries
+            ON message_hidden_entries.message_id = messages.id
+            AND message_hidden_entries.user_id = conversation_participants.user_id
+          INNER JOIN users ON users.id = messages.sender_id
+          WHERE conversation_participants.user_id = ?
+            AND conversation_participants.conversation_id IN (${placeholders})
+            AND message_hidden_entries.id IS NULL
+          GROUP BY
+            messages.conversation_id,
+            users.public_id,
+            users.full_name,
+            users.avatar_url,
+            users.show_activity_status,
+            users.presence,
+            users.last_seen_at
+          ORDER BY latest_unread_at DESC`,
+          [currentUserId, ...conversationIds],
+        ),
+      ])
 
-      ;[unreadRows] = await pool.execute(
-        `SELECT
-          conversation_participants.conversation_id,
-          COUNT(messages.id) AS unread_count
-        FROM conversation_participants
-        LEFT JOIN messages
-          ON messages.conversation_id = conversation_participants.conversation_id
-          AND messages.sender_id <> conversation_participants.user_id
-          AND messages.deleted_at IS NULL
-          AND (
-            conversation_participants.last_read_message_id IS NULL
-            OR messages.id > conversation_participants.last_read_message_id
-          )
-        LEFT JOIN message_hidden_entries
-          ON message_hidden_entries.message_id = messages.id
-          AND message_hidden_entries.user_id = conversation_participants.user_id
-        WHERE conversation_participants.user_id = ?
-          AND conversation_participants.conversation_id IN (${placeholders})
-          AND (messages.id IS NULL OR message_hidden_entries.id IS NULL)
-        GROUP BY conversation_participants.conversation_id`,
-        [currentUserId, ...conversationIds],
-      )
-
-      ;[unreadSenderRows] = await pool.execute(
-        `SELECT
-          messages.conversation_id,
-          users.public_id,
-          users.full_name,
-          users.avatar_url,
-          CASE
-            WHEN users.show_activity_status = 1
-              AND users.presence = 'online'
-              AND users.last_seen_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 2 MINUTE)
-              THEN 'online'
-            WHEN users.show_activity_status = 1
-              AND users.presence IN ('away', 'busy') THEN users.presence
-            ELSE 'offline'
-          END AS presence,
-          MAX(messages.created_at) AS latest_unread_at
-        FROM conversation_participants
-        INNER JOIN messages
-          ON messages.conversation_id = conversation_participants.conversation_id
-          AND messages.sender_id <> conversation_participants.user_id
-          AND messages.deleted_at IS NULL
-          AND (
-            conversation_participants.last_read_message_id IS NULL
-            OR messages.id > conversation_participants.last_read_message_id
-          )
-        LEFT JOIN message_hidden_entries
-          ON message_hidden_entries.message_id = messages.id
-          AND message_hidden_entries.user_id = conversation_participants.user_id
-        INNER JOIN users ON users.id = messages.sender_id
-        WHERE conversation_participants.user_id = ?
-          AND conversation_participants.conversation_id IN (${placeholders})
-          AND message_hidden_entries.id IS NULL
-        GROUP BY
-          messages.conversation_id,
-          users.public_id,
-          users.full_name,
-          users.avatar_url,
-          users.show_activity_status,
-          users.presence,
-          users.last_seen_at
-        ORDER BY latest_unread_at DESC`,
-        [currentUserId, ...conversationIds],
-      )
+      attachmentRows = batchAttachmentRows
+      unreadRows = batchUnreadRows
+      unreadSenderRows = batchUnreadSenderRows
     }
 
     const attachmentsByConversation = attachmentRows.reduce((result, row) => {
@@ -1977,15 +1990,19 @@ async function createGroupConversation(request, response, next) {
       [conversationId, currentUserId],
     )
 
-    for (const member of memberRows) {
+    if (memberRows.length > 0) {
+      const participantPlaceholders = memberRows
+        .map(() => '(?, ?, \'member\', CURRENT_TIMESTAMP)')
+        .join(', ')
+      const participantValues = memberRows.flatMap((member) => [conversationId, member.id])
       await connection.execute(
         `INSERT INTO conversation_participants (
           conversation_id,
           user_id,
           role,
           last_read_at
-        ) VALUES (?, ?, 'member', CURRENT_TIMESTAMP)`,
-        [conversationId, member.id],
+        ) VALUES ${participantPlaceholders}`,
+        participantValues,
       )
     }
 
@@ -2011,7 +2028,6 @@ async function getConversationMembers(request, response, next) {
   const connection = await pool.getConnection()
 
   try {
-    console.log("updateConversationBackground hit", request.params, !!request.file, request.body);
     const currentUserId = request.user.id
     const conversationId = Number(request.params.conversationId)
 
@@ -5050,7 +5066,6 @@ async function updateConversationBackground(request, response, next) {
   const connection = await pool.getConnection()
 
   try {
-    console.log("updateConversationBackground hit", request.params, !!request.file, request.body);
     const currentUserId = request.user.id
     const conversationId = Number(request.params.conversationId)
     const backgroundImage = request.file ? request.file.cloudinary.url : null

@@ -3,10 +3,11 @@ const { pool } = require('../../config/db')
 const { emitToUsers } = require('../../realtime/socket')
 const { sendWebPushToUsers } = require('../../services/push.service')
 const { attachMutualFriendsSummary, getMutualFriendsList } = require('../../utils/mutualFriends.util')
+const logger = require('../../utils/logger')
 
 function pushWebNotificationToUsers(userIds, payload) {
   sendWebPushToUsers(userIds, payload).catch((error) => {
-    console.error('Không thể gửi thông báo đẩy trên Web:', error)
+    logger.error('Không thể gửi thông báo đẩy trên Web:', error)
   })
 }
 

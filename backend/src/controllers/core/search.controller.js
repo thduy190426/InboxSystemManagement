@@ -36,7 +36,7 @@ async function globalSearch(request, response, next) {
       .filter((part) => part.length > 2)
       .join(' ')
 
-    const [conversationRows] = await pool.execute(
+    const conversationPromise = pool.execute(
       `SELECT
         conversations.id,
         conversations.type,
@@ -77,8 +77,8 @@ async function globalSearch(request, response, next) {
       [currentUserId, currentUserId, currentUserId, likeKeyword, likeKeyword, likeKeyword, likeKeyword],
     )
 
-    const [messageRows] = fullTextKeyword
-      ? await pool.execute(
+    const messagePromise = fullTextKeyword
+      ? pool.execute(
           `SELECT
             messages.id,
             messages.conversation_id,
@@ -129,7 +129,7 @@ async function globalSearch(request, response, next) {
             likeKeyword,
           ],
         )
-      : await pool.execute(
+      : pool.execute(
           `SELECT
             messages.id,
             messages.conversation_id,
@@ -169,7 +169,7 @@ async function globalSearch(request, response, next) {
           [currentUserId, currentUserId, currentUserId, likeKeyword],
         )
 
-    const [userRows] = await pool.execute(
+    const userPromise = pool.execute(
       `SELECT
         users.public_id,
         users.full_name,
@@ -198,6 +198,12 @@ async function globalSearch(request, response, next) {
       LIMIT 8`,
       [currentUserId, currentUserId, likeKeyword, likeKeyword, likeKeyword, likeKeyword],
     )
+
+    const [[conversationRows], [messageRows], [userRows]] = await Promise.all([
+      conversationPromise,
+      messagePromise,
+      userPromise,
+    ])
 
     response.json({
       conversations: conversationRows.map((row) => ({

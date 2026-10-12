@@ -1,4 +1,5 @@
 const { sanitizeValue } = require('./requestLogger.middleware')
+const logger = require('../utils/logger')
 
 function getUserContext(request) {
   if (!request.user) {
@@ -13,7 +14,7 @@ function getUserContext(request) {
 }
 
 function logRequestError(error, request, statusCode) {
-  console.error('[BE][ERROR][DETAIL]', {
+  logger.error('[BE][ERROR][DETAIL]', {
     requestId: request.requestId,
     method: request.method,
     url: request.originalUrl,
@@ -28,7 +29,7 @@ function logRequestError(error, request, statusCode) {
 }
 
 function notFoundHandler(request, response) {
-  console.warn('[BE][ERROR][NOT_FOUND]', {
+  logger.warn('[BE][ERROR][NOT_FOUND]', {
     requestId: request.requestId,
     method: request.method,
     url: request.originalUrl,

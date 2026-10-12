@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs')
 const { randomUUID } = require('crypto')
 const { pool } = require('../../config/db')
 const { validateRegisterPayload } = require('../../utils/validation')
+const logger = require('../../utils/logger')
 
 const ALLOWED_ROLES = new Set(['user', 'agent', 'owner'])
 const ALLOWED_REPORT_STATUSES = new Set(['pending', 'reviewed', 'dismissed'])
@@ -32,7 +33,7 @@ const messageReportsTableReady = pool
     )`,
   )
   .catch((error) => {
-    console.error('Không thể đảm bảo bảng message_reports:', error)
+    logger.error('Không thể đảm bảo bảng message_reports:', error)
     throw error
   })
 

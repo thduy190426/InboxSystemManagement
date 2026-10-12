@@ -1,4 +1,4 @@
-const db = require('../../config/db')
+const { pool } = require('../../config/db')
 
 async function uploadKeys(req, res, next) {
   try {
@@ -9,7 +9,7 @@ async function uploadKeys(req, res, next) {
       return res.status(400).json({ error: 'Missing required key information' })
     }
 
-    const connection = await db.getConnection()
+    const connection = await pool.getConnection()
     try {
       await connection.beginTransaction()
 
@@ -73,7 +73,7 @@ async function uploadKeys(req, res, next) {
 async function fetchKeys(req, res, next) {
   try {
     const targetUserId = req.params.userId
-    const [devices] = await db.execute(
+    const [devices] = await pool.execute(
       `SELECT device_id, registration_id
        FROM e2ee_devices
        WHERE user_id = ?
@@ -88,20 +88,24 @@ async function fetchKeys(req, res, next) {
 
     const device = devices[0]
 
-    const [identityKeys] = await db.execute(
-      `SELECT identity_key FROM e2ee_identity_keys WHERE user_id = ? AND device_id = ?`,
-      [targetUserId, device.device_id]
-    )
-
-    const [signedPreKeys] = await db.execute(
-      `SELECT key_id, public_key, signature FROM e2ee_signed_prekeys WHERE user_id = ? AND device_id = ? ORDER BY created_at DESC LIMIT 1`,
-      [targetUserId, device.device_id]
-    )
-
-    const [oneTimePreKeys] = await db.execute(
-      `SELECT key_id, public_key FROM e2ee_onetime_prekeys WHERE user_id = ? AND device_id = ? LIMIT 1`,
-      [targetUserId, device.device_id]
-    )
+    const [
+      [identityKeys],
+      [signedPreKeys],
+      [oneTimePreKeys],
+    ] = await Promise.all([
+      pool.execute(
+        `SELECT identity_key FROM e2ee_identity_keys WHERE user_id = ? AND device_id = ?`,
+        [targetUserId, device.device_id]
+      ),
+      pool.execute(
+        `SELECT key_id, public_key, signature FROM e2ee_signed_prekeys WHERE user_id = ? AND device_id = ? ORDER BY created_at DESC LIMIT 1`,
+        [targetUserId, device.device_id]
+      ),
+      pool.execute(
+        `SELECT key_id, public_key FROM e2ee_onetime_prekeys WHERE user_id = ? AND device_id = ? LIMIT 1`,
+        [targetUserId, device.device_id]
+      ),
+    ])
 
     if (identityKeys.length === 0 || signedPreKeys.length === 0) {
       return res.status(404).json({ error: 'Incomplete key bundle for target user' })
@@ -122,7 +126,7 @@ async function fetchKeys(req, res, next) {
     }
 
     if (oneTimePreKeys.length > 0) {
-      await db.execute(
+      await pool.execute(
         `DELETE FROM e2ee_onetime_prekeys WHERE user_id = ? AND device_id = ? AND key_id = ?`,
         [targetUserId, device.device_id, oneTimePreKeys[0].key_id]
       )

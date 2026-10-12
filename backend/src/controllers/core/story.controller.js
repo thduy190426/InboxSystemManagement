@@ -3,6 +3,7 @@ const { pool } = require('../../config/db');
 const { uploadBufferToCloudinary } = require('../../config/upload');
 const { getIO } = require('../../realtime/socket');
 const { attachMutualFriendsSummary } = require('../../utils/mutualFriends.util');
+const logger = require('../../utils/logger');
 
 let storySchemaReadyPromise = null;
 
@@ -149,12 +150,12 @@ async function ensureStorySchema() {
       try {
         await pool.execute('ALTER TABLE stories ADD COLUMN views_count INT UNSIGNED NOT NULL DEFAULT 0');
       } catch (e) {
-        if (e && e.code !== 'ER_DUP_FIELDNAME') console.warn('[story.controller] views_count:', e.message);
+        if (e && e.code !== 'ER_DUP_FIELDNAME') logger.debug('[story.controller] views_count:', e.message);
       }
       try {
         await pool.execute('ALTER TABLE stories ADD COLUMN reactions_count INT UNSIGNED NOT NULL DEFAULT 0');
       } catch (e) {
-        if (e && e.code !== 'ER_DUP_FIELDNAME') console.warn('[story.controller] reactions_count:', e.message);
+        if (e && e.code !== 'ER_DUP_FIELDNAME') logger.debug('[story.controller] reactions_count:', e.message);
       }
       try {
         await pool.execute(`
@@ -162,11 +163,11 @@ async function ensureStorySchema() {
           MODIFY COLUMN privacy ENUM('public', 'friends', 'close_friends', 'only_me') NOT NULL DEFAULT 'friends'
         `);
       } catch (e) {
-        console.warn('[story.controller] privacy column modify:', e.message);
+        logger.debug('[story.controller] privacy column modify:', e.message);
       }
-      console.log('[story.controller] Story schema initialization verified.');
+      logger.debug('[story.controller] Story schema initialization verified.');
     } catch (err) {
-      console.warn('[story.controller] Schema initialization check:', err.message);
+      logger.warn('[story.controller] Schema initialization check:', err.message);
     }
   })();
 
@@ -245,7 +246,7 @@ exports.createStory = async (req, res, next) => {
       story: newStory,
     });
   } catch (error) {
-    console.error('[story.controller] Error in createStory:', error);
+    logger.debug('[story.controller] Error in createStory:', error);
     next(error);
   }
 };
@@ -340,7 +341,7 @@ exports.getActiveStories = async (req, res, next) => {
       data: Object.values(groupedStories),
     });
   } catch (error) {
-    console.error('[story.controller] Error in getActiveStories:', error);
+    logger.debug('[story.controller] Error in getActiveStories:', error);
     next(error);
   }
 };
@@ -399,7 +400,7 @@ exports.recordView = async (req, res, next) => {
       isNewView: insertResult.affectedRows > 0,
     });
   } catch (error) {
-    console.error('[story.controller] Error in recordView:', error);
+    logger.debug('[story.controller] Error in recordView:', error);
     next(error);
   }
 };
@@ -501,7 +502,7 @@ exports.reactToStory = async (req, res, next) => {
       reactions_count: countRows[0]?.reactions_count || 0,
     });
   } catch (error) {
-    console.error('[story.controller] Error in reactToStory:', error);
+    logger.debug('[story.controller] Error in reactToStory:', error);
     next(error);
   }
 };
@@ -608,7 +609,7 @@ exports.replyToStory = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error('[story.controller] Error in replyToStory:', error);
+    logger.debug('[story.controller] Error in replyToStory:', error);
     next(error);
   }
 };
@@ -650,7 +651,7 @@ exports.getStoryViewers = async (req, res, next) => {
       data: enrichedViewers,
     });
   } catch (error) {
-    console.error('[story.controller] Error in getStoryViewers:', error);
+    logger.debug('[story.controller] Error in getStoryViewers:', error);
     next(error);
   }
 };
@@ -685,7 +686,7 @@ exports.deleteStory = async (req, res, next) => {
       message: 'Story deleted successfully',
     });
   } catch (error) {
-    console.error('[story.controller] Error in deleteStory:', error);
+    logger.debug('[story.controller] Error in deleteStory:', error);
     next(error);
   }
 };
@@ -710,7 +711,7 @@ exports.getCloseFriends = async (req, res, next) => {
       data: friends,
     });
   } catch (error) {
-    console.error('[story.controller] Error in getCloseFriends:', error);
+    logger.debug('[story.controller] Error in getCloseFriends:', error);
     next(error);
   }
 };
@@ -751,7 +752,7 @@ exports.toggleCloseFriend = async (req, res, next) => {
       isCloseFriend,
     });
   } catch (error) {
-    console.error('[story.controller] Error in toggleCloseFriend:', error);
+    logger.debug('[story.controller] Error in toggleCloseFriend:', error);
     next(error);
   }
 };
@@ -789,7 +790,7 @@ exports.votePoll = async (req, res, next) => {
       pollStats: { countA, countB, percentA, percentB, total, myVote: chosenOption }
     });
   } catch (error) {
-    console.error('[story.controller] Error in votePoll:', error);
+    logger.debug('[story.controller] Error in votePoll:', error);
     next(error);
   }
 };
@@ -825,7 +826,7 @@ exports.getPollStats = async (req, res, next) => {
       pollStats: { countA, countB, percentA, percentB, total, myVote }
     });
   } catch (error) {
-    console.error('[story.controller] Error in getPollStats:', error);
+    logger.debug('[story.controller] Error in getPollStats:', error);
     next(error);
   }
 };
@@ -857,7 +858,7 @@ exports.voteSlider = async (req, res, next) => {
       sliderStats: { average, myValue: Math.round(value), total }
     });
   } catch (error) {
-    console.error('[story.controller] Error in voteSlider:', error);
+    logger.debug('[story.controller] Error in voteSlider:', error);
     next(error);
   }
 };
@@ -887,7 +888,7 @@ exports.getSliderStats = async (req, res, next) => {
       sliderStats: { average, myValue, total }
     });
   } catch (error) {
-    console.error('[story.controller] Error in getSliderStats:', error);
+    logger.debug('[story.controller] Error in getSliderStats:', error);
     next(error);
   }
 };
@@ -915,7 +916,7 @@ exports.getStoryArchive = async (req, res, next) => {
       data: stories,
     });
   } catch (error) {
-    console.error('[story.controller] Error in getStoryArchive:', error);
+    logger.debug('[story.controller] Error in getStoryArchive:', error);
     next(error);
   }
 };
@@ -942,7 +943,7 @@ exports.getHighlights = async (req, res, next) => {
       data: highlights,
     });
   } catch (error) {
-    console.error('[story.controller] Error in getHighlights:', error);
+    logger.debug('[story.controller] Error in getHighlights:', error);
     next(error);
   }
 };
@@ -973,10 +974,12 @@ exports.createHighlight = async (req, res, next) => {
       [highlightId, userId, title.trim(), finalCover]
     );
 
-    for (let i = 0; i < storyIds.length; i++) {
+    if (storyIds.length > 0) {
+      const placeholders = storyIds.map(() => '(?, ?, ?)').join(', ');
+      const values = storyIds.flatMap((storyId, i) => [highlightId, storyId, i]);
       await pool.query(
-        'INSERT INTO story_highlight_items (highlight_id, story_id, order_index) VALUES (?, ?, ?)',
-        [highlightId, storyIds[i], i]
+        `INSERT INTO story_highlight_items (highlight_id, story_id, order_index) VALUES ${placeholders}`,
+        values
       );
     }
 
@@ -991,7 +994,7 @@ exports.createHighlight = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error('[story.controller] Error in createHighlight:', error);
+    logger.debug('[story.controller] Error in createHighlight:', error);
     next(error);
   }
 };
@@ -1048,7 +1051,7 @@ exports.getHighlightById = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.error('[story.controller] Error in getHighlightById:', error);
+    logger.debug('[story.controller] Error in getHighlightById:', error);
     next(error);
   }
 };
@@ -1075,7 +1078,7 @@ exports.deleteHighlight = async (req, res, next) => {
       message: 'Đã xóa tin nổi bật thành công',
     });
   } catch (error) {
-    console.error('[story.controller] Error in deleteHighlight:', error);
+    logger.debug('[story.controller] Error in deleteHighlight:', error);
     next(error);
   }
 };

@@ -1,48 +1,49 @@
 const { Resend } = require('resend');
 const nodemailer = require('nodemailer');
 
+const logger = require('../utils/logger');
+
 let resendClient = null;
 let nodemailerTransporter = null;
 let useNodemailer = false;
+let isInitialized = false;
 
 function initMailClient() {
-  console.log('[MAIL_SERVICE] Bắt đầu kiểm tra cấu hình Mail Client...');
-  
+  if (isInitialized) {
+    return Boolean(resendClient || nodemailerTransporter);
+  }
+
   const apiKey = process.env.RESEND_API_KEY;
-  console.log(`[MAIL_SERVICE] RESEND_API_KEY: ${apiKey ? 'ĐÃ CẤU HÌNH' : 'THIẾU'}`);
-  
   if (apiKey) {
-    if (!resendClient) {
-      resendClient = new Resend(apiKey);
-      console.log('[MAIL_SERVICE] Khởi tạo kết nối Resend API thành công. Sẽ sử dụng Resend làm phương thức gửi chính.');
-    }
+    resendClient = new Resend(apiKey);
+    isInitialized = true;
+    logger.info('[MAIL_SERVICE] Khởi tạo kết nối Resend API thành công.');
     return true;
   }
 
-  console.log(`[MAIL_SERVICE] SMTP_USER: ${process.env.SMTP_USER ? 'ĐÃ CẤU HÌNH' : 'THIẾU'}, SMTP_PASS: ${process.env.SMTP_PASS ? 'ĐÃ CẤU HÌNH' : 'THIẾU'}`);
   if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-    if (!nodemailerTransporter) {
-      nodemailerTransporter = nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false,
-        requireTLS: true,
-        family: 4, 
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
-        },
-        connectionTimeout: 10000, 
-        greetingTimeout: 10000,
-        socketTimeout: 15000,
-      });
-      useNodemailer = true;
-      console.log('[MAIL_SERVICE] Đã khởi tạo kết nối Nodemailer (Gmail) thành công.');
-    }
+    nodemailerTransporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      requireTLS: true,
+      family: 4,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
+    });
+    useNodemailer = true;
+    isInitialized = true;
+    logger.info('[MAIL_SERVICE] Khởi tạo kết nối Nodemailer (Gmail) thành công.');
     return true;
   }
 
-  console.warn('[MAIL_SERVICE] Cảnh báo: Chưa cấu hình dịch vụ gửi Email (SMTP hoặc Resend)!');
+  isInitialized = true;
+  logger.warn('[MAIL_SERVICE] Chưa cấu hình dịch vụ gửi Email (SMTP hoặc Resend)!');
   return false;
 }
 
@@ -54,9 +55,8 @@ function getSender() {
 }
 
 async function sendMailWrapper(mailOptions) {
-  console.log(`[MAIL_SERVICE] Chuẩn bị gửi email đến: ${mailOptions.to}, Tiêu đề: "${mailOptions.subject}"`);
   if (!initMailClient()) {
-    console.warn('[MAIL_SERVICE] Hủy gửi email do không có dịch vụ nào được cấu hình.');
+    logger.warn('[MAIL_SERVICE] Hủy gửi email do không có dịch vụ nào được cấu hình.');
     if (process.env.NODE_ENV === 'production') {
       const error = new Error('Dịch vụ gửi Email chưa được cấu hình!');
       error.statusCode = 503;
@@ -65,24 +65,24 @@ async function sendMailWrapper(mailOptions) {
     return { skipped: true };
   }
 
+  logger.debug(`[MAIL_SERVICE] Gửi email đến: ${mailOptions.to}, Tiêu đề: "${mailOptions.subject}"`);
+
   try {
     if (useNodemailer) {
-      console.log('[MAIL_SERVICE] Bắt đầu gọi API của Nodemailer (Gmail)...');
       const info = await nodemailerTransporter.sendMail(mailOptions);
-      console.log('[MAIL_SERVICE] Đã gửi email thành công (Nodemailer). MessageId:', info.messageId);
+      logger.info(`[MAIL_SERVICE] Đã gửi email thành công (Nodemailer) đến ${mailOptions.to}. MessageId: ${info.messageId}`);
       return { skipped: false };
     } else {
-      console.log('[MAIL_SERVICE] Bắt đầu gọi API của Resend...');
       const { data, error } = await resendClient.emails.send(mailOptions);
       if (error) {
-        console.error('[MAIL_SERVICE] Resend API trả về lỗi:', error);
+        logger.error('[MAIL_SERVICE] Resend API trả về lỗi', error);
         throw error;
       }
-      console.log('[MAIL_SERVICE] Đã gửi email thành công (Resend). ID:', data?.id);
+      logger.info(`[MAIL_SERVICE] Đã gửi email thành công (Resend) đến ${mailOptions.to}. ID: ${data?.id}`);
       return { skipped: false };
     }
   } catch (error) {
-    console.error('[MAIL_SERVICE] Lỗi hệ thống khi gửi Email:', error);
+    logger.error('[MAIL_SERVICE] Lỗi hệ thống khi gửi Email', error);
     return { skipped: false, error };
   }
 }

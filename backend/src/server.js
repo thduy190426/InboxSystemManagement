@@ -9,6 +9,7 @@ const { pool, testConnection } = require('./config/db')
 const { ensureConversationSchemaOnce } = require('./controllers/core/conversation.controller')
 const { initRealtime } = require('./realtime/socket')
 const { getAllowedOrigins } = require('./utils/allowedOrigins')
+const logger = require('./utils/logger')
 
 const port = Number(process.env.PORT || 4000)
 const server = http.createServer(app)
@@ -26,11 +27,11 @@ async function ensureOptimalIndexes() {
       try {
         await connection.query(sql)
       } catch (err) {
-        if (err.code !== 'ER_DUP_KEYNAME') console.error('Index warning:', err.message)
+        if (err.code !== 'ER_DUP_KEYNAME') logger.debug('Index warning:', err.message)
       }
     }
   } catch (err) {
-    console.error('Error ensuring indexes:', err)
+    logger.warn('Error ensuring indexes:', err.message || err)
   } finally {
     connection.release()
   }
@@ -39,16 +40,16 @@ async function ensureOptimalIndexes() {
 async function startServer() {
   try {
     await testConnection()
+    logger.info('Kết nối cơ sở dữ liệu thành công.')
     await ensureOptimalIndexes()
     await ensureConversationSchemaOnce()
     initRealtime(server, getAllowedOrigins())
 
     server.listen(port, () => {
-      console.log(`Máy chủ API đang chạy ở cổng http://127.0.0.1:${port}!`)
+      logger.info(`Máy chủ API đang chạy ở cổng http://127.0.0.1:${port}!`)
     })
   } catch (error) {
-    console.error('Khởi động máy chủ API thất bại!')
-    console.error(error)
+    logger.error('Khởi động máy chủ API thất bại!', error)
     process.exit(1)
   }
 }

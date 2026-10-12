@@ -1,3 +1,4 @@
+const logger = require('../utils/logger')
 const SENSITIVE_KEY_PATTERN = /password|token|authorization|cookie|secret|code|otp|refresh/i
 const MAX_LOG_STRING_LENGTH = 1200
 const MAX_LOG_ARRAY_LENGTH = 20
@@ -122,7 +123,7 @@ function logRequest(request, _response, next) {
     return originalSend(payload)
   }
 
-  console.info('[BE][REQUEST][START]', {
+  logger.debug('[BE][REQUEST][START]', {
     requestId,
     method: request.method,
     url: request.originalUrl,
@@ -134,18 +135,29 @@ function logRequest(request, _response, next) {
 
   _response.once('finish', () => {
     const durationMs = Number(process.hrtime.bigint() - startedAt) / 1_000_000
-    const level = _response.statusCode >= 500 ? 'error' : _response.statusCode >= 400 ? 'warn' : 'info'
-    const label = _response.statusCode >= 400 ? 'ERROR' : 'SUCCESS'
+    const statusCode = _response.statusCode
+    const isError = statusCode >= 400
+    const level = statusCode >= 500 ? 'error' : statusCode >= 400 ? 'warn' : 'info'
+    const label = isError ? 'ERROR' : 'SUCCESS'
 
-    console[level](`[BE][REQUEST][${label}]`, {
+    const logData = {
       requestId,
       method: request.method,
       url: request.originalUrl,
-      statusCode: _response.statusCode,
+      statusCode,
       durationMs: Number(durationMs.toFixed(2)),
       user: getUserContext(request),
-      response: getResponsePayload(responsePayload),
-    })
+    }
+
+    if (isError || !isProduction || isDebug) {
+      logData.response = getResponsePayload(responsePayload)
+      if (isError) {
+        logData.query = sanitizeValue(request.query)
+        logData.body = sanitizeValue(request.body)
+      }
+    }
+
+    logger[level](`[BE][REQUEST][${label}]`, logData)
   })
 
   next()

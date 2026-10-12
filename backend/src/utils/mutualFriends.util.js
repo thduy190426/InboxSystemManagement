@@ -1,4 +1,5 @@
 const { pool } = require('../config/db')
+const logger = require('./logger')
 
 /**
  * Enriches an array of user objects with mutual friends metrics in a single indexed query.
@@ -82,7 +83,7 @@ async function attachMutualFriendsSummary(currentUserId, userRows) {
       }
     })
   } catch (error) {
-    console.error('Lỗi khi tính toán bạn chung (attachMutualFriendsSummary):', error)
+    logger.error('Lỗi khi tính toán bạn chung (attachMutualFriendsSummary):', error)
     
     return userRows.map((user) => ({
       ...user,

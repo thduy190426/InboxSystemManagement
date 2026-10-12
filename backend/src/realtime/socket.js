@@ -4,6 +4,7 @@ const { Server } = require('socket.io')
 const { pool } = require('../config/db')
 const { sendWebPushToUsers } = require('../services/push.service')
 const { sanitizeValue } = require('../middleware/requestLogger.middleware')
+const logger = require('../utils/logger')
 
 let io = null
 const activeCallTimers = new Map()
@@ -11,7 +12,7 @@ const CALL_ANSWER_TIMEOUT_MS = 60_000
 
 function pushWebNotificationToUsers(userIds, payload) {
   sendWebPushToUsers(userIds, payload).catch((error) => {
-    console.error('Không thể gửi thông báo đẩy trên Web:', error)
+    logger.error('Không thể gửi thông báo đẩy trên Web:', error)
   })
 }
 
@@ -49,9 +50,7 @@ function sanitizeSocketPayload(payload) {
 }
 
 function logSocketEvent(socket, eventName, payload, ack) {
-  const startedAt = process.hrtime.bigint()
-
-  console.info('[BE][SOCKET][START]', {
+  logger.debug('[BE][SOCKET][START]', {
     socketId: socket.id,
     event: eventName,
     user: getSocketUserContext(socket),
@@ -65,16 +64,19 @@ function logSocketEvent(socket, eventName, payload, ack) {
   return (response) => {
     const durationMs = Number(process.hrtime.bigint() - startedAt) / 1_000_000
     const isError = response && response.ok === false
-    const level = isError ? 'warn' : 'info'
-    const label = isError ? 'ERROR' : 'SUCCESS'
 
-    console[level](`[BE][SOCKET][${label}]`, {
-      socketId: socket.id,
-      event: eventName,
-      durationMs: Number(durationMs.toFixed(2)),
-      user: getSocketUserContext(socket),
-      response: sanitizeValue(response),
-    })
+    if (isError || !isProduction || isDebug) {
+      const level = isError ? 'warn' : 'info'
+      const label = isError ? 'ERROR' : 'SUCCESS'
+
+      console[level](`[BE][SOCKET][${label}]`, {
+        socketId: socket.id,
+        event: eventName,
+        durationMs: Number(durationMs.toFixed(2)),
+        user: getSocketUserContext(socket),
+        response: sanitizeValue(response),
+      })
+    }
 
     return ack(response)
   }
@@ -392,7 +394,7 @@ function scheduleMissedCall(callId) {
         })
       } catch (error) {
         await connection.rollback()
-        console.error('Không đánh dấu cuộc gọi nhỡ:', error)
+        logger.error('Không đánh dấu cuộc gọi nhỡ:', error)
       } finally {
         connection.release()
         activeCallTimers.delete(callId)
@@ -462,7 +464,7 @@ function initRealtime(server, corsOrigin) {
   io.use(authenticateSocket)
 
   io.on('connection', async (socket) => {
-    console.info('[BE][SOCKET][CONNECTED]', {
+    logger.info('[BE][SOCKET][CONNECTED]', {
       socketId: socket.id,
       user: getSocketUserContext(socket),
       ip: socket.handshake.address,
@@ -473,7 +475,7 @@ function initRealtime(server, corsOrigin) {
       socket.join(getUserRoom(socket.user.id))
       await joinConversationRooms(socket)
     } catch (error) {
-      console.error('[BE][SOCKET][ERROR]', {
+      logger.error('[BE][SOCKET][ERROR]', {
         socketId: socket.id,
         event: 'connection:join-rooms',
         user: getSocketUserContext(socket),
@@ -483,7 +485,7 @@ function initRealtime(server, corsOrigin) {
     }
 
     socket.on('disconnect', (reason) => {
-      console.info('[BE][SOCKET][DISCONNECTED]', {
+      logger.info('[BE][SOCKET][DISCONNECTED]', {
         socketId: socket.id,
         user: getSocketUserContext(socket),
         reason,
@@ -493,7 +495,7 @@ function initRealtime(server, corsOrigin) {
     socket.on('realtime:refresh-conversations', async () => {
       logSocketEvent(socket, 'realtime:refresh-conversations')
       await joinConversationRooms(socket)
-      console.info('[BE][SOCKET][SUCCESS]', {
+      logger.debug('[BE][SOCKET][SUCCESS]', {
         socketId: socket.id,
         event: 'realtime:refresh-conversations',
         user: getSocketUserContext(socket),
@@ -596,7 +598,7 @@ function initRealtime(server, corsOrigin) {
         ack?.({ ok: true, call: callPayload })
       } catch (error) {
         await connection.rollback()
-        console.error('Không thể bắt đầu cuộc gọi:', error)
+        logger.error('Không thể bắt đầu cuộc gọi:', error)
         ack?.({ ok: false, message: 'Không thể bắt đầu cuộc gọi!' })
       } finally {
         connection.release()
@@ -664,7 +666,7 @@ function initRealtime(server, corsOrigin) {
         ack?.({ ok: true })
       } catch (error) {
         await connection.rollback()
-        console.error('Không thể nhận cuộc gọi:', error)
+        logger.error('Không thể nhận cuộc gọi:', error)
         ack?.({ ok: false, message: 'Không thể nhận cuộc gọi!' })
       } finally {
         connection.release()
@@ -778,7 +780,7 @@ function initRealtime(server, corsOrigin) {
         ack?.({ ok: true })
       } catch (error) {
         await connection.rollback()
-        console.error('Không thể hoàn thành cuộc gọi:', error)
+        logger.error('Không thể hoàn thành cuộc gọi:', error)
         ack?.({ ok: false })
       } finally {
         connection.release()

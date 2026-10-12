@@ -12,6 +12,7 @@ const {
 } = require('../../utils/validation')
 const { ensureUserProfileColumns } = require('../../utils/userProfileColumns')
 const { sendEmailVerificationCode, sendPasswordResetCode } = require('../../services/mail.service')
+const logger = require('../../utils/logger')
 
 function toPublicUser(row) {
   return {
@@ -157,7 +158,7 @@ async function deliverEmailVerificationCode(payload) {
   try {
     return await sendEmailVerificationCode(payload)
   } catch (error) {
-    console.error('Không thể gửi mã xác thực Email:', error)
+    logger.error('Không thể gửi mã xác thực Email:', error)
 
     return {
       failed: true,
@@ -170,7 +171,7 @@ async function deliverPasswordResetCode(payload) {
   try {
     return await sendPasswordResetCode(payload)
   } catch (error) {
-    console.error('Không thể gửi mã đặt lại mật khẩu:', error)
+    logger.error('Không thể gửi mã đặt lại mật khẩu:', error)
 
     return {
       failed: true,
@@ -270,7 +271,7 @@ async function emitPresenceChanged(userId, presence) {
       },
     )
   } catch (error) {
-    console.error('Không thể phát ra sự kiện hiện diện thời gian thực:', error)
+    logger.error('Không thể phát ra sự kiện hiện diện thời gian thực:', error)
   }
 }
 

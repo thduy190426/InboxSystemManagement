@@ -1,4 +1,5 @@
 const { getLinkPreview: fetchLinkPreview } = require('link-preview-js');
+const logger = require('../utils/logger');
 
 const previewCache = new Map();
 
@@ -35,7 +36,7 @@ exports.getLinkPreview = async (req, res) => {
 
     return res.json({ success: true, data });
   } catch (error) {
-    console.error('Link preview error:', error.message);
+    logger.debug('Link preview error:', error.message);
     return res.json({ success: true, data: null });
   }
 };
