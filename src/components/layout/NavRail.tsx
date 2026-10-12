@@ -14,6 +14,8 @@ import {
 } from 'lucide-react'
 import type { AuthUser } from '../../services/api/authApi'
 import type { AppView } from '../../types'
+import type { SavedAccount } from '../../services/storage/authStorage'
+import { AccountSwitcherMenu } from '../auth/AccountSwitcherMenu'
 // import { useTheme } from '../providers/ThemeProvider'
 import { useTranslation } from 'react-i18next'
 
@@ -35,6 +37,8 @@ type NavRailProps = {
   onToggleOpen: () => void
   onLogout: () => void
   onUserChange: (user: AuthUser) => void
+  onSwitchAccount?: (account: SavedAccount) => void
+  onAddAccount?: () => void
 }
 
 export function NavRail({
@@ -45,10 +49,14 @@ export function NavRail({
   onChangeView,
   onToggleOpen,
   onLogout,
+  onSwitchAccount,
+  onAddAccount,
 }: NavRailProps) {
   // const { theme, toggleTheme } = useTheme()
   const { t } = useTranslation('nav')
   const [isRinging, setIsRinging] = useState(false)
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false)
+  const avatarButtonRef = useRef<HTMLButtonElement>(null)
   const prevCountRef = useRef(notificationCount)
 
   useEffect(() => {
@@ -139,11 +147,14 @@ export function NavRail({
       </button>
 
       <button
+        ref={avatarButtonRef}
         className="profile-avatar-button"
         style={{ margin: '0 auto' }}
-        onClick={() => onChangeView('profile')}
-        title={t('editProfile')}
+        onClick={() => setIsAccountMenuOpen((prev) => !prev)}
+        title={t('accountSwitcher.title', { defaultValue: 'Chuyển tài khoản' })}
         type="button"
+        aria-haspopup="dialog"
+        aria-expanded={isAccountMenuOpen}
       >
         {currentUser?.avatarUrl ? (
           <img alt="" src={currentUser.avatarUrl} />
@@ -151,6 +162,25 @@ export function NavRail({
           <span>{currentUser?.displayName?.[0] || currentUser?.fullName?.[0] || 'I'}</span>
         )}
       </button>
+
+      <AccountSwitcherMenu
+        isOpen={isAccountMenuOpen}
+        currentUser={currentUser}
+        anchorEl={avatarButtonRef.current}
+        onClose={() => setIsAccountMenuOpen(false)}
+        onSwitchAccount={(account) => {
+          setIsAccountMenuOpen(false)
+          onSwitchAccount?.(account)
+        }}
+        onAddAccount={() => {
+          setIsAccountMenuOpen(false)
+          onAddAccount?.()
+        }}
+        onViewProfile={() => {
+          setIsAccountMenuOpen(false)
+          onChangeView('profile')
+        }}
+      />
 
       <nav className="nav-items">
         {navItemsConfig.map((item) => {

@@ -14709,3 +14709,47 @@ html.dark .group-member-row strong {
 html.dark .group-member-row small {
   color: rgba(255, 255, 255, 0.7) !important;
 }
+
+/* ==========================================================================
+   Account Switcher Menu & Recent Accounts (Messenger Style)
+   ========================================================================== */
+@keyframes accountSwitcherFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.account-item-row:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+html:not(.dark) .account-switcher-popover {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.15), 0 0 1px 1px rgba(0, 0, 0, 0.05) !important;
+}
+
+html:not(.dark) .account-item-row:hover {
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+.account-remove-btn:hover {
+  opacity: 1 !important;
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #ef4444 !important;
+}
+
+.account-add-btn:hover {
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.25), rgba(37, 99, 235, 0.25)) !important;
+  border-color: rgba(20, 184, 166, 0.7) !important;
+  transform: translateY(-1px);
+}
+
