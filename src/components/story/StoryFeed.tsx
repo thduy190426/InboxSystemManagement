@@ -6,7 +6,6 @@ import type { UserStoryGroup } from '../../types'
 import { getRealtimeSocket } from '../../services/realtime/realtime'
 import { getStoredAuthSession } from '../../services/storage/authStorage'
 import { useTranslation } from 'react-i18next'
-import { FeatureBadge } from '../ui/FeatureBadge'
 import { CloseFriendsModal } from './CloseFriendsModal'
 
 type StoryFeedProps = {
@@ -96,9 +95,8 @@ export function StoryFeed({ onCreateClick, onStoryClick, pushToast }: StoryFeedP
               </span>
             )}
           </div>
-          <span className="story-name" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+          <span className="story-name" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {t('yourStory')}
-            <FeatureBadge featureId="story" />
           </span>
         </button>
 

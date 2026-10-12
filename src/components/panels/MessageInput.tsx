@@ -3,7 +3,6 @@ import { Reply, X, Mic, Video, Send, Loader2, MapPin, PieChart, Image, Smile, Se
 import { useMediaRecording } from '../../hooks/chat/useMediaRecording'
 import type { EmojiStyle, Theme } from 'emoji-picker-react'
 import { useTranslation } from 'react-i18next'
-import { FeatureBadge } from '../ui/FeatureBadge'
 
 const EmojiPicker = lazy(() => import('emoji-picker-react'))
 
@@ -340,7 +339,6 @@ export function MessageInput({}: MessageInputProps) {
                     >
                       <PieChart size={17} />
                       <span>{t('createPollTitle')}</span>
-                      <FeatureBadge featureId="poll" />
                     </button>
                   </span>
 
