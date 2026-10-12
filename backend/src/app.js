@@ -1,4 +1,5 @@
 const cors = require('cors')
+const compression = require('compression')
 const express = require('express')
 const helmet = require('helmet')
 const adminRoutes = require('./routes/system/admin.routes')
@@ -41,6 +42,10 @@ app.use(
 )
 app.use(cors(corsOptions))
 app.options('*', cors(corsOptions))
+app.use(compression({
+  threshold: 1024,
+  level: 6,
+}))
 app.use(express.json({ limit: '1mb' }))
 app.use(logRequest)
 app.use('/api', globalRateLimit)

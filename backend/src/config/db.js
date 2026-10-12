@@ -7,7 +7,10 @@ const pool = mysql.createPool({
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'inbox_system_management',
   waitForConnections: true,
-  connectionLimit: Number(process.env.DB_CONNECTION_LIMIT || 10),
+  connectionLimit: Number(process.env.DB_CONNECTION_LIMIT || 30),
+  queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10000,
   namedPlaceholders: true,
   charset: 'utf8mb4',
 })
