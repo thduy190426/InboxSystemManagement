@@ -102,31 +102,31 @@ export function PollMessage({ message, currentUserId, members, onVote }: PollMes
 
   return (
     <div className="poll-message-card" style={{ 
-      background: 'linear-gradient(to bottom, var(--background-color), var(--input-bg))', 
-      border: '1px solid var(--border-color)', 
+      background: 'rgba(24, 28, 38, 0.95)', 
+      border: '1px solid rgba(255, 255, 255, 0.16)', 
       borderRadius: '16px', 
       padding: '20px',
       minWidth: '300px',
       maxWidth: '380px',
-      boxShadow: '0 8px 24px -8px rgba(0,0,0,0.1)',
+      boxShadow: '0 8px 24px -8px rgba(0,0,0,0.35)',
       overflow: 'hidden',
       position: 'relative'
     }}>
       <div className="poll-header" style={{ marginBottom: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--accent-color-transparent, rgba(147, 51, 234, 0.1))', color: 'var(--accent-color)', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 600 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(147, 51, 234, 0.2)', color: '#c084fc', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 600 }}>
             <PieChart size={14} />
             <span>{t('pollTitle')}</span>
           </div>
           {isPollEnded && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '4px 8px', borderRadius: '8px', fontSize: '11px', fontWeight: 600 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', padding: '4px 8px', borderRadius: '8px', fontSize: '11px', fontWeight: 600 }}>
               <AlertCircle size={12} />
               {t('pollEnded')}
             </div>
           )}
         </div>
-        <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 600, lineHeight: 1.4, color: 'var(--text-color)' }}>{poll.question}</h3>
-        <div style={{ display: 'flex', gap: '12px', marginTop: '10px', fontSize: '12px', color: 'var(--subtle)' }}>
+        <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 600, lineHeight: 1.4, color: '#ffffff' }}>{poll.question}</h3>
+        <div style={{ display: 'flex', gap: '12px', marginTop: '10px', fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)' }}>
           {poll.allowMultipleAnswers && <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><CheckSquare size={12} /> {t('multipleChoiceLabel')}</span>}
           {poll.isAnonymous && <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Users size={12} /> {t('anonymousLabel')}</span>}
         </div>
@@ -157,9 +157,9 @@ export function PollMessage({ message, currentUserId, members, onVote }: PollMes
                   alignItems: 'center',
                   padding: '12px 14px',
                   borderRadius: '12px',
-                  border: isSelected ? '2px solid var(--accent-color)' : isWinner ? '2px solid #f59e0b' : '2px solid transparent',
-                  background: isSelected ? 'var(--background-color)' : 'var(--background-color)',
-                  boxShadow: isSelected ? '0 4px 12px rgba(147, 51, 234, 0.15)' : 'inset 0 0 0 1px var(--border-color)',
+                  border: isSelected ? '2px solid #a855f7' : isWinner ? '2px solid #f59e0b' : '2px solid rgba(255, 255, 255, 0.12)',
+                  background: isSelected ? 'rgba(147, 51, 234, 0.25)' : 'rgba(255, 255, 255, 0.07)',
+                  boxShadow: isSelected ? '0 4px 12px rgba(147, 51, 234, 0.25)' : 'inset 0 0 0 1px rgba(255, 255, 255, 0.08)',
                   cursor: isPollEnded ? 'default' : 'pointer',
                   position: 'relative',
                   overflow: 'hidden',
@@ -168,13 +168,13 @@ export function PollMessage({ message, currentUserId, members, onVote }: PollMes
                 }}
                 onMouseOver={(e) => {
                   if (!isPollEnded && !isSelected) {
-                    e.currentTarget.style.boxShadow = 'inset 0 0 0 1px var(--accent-color)';
+                    e.currentTarget.style.boxShadow = 'inset 0 0 0 1px #a855f7';
                     e.currentTarget.style.transform = 'translateY(-1px)';
                   }
                 }}
                 onMouseOut={(e) => {
                   if (!isPollEnded && !isSelected) {
-                    e.currentTarget.style.boxShadow = isWinner ? 'none' : 'inset 0 0 0 1px var(--border-color)';
+                    e.currentTarget.style.boxShadow = isWinner ? 'none' : 'inset 0 0 0 1px rgba(255, 255, 255, 0.08)';
                     e.currentTarget.style.transform = 'translateY(0)';
                   }
                 }}
@@ -187,7 +187,7 @@ export function PollMessage({ message, currentUserId, members, onVote }: PollMes
                       top: 0,
                       bottom: 0,
                       width: `${percentage}%`,
-                      background: isWinner ? 'linear-gradient(90deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.1) 100%)' : isVotedByMe ? 'linear-gradient(90deg, var(--accent-color-transparent, rgba(147, 51, 234, 0.2)) 0%, rgba(147, 51, 234, 0.05) 100%)' : 'var(--input-bg)',
+                      background: isWinner ? 'linear-gradient(90deg, rgba(245, 158, 11, 0.25) 0%, rgba(245, 158, 11, 0.1) 100%)' : isVotedByMe ? 'linear-gradient(90deg, rgba(147, 51, 234, 0.3) 0%, rgba(147, 51, 234, 0.08) 100%)' : 'rgba(255, 255, 255, 0.1)',
                       transition: 'width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)'
                     }} 
                   />
@@ -198,8 +198,8 @@ export function PollMessage({ message, currentUserId, members, onVote }: PollMes
                     width: '20px', 
                     height: '20px', 
                     borderRadius: poll.allowMultipleAnswers ? '6px' : '50%', 
-                    border: isSelected ? 'none' : isWinner ? '2px solid #f59e0b' : '2px solid var(--subtle)',
-                    backgroundColor: isSelected ? 'var(--accent-color)' : isWinner ? '#f59e0b' : 'transparent',
+                    border: isSelected ? 'none' : isWinner ? '2px solid #f59e0b' : '2px solid rgba(255, 255, 255, 0.4)',
+                    backgroundColor: isSelected ? '#a855f7' : isWinner ? '#f59e0b' : 'transparent',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -210,12 +210,12 @@ export function PollMessage({ message, currentUserId, members, onVote }: PollMes
                     {!isSelected && isWinner && <Check size={14} color="white" strokeWidth={3} />}
                   </div>
                   
-                  <span style={{ flex: 1, fontSize: '14px', fontWeight: isSelected || isWinner ? 600 : 400, color: isWinner ? '#f59e0b' : 'inherit' }}>{option.text}</span>
+                  <span style={{ flex: 1, fontSize: '14px', fontWeight: isSelected || isWinner ? 600 : 400, color: isWinner ? '#f59e0b' : '#ffffff' }}>{option.text}</span>
                   
                   {canViewResults && (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: '40px' }}>
-                      <span style={{ fontSize: '14px', fontWeight: 700, color: isWinner ? '#f59e0b' : 'inherit' }}>{percentage}%</span>
-                      <span style={{ fontSize: '11px', color: 'var(--subtle)' }}>{voteCount} {t('pollVotes', { count: voteCount }).split(' ')[1] || 'votes'}</span>
+                      <span style={{ fontSize: '14px', fontWeight: 700, color: isWinner ? '#f59e0b' : '#ffffff' }}>{percentage}%</span>
+                      <span style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.75)' }}>{voteCount} {t('pollVotes', { count: voteCount }).split(' ')[1] || 'votes'}</span>
                     </div>
                   )}
                 </div>
@@ -227,7 +227,7 @@ export function PollMessage({ message, currentUserId, members, onVote }: PollMes
         })}
       </div>
 
-      <div className="poll-footer" style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px dashed var(--border-color)' }}>
+      <div className="poll-footer" style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px dashed rgba(255, 255, 255, 0.2)' }}>
         {!isPollEnded ? (
           <div style={{ display: 'flex', gap: '10px' }}>
             <button
@@ -238,14 +238,14 @@ export function PollMessage({ message, currentUserId, members, onVote }: PollMes
                 flex: 1,
                 padding: '10px 16px',
                 borderRadius: '10px',
-                background: (selectedOptionIds.length === 0 || JSON.stringify(selectedOptionIds.sort()) === JSON.stringify(userPreviousVotes.sort())) ? 'var(--border-color)' : 'linear-gradient(135deg, var(--accent-color) 0%, #a855f7 100%)',
-                color: (selectedOptionIds.length === 0 || JSON.stringify(selectedOptionIds.sort()) === JSON.stringify(userPreviousVotes.sort())) ? 'var(--subtle)' : 'white',
+                background: (selectedOptionIds.length === 0 || JSON.stringify(selectedOptionIds.sort()) === JSON.stringify(userPreviousVotes.sort())) ? 'rgba(255, 255, 255, 0.1)' : 'linear-gradient(135deg, #9333ea 0%, #a855f7 100%)',
+                color: (selectedOptionIds.length === 0 || JSON.stringify(selectedOptionIds.sort()) === JSON.stringify(userPreviousVotes.sort())) ? 'rgba(255, 255, 255, 0.4)' : '#ffffff',
                 border: 'none',
                 fontWeight: 600,
                 fontSize: '14px',
                 cursor: (selectedOptionIds.length === 0 || JSON.stringify(selectedOptionIds.sort()) === JSON.stringify(userPreviousVotes.sort())) ? 'default' : 'pointer',
                 transition: 'all 0.2s',
-                boxShadow: (selectedOptionIds.length === 0 || JSON.stringify(selectedOptionIds.sort()) === JSON.stringify(userPreviousVotes.sort())) ? 'none' : '0 4px 12px rgba(147, 51, 234, 0.3)'
+                boxShadow: (selectedOptionIds.length === 0 || JSON.stringify(selectedOptionIds.sort()) === JSON.stringify(userPreviousVotes.sort())) ? 'none' : '0 4px 12px rgba(147, 51, 234, 0.35)'
               }}
             >
               {hasVoted ? t('changeVoteBtn') : t('voteBtn')}
@@ -257,16 +257,16 @@ export function PollMessage({ message, currentUserId, members, onVote }: PollMes
                 style={{
                   padding: '10px 16px',
                   borderRadius: '10px',
-                  background: 'rgba(239, 68, 68, 0.05)',
-                  color: 'var(--danger-color, #ef4444)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  background: 'rgba(239, 68, 68, 0.12)',
+                  color: '#f87171',
+                  border: '1px solid rgba(239, 68, 68, 0.35)',
                   fontWeight: 600,
                   fontSize: '14px',
                   cursor: 'pointer',
                   transition: 'all 0.2s'
                 }}
-                onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.border = '1px solid #ef4444'; }}
-                onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.05)'; e.currentTarget.style.border = '1px solid rgba(239, 68, 68, 0.3)'; }}
+                onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'; e.currentTarget.style.border = '1px solid #ef4444'; }}
+                onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)'; e.currentTarget.style.border = '1px solid rgba(239, 68, 68, 0.35)'; }}
               >
                 {t('cancelVoteBtn')}
               </button>
@@ -274,17 +274,17 @@ export function PollMessage({ message, currentUserId, members, onVote }: PollMes
           </div>
         ) : null}
         
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: !isPollEnded ? '16px' : '0', fontSize: '13px', color: 'var(--subtle)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: !isPollEnded ? '16px' : '0', fontSize: '13px', color: 'rgba(255, 255, 255, 0.8)' }}>
           <span style={{ fontWeight: 500 }}>{t('totalVoters', { count: totalVotes })}</span>
           {poll.endTime && !isPollEnded && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--input-bg)', padding: '4px 8px', borderRadius: '6px' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255, 255, 255, 0.12)', padding: '4px 8px', borderRadius: '6px', color: '#ffffff' }}>
               <Clock size={12} />
               {new Date(poll.endTime).toLocaleTimeString(i18n.language === 'vi' ? 'vi-VN' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
         </div>
         {poll.hideResultsUntilEnd && !isPollEnded && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '12px', fontSize: '12px', color: '#f59e0b', justifyContent: 'center', background: 'rgba(245, 158, 11, 0.1)', padding: '8px', borderRadius: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '12px', fontSize: '12px', color: '#f59e0b', justifyContent: 'center', background: 'rgba(245, 158, 11, 0.15)', padding: '8px', borderRadius: '8px' }}>
             <EyeOff size={14} />
             <span style={{ fontWeight: 500 }}>{t('pollResultsHidden')}</span>
           </div>

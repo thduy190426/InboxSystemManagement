@@ -261,7 +261,7 @@ export function ChatPanel(props: ChatPanelProps) {
           getMessageStateLabel, formatMessageTime: (msg) => formatMessageTime(msg, t), renderAttachments, renderReactions,
           isSameLocalDay, parseMessageDate, setOpenActionMenuId, setOpenReactionPickerId
         }}>
-    <section className="chat-panel" aria-label={t('chatAriaLabel', { name: activeConversation.name })} style={activeConversation.backgroundImage ? { backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("${activeConversation.backgroundImage}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' } : {}}>
+    <section className={`chat-panel ${activeConversation.backgroundImage ? 'has-custom-bg' : ''}`} aria-label={t('chatAriaLabel', { name: activeConversation.name })} style={activeConversation.backgroundImage ? { backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("${activeConversation.backgroundImage}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' } : {}}>
       <header className="chat-header">
         <div className="chat-identity">
           <button
@@ -380,7 +380,7 @@ export function ChatPanel(props: ChatPanelProps) {
                 <small>
                   {getReplyText(message)}
                   {message.pinnedBy && message.pinnedAt && (
-                    <span style={{ display: 'block', color: 'var(--subtle)', fontSize: '0.85em', marginTop: '2px' }}>
+                    <span style={{ display: 'block', color: 'rgba(255, 255, 255, 0.75)', fontSize: '0.85em', marginTop: '2px' }}>
                       {t('pinnedBy', { name: message.pinnedBy, time: new Date(message.pinnedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) })}
                     </span>
                   )}
@@ -436,8 +436,8 @@ export function ChatPanel(props: ChatPanelProps) {
                 {displayMessages.length === 0 && activeConversation.type !== 'group' ? (
                   <div className="thread-empty-state" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', padding: '40px 0' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                      <MessageSquare size={48} strokeWidth={1.5} style={{ opacity: 0.2 }} />
-                      <span style={{ color: 'var(--subtle)' }}>{t('startChatSuggest', { name: activeConversation.name })}</span>
+                      <MessageSquare size={48} strokeWidth={1.5} style={{ opacity: 0.4, color: '#ffffff' }} />
+                      <span style={{ color: 'rgba(255, 255, 255, 0.85)' }}>{t('startChatSuggest', { name: activeConversation.name })}</span>
                     </div>
                   </div>
                 ) : null}

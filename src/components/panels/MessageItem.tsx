@@ -161,8 +161,8 @@ export function MessageItem(props: MessageItemProps) {
                           {systemGroupCount > 1 && (
                             <span style={{ 
                               fontSize: '11px', 
-                              backgroundColor: 'var(--border-color)', 
-                              color: 'var(--text-color)',
+                              backgroundColor: 'rgba(255, 255, 255, 0.2)', 
+                              color: '#ffffff',
                               padding: '2px 6px', 
                               borderRadius: '10px', 
                               marginLeft: '4px',

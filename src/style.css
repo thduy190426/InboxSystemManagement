@@ -36,7 +36,10 @@
   --modal-motion-duration: 180ms;
   --modal-motion-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  --text-color: var(--text);
+  --background-color: var(--bg);
+  --border-color: var(--line);
+  --input-bg: var(--surface-soft);
 
   color: var(--text);
   background: var(--bg);
@@ -9106,6 +9109,10 @@ html.dark {
   --orange: #f97316;
   --rose: #ec4899;
   --shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+  --text-color: #ffffff;
+  --background-color: var(--bg);
+  --border-color: var(--line);
+  --input-bg: var(--surface-soft);
 }
 
 html.dark body {
@@ -13208,6 +13215,609 @@ html.dark .skeleton-domain {
   background: rgba(255, 255, 255, 0.12);
   color: var(--text-color, #fff);
 }
+
+/* ==========================================================================
+   CHAT PANEL WHITE TEXT & DARK BACKGROUND OPTIMIZATION
+   ========================================================================== */
+
+/* Universal Message Bubble Text - Pure White & Crisp Legibility on Dark Backgrounds */
+.chat-panel .message-bubble,
+html.dark .chat-panel .message-bubble,
+.chat-panel.has-custom-bg .message-bubble {
+  color: #ffffff !important;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+.chat-panel .message-bubble p,
+html.dark .chat-panel .message-bubble p,
+.chat-panel.has-custom-bg .message-bubble p {
+  color: #ffffff !important;
+  line-height: 1.45;
+}
+
+/* Incoming Message Bubble in Dark Theme or on Custom Dark Wallpaper */
+html.dark .chat-panel .message-bubble:not(.media-only),
+.chat-panel.has-custom-bg .message-bubble:not(.media-only) {
+  background: rgba(32, 37, 49, 0.9) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.42) !important;
+  color: #ffffff !important;
+}
+
+/* Outgoing Message Bubble - Sleek Teal Glass with Crisp White Text */
+.chat-panel .outgoing .message-bubble:not(.media-only),
+html.dark .chat-panel .outgoing .message-bubble:not(.media-only),
+.chat-panel.has-custom-bg .outgoing .message-bubble:not(.media-only) {
+  background: linear-gradient(135deg, rgba(15, 159, 142, 0.95), rgba(13, 148, 136, 0.92)) !important;
+  border: 1px solid rgba(45, 212, 191, 0.45) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  box-shadow: 0 4px 18px rgba(15, 159, 142, 0.3) !important;
+  color: #ffffff !important;
+}
+
+/* Links inside Messages - Pure White with Refined Underline and Glow Hover */
+.chat-panel .message-link,
+.chat-panel .message-bubble a:not(.attachment-download-button),
+html.dark .chat-panel .message-link,
+.chat-panel.has-custom-bg .message-link {
+  color: #ffffff !important;
+  text-decoration: underline !important;
+  text-decoration-color: rgba(255, 255, 255, 0.65) !important;
+  text-underline-offset: 3.5px !important;
+  text-decoration-thickness: 1.5px !important;
+  font-weight: 500 !important;
+  word-break: break-all;
+  transition: all 0.2s ease !important;
+}
+
+.chat-panel .message-link:hover,
+.chat-panel .message-bubble a:not(.attachment-download-button):hover,
+html.dark .chat-panel .message-link:hover,
+.chat-panel.has-custom-bg .message-link:hover {
+  color: #ffffff !important;
+  text-decoration-color: #ffffff !important;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.6) !important;
+  opacity: 1 !important;
+}
+
+/* Sender Name - High-contrast Bright White/Mint */
+.chat-panel .message-sender-name,
+html.dark .chat-panel .message-sender-name,
+.chat-panel.has-custom-bg .message-sender-name {
+  color: #5eead4 !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.015em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Message Time & Status Indicators */
+.chat-panel .message-time,
+.chat-panel .message-time span,
+html.dark .chat-panel .message-time,
+html.dark .chat-panel .message-time span,
+.chat-panel.has-custom-bg .message-time,
+.chat-panel.has-custom-bg .message-time span {
+  color: rgba(255, 255, 255, 0.85) !important;
+  font-weight: 500;
+}
+
+.chat-panel .message-time svg,
+html.dark .chat-panel .message-time svg,
+.chat-panel.has-custom-bg .message-time svg {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Link Preview Cards - Optimized Dark Glass Card with Pure White Text */
+.chat-panel .link-preview-card,
+html.dark .chat-panel .link-preview-card,
+.chat-panel.has-custom-bg .link-preview-card {
+  background: rgba(18, 22, 32, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 12px !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+}
+
+.chat-panel .link-preview-card:hover,
+html.dark .chat-panel .link-preview-card:hover,
+.chat-panel.has-custom-bg .link-preview-card:hover {
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+.chat-panel .link-preview-title,
+html.dark .chat-panel .link-preview-title,
+.chat-panel.has-custom-bg .link-preview-title {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+}
+
+.chat-panel .link-preview-desc,
+html.dark .chat-panel .link-preview-desc,
+.chat-panel.has-custom-bg .link-preview-desc {
+  color: rgba(255, 255, 255, 0.85) !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+}
+
+.chat-panel .link-preview-footer,
+.chat-panel .link-preview-domain,
+html.dark .chat-panel .link-preview-footer,
+html.dark .chat-panel .link-preview-domain,
+.chat-panel.has-custom-bg .link-preview-footer,
+.chat-panel.has-custom-bg .link-preview-domain {
+  color: rgba(255, 255, 255, 0.75) !important;
+  font-size: 12px !important;
+}
+
+.chat-panel .link-preview-icon,
+html.dark .chat-panel .link-preview-icon,
+.chat-panel.has-custom-bg .link-preview-icon {
+  color: #ffffff !important;
+}
+
+/* Reply Preview inside Message Bubble */
+.chat-panel .message-reply-preview,
+html.dark .chat-panel .message-reply-preview,
+.chat-panel.has-custom-bg .message-reply-preview {
+  background: rgba(0, 0, 0, 0.3) !important;
+  border-left: 3.5px solid #14b8a6 !important;
+  border-radius: 8px !important;
+  color: #ffffff !important;
+}
+
+.chat-panel .message-reply-preview strong,
+html.dark .chat-panel .message-reply-preview strong,
+.chat-panel.has-custom-bg .message-reply-preview strong {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+.chat-panel .message-reply-preview span,
+html.dark .chat-panel .message-reply-preview span,
+.chat-panel.has-custom-bg .message-reply-preview span {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Story Reply Card inside Message Bubble */
+.chat-panel .story-reply-card,
+html.dark .chat-panel .story-reply-card,
+.chat-panel.has-custom-bg .story-reply-card {
+  background: rgba(0, 0, 0, 0.3) !important;
+  border-left: 4px solid #14b8a6 !important;
+  border-radius: 8px !important;
+}
+
+.chat-panel .story-reply-title,
+html.dark .chat-panel .story-reply-title,
+.chat-panel.has-custom-bg .story-reply-title {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+.chat-panel .story-reply-snippet,
+html.dark .chat-panel .story-reply-snippet,
+.chat-panel.has-custom-bg .story-reply-snippet {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Mention Highlight & Mark Search Results */
+.chat-panel .mention-highlight,
+html.dark .chat-panel .mention-highlight,
+.chat-panel.has-custom-bg .mention-highlight {
+  background: rgba(37, 99, 235, 0.4) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border-radius: 4px !important;
+  padding: 0 4px !important;
+  box-shadow: 0 0 4px rgba(37, 99, 235, 0.3);
+}
+
+.chat-panel .message-bubble mark,
+html.dark .chat-panel .message-bubble mark,
+.chat-panel.has-custom-bg .message-bubble mark {
+  background: rgba(234, 179, 8, 0.45) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border-radius: 4px !important;
+  padding: 0 3px !important;
+}
+
+/* Pinned Message Badge on Bubble */
+.chat-panel .message-pin-badge,
+html.dark .chat-panel .message-pin-badge,
+.chat-panel.has-custom-bg .message-pin-badge {
+  background: rgba(255, 255, 255, 0.16) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  color: #ffffff !important;
+  border-radius: 6px !important;
+}
+
+.chat-panel .message-pin-badge span,
+.chat-panel .message-pin-badge svg {
+  color: #ffffff !important;
+}
+
+/* Chat Header Pinned Messages Bar */
+.chat-panel .chat-pinned-messages,
+html.dark .chat-panel .chat-pinned-messages,
+.chat-panel.has-custom-bg .chat-pinned-messages {
+  background: rgba(18, 22, 30, 0.92) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(14px) !important;
+}
+
+.chat-panel .chat-pinned-message,
+html.dark .chat-panel .chat-pinned-message,
+.chat-panel.has-custom-bg .chat-pinned-message {
+  background: rgba(30, 35, 46, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+}
+
+.chat-panel .chat-pinned-message:hover,
+html.dark .chat-panel .chat-pinned-message:hover,
+.chat-panel.has-custom-bg .chat-pinned-message:hover {
+  background: rgba(45, 52, 68, 0.95) !important;
+  border-color: rgba(20, 184, 166, 0.5) !important;
+}
+
+.chat-panel .chat-pinned-message strong,
+html.dark .chat-panel .chat-pinned-message strong,
+.chat-panel.has-custom-bg .chat-pinned-message strong {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+.chat-panel .chat-pinned-message small,
+html.dark .chat-panel .chat-pinned-message small,
+.chat-panel.has-custom-bg .chat-pinned-message small {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.chat-panel .chat-pinned-message>svg {
+  color: #5eead4 !important;
+}
+
+.chat-panel .chat-pinned-more,
+html.dark .chat-panel .chat-pinned-more,
+.chat-panel.has-custom-bg .chat-pinned-more {
+  background: rgba(30, 35, 46, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+}
+
+/* Day & Date Divider in Thread */
+.chat-panel .day-divider.message-time-divider span,
+html.dark .chat-panel .day-divider.message-time-divider span,
+.chat-panel.has-custom-bg .day-divider.message-time-divider span {
+  background: rgba(25, 30, 42, 0.9) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
+  font-weight: 600 !important;
+}
+
+.chat-panel .day-divider.message-time-divider::before,
+html.dark .chat-panel .day-divider.message-time-divider::before,
+.chat-panel.has-custom-bg .day-divider.message-time-divider::before {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* System Message in Thread */
+.chat-panel .system-message,
+html.dark .chat-panel .system-message,
+.chat-panel.has-custom-bg .system-message {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+}
+
+.chat-panel .system-message mark,
+html.dark .chat-panel .system-message mark,
+.chat-panel.has-custom-bg .system-message mark {
+  background: rgba(234, 179, 8, 0.45) !important;
+  color: #ffffff !important;
+}
+
+/* File Attachment in Bubble */
+.chat-panel .message-file-link,
+html.dark .chat-panel .message-file-link,
+.chat-panel.has-custom-bg .message-file-link {
+  background: rgba(0, 0, 0, 0.28) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+.chat-panel .message-file-link strong,
+html.dark .chat-panel .message-file-link strong,
+.chat-panel.has-custom-bg .message-file-link strong {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+.chat-panel .message-file-link small,
+html.dark .chat-panel .message-file-link small,
+.chat-panel.has-custom-bg .message-file-link small {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.chat-panel .message-file-link>svg {
+  color: #ffffff !important;
+}
+
+/* Attachment Download Button */
+.chat-panel .attachment-download-button,
+html.dark .chat-panel .attachment-download-button,
+.chat-panel.has-custom-bg .attachment-download-button {
+  background: rgba(255, 255, 255, 0.18) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+}
+
+.chat-panel .attachment-download-button:hover,
+html.dark .chat-panel .attachment-download-button:hover,
+.chat-panel.has-custom-bg .attachment-download-button:hover {
+  background: rgba(255, 255, 255, 0.28) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  color: #ffffff !important;
+}
+
+.chat-panel .attachment-download-button svg {
+  color: #ffffff !important;
+}
+
+/* Video & PDF Attachment Toolbar */
+.chat-panel .attachment-toolbar,
+html.dark .chat-panel .attachment-toolbar,
+.chat-panel.has-custom-bg .attachment-toolbar {
+  background: rgba(0, 0, 0, 0.45) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+.chat-panel .attachment-toolbar span,
+.chat-panel .attachment-toolbar a,
+html.dark .chat-panel .attachment-toolbar span,
+html.dark .chat-panel .attachment-toolbar a,
+.chat-panel.has-custom-bg .attachment-toolbar span,
+.chat-panel.has-custom-bg .attachment-toolbar a {
+  color: #ffffff !important;
+}
+
+.chat-panel .attachment-toolbar a {
+  text-decoration: underline !important;
+}
+
+/* Audio Player Attachment */
+.chat-panel .message-audio-attachment,
+html.dark .chat-panel .message-audio-attachment,
+.chat-panel.has-custom-bg .message-audio-attachment {
+  background: rgba(0, 0, 0, 0.28) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+.chat-panel .message-audio-attachment strong,
+html.dark .chat-panel .message-audio-attachment strong,
+.chat-panel.has-custom-bg .message-audio-attachment strong {
+  color: #ffffff !important;
+}
+
+.chat-panel .message-audio-attachment small,
+.chat-panel .message-audio-attachment .audio-duration,
+html.dark .chat-panel .message-audio-attachment small,
+html.dark .chat-panel .message-audio-attachment .audio-duration,
+.chat-panel.has-custom-bg .message-audio-attachment small,
+.chat-panel.has-custom-bg .message-audio-attachment .audio-duration {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.chat-panel .waveform-bar,
+html.dark .chat-panel .waveform-bar,
+.chat-panel.has-custom-bg .waveform-bar {
+  background: rgba(255, 255, 255, 0.85) !important;
+}
+
+.chat-panel .audio-play-btn,
+html.dark .chat-panel .audio-play-btn,
+.chat-panel.has-custom-bg .audio-play-btn {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.18) !important;
+}
+
+/* Call Message Cards */
+.chat-panel .message-call-card,
+html.dark .chat-panel .message-call-card,
+.chat-panel.has-custom-bg .message-call-card {
+  background: rgba(26, 30, 42, 0.9) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  color: #ffffff !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+.chat-panel .message-call-card .call-info strong,
+html.dark .chat-panel .message-call-card .call-info strong,
+.chat-panel.has-custom-bg .message-call-card .call-info strong {
+  color: #ffffff !important;
+}
+
+.chat-panel .message-call-card .call-info small,
+html.dark .chat-panel .message-call-card .call-info small,
+.chat-panel.has-custom-bg .message-call-card .call-info small {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.chat-panel .message-call-card .call-icon,
+html.dark .chat-panel .message-call-card .call-icon,
+.chat-panel.has-custom-bg .message-call-card .call-icon {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+.chat-panel .call-action-btn,
+html.dark .chat-panel .call-action-btn,
+.chat-panel.has-custom-bg .call-action-btn {
+  background: rgba(255, 255, 255, 0.16) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  color: #ffffff !important;
+}
+
+.chat-panel .call-action-btn:hover,
+html.dark .chat-panel .call-action-btn:hover,
+.chat-panel.has-custom-bg .call-action-btn:hover {
+  background: rgba(255, 255, 255, 0.25) !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
+}
+
+/* Poll Message Card */
+.chat-panel .poll-message-card,
+html.dark .chat-panel .poll-message-card,
+.chat-panel.has-custom-bg .poll-message-card {
+  background: rgba(24, 28, 38, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  color: #ffffff !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+.chat-panel .poll-header h3,
+html.dark .chat-panel .poll-header h3,
+.chat-panel.has-custom-bg .poll-header h3 {
+  color: #ffffff !important;
+}
+
+.chat-panel .poll-option-item span,
+html.dark .chat-panel .poll-option-item span,
+.chat-panel.has-custom-bg .poll-option-item span {
+  color: #ffffff !important;
+}
+
+/* Typing Indicator */
+.chat-panel .typing-indicator,
+html.dark .chat-panel .typing-indicator,
+.chat-panel.has-custom-bg .typing-indicator {
+  background: rgba(30, 35, 46, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(10px) !important;
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+
+.chat-panel .typing-indicator strong,
+html.dark .chat-panel .typing-indicator strong,
+.chat-panel.has-custom-bg .typing-indicator strong {
+  color: #ffffff !important;
+}
+
+.chat-panel .typing-dot,
+html.dark .chat-panel .typing-dot,
+.chat-panel.has-custom-bg .typing-dot {
+  background-color: #ffffff !important;
+}
+
+/* Thread Empty State */
+.chat-panel .thread-empty-state span,
+html.dark .chat-panel .thread-empty-state span,
+.chat-panel.has-custom-bg .thread-empty-state span {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.chat-panel .thread-empty-state svg,
+html.dark .chat-panel .thread-empty-state svg,
+.chat-panel.has-custom-bg .thread-empty-state svg {
+  color: #ffffff !important;
+  opacity: 0.45 !important;
+}
+
+/* Reactions on Message */
+.chat-panel .message-reaction,
+html.dark .chat-panel .message-reaction,
+.chat-panel.has-custom-bg .message-reaction {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.chat-panel .message-reaction strong,
+html.dark .chat-panel .message-reaction strong,
+.chat-panel.has-custom-bg .message-reaction strong {
+  color: #ffffff !important;
+}
+
+/* Message Edit Form */
+.chat-panel .message-edit-form input,
+html.dark .chat-panel .message-edit-form input,
+.chat-panel.has-custom-bg .message-edit-form input {
+  background: rgba(0, 0, 0, 0.45) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: #ffffff !important;
+}
+
+/* Header & Search UI Text */
+html.dark .chat-panel .chat-profile-copy h2,
+.chat-panel.has-custom-bg .chat-profile-copy h2 {
+  color: #ffffff !important;
+}
+
+html.dark .chat-panel .chat-profile-copy p,
+.chat-panel.has-custom-bg .chat-profile-copy p {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+html.dark .chat-panel .header-actions button,
+.chat-panel.has-custom-bg .header-actions button {
+  color: #ffffff !important;
+}
+
+html.dark .chat-panel .message-search-count,
+.chat-panel.has-custom-bg .message-search-count {
+  color: #ffffff !important;
+}
+
+html.dark .chat-panel .message-search-field input,
+.chat-panel.has-custom-bg .message-search-field input {
+  color: #ffffff !important;
+}
+
+/* Composer Input & Reply Preview */
+html.dark .chat-panel .composer-reply-preview strong,
+.chat-panel.has-custom-bg .composer-reply-preview strong {
+  color: #ffffff !important;
+}
+
+html.dark .chat-panel .composer-reply-preview small,
+.chat-panel.has-custom-bg .composer-reply-preview small {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html.dark .chat-panel .composer-reply-preview button,
+.chat-panel.has-custom-bg .composer-reply-preview button {
+  color: #ffffff !important;
+}
+
+html.dark .chat-panel .composer-input input,
+.chat-panel.has-custom-bg .composer-input input {
+  color: #ffffff !important;
+}
+
+html.dark .chat-panel .composer-input input::placeholder,
+.chat-panel.has-custom-bg .composer-input input::placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
 
 
 
