@@ -11,6 +11,26 @@
     "facebookLoginErr": "Không thể đăng nhập bằng Facebook!",
     "registerErr": "Không thể đăng ký!"
   },
+  "accountSwitcher": {
+    "title": "Chuyển tài khoản",
+    "switchAccount": "Chuyển tài khoản",
+    "currentAccount": "Tài khoản hiện tại",
+    "activeNow": "Đang hoạt động",
+    "savedAccounts": "Tài khoản đã lưu",
+    "otherAccounts": "Tài khoản khác",
+    "addAccount": "Đăng nhập bằng tài khoản khác",
+    "addNewAccount": "Thêm tài khoản",
+    "manageAccounts": "Quản lý tài khoản",
+    "removeAccount": "Xóa tài khoản khỏi thiết bị",
+    "removeAccountConfirm": "Bạn có chắc chắn muốn xóa tài khoản {{name}} khỏi thiết bị này không? Bạn sẽ cần nhập lại thông tin để đăng nhập lại.",
+    "viewProfile": "Xem trang cá nhân",
+    "recentAccounts": "Tài khoản gần đây",
+    "recentAccountsSub": "Nhấp vào ảnh đại diện hoặc đăng nhập bằng tài khoản khác.",
+    "loginAnotherAccount": "Đăng nhập bằng tài khoản khác",
+    "switchedAccountSuccess": "Đã chuyển sang tài khoản {{name}}!",
+    "switchFailed": "Không thể chuyển tài khoản hoặc phiên đã hết hạn. Vui lòng đăng nhập lại!",
+    "noSavedAccounts": "Chưa có tài khoản nào được lưu trên thiết bị này."
+  },
   "api": {
     "genericError": "Không thể xử lý yêu cầu!",
     "rateLimitWithWait": "Bạn thao tác quá nhanh. Vui lòng thử lại sau {{seconds}} giây!",

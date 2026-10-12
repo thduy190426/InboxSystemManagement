@@ -11,6 +11,26 @@
     "facebookLoginErr": "Cannot log in with Facebook!",
     "registerErr": "Cannot register!"
   },
+  "accountSwitcher": {
+    "title": "Switch Account",
+    "switchAccount": "Switch Account",
+    "currentAccount": "Current Account",
+    "activeNow": "Active now",
+    "savedAccounts": "Saved Accounts",
+    "otherAccounts": "Other Accounts",
+    "addAccount": "Log into another account",
+    "addNewAccount": "Add Account",
+    "manageAccounts": "Manage Accounts",
+    "removeAccount": "Remove account from device",
+    "removeAccountConfirm": "Are you sure you want to remove {{name}} from this device? You will need to enter your credentials to log in again.",
+    "viewProfile": "View profile",
+    "recentAccounts": "Recent Accounts",
+    "recentAccountsSub": "Click your profile picture or log into another account.",
+    "loginAnotherAccount": "Log into another account",
+    "switchedAccountSuccess": "Switched to {{name}} successfully!",
+    "switchFailed": "Unable to switch account or session expired. Please log in again!",
+    "noSavedAccounts": "No saved accounts on this device."
+  },
   "api": {
     "genericError": "Unable to process the request!",
     "rateLimitWithWait": "You are performing actions too quickly. Please retry after {{seconds}} seconds!",
