@@ -244,6 +244,10 @@ export function ChatPanel(props: ChatPanelProps) {
     activeConversation, busyMessageId, draft, isBlocked, isDetailOpen, hasOlderMessages, isTyping, isLoadingOlderMessages, isUploadingAttachment, focusedMessageId, pinnedMessages, members, replyingTo, onCancelReply, onRetryMessage, onLoadOlderMessages, onUploadAttachment, onJumpToMessage, onToggleDetails, onOpenContactProfile, onOpenConversationList, onStartCall, onSubmit, currentUserId, onSendPoll, onVotePoll, onSendSticker
   } = props
 
+  const isGroup = activeConversation.type === 'group'
+  const groupMembers = (members as any[]) || []
+  const onlineMembersCount = groupMembers.filter((m) => m.presence === 'online').length
+
   return (
     <ChatStateContext.Provider value={{
       activeConversation, currentUserId, members: members as any, searchMatches,
@@ -274,14 +278,13 @@ export function ChatPanel(props: ChatPanelProps) {
           </button>
           <button
             className="chat-profile-trigger"
-            disabled={activeConversation.type !== 'direct'}
-            onClick={onOpenContactProfile}
-            title={t('viewProfileTitle')}
+            onClick={isGroup ? onToggleDetails : onOpenContactProfile}
+            title={isGroup ? t('chatInfoBtn') : t('viewProfileTitle')}
             type="button"
           >
             <span className="avatar-wrap compact">
               <AvatarFallback name={activeConversation.name} src={activeConversation.avatar} />
-              {!activeConversation.restricted ? (
+              {!isGroup && !activeConversation.restricted ? (
                 <>
                   <span className={`presence-dot ${activeConversation.presence}`} />
                   <OnlineDurationBadge
@@ -295,7 +298,13 @@ export function ChatPanel(props: ChatPanelProps) {
             </span>
             <span className="chat-profile-copy">
               <h2>{activeConversation.name}</h2>
-              {activeConversation.restricted || (activeConversation.status && activeConversation.status !== 'Ngoại tuyến' && activeConversation.status !== 'Offline') ? (
+              {isGroup ? (
+                <p>
+                  {onlineMembersCount > 0
+                    ? t('groupMembersSubtitle', { total: groupMembers.length, online: onlineMembersCount })
+                    : t('membersCount', { count: groupMembers.length })}
+                </p>
+              ) : activeConversation.restricted || (activeConversation.status && activeConversation.status !== 'Ngoại tuyến' && activeConversation.status !== 'Offline') ? (
                 <p>{activeConversation.restricted ? t('statusOffline') : activeConversation.status}</p>
               ) : null}
             </span>

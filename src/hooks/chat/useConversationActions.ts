@@ -443,6 +443,7 @@ export function useConversationActions({
 
   async function handleCreateGroup(payload: {
     title: string
+    description?: string
     memberIds: string[]
     avatar?: File | null
   }) {

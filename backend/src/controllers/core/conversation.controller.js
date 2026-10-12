@@ -659,12 +659,16 @@ async function emitConversationChanged(connection, conversationId, actorUserId, 
       [conversationId],
     )
 
-    emitToConversation(conversationId, 'conversation:changed', {
+    const userIds = rows.map((row) => Number(row.user_id))
+    const payload = {
       conversationId: String(conversationId),
       actorUserId: String(actorUserId),
       eventType,
-      userIds: rows.map((row) => Number(row.user_id)),
-    })
+      userIds,
+    }
+
+    emitToConversation(conversationId, 'conversation:changed', payload)
+    emitToUsers(userIds, 'conversation:changed', payload)
   } catch (error) {
     console.error('Không thể phát ra sự kiện thời gian thực của cuộc trò chuyện:', error)
   }
@@ -1884,6 +1888,7 @@ async function createGroupConversation(request, response, next) {
   try {
     const currentUserId = request.user.id
     const title = typeof request.body.title === 'string' ? request.body.title.trim() : ''
+    const description = typeof request.body.description === 'string' ? request.body.description.trim() : null
     let memberIds = []
 
     try {
@@ -1940,11 +1945,12 @@ async function createGroupConversation(request, response, next) {
         public_id,
         type,
         title,
+        description,
         avatar_url,
         created_by,
         last_message_at
-      ) VALUES (?, 'group', ?, ?, ?, CURRENT_TIMESTAMP)`,
-      [randomUUID(), title, avatarUrl, currentUserId],
+      ) VALUES (?, 'group', ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+      [randomUUID(), title, description || null, avatarUrl, currentUserId],
     )
     const conversationId = conversationResult.insertId
 

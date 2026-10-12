@@ -514,12 +514,16 @@ export async function createDirectConversation(userId: string) {
 
 export async function createGroupConversation(payload: {
   title: string
+  description?: string
   memberIds: string[]
   avatar?: File | null
 }) {
   const formData = new FormData()
 
   formData.append('title', payload.title)
+  if (payload.description) {
+    formData.append('description', payload.description)
+  }
   formData.append('memberIds', JSON.stringify(payload.memberIds))
 
   if (payload.avatar) {

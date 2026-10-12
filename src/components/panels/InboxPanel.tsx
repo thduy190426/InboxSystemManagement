@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
-import type { CSSProperties, ChangeEvent, FormEvent } from 'react'
+import type { CSSProperties, ChangeEvent } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Archive, ArchiveRestore, BellOff, Check, ImagePlus, Inbox, MessageCircle, MessageSquare, MessageSquareOff, Pin, Plus, Search, SearchX, Trash2, Type, UserRound, Users, X } from 'lucide-react'
+import { Archive, ArchiveRestore, BellOff, Check, Inbox, MessageCircle, MessageSquare, MessageSquareOff, Pin, Plus, Search, SearchX, Trash2, UserRound, Users, X } from 'lucide-react'
 import { globalSearch, type GlobalSearchResponse } from '../../services/api/searchApi'
 import type { ContactUser, Conversation, Message } from '../../types'
 import { AvatarFallback } from '../ui/AvatarFallback'
@@ -10,6 +10,7 @@ import { StoryCreatorModal } from '../story/StoryCreatorModal'
 import { StoryViewerOverlay } from '../story/StoryViewerOverlay'
 import type { UserStoryGroup } from '../../types'
 import { OnlineDurationBadge } from '../ui/OnlineDurationBadge'
+import { CreateGroupModal } from './modals/CreateGroupModal'
 
 export type ConversationFilter = 'all' | 'unread' | 'requests' | 'group' | 'archived'
 type DirectMessageUser = Pick<ContactUser, 'id' | 'fullName' | 'friendshipStatus' | 'contactId'>
@@ -26,6 +27,7 @@ type InboxPanelProps = {
   query: string
   onCreateGroup: (payload: {
     title: string
+    description?: string
     memberIds: string[]
     avatar?: File | null
   }) => Promise<void> | void
@@ -113,9 +115,6 @@ export function InboxPanel({
   const { t } = useTranslation('panels')
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false)
   const [isCreateGroupClosing, setIsCreateGroupClosing] = useState(false)
-  const [groupTitle, setGroupTitle] = useState('')
-  const [groupAvatar, setGroupAvatar] = useState<File | null>(null)
-  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([])
   const [globalResults, setGlobalResults] = useState<GlobalSearchResponse | null>(null)
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false)
   const [isSearchingGlobally, setIsSearchingGlobally] = useState(false)
@@ -228,22 +227,11 @@ export function InboxPanel({
     }
   }, [query])
 
-  function toggleMember(memberId: string) {
-    setSelectedMemberIds((current) =>
-      current.includes(memberId)
-        ? current.filter((id) => id !== memberId)
-        : [...current, memberId],
-    )
-  }
-
   function closeCreateGroup() {
     setIsCreateGroupClosing(true)
     window.setTimeout(() => {
       setIsCreateGroupOpen(false)
       setIsCreateGroupClosing(false)
-      setGroupTitle('')
-      setGroupAvatar(null)
-      setSelectedMemberIds([])
     }, 140)
   }
 
@@ -280,21 +268,6 @@ export function InboxPanel({
     onDeleteConversation(conversationId)
   }
 
-  async function handleCreateGroup(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-
-    if (groupTitle.trim().length < 2 || groupTitle.trim().length > 50 || selectedMemberIds.length < 2) {
-      pushToast?.(t('groupNameReqErr'), 'error')
-      return
-    }
-
-    await onCreateGroup({
-      title: groupTitle.trim(),
-      memberIds: selectedMemberIds,
-      avatar: groupAvatar,
-    })
-    closeCreateGroup()
-  }
 
   const directFriends = conversations.filter(
     (conversation) => !conversation.type || conversation.type === 'direct',
@@ -771,104 +744,17 @@ export function InboxPanel({
         </div>
       ) : null}
 
-      {isCreateGroupOpen ? (
-        <div className={isCreateGroupClosing ? 'modal-backdrop is-exiting' : 'modal-backdrop'} role="presentation">
-          <form className="group-modal" onSubmit={handleCreateGroup}>
-            <div className="group-modal-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '44px', height: '44px', borderRadius: '50%', background: 'var(--primary)', color: '#fff' }}>
-                  <Users size={22} />
-                </div>
-                <div>
-                  <h2 style={{ margin: 0, fontSize: '18px' }}>{t('createGroupTitle')}</h2>
-                  <p style={{ margin: 0, marginTop: '4px' }}>{t('createGroupDesc')}</p>
-                </div>
-              </div>
-              <button className="icon-button" onClick={closeCreateGroup} type="button" title={t('closeBtn')}>
-                <X size={18} />
-              </button>
-            </div>
-
-            <label className="group-field">
-              <span >
-                <Type size={16} /> {t('groupNameInput')}
-              </span>
-              <input
-                autoFocus
-                maxLength={50}
-                onChange={(event) => setGroupTitle(event.target.value)}
-                placeholder={t('groupNamePlaceholder')}
-                value={groupTitle}
-              />
-            </label>
-
-            <label className="group-avatar-picker">
-              <ImagePlus size={18} />
-              <span>{groupAvatar ? groupAvatar.name : t('groupAvatarPlaceholder')}</span>
-              <input
-                accept="image/*"
-                onChange={(event) => setGroupAvatar(event.target.files?.[0] ?? null)}
-                type="file"
-              />
-            </label>
-
-            <div className="group-member-picker">
-              <div className="group-member-title">
-                <strong >
-                  <Users size={16} /> {t('membersLabel')}
-                </strong>
-                <span>{t('nSelected', { count: selectedMemberIds.length })}</span>
-              </div>
-              <div className="group-member-list">
-                {friends.map((friend) => (
-                  <label className="group-member-row" key={friend.id}>
-                    <input
-                      checked={selectedMemberIds.includes(friend.id)}
-                      onChange={() => toggleMember(friend.id)}
-                      type="checkbox"
-                    />
-                    <AvatarFallback name={friend.fullName} src={friend.avatarUrl} />
-                    <span>
-                      <strong>{friend.fullName}</strong>
-                      <small>{friend.email}</small>
-                    </span>
-                  </label>
-                ))}
-                {friends.length === 0 ? (
-                  <div className="empty-state">
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                      <Users size={32} strokeWidth={1.5} />
-                      <span>{t('noFriendsForGroup')}</span>
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-
-            <button
-              className="group-primary-button"
-              disabled={
-                groupTitle.trim().length < 2 ||
-                groupTitle.trim().length > 50 ||
-                selectedMemberIds.length < 2 ||
-                isCreatingGroup
-              }
-              title={
-                groupTitle.trim().length < 2 
-                  ? t('groupNameMinLen')
-                  : selectedMemberIds.length < 2 
-                    ? t('groupMinMembers')
-                    : ''
-              }
-              type="submit"
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: (groupTitle.trim().length < 2 || selectedMemberIds.length < 2) ? 0.6 : 1 }}
-            >
-              {isCreatingGroup ? null : <Check size={18} />}
-              {isCreatingGroup ? t('creatingGroupTxt') : t('createGroupBtn')}
-            </button>
-          </form>
-        </div>
-      ) : null}
+      <CreateGroupModal
+        friends={friends}
+        isClosing={isCreateGroupClosing}
+        isCreating={Boolean(isCreatingGroup)}
+        isOpen={isCreateGroupOpen}
+        onClose={closeCreateGroup}
+        onSubmit={async (payload) => {
+          await onCreateGroup(payload)
+          closeCreateGroup()
+        }}
+      />
 
       {onResizeStart && !isCompact && (
         <div 

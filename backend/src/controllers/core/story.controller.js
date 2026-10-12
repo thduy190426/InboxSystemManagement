@@ -11,7 +11,25 @@ async function ensureStorySchema() {
 
   storySchemaReadyPromise = (async () => {
     try {
-      
+      await pool.execute(`
+        CREATE TABLE IF NOT EXISTS stories (
+          id CHAR(36) NOT NULL,
+          user_id BIGINT UNSIGNED NOT NULL,
+          media_url VARCHAR(500) NOT NULL,
+          media_type ENUM('image', 'video') NOT NULL DEFAULT 'image',
+          text_content TEXT NULL,
+          privacy ENUM('public', 'friends', 'close_friends', 'only_me') NOT NULL DEFAULT 'friends',
+          views_count INT UNSIGNED NOT NULL DEFAULT 0,
+          reactions_count INT UNSIGNED NOT NULL DEFAULT 0,
+          expires_at DATETIME NOT NULL,
+          created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (id),
+          KEY idx_stories_user_id (user_id),
+          KEY idx_stories_expires_at (expires_at),
+          CONSTRAINT fk_stories_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      `);
+
       await pool.execute(`
         CREATE TABLE IF NOT EXISTS story_views (
           id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
