@@ -227,10 +227,8 @@ export async function navigateToTour(
     return false
   }
 
-  // Allow component render and animations to settle
   await new Promise((resolve) => setTimeout(resolve, 250))
 
-  // Scroll first element into view smoothly if applicable
   const firstEl = document.querySelector(selectors[0])
   if (firstEl) {
     firstEl.scrollIntoView({ behavior: 'smooth', block: 'center' })

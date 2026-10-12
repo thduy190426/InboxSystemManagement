@@ -272,8 +272,8 @@ exports.getActiveStories = async (req, res, next) => {
              AND (
                EXISTS (
                  SELECT 1 FROM contacts c 
-                 WHERE ((c.user_id = ? AND c.contact_id = s.user_id) 
-                     OR (c.user_id = s.user_id AND c.contact_id = ?))
+                 WHERE ((c.owner_user_id = ? AND c.contact_user_id = s.user_id) 
+                     OR (c.owner_user_id = s.user_id AND c.contact_user_id = ?))
                    AND c.status = 'accepted'
                )
              )

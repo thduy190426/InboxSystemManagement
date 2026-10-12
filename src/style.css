@@ -13216,11 +13216,6 @@ html.dark .skeleton-domain {
   color: var(--text-color, #fff);
 }
 
-/* ==========================================================================
-   CHAT PANEL WHITE TEXT & DARK BACKGROUND OPTIMIZATION
-   ========================================================================== */
-
-/* Universal Message Bubble Text - Pure White & Crisp Legibility on Dark Backgrounds */
 .chat-panel .message-bubble,
 html.dark .chat-panel .message-bubble,
 .chat-panel.has-custom-bg .message-bubble {
@@ -13236,7 +13231,7 @@ html.dark .chat-panel .message-bubble p,
   line-height: 1.45;
 }
 
-/* Incoming Message Bubble in Dark Theme or on Custom Dark Wallpaper */
+
 html.dark .chat-panel .message-bubble:not(.media-only),
 .chat-panel.has-custom-bg .message-bubble:not(.media-only) {
   background: rgba(32, 37, 49, 0.9) !important;
@@ -13247,7 +13242,7 @@ html.dark .chat-panel .message-bubble:not(.media-only),
   color: #ffffff !important;
 }
 
-/* Outgoing Message Bubble - Sleek Teal Glass with Crisp White Text */
+
 .chat-panel .outgoing .message-bubble:not(.media-only),
 html.dark .chat-panel .outgoing .message-bubble:not(.media-only),
 .chat-panel.has-custom-bg .outgoing .message-bubble:not(.media-only) {
@@ -13259,7 +13254,7 @@ html.dark .chat-panel .outgoing .message-bubble:not(.media-only),
   color: #ffffff !important;
 }
 
-/* Links inside Messages - Pure White with Refined Underline and Glow Hover */
+
 .chat-panel .message-link,
 .chat-panel .message-bubble a:not(.attachment-download-button),
 html.dark .chat-panel .message-link,
@@ -13284,7 +13279,7 @@ html.dark .chat-panel .message-link:hover,
   opacity: 1 !important;
 }
 
-/* Sender Name - High-contrast Bright White/Mint */
+
 .chat-panel .message-sender-name,
 html.dark .chat-panel .message-sender-name,
 .chat-panel.has-custom-bg .message-sender-name {
@@ -13294,7 +13289,7 @@ html.dark .chat-panel .message-sender-name,
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
-/* Message Time & Status Indicators */
+
 .chat-panel .message-time,
 .chat-panel .message-time span,
 html.dark .chat-panel .message-time,
@@ -13311,7 +13306,7 @@ html.dark .chat-panel .message-time svg,
   color: rgba(255, 255, 255, 0.85) !important;
 }
 
-/* Link Preview Cards - Optimized Dark Glass Card with Pure White Text */
+
 .chat-panel .link-preview-card,
 html.dark .chat-panel .link-preview-card,
 .chat-panel.has-custom-bg .link-preview-card {
@@ -13364,7 +13359,7 @@ html.dark .chat-panel .link-preview-icon,
   color: #ffffff !important;
 }
 
-/* Reply Preview inside Message Bubble */
+
 .chat-panel .message-reply-preview,
 html.dark .chat-panel .message-reply-preview,
 .chat-panel.has-custom-bg .message-reply-preview {
@@ -13387,7 +13382,7 @@ html.dark .chat-panel .message-reply-preview span,
   color: rgba(255, 255, 255, 0.85) !important;
 }
 
-/* Story Reply Card inside Message Bubble */
+
 .chat-panel .story-reply-card,
 html.dark .chat-panel .story-reply-card,
 .chat-panel.has-custom-bg .story-reply-card {
@@ -13409,7 +13404,7 @@ html.dark .chat-panel .story-reply-snippet,
   color: rgba(255, 255, 255, 0.85) !important;
 }
 
-/* Mention Highlight & Mark Search Results */
+
 .chat-panel .mention-highlight,
 html.dark .chat-panel .mention-highlight,
 .chat-panel.has-custom-bg .mention-highlight {
@@ -13431,7 +13426,7 @@ html.dark .chat-panel .message-bubble mark,
   padding: 0 3px !important;
 }
 
-/* Pinned Message Badge on Bubble */
+
 .chat-panel .message-pin-badge,
 html.dark .chat-panel .message-pin-badge,
 .chat-panel.has-custom-bg .message-pin-badge {
@@ -13446,7 +13441,7 @@ html.dark .chat-panel .message-pin-badge,
   color: #ffffff !important;
 }
 
-/* Chat Header Pinned Messages Bar */
+
 .chat-panel .chat-pinned-messages,
 html.dark .chat-panel .chat-pinned-messages,
 .chat-panel.has-custom-bg .chat-pinned-messages {
@@ -13495,7 +13490,7 @@ html.dark .chat-panel .chat-pinned-more,
   color: #ffffff !important;
 }
 
-/* Day & Date Divider in Thread */
+
 .chat-panel .day-divider.message-time-divider span,
 html.dark .chat-panel .day-divider.message-time-divider span,
 .chat-panel.has-custom-bg .day-divider.message-time-divider span {
@@ -13514,7 +13509,7 @@ html.dark .chat-panel .day-divider.message-time-divider::before,
   background: rgba(255, 255, 255, 0.12) !important;
 }
 
-/* System Message in Thread */
+
 .chat-panel .system-message,
 html.dark .chat-panel .system-message,
 .chat-panel.has-custom-bg .system-message {
@@ -13533,7 +13528,7 @@ html.dark .chat-panel .system-message mark,
   color: #ffffff !important;
 }
 
-/* File Attachment in Bubble */
+
 .chat-panel .message-file-link,
 html.dark .chat-panel .message-file-link,
 .chat-panel.has-custom-bg .message-file-link {
@@ -13559,7 +13554,7 @@ html.dark .chat-panel .message-file-link small,
   color: #ffffff !important;
 }
 
-/* Attachment Download Button */
+
 .chat-panel .attachment-download-button,
 html.dark .chat-panel .attachment-download-button,
 .chat-panel.has-custom-bg .attachment-download-button {
@@ -13580,7 +13575,7 @@ html.dark .chat-panel .attachment-download-button:hover,
   color: #ffffff !important;
 }
 
-/* Video & PDF Attachment Toolbar */
+
 .chat-panel .attachment-toolbar,
 html.dark .chat-panel .attachment-toolbar,
 .chat-panel.has-custom-bg .attachment-toolbar {
@@ -13602,7 +13597,7 @@ html.dark .chat-panel .attachment-toolbar a,
   text-decoration: underline !important;
 }
 
-/* Audio Player Attachment */
+
 .chat-panel .message-audio-attachment,
 html.dark .chat-panel .message-audio-attachment,
 .chat-panel.has-custom-bg .message-audio-attachment {
@@ -13639,7 +13634,7 @@ html.dark .chat-panel .audio-play-btn,
   background: rgba(255, 255, 255, 0.18) !important;
 }
 
-/* Call Message Cards */
+
 .chat-panel .message-call-card,
 html.dark .chat-panel .message-call-card,
 .chat-panel.has-custom-bg .message-call-card {
@@ -13683,7 +13678,7 @@ html.dark .chat-panel .call-action-btn:hover,
   border-color: rgba(255, 255, 255, 0.35) !important;
 }
 
-/* Poll Message Card */
+
 .chat-panel .poll-message-card,
 html.dark .chat-panel .poll-message-card,
 .chat-panel.has-custom-bg .poll-message-card {
@@ -13705,7 +13700,7 @@ html.dark .chat-panel .poll-option-item span,
   color: #ffffff !important;
 }
 
-/* Typing Indicator */
+
 .chat-panel .typing-indicator,
 html.dark .chat-panel .typing-indicator,
 .chat-panel.has-custom-bg .typing-indicator {
@@ -13728,7 +13723,7 @@ html.dark .chat-panel .typing-dot,
   background-color: #ffffff !important;
 }
 
-/* Thread Empty State */
+
 .chat-panel .thread-empty-state span,
 html.dark .chat-panel .thread-empty-state span,
 .chat-panel.has-custom-bg .thread-empty-state span {
@@ -13742,7 +13737,7 @@ html.dark .chat-panel .thread-empty-state svg,
   opacity: 0.45 !important;
 }
 
-/* Reactions on Message */
+
 .chat-panel .message-reaction,
 html.dark .chat-panel .message-reaction,
 .chat-panel.has-custom-bg .message-reaction {
@@ -13757,7 +13752,7 @@ html.dark .chat-panel .message-reaction strong,
   color: #ffffff !important;
 }
 
-/* Message Edit Form */
+
 .chat-panel .message-edit-form input,
 html.dark .chat-panel .message-edit-form input,
 .chat-panel.has-custom-bg .message-edit-form input {
@@ -13766,7 +13761,7 @@ html.dark .chat-panel .message-edit-form input,
   color: #ffffff !important;
 }
 
-/* Header & Search UI Text */
+
 html.dark .chat-panel .chat-profile-copy h2,
 .chat-panel.has-custom-bg .chat-profile-copy h2 {
   color: #ffffff !important;
@@ -13792,7 +13787,7 @@ html.dark .chat-panel .message-search-field input,
   color: #ffffff !important;
 }
 
-/* Composer Input & Reply Preview */
+
 html.dark .chat-panel .composer-reply-preview strong,
 .chat-panel.has-custom-bg .composer-reply-preview strong {
   color: #ffffff !important;
@@ -13818,11 +13813,6 @@ html.dark .chat-panel .composer-input input::placeholder,
   color: rgba(255, 255, 255, 0.5) !important;
 }
 
-/* ==========================================================================
-   INBOX PANEL WHITE TEXT & DARK BACKGROUND OPTIMIZATION
-   ========================================================================== */
-
-/* Inbox Panel Base & Header */
 .inbox-panel,
 html.dark .inbox-panel {
   background: var(--surface-soft);
@@ -13865,7 +13855,7 @@ html.dark .inbox-panel .panel-header-actions .icon-button:hover {
   transform: translateY(-1px);
 }
 
-/* Search Field */
+
 .inbox-panel .search-field,
 html.dark .inbox-panel .search-field {
   background: rgba(255, 255, 255, 0.05) !important;
@@ -13894,14 +13884,14 @@ html.dark .inbox-panel .search-field input::placeholder {
   color: rgba(255, 255, 255, 0.45) !important;
 }
 
-/* Story Feed */
+
 .inbox-panel .story-name,
 html.dark .story-name {
   color: #ffffff !important;
   font-weight: 500;
 }
 
-/* Global Search Overlay Panel */
+
 .inbox-panel .global-search-panel,
 html.dark .inbox-panel .global-search-panel {
   background: rgba(24, 28, 36, 0.96) !important;
@@ -13979,7 +13969,7 @@ html.dark .inbox-panel .global-search-state.is-error {
   color: #fb7185 !important;
 }
 
-/* Friend Status Strip */
+
 .inbox-panel .friend-status-card,
 html.dark .inbox-panel .friend-status-card {
   color: rgba(255, 255, 255, 0.78) !important;
@@ -14010,7 +14000,7 @@ html.dark .inbox-panel .friend-status-card.is-active > span:last-child {
   color: #ffffff !important;
 }
 
-/* Quick Filters */
+
 .inbox-panel .quick-filters button,
 html.dark .inbox-panel .quick-filters button {
   background: rgba(255, 255, 255, 0.05) !important;
@@ -14039,7 +14029,7 @@ html.dark .inbox-panel .quick-filters button.is-active {
   color: inherit !important;
 }
 
-/* Conversation Row & Items */
+
 .inbox-panel .conversation-row,
 html.dark .inbox-panel .conversation-row {
   border: 1px solid transparent !important;
@@ -14062,7 +14052,7 @@ html.dark .inbox-panel .conversation-row.is-active {
   box-shadow: inset 3px 0 0 var(--conversation-accent, var(--primary)), 0 6px 20px rgba(0, 0, 0, 0.3) !important;
 }
 
-/* Conversation Name */
+
 .inbox-panel .conversation-topline strong,
 html.dark .inbox-panel .conversation-topline strong {
   color: #ffffff !important;
@@ -14077,7 +14067,7 @@ html.dark .inbox-panel .conversation-row.is-unread .conversation-topline strong 
   font-weight: 800 !important;
 }
 
-/* Conversation Preview Snippet */
+
 .inbox-panel .conversation-preview,
 html.dark .inbox-panel .conversation-preview {
   color: rgba(255, 255, 255, 0.8) !important;
@@ -14096,7 +14086,7 @@ html.dark .inbox-panel .conversation-row.is-active .conversation-preview {
   color: rgba(255, 255, 255, 0.92) !important;
 }
 
-/* Conversation Time */
+
 .inbox-panel .conversation-time,
 html.dark .inbox-panel .conversation-time {
   color: rgba(255, 255, 255, 0.65) !important;
@@ -14110,7 +14100,7 @@ html.dark .inbox-panel .conversation-row.is-unread .conversation-time {
   font-weight: 700 !important;
 }
 
-/* Conversation Meta Icons */
+
 .inbox-panel .conversation-meta svg,
 html.dark .inbox-panel .conversation-meta svg {
   color: rgba(255, 255, 255, 0.7) !important;
@@ -14146,7 +14136,7 @@ html.dark .inbox-panel .restore-chip span {
   color: #5eead4 !important;
 }
 
-/* Empty State */
+
 .inbox-panel .empty-state,
 html.dark .inbox-panel .empty-state {
   color: rgba(255, 255, 255, 0.75) !important;
@@ -14162,7 +14152,7 @@ html.dark .inbox-panel .empty-state span {
   color: rgba(255, 255, 255, 0.8) !important;
 }
 
-/* Context Menu */
+
 html.dark .conversation-context-menu {
   background: rgba(24, 28, 36, 0.98) !important;
   border: 1px solid rgba(255, 255, 255, 0.16) !important;
@@ -14186,7 +14176,7 @@ html.dark .conversation-context-menu button.is-danger:hover {
   background: rgba(244, 63, 94, 0.16) !important;
 }
 
-/* Group Modal Optimization */
+
 html.dark .group-modal {
   background: rgba(24, 28, 36, 0.98) !important;
   border: 1px solid rgba(255, 255, 255, 0.16) !important;

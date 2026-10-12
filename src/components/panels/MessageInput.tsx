@@ -25,6 +25,33 @@ export function MessageInput({}: MessageInputProps) {
   const [isStickerPickerOpen, setIsStickerPickerOpen] = useState(false)
   const [isMoreActionsOpen, setIsMoreActionsOpen] = useState(false)
   const [stickerPacks, setStickerPacks] = useState<import('../../services/api/stickerApi').StickerPack[]>([])
+  const emojiWrapRef = useRef<HTMLSpanElement>(null)
+
+  useEffect(() => {
+    if (!isComposerEmojiOpen) return
+
+    function handlePointerDownOutside(event: MouseEvent | TouchEvent) {
+      if (emojiWrapRef.current && !emojiWrapRef.current.contains(event.target as Node)) {
+        setIsComposerEmojiOpen(false)
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsComposerEmojiOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDownOutside)
+    document.addEventListener('touchstart', handlePointerDownOutside)
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDownOutside)
+      document.removeEventListener('touchstart', handlePointerDownOutside)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isComposerEmojiOpen, setIsComposerEmojiOpen])
 
   useEffect(() => {
     import('../../services/api/stickerApi').then(api => {
@@ -171,11 +198,22 @@ export function MessageInput({}: MessageInputProps) {
               aria-label={t('messageInputAria')}
               disabled={isBlocked}
               onChange={handleDraftChange}
+              onFocus={() => {
+                setIsComposerEmojiOpen(false)
+              }}
               placeholder={isBlocked ? t('blockedPlaceholder') : t('messagePlaceholder', { name: activeConversation.name })}
               value={draft}
             />
           </label>
-          <span className="composer-emoji-wrap">
+          <span
+            className="composer-emoji-wrap"
+            ref={emojiWrapRef}
+            onBlur={(e) => {
+              if (e.relatedTarget && !e.currentTarget.contains(e.relatedTarget as Node)) {
+                setIsComposerEmojiOpen(false)
+              }
+            }}
+          >
             <button
               className={isComposerEmojiOpen ? 'icon-button composer-extra is-active' : 'icon-button composer-extra'}
               disabled={isBlocked || isUploadingAttachment}

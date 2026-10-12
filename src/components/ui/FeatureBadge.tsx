@@ -8,7 +8,7 @@ type FeatureBadgeProps = {
 }
 
 export function FeatureBadge({}: FeatureBadgeProps) {
-  // Feature badges ("✨ New") disabled
+
   return null
 }
 
