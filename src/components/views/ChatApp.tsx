@@ -16,11 +16,15 @@ const SettingsPage = lazy(() => import('./SettingsPage').then(m => ({ default: m
 
 import { useAutoTour } from '../../hooks/tutorial/useAutoTour'
 
+import type { SavedAccount } from '../../services/storage/authStorage'
+
 type ChatAppProps = {
   currentUser: AuthUser | null
   onAccountDeleted: () => void
   onLogout: () => void
   onUserChange: (user: AuthUser) => void
+  onSwitchAccount?: (account: SavedAccount) => void
+  onAddAccount?: () => void
   pushToast?: (text: string, tone?: 'info' | 'error') => void
 }
 
@@ -39,6 +43,8 @@ export function ChatApp(props: ChatAppProps) {
         onLogout={ctrl.handleLogout}
         onToggleOpen={() => ctrl.setIsSidebarOpen((current) => !current)}
         onUserChange={props.onUserChange}
+        onSwitchAccount={props.onSwitchAccount}
+        onAddAccount={props.onAddAccount}
       />
     )
   }

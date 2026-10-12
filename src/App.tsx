@@ -34,7 +34,10 @@ import {
   getStoredAuthSession,
   storeAuthSession,
   updateStoredAuthUser,
+  switchActiveAccount,
+  type SavedAccount,
 } from './services/storage/authStorage'
+import { disconnectRealtimeSocket } from './services/realtime/realtime'
 import type { AuthScreen } from './types'
 
 const ROUTE_TRANSITION_EVENT = 'app:route-transition'
@@ -318,6 +321,38 @@ export function App() {
     setCurrentUser(user)
   }
 
+  function handleSwitchAccount(targetAccount: SavedAccount) {
+    const switched = switchActiveAccount(targetAccount.user.id)
+    if (!switched) {
+      pushToast(
+        t('accountSwitcher.switchFailed', {
+          defaultValue: 'Không thể chuyển tài khoản hoặc phiên đã hết hạn. Vui lòng đăng nhập lại!',
+        }),
+        'error',
+      )
+      return
+    }
+
+    disconnectRealtimeSocket()
+    setCurrentUser(switched.user)
+    setIsAuthenticated(true)
+    pushToast(
+      t('accountSwitcher.switchedAccountSuccess', {
+        name: switched.user.displayName || switched.user.fullName,
+        defaultValue: `Đã chuyển sang tài khoản ${switched.user.displayName || switched.user.fullName}!`,
+      }),
+      'info',
+    )
+  }
+
+  function handleAddAccount() {
+    clearStoredAuthSession()
+    setIsAuthenticated(false)
+    setCurrentUser(null)
+    setAuthScreen('login')
+    window.history.pushState(null, '', toAuthPath('login'))
+  }
+
   async function handleLogin(payload: Record<string, string>) {
     setIsSubmitting(true)
     setAuthError('')
@@ -458,10 +493,13 @@ export function App() {
     if (isAuthenticated) {
       return (
         <ChatApp
+          key={currentUser?.id}
           currentUser={currentUser}
           onAccountDeleted={handleAccountDeleted}
           onLogout={handleLogout}
           onUserChange={handleUserChange}
+          onSwitchAccount={handleSwitchAccount}
+          onAddAccount={handleAddAccount}
         />
       )
     }
