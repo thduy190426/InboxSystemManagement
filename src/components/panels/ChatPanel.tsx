@@ -241,7 +241,7 @@ export function ChatPanel(props: ChatPanelProps) {
   } = useChatPanelController(props)
 
   const {
-    activeConversation, busyMessageId, draft, isBlocked, isDetailOpen, hasOlderMessages, isTyping, isLoadingOlderMessages, isUploadingAttachment, focusedMessageId, pinnedMessages, members, replyingTo, onCancelReply, onRetryMessage, onLoadOlderMessages, onUploadAttachment, onJumpToMessage, onToggleDetails, onOpenContactProfile, onOpenConversationList, onStartCall, onSubmit, currentUserId, onSendPoll, onVotePoll, onSendSticker
+    activeConversation, busyMessageId, draft, isBlocked, isDetailOpen, hasOlderMessages, isTyping, isLoadingOlderMessages, isUploadingAttachment, focusedMessageId, pinnedMessages, members, replyingTo, onCancelReply, onRetryMessage, onLoadOlderMessages, onUploadAttachment, onJumpToMessage, onToggleDetails, onOpenContactProfile, onOpenConversationList, onStartCall, onSubmit, currentUserId, onSendPoll, onVotePoll, onSendSticker, showReadReceipts = true
   } = props
 
   const isGroup = activeConversation.type === 'group'
@@ -252,7 +252,7 @@ export function ChatPanel(props: ChatPanelProps) {
     <ChatStateContext.Provider value={{
       activeConversation, currentUserId, members: members as any, searchMatches,
       activeSearchMessageId: activeSearchMessageId as string, focusedMessageId: focusedMessageId as string, editingMessageId: editingMessageId as string, busyMessageId: busyMessageId as string,
-      editingText, openActionMenuId, openReactionPickerId
+      editingText, openActionMenuId, openReactionPickerId, showReadReceipts
     }}>
       <MessageActionContext.Provider value={{
         startReplying, startForwarding, handleDeleteForMe, handleRecall, handleReport,

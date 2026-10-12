@@ -13306,6 +13306,54 @@ html.dark .chat-panel .message-time svg,
   color: rgba(255, 255, 255, 0.85) !important;
 }
 
+.chat-panel .message-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  vertical-align: middle;
+}
+
+.chat-panel .message-time svg.message-status-seen,
+.chat-panel .message-time .message-status-seen svg,
+.chat-panel .message-status-badge .message-status-seen,
+html.dark .chat-panel .message-time svg.message-status-seen,
+html.dark .chat-panel .message-time .message-status-seen svg,
+.chat-panel.has-custom-bg .message-time svg.message-status-seen,
+.chat-panel.has-custom-bg .message-time .message-status-seen svg {
+  color: #38bdf8 !important;
+}
+
+.chat-panel .message-time .message-status-seen-label,
+html.dark .chat-panel .message-time .message-status-seen-label,
+.chat-panel.has-custom-bg .message-time .message-status-seen-label {
+  color: #7dd3fc !important;
+  font-weight: 600;
+}
+
+.chat-panel .message-time svg.message-status-sending,
+html.dark .chat-panel .message-time svg.message-status-sending,
+.chat-panel.has-custom-bg .message-time svg.message-status-sending {
+  opacity: 0.75;
+  animation: messageStatusPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes messageStatusPulse {
+  0%, 100% {
+    opacity: 0.45;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+.chat-panel .message-time .message-status-failed {
+  color: #fb7185 !important;
+  font-weight: 600;
+}
+
+
 
 .chat-panel .link-preview-card,
 html.dark .chat-panel .link-preview-card,

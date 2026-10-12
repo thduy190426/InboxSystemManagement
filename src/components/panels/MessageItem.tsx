@@ -1,7 +1,7 @@
 import { useChatState, useMessageActions, useChatUI } from './ChatContexts'
 
 import { Suspense, lazy, useState, useEffect } from 'react'
-import { MoreHorizontal, Reply, Pencil, Copy, Pin, Trash2, Check, CheckCheck, PinOff, Calendar, X, SendHorizontal, Smile, Download, Flag } from 'lucide-react'
+import { MoreHorizontal, Reply, Pencil, Copy, Pin, Trash2, Check, CheckCheck, Clock, PinOff, Calendar, X, SendHorizontal, Smile, Download, Flag } from 'lucide-react'
 import type { Message } from '../../types'
 import { AvatarFallback } from '../ui/AvatarFallback'
 import type { EmojiStyle, Theme } from 'emoji-picker-react'
@@ -48,10 +48,12 @@ export function MessageItem(props: MessageItemProps) {
   const { 
     currentUserId, editingMessageId, busyMessageId, editingText, 
     openActionMenuId, openReactionPickerId, searchMatches, 
-    activeSearchMessageId, focusedMessageId, activeConversation, members 
+    activeSearchMessageId, focusedMessageId, activeConversation, members,
+    showReadReceipts = true
   } = useChatState()
   
-  const seenByMembers = (members || []).filter(
+  const canShowRead = showReadReceipts && !activeConversation?.restricted
+  const seenByMembers = (canShowRead ? (members || []) : []).filter(
     (m) => String(m.lastReadMessageId) === String(message.id) && String(m.userId) !== String(currentUserId)
   )
   const hasSeenReceipts = seenByMembers.length > 0
@@ -278,24 +280,41 @@ export function MessageItem(props: MessageItemProps) {
                           {formatMessageTime(message)}
                           {message.isEdited ? <span>{t('editedLabel')}</span> : null}
                           {effectiveAuthor === 'me' ? (
-                            <>
-                              {message.state !== 'seen' && (
+                            <span className="message-status-badge" title={getMessageStateLabel(message)}>
+                              {message.state === 'sending' ? (
                                 <>
-                                  <CheckCheck aria-label={getMessageStateLabel(message)} size={15} />
-                                  <span>{getMessageStateLabel(message)}</span>
+                                  <Clock className="message-status-icon message-status-sending" size={12} aria-label={t('sending')} />
+                                  <span>{t('sending')}</span>
+                                </>
+                              ) : message.state === 'failed' ? (
+                                <>
+                                  <span className="message-status-failed">{t('sendError', { defaultValue: 'Gửi lỗi!' })}</span>
+                                  <button
+                                    className="message-retry-button"
+                                    onClick={() => onRetryMessage(message)}
+                                    title={t('retryTitle')}
+                                    type="button"
+                                  >
+                                    {t('retryBtn')}
+                                  </button>
+                                </>
+                              ) : message.state === 'seen' && canShowRead ? (
+                                <>
+                                  <CheckCheck className="message-status-icon message-status-seen" size={14} aria-label={getMessageStateLabel(message)} />
+                                  <span className="message-status-seen-label">{getMessageStateLabel(message)}</span>
+                                </>
+                              ) : message.state === 'seen' || message.state === 'delivered' ? (
+                                <>
+                                  <CheckCheck className="message-status-icon message-status-delivered" size={14} aria-label={t('statusReceived')} />
+                                  <span>{t('statusReceived')}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Check className="message-status-icon message-status-sent" size={14} aria-label={t('statusSent')} />
+                                  <span>{t('statusSent')}</span>
                                 </>
                               )}
-                              {message.state === 'failed' ? (
-                                <button
-                                  className="message-retry-button"
-                                  onClick={() => onRetryMessage(message)}
-                                  title={t('retryTitle')}
-                                  type="button"
-                                >
-                                  {t('retryBtn')}
-                                </button>
-                              ) : null}
-                            </>
+                            </span>
                           ) : null}
                         </span>
                         {renderReactions(message)}
@@ -305,19 +324,28 @@ export function MessageItem(props: MessageItemProps) {
                         <div className="message-read-receipts" style={{
                           display: 'flex',
                           justifyContent: 'flex-end',
-                          gap: '2px',
-                          marginTop: '2px',
+                          gap: '3px',
+                          marginTop: '3px',
                           paddingRight: '2px'
                         }}>
-                          {seenByMembers.map(m => (
-                            <div key={m.userId} title={`Đã xem bởi ${m.fullName}`}>
-                              <AvatarFallback
-                                className="message-read-avatar"
-                                name={m.fullName || ''}
-                                src={m.avatarUrl || ''}
-                              />
-                            </div>
-                          ))}
+                          {seenByMembers.map(m => {
+                            const formattedReadTime = m.lastReadAt
+                              ? new Date(m.lastReadAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+                              : ''
+                            const seenTitle = formattedReadTime
+                              ? `Đã xem bởi ${m.fullName || m.handle || 'Người dùng'} lúc ${formattedReadTime}`
+                              : `Đã xem bởi ${m.fullName || m.handle || 'Người dùng'}`
+
+                            return (
+                              <div key={m.userId} title={seenTitle}>
+                                <AvatarFallback
+                                  className="message-read-avatar"
+                                  name={m.fullName || m.handle || ''}
+                                  src={m.avatarUrl || ''}
+                                />
+                              </div>
+                            )
+                          })}
                         </div>
                       ) : null}
 

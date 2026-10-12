@@ -30,6 +30,7 @@ export type ChatStateContextType = {
   editingText: string
   openActionMenuId: string
   openReactionPickerId: string
+  showReadReceipts?: boolean
 }
 
 export type ChatUIContextType = {
