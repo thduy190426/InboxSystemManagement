@@ -541,6 +541,7 @@ export function App() {
         twoFactorToken={twoFactorToken}
         onLogin2FA={handleLogin2FA}
         onCancel2FA={() => setTwoFactorToken(null)}
+        onSelectSavedAccount={handleSwitchAccount}
       />
     )
   })()

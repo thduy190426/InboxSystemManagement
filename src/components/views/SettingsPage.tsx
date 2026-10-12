@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   AlertTriangle,
   ChevronDown,
@@ -9,6 +10,7 @@ import {
   Laptop,
   LogOut,
   MessageSquare,
+  Plus,
   RefreshCw,
   RotateCcw,
   Settings,
@@ -16,11 +18,17 @@ import {
   Sparkles,
   Trash2,
   UserRound,
+  Users,
 } from 'lucide-react'
 import {
   type UserSession,
 } from '../../services/api/userApi'
 import type { AuthUser } from '../../services/api/authApi'
+import {
+  getSavedAccounts,
+  removeSavedAccount,
+  type SavedAccount,
+} from '../../services/storage/authStorage'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { TwoFactorSettings } from './TwoFactorSettings'
 import { useAutoTour } from '../../hooks/tutorial/useAutoTour'
@@ -35,6 +43,8 @@ export type SettingsPageProps = {
   onUserChange: (user: AuthUser) => void
   pushToast: (text: string, tone?: 'info' | 'error') => void
   onChangeView?: (view: AppView) => void
+  onSwitchAccount?: (account: SavedAccount) => void
+  onAddAccount?: () => void
 }
 
 type SessionViewModel = UserSession & {
@@ -229,6 +239,8 @@ export function SettingsPage(props: SettingsPageProps) {
 
   useAutoTour('settings', true, props.currentUser?.id)
 
+  const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>(() => getSavedAccounts())
+
   const {
     currentUser, onUserChange, pushToast
   } = props
@@ -265,6 +277,9 @@ export function SettingsPage(props: SettingsPageProps) {
           </button>
           <button className={`sp-nav-item${activeSection === 'sessions' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('sessions')}>
             <Laptop size={15} /> {t('navSessions')}
+          </button>
+          <button className={`sp-nav-item${activeSection === 'switch-accounts' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('switch-accounts')}>
+            <Users size={15} /> {t('accountSwitcher.title', { defaultValue: 'Chuyển tài khoản' })}
           </button>
           <button className={`sp-nav-item${activeSection === 'tutorial-settings' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('tutorial-settings')}>
             <Compass size={15} /> {t('navTutorial')}
@@ -548,6 +563,137 @@ export function SettingsPage(props: SettingsPageProps) {
                       ))}
                     </div>
                   </div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          <section id="switch-accounts" className="sp-card" aria-labelledby="switch-accounts-title">
+            <div className="sp-card-header">
+              <div className="sp-card-icon sp-card-icon--default">
+                <Users size={16} />
+              </div>
+              <div className="sp-card-header-text">
+                <h2 id="switch-accounts-title">{t('accountSwitcher.title', { defaultValue: 'Chuyển tài khoản' })}</h2>
+                <p>{t('accountSwitcher.recentAccountsSub', { defaultValue: 'Chuyển đổi nhanh giữa các tài khoản đã đăng nhập trên thiết bị này.' })}</p>
+              </div>
+            </div>
+            <div className="sp-card-body">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {savedAccounts.map((account: SavedAccount) => {
+                  const isCurrent = String(account.user.id) === String(currentUser?.id) || account.user.email === currentUser?.email
+                  return (
+                    <div
+                      key={account.user.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '12px 14px',
+                        borderRadius: '12px',
+                        background: isCurrent ? 'rgba(20, 184, 166, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+                        border: isCurrent ? '1px solid rgba(20, 184, 166, 0.3)' : '1px solid rgba(255, 255, 255, 0.08)',
+                        gap: '12px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                        {account.user.avatarUrl ? (
+                          <img
+                            src={account.user.avatarUrl}
+                            alt=""
+                            style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              width: '40px',
+                              height: '40px',
+                              borderRadius: '50%',
+                              background: 'linear-gradient(135deg, #14b8a6, #2563eb)',
+                              color: '#fff',
+                              display: 'grid',
+                              placeItems: 'center',
+                              fontWeight: 700,
+                              fontSize: '16px',
+                              flexShrink: 0,
+                            }}
+                          >
+                            {account.user.displayName?.[0] || account.user.fullName?.[0] || 'U'}
+                          </div>
+                        )}
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <strong style={{ fontSize: '14px', color: 'var(--color-text-main, #e2e8f0)' }}>
+                              {account.user.displayName || account.user.fullName}
+                            </strong>
+                            {isCurrent && (
+                              <span
+                                style={{
+                                  fontSize: '11px',
+                                  padding: '2px 8px',
+                                  borderRadius: '12px',
+                                  background: 'rgba(16, 185, 129, 0.15)',
+                                  color: '#10b981',
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {t('accountSwitcher.activeNow', { defaultValue: 'Đang hoạt động' })}
+                              </span>
+                            )}
+                          </div>
+                          <span style={{ fontSize: '12px', color: 'var(--color-text-muted, #94a3b8)' }}>
+                            {account.user.email}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                        {!isCurrent && props.onSwitchAccount && (
+                          <button
+                            type="button"
+                            className="sp-btn sp-btn--ghost"
+                            onClick={() => props.onSwitchAccount?.(account)}
+                            style={{ fontSize: '12.5px', padding: '6px 12px' }}
+                          >
+                            {t('accountSwitcher.switchAccount', { defaultValue: 'Chuyển' })}
+                          </button>
+                        )}
+                        {!isCurrent && (
+                          <button
+                            type="button"
+                            className="sp-btn sp-btn--danger"
+                            onClick={() => {
+                              removeSavedAccount(account.user.id)
+                              setSavedAccounts(getSavedAccounts())
+                            }}
+                            title={t('accountSwitcher.removeAccount', { defaultValue: 'Xóa tài khoản khỏi thiết bị' })}
+                            style={{ padding: '6px 8px' }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+
+                {props.onAddAccount && (
+                  <button
+                    type="button"
+                    className="sp-btn sp-btn--ghost"
+                    onClick={props.onAddAccount}
+                    style={{
+                      justifyContent: 'center',
+                      padding: '10px 14px',
+                      borderRadius: '10px',
+                      border: '1px dashed rgba(20, 184, 166, 0.4)',
+                      marginTop: '4px',
+                      fontWeight: 600,
+                    }}
+                  >
+                    <Plus size={15} />
+                    <span>{t('accountSwitcher.addAccount', { defaultValue: 'Đăng nhập bằng tài khoản khác' })}</span>
+                  </button>
                 )}
               </div>
             </div>

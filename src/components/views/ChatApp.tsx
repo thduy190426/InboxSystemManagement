@@ -166,6 +166,8 @@ export function ChatApp(props: ChatAppProps) {
             onUserChange={props.onUserChange}
             pushToast={ctrl.pushToast}
             onChangeView={ctrl.handleChangeView}
+            onSwitchAccount={props.onSwitchAccount}
+            onAddAccount={props.onAddAccount}
           />
         </Suspense>
         {renderCallOverlay()}

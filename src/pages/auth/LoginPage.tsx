@@ -1,6 +1,6 @@
 import type { FormEvent } from 'react'
 import { useState, useRef, useEffect } from 'react'
-import { ArrowRight, Eye, EyeOff, Lock, LogIn, Mail } from 'lucide-react'
+import { ArrowRight, ChevronLeft, Eye, EyeOff, Lock, LogIn, Mail, Plus, X } from 'lucide-react'
 import ReCAPTCHA from 'react-google-recaptcha'
 import { useGoogleLogin } from '@react-oauth/google'
 import FacebookLoginDefault from '@greatsumini/react-facebook-login'
@@ -9,12 +9,18 @@ import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import type { AuthPageProps } from '../../types'
 import loginBg from '../../bg-images/LoginBG.jpg'
+import {
+  getSavedAccounts,
+  removeSavedAccount,
+  type SavedAccount,
+} from '../../services/storage/authStorage'
 
 type LoginPageProps = AuthPageProps & {
   onForgotPassword?: () => void
   twoFactorToken?: string | null
   onLogin2FA?: (code: string) => void
   onCancel2FA?: () => void
+  onSelectSavedAccount?: (account: SavedAccount) => void
 }
 
 export function LoginPage({
@@ -28,7 +34,11 @@ export function LoginPage({
   twoFactorToken,
   onLogin2FA,
   onCancel2FA,
+  onSelectSavedAccount,
 }: LoginPageProps) {
+  const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>(() => getSavedAccounts())
+  const [showStandardForm, setShowStandardForm] = useState<boolean>(() => savedAccounts.length === 0)
+  const [prefilledEmail, setPrefilledEmail] = useState<string>('')
   const [showPassword, setShowPassword] = useState(false)
   const [isFormFilled, setIsFormFilled] = useState(false)
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null)
@@ -82,6 +92,25 @@ export function LoginPage({
     })
   }
 
+  function handleSelectSavedAccount(account: SavedAccount) {
+    if (onSelectSavedAccount) {
+      onSelectSavedAccount(account)
+    } else {
+      setPrefilledEmail(account.user.email)
+      setShowStandardForm(true)
+    }
+  }
+
+  function handleRemoveSavedAccount(e: React.MouseEvent, account: SavedAccount) {
+    e.stopPropagation()
+    removeSavedAccount(account.user.id)
+    const remaining = getSavedAccounts()
+    setSavedAccounts(remaining)
+    if (remaining.length === 0) {
+      setShowStandardForm(true)
+    }
+  }
+
   return (
     <main 
       className="auth-shell"
@@ -96,66 +125,197 @@ export function LoginPage({
         className="auth-card" 
         aria-labelledby="login-title"
       >
-        <div className="auth-card-header">
-          <span className="section-kicker" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <LogIn size={14} />
-            {t('login.loginButton')}
-          </span>
-          <h1 id="login-title">{t('login.title')}</h1>
-          <p>{t('login.subtitle')}</p>
-        </div>
-
-        {errorMessage ? (
-          <div className="auth-error-notice" role="alert">
-            {errorMessage}
-          </div>
-        ) : null}
-
-        {twoFactorToken ? (
-          <form className="auth-form" onSubmit={(e) => {
-            e.preventDefault();
-            const formData = new FormData(e.currentTarget);
-            const code = String(formData.get('code') ?? '').trim();
-            if (code && onLogin2FA) onLogin2FA(code);
-          }}>
-            <label className="auth-field" htmlFor="login-2fa-code">
-              <span>{t('login.twoFactorLabel')}</span>
-              <div className="auth-input-row">
-                <Lock size={18} />
-                <input
-                  id="login-2fa-code"
-                  name="code"
-                  placeholder={t('login.twoFactorPlaceholder')}
-                  required
-                  type="text"
-                  minLength={6}
-                />
-              </div>
-            </label>
-            <button className="primary-action-button" disabled={isSubmitting} type="submit">
-              <span>{t('login.twoFactorConfirm')}</span>
-              <ArrowRight size={18} />
-            </button>
-            <button className="secondary-action-button" disabled={isSubmitting} type="button" onClick={onCancel2FA} style={{ marginTop: '12px', background: 'transparent', color: 'var(--text-color)', border: '1px solid var(--border-color)' }}>
-              {t('login.twoFactorCancel')}
-            </button>
-          </form>
-        ) : (
-        <form className="auth-form" onChange={handleFormChange} onSubmit={handleSubmit}>
-          <label className="auth-field" htmlFor="login-email">
-            <span>{t('login.emailLabel')}</span>
-            <div className="auth-input-row">
-              <Mail size={18} />
-              <input
-                id="login-email"
-                autoComplete="email"
-                name="email"
-                placeholder={t('login.emailPlaceholder')}
-                required
-                type="email"
-              />
+        {!twoFactorToken && savedAccounts.length > 0 && !showStandardForm ? (
+          <>
+            <div className="auth-card-header">
+              <span className="section-kicker" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <LogIn size={14} />
+                {t('login.loginButton')}
+              </span>
+              <h1 id="login-title">
+                {t('accountSwitcher.recentAccounts', { defaultValue: 'Tài khoản gần đây' })}
+              </h1>
+              <p>
+                {t('accountSwitcher.recentAccountsSub', {
+                  defaultValue: 'Nhấp vào ảnh đại diện hoặc đăng nhập bằng tài khoản khác.',
+                })}
+              </p>
             </div>
-          </label>
+
+            {errorMessage ? (
+              <div className="auth-error-notice" role="alert">
+                {errorMessage}
+              </div>
+            ) : null}
+
+            <div className="recent-accounts-container">
+              {savedAccounts.map((account) => (
+                <div
+                  key={account.user.id}
+                  className="recent-account-card"
+                  onClick={() => handleSelectSavedAccount(account)}
+                >
+                  {account.user.avatarUrl ? (
+                    <img
+                      src={account.user.avatarUrl}
+                      alt=""
+                      className="recent-account-avatar"
+                    />
+                  ) : (
+                    <div className="recent-account-avatar-fallback">
+                      {account.user.displayName?.[0] || account.user.fullName?.[0] || 'U'}
+                    </div>
+                  )}
+
+                  <div style={{ flex: 1, minWidth: 0, paddingRight: '16px' }}>
+                    <div
+                      style={{
+                        fontWeight: 700,
+                        fontSize: '14.5px',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {account.user.displayName || account.user.fullName}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '12px',
+                        color: 'var(--color-text-muted, #94a3b8)',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {account.user.email}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="recent-account-remove-btn"
+                    title={t('accountSwitcher.removeAccount', { defaultValue: 'Xóa tài khoản khỏi thiết bị' })}
+                    onClick={(e) => handleRemoveSavedAccount(e, account)}
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+
+              <button
+                type="button"
+                className="account-add-btn"
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  padding: '12px 16px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, rgba(20, 184, 166, 0.15), rgba(37, 99, 235, 0.15))',
+                  border: '1px dashed rgba(20, 184, 166, 0.4)',
+                  color: 'var(--color-text-main, #e2e8f0)',
+                  fontSize: '13.5px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  marginTop: '4px',
+                }}
+                onClick={() => {
+                  setPrefilledEmail('')
+                  setShowStandardForm(true)
+                }}
+              >
+                <Plus size={18} />
+                <span>{t('accountSwitcher.addAccount', { defaultValue: 'Đăng nhập bằng tài khoản khác' })}</span>
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="auth-card-header">
+              {savedAccounts.length > 0 && !twoFactorToken && (
+                <button
+                  type="button"
+                  onClick={() => setShowStandardForm(false)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--color-text-muted, #94a3b8)',
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    padding: '0 0 8px 0',
+                    marginRight: 'auto',
+                  }}
+                >
+                  <ChevronLeft size={16} />
+                  <span>{t('accountSwitcher.recentAccounts', { defaultValue: 'Tài khoản gần đây' })}</span>
+                </button>
+              )}
+              <span className="section-kicker" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <LogIn size={14} />
+                {t('login.loginButton')}
+              </span>
+              <h1 id="login-title">{t('login.title')}</h1>
+              <p>{t('login.subtitle')}</p>
+            </div>
+
+            {errorMessage ? (
+              <div className="auth-error-notice" role="alert">
+                {errorMessage}
+              </div>
+            ) : null}
+
+            {twoFactorToken ? (
+              <form className="auth-form" onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const code = String(formData.get('code') ?? '').trim();
+                if (code && onLogin2FA) onLogin2FA(code);
+              }}>
+                <label className="auth-field" htmlFor="login-2fa-code">
+                  <span>{t('login.twoFactorLabel')}</span>
+                  <div className="auth-input-row">
+                    <Lock size={18} />
+                    <input
+                      id="login-2fa-code"
+                      name="code"
+                      placeholder={t('login.twoFactorPlaceholder')}
+                      required
+                      type="text"
+                      minLength={6}
+                    />
+                  </div>
+                </label>
+                <button className="primary-action-button" disabled={isSubmitting} type="submit">
+                  <span>{t('login.twoFactorConfirm')}</span>
+                  <ArrowRight size={18} />
+                </button>
+                <button className="secondary-action-button" disabled={isSubmitting} type="button" onClick={onCancel2FA} style={{ marginTop: '12px', background: 'transparent', color: 'var(--text-color)', border: '1px solid var(--border-color)' }}>
+                  {t('login.twoFactorCancel')}
+                </button>
+              </form>
+            ) : (
+            <form className="auth-form" onChange={handleFormChange} onSubmit={handleSubmit}>
+              <label className="auth-field" htmlFor="login-email">
+                <span>{t('login.emailLabel')}</span>
+                <div className="auth-input-row">
+                  <Mail size={18} />
+                  <input
+                    id="login-email"
+                    autoComplete="email"
+                    defaultValue={prefilledEmail}
+                    name="email"
+                    placeholder={t('login.emailPlaceholder')}
+                    required
+                    type="email"
+                  />
+                </div>
+              </label>
 
           <label className="auth-field" htmlFor="login-password">
             <span>{t('login.passwordLabel')}</span>
@@ -263,12 +423,15 @@ export function LoginPage({
             </button>
           )}
         />
-        </>
+            </>
+          )}
+          </>
         )}
 
         <p className="auth-switch">
           {t('login.noAccount')}
           <button disabled={isSubmitting} onClick={onSwitchMode} type="button">
+            {t('login.createNewAccount')}
           </button>
         </p>
       </section>
