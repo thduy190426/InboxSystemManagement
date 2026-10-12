@@ -11,6 +11,7 @@ import { StoryViewerOverlay } from '../story/StoryViewerOverlay'
 import type { UserStoryGroup } from '../../types'
 import { OnlineDurationBadge } from '../ui/OnlineDurationBadge'
 import { CreateGroupModal } from './modals/CreateGroupModal'
+import { Virtuoso } from 'react-virtuoso'
 
 export type ConversationFilter = 'all' | 'unread' | 'requests' | 'group' | 'archived'
 type DirectMessageUser = Pick<ContactUser, 'id' | 'fullName' | 'friendshipStatus' | 'contactId'>
@@ -621,97 +622,105 @@ export function InboxPanel({
         </button>
       </div>
 
-      <div className="conversation-list" data-tour="inbox-conversation-list">
-        {conversations.map((conversation) => (
-          <button
-            className={
-              conversation.id === activeConversation?.id
-                ? `conversation-row is-active${conversation.unread ? ' is-unread' : ''} animate-in`
-                : `conversation-row${conversation.unread ? ' is-unread' : ''} animate-in`
-            }
-            key={conversation.id}
-            onContextMenu={(event) => {
-              event.preventDefault()
-              openConversationMenu(conversation.id, event.clientX, event.clientY)
-            }}
-            onClick={() =>
-              activeFilter === 'archived'
-                ? onRestoreConversation(conversation.id)
-                : onSelectConversation(conversation.id)
-            }
-            onMouseDown={(event) => {
-              if (event.button !== 0) {
-                return
-              }
+      <div className="conversation-list" data-tour="inbox-conversation-list" style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        {conversations.length > 0 ? (
+          <Virtuoso
+            style={{ height: '100%', width: '100%' }}
+            data={conversations}
+            computeItemKey={(_index, conversation) => conversation.id}
+            itemContent={(_index, conversation) => (
+              <div style={{ paddingBottom: '10px' }}>
+                <button
+                  className={
+                    conversation.id === activeConversation?.id
+                      ? `conversation-row is-active${conversation.unread ? ' is-unread' : ''} animate-in`
+                      : `conversation-row${conversation.unread ? ' is-unread' : ''} animate-in`
+                  }
+                  key={conversation.id}
+                  onContextMenu={(event) => {
+                    event.preventDefault()
+                    openConversationMenu(conversation.id, event.clientX, event.clientY)
+                  }}
+                  onClick={() =>
+                    activeFilter === 'archived'
+                      ? onRestoreConversation(conversation.id)
+                      : onSelectConversation(conversation.id)
+                  }
+                  onMouseDown={(event) => {
+                    if (event.button !== 0) {
+                      return
+                    }
 
-              startConversationLongPress(conversation.id, event.clientX, event.clientY)
-            }}
-            onMouseLeave={clearLongPressTimer}
-            onMouseUp={clearLongPressTimer}
-            onTouchCancel={clearLongPressTimer}
-            onTouchEnd={clearLongPressTimer}
-            onTouchStart={(event) => {
-              const touch = event.touches[0]
+                    startConversationLongPress(conversation.id, event.clientX, event.clientY)
+                  }}
+                  onMouseLeave={clearLongPressTimer}
+                  onMouseUp={clearLongPressTimer}
+                  onTouchCancel={clearLongPressTimer}
+                  onTouchEnd={clearLongPressTimer}
+                  onTouchStart={(event) => {
+                    const touch = event.touches[0]
 
-              if (touch) {
-                startConversationLongPress(conversation.id, touch.clientX, touch.clientY)
-              }
-            }}
-            style={{ '--conversation-accent': conversation.accent } as CSSProperties}
-            type="button"
-          >
-            <span className="avatar-wrap">
-              <AvatarFallback name={getResolvedConversationName(conversation)} src={conversation.avatar} />
-              <span className={`presence-dot ${conversation.presence}`} />
-              <OnlineDurationBadge
-                compact
-                onlineSince={conversation.onlineSince}
-                status={conversation.status}
-                presence={conversation.presence}
-              />
-            </span>
-            <span className="conversation-copy">
-              <span className="conversation-topline">
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0, flex: '1 1 auto', fontSize: 'inherit', color: 'inherit' }}>
-                  <strong>{getResolvedConversationName(conversation)}</strong>
-                  {conversation.muted ? <BellOff size={14} aria-label={t('mutedAria')} className="conversation-muted-icon" style={{ flexShrink: 0 }} /> : null}
-                </span>
-              </span>
-              <span className="conversation-preview">{getConversationPreview(conversation)}</span>
-            </span>
-            <span className="conversation-meta">
-              {activeFilter !== 'archived' ? (
-                <span className="conversation-time">{formatConversationLastTime(conversation)}</span>
-              ) : null}
-              {activeFilter === 'archived' ? (
-                <span className="restore-chip">
-                  <ArchiveRestore size={14} />
-                  <span>{t('restoreBtn')}</span>
-                </span>
-              ) : null}
-              {conversation.pinned ? <Pin size={14} aria-label={t('pinnedAria')} /> : null}
-              {conversation.lastMessageByMe ? (
-                messagesByConversation?.[conversation.id]?.at(-1)?.state === 'seen' || !messagesByConversation?.[conversation.id] ? (
-                  <AvatarFallback
-                    className="conversation-seen-avatar"
-                    name={getResolvedConversationName(conversation)}
-                    src={conversation.avatar}
-                  />
-                ) : (
-                  <Check size={14} className="conversation-sent-icon" />
-                )
-              ) : null}
-            </span>
-          </button>
-        ))}
-        {conversations.length === 0 ? (
+                    if (touch) {
+                      startConversationLongPress(conversation.id, touch.clientX, touch.clientY)
+                    }
+                  }}
+                  style={{ '--conversation-accent': conversation.accent } as CSSProperties}
+                  type="button"
+                >
+                  <span className="avatar-wrap">
+                    <AvatarFallback name={getResolvedConversationName(conversation)} src={conversation.avatar} />
+                    <span className={`presence-dot ${conversation.presence}`} />
+                    <OnlineDurationBadge
+                      compact
+                      onlineSince={conversation.onlineSince}
+                      status={conversation.status}
+                      presence={conversation.presence}
+                    />
+                  </span>
+                  <span className="conversation-copy">
+                    <span className="conversation-topline">
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0, flex: '1 1 auto', fontSize: 'inherit', color: 'inherit' }}>
+                        <strong>{getResolvedConversationName(conversation)}</strong>
+                        {conversation.muted ? <BellOff size={14} aria-label={t('mutedAria')} className="conversation-muted-icon" style={{ flexShrink: 0 }} /> : null}
+                      </span>
+                    </span>
+                    <span className="conversation-preview">{getConversationPreview(conversation)}</span>
+                  </span>
+                  <span className="conversation-meta">
+                    {activeFilter !== 'archived' ? (
+                      <span className="conversation-time">{formatConversationLastTime(conversation)}</span>
+                    ) : null}
+                    {activeFilter === 'archived' ? (
+                      <span className="restore-chip">
+                        <ArchiveRestore size={14} />
+                        <span>{t('restoreBtn')}</span>
+                      </span>
+                    ) : null}
+                    {conversation.pinned ? <Pin size={14} aria-label={t('pinnedAria')} /> : null}
+                    {conversation.lastMessageByMe ? (
+                      messagesByConversation?.[conversation.id]?.at(-1)?.state === 'seen' || !messagesByConversation?.[conversation.id] ? (
+                        <AvatarFallback
+                          className="conversation-seen-avatar"
+                          name={getResolvedConversationName(conversation)}
+                          src={conversation.avatar}
+                        />
+                      ) : (
+                        <Check size={14} className="conversation-sent-icon" />
+                      )
+                    ) : null}
+                  </span>
+                </button>
+              </div>
+            )}
+          />
+        ) : (
           <div className="empty-state">
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
               <MessageSquareOff size={32} strokeWidth={1.5} />
               <span>{t('noMatchingConv')}</span>
             </div>
           </div>
-        ) : null}
+        )}
       </div>
 
       {conversationMenu ? (
