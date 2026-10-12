@@ -1,6 +1,8 @@
-import { AtSign, Bell, MessageCircle, UserPlus } from 'lucide-react'
+import { AtSign, Bell, BellOff, BellRing, HelpCircle, MessageCircle, RefreshCw, ShieldAlert, UserPlus, X } from 'lucide-react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { BrowserNotificationPermission } from '../../services/core/browserNotifications'
+import { toast } from 'sonner'
+import { showBrowserNotification, type BrowserNotificationPermission } from '../../services/core/browserNotifications'
 import type { AppNotification, ContactUser, Conversation } from '../../types'
 import { AvatarFallback } from '../ui/AvatarFallback'
 
@@ -9,7 +11,7 @@ type NotificationsPanelProps = {
   conversations: Conversation[]
   friendRequests: ContactUser[]
   notifications: AppNotification[]
-  onEnableBrowserNotifications: () => void
+  onEnableBrowserNotifications: () => Promise<void> | void
   onOpenContacts: () => void
   onOpenConversation: (conversationId: string) => void
   onOpenNotification: (notification: AppNotification) => void
@@ -55,22 +57,31 @@ export function NotificationsPanel({
 }: NotificationsPanelProps) {
   const { t } = useTranslation('notifications')
 
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [showGuideModal, setShowGuideModal] = useState(false)
+
   const unreadConversations = conversations.filter((c) => c.unread > 0)
   const mentionNotifications = notifications.filter((n) => n.type === 'mention')
   const unreadMentionCount = mentionNotifications.filter((n) => !n.readAt).length
   const totalUnreadMessages = unreadConversations.reduce((total, c) => total + c.unread, 0)
   const totalNotifications = totalUnreadMessages + friendRequests.length + unreadMentionCount
 
-  const browserNotificationLabel =
-    browserNotificationPermission === 'granted' ? t('browserGranted')
-    : browserNotificationPermission === 'denied' ? t('browserDenied')
-    : browserNotificationPermission === 'unsupported' ? t('browserUnsupported')
-    : t('browserEnable')
-
-  const isBrowserBtnDisabled =
-    browserNotificationPermission === 'granted' ||
-    browserNotificationPermission === 'denied' ||
-    browserNotificationPermission === 'unsupported'
+  async function handleResync() {
+    if (isSyncing) return
+    setIsSyncing(true)
+    try {
+      await onEnableBrowserNotifications()
+      showBrowserNotification(t('testNotificationTitle'), {
+        body: t('testNotificationBody'),
+        tag: 'test-notification-' + Date.now(),
+      })
+      toast.success(t('resyncSuccess'))
+    } catch {
+      toast.error(t('resyncError'))
+    } finally {
+      setTimeout(() => setIsSyncing(false), 600)
+    }
+  }
 
   return (
     <section className="np-page" aria-labelledby="notifications-title">
@@ -83,15 +94,69 @@ export function NotificationsPanel({
           <h1 id="notifications-title">{t('title')}</h1>
         </div>
         <div className="np-header-aside">
-          <button
-            className={`np-push-btn${browserNotificationPermission === 'granted' ? ' np-push-btn--active' : ''}`}
-            disabled={isBrowserBtnDisabled}
-            onClick={onEnableBrowserNotifications}
-            type="button"
-          >
-            <Bell size={14} />
-            <span>{browserNotificationLabel}</span>
-          </button>
+          {browserNotificationPermission === 'granted' ? (
+            <div className="np-push-badge-card is-granted" role="region" aria-label={t('browserGranted')}>
+              <div className="np-push-status-wrap">
+                <span className="np-status-dot-wrap" aria-hidden="true">
+                  <span className="np-status-dot-ping" />
+                  <span className="np-status-dot" />
+                </span>
+                <BellRing size={15} className="np-push-icon-active" />
+                <span className="np-push-status-label">{t('browserGranted')}</span>
+              </div>
+              <div className="np-push-actions">
+                <button
+                  className="np-push-action-btn np-push-resync-btn"
+                  disabled={isSyncing}
+                  onClick={handleResync}
+                  title={t('resyncTitle')}
+                  type="button"
+                >
+                  <RefreshCw size={13} className={isSyncing ? 'np-spin' : ''} />
+                  <span>{isSyncing ? t('resyncing') : t('resyncBtn')}</span>
+                </button>
+                <button
+                  className="np-push-action-btn np-push-help-btn"
+                  onClick={() => setShowGuideModal(true)}
+                  title={t('troubleshootTitle')}
+                  type="button"
+                >
+                  <HelpCircle size={14} />
+                </button>
+              </div>
+            </div>
+          ) : browserNotificationPermission === 'denied' ? (
+            <div className="np-push-badge-card is-denied" role="region" aria-label={t('browserDenied')}>
+              <div className="np-push-status-wrap">
+                <BellOff size={15} className="np-push-icon-denied" />
+                <span className="np-push-status-label">{t('browserDenied')}</span>
+              </div>
+              <button
+                className="np-push-action-btn np-push-unblock-btn"
+                onClick={() => setShowGuideModal(true)}
+                title={t('troubleshootTitle')}
+                type="button"
+              >
+                <ShieldAlert size={13} />
+                <span>{t('unblockBtn')}</span>
+              </button>
+            </div>
+          ) : browserNotificationPermission === 'unsupported' ? (
+            <div className="np-push-badge-card is-unsupported">
+              <BellOff size={15} />
+              <span>{t('browserUnsupported')}</span>
+            </div>
+          ) : (
+            <button
+              className="np-push-cta-btn"
+              onClick={onEnableBrowserNotifications}
+              type="button"
+            >
+              <Bell size={15} className="np-bell-shake" />
+              <span>{t('browserEnable')}</span>
+            </button>
+          )}
+
           {totalNotifications > 0 && (
             <span className="np-total-badge">{totalNotifications}</span>
           )}
@@ -181,6 +246,81 @@ export function NotificationsPanel({
           ))}
         </NotificationSection>
       </div>
+
+      {showGuideModal && (
+        <div className="np-guide-backdrop" role="presentation" onClick={() => setShowGuideModal(false)}>
+          <div
+            className="np-guide-modal animate-in"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="np-guide-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="np-guide-header">
+              <div className="np-guide-header-icon">
+                <BellRing size={22} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0, paddingRight: '24px' }}>
+                <h3 id="np-guide-title">{t('guideModalTitle')}</h3>
+                <p>{t('guideModalDesc')}</p>
+              </div>
+              <button
+                className="np-guide-close-btn"
+                onClick={() => setShowGuideModal(false)}
+                type="button"
+                aria-label={t('closeGuide')}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="np-guide-steps">
+              <div className="np-guide-step-card">
+                <span className="np-step-number">1</span>
+                <div className="np-step-text">
+                  <strong>{t('guideStep1')}</strong>
+                  <small>Kiểm tra quyền truy cập ở góc trái URL trình duyệt (bên cạnh tên miền web).</small>
+                </div>
+              </div>
+
+              <div className="np-guide-step-card">
+                <span className="np-step-number">2</span>
+                <div className="np-step-text">
+                  <strong>{t('guideStep2')}</strong>
+                  <small>Đảm bảo trạng thái thông báo là &quot;Cho phép&quot; và trình duyệt không bật chế độ Không làm phiền.</small>
+                </div>
+              </div>
+
+              <div className="np-guide-step-card">
+                <span className="np-step-number">3</span>
+                <div className="np-step-text">
+                  <strong>{t('guideStep3')}</strong>
+                  <small>Hệ thống sẽ tái kết nối Service Worker và gửi ngay một thông báo mẫu để xác nhận.</small>
+                </div>
+              </div>
+            </div>
+
+            <div className="np-guide-footer">
+              <button
+                className="np-guide-btn-test"
+                disabled={isSyncing}
+                onClick={handleResync}
+                type="button"
+              >
+                <RefreshCw size={15} className={isSyncing ? 'np-spin' : ''} />
+                <span>{isSyncing ? t('resyncing') : t('sendTestBtn')}</span>
+              </button>
+              <button
+                className="np-guide-btn-close"
+                onClick={() => setShowGuideModal(false)}
+                type="button"
+              >
+                {t('closeGuide')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }
