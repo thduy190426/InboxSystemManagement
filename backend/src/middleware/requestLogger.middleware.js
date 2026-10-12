@@ -1,7 +1,18 @@
 const logger = require('../utils/logger')
-const SENSITIVE_KEY_PATTERN = /password|token|authorization|cookie|secret|code|otp|refresh/i
+const SENSITIVE_KEY_PATTERN = /password|token|authorization|cookie|secret|otp|refresh|verification_?code|backup_?codes?/i
 const MAX_LOG_STRING_LENGTH = 1200
 const MAX_LOG_ARRAY_LENGTH = 20
+
+const isProduction = process.env.NODE_ENV === 'production'
+const isDebug = process.env.DEBUG === 'true' || process.env.LOG_LEVEL === 'debug'
+
+function isSensitiveKey(key) {
+  if (!key || typeof key !== 'string') return false
+  if (key === 'statusCode' || key === 'status' || key === 'code' || key === 'errorCode') {
+    return false
+  }
+  return SENSITIVE_KEY_PATTERN.test(key)
+}
 
 function truncateString(value) {
   if (value.length <= MAX_LOG_STRING_LENGTH) {
@@ -12,7 +23,7 @@ function truncateString(value) {
 }
 
 function sanitizeValue(value, key = '') {
-  if (SENSITIVE_KEY_PATTERN.test(key)) {
+  if (isSensitiveKey(key)) {
     return '[REDACTED]'
   }
 

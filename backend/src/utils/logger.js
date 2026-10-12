@@ -1,5 +1,13 @@
-const SENSITIVE_KEY_PATTERN = /password|token|authorization|cookie|secret|code|otp|refresh/i
+const SENSITIVE_KEY_PATTERN = /password|token|authorization|cookie|secret|otp|refresh|verification_?code|backup_?codes?/i
 const MAX_LOG_STRING_LENGTH = 1000
+
+function isSensitiveKey(key) {
+  if (!key || typeof key !== 'string') return false
+  if (key === 'statusCode' || key === 'status' || key === 'code' || key === 'errorCode') {
+    return false
+  }
+  return SENSITIVE_KEY_PATTERN.test(key)
+}
 
 function truncateString(value) {
   if (typeof value !== 'string') return value
@@ -8,7 +16,7 @@ function truncateString(value) {
 }
 
 function sanitizeLogValue(value, key = '') {
-  if (SENSITIVE_KEY_PATTERN.test(key)) {
+  if (isSensitiveKey(key)) {
     return '[REDACTED]'
   }
 

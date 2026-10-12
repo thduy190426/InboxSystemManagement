@@ -1390,15 +1390,15 @@ async function touchDeliveredReceipts(connection, conversationId, currentUserId)
     `INSERT INTO message_receipts (message_id, user_id, delivered_at)
     SELECT messages.id, ?, CURRENT_TIMESTAMP
     FROM messages
-    LEFT JOIN message_receipts
-      ON message_receipts.message_id = messages.id
-      AND message_receipts.user_id = ?
+    LEFT JOIN message_receipts AS existing_receipts
+      ON existing_receipts.message_id = messages.id
+      AND existing_receipts.user_id = ?
     WHERE messages.conversation_id = ?
       AND messages.sender_id <> ?
       AND messages.deleted_at IS NULL
-      AND (message_receipts.delivered_at IS NULL OR message_receipts.id IS NULL)
+      AND (existing_receipts.delivered_at IS NULL OR existing_receipts.id IS NULL)
     ON DUPLICATE KEY UPDATE
-      delivered_at = COALESCE(delivered_at, VALUES(delivered_at))`,
+      delivered_at = COALESCE(message_receipts.delivered_at, VALUES(delivered_at))`,
     [currentUserId, currentUserId, conversationId, currentUserId],
   )
 }
@@ -4763,16 +4763,16 @@ async function markConversationRead(request, response, next) {
       `INSERT INTO message_receipts (message_id, user_id, delivered_at, read_at)
       SELECT messages.id, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
       FROM messages
-      LEFT JOIN message_receipts
-        ON message_receipts.message_id = messages.id
-        AND message_receipts.user_id = ?
+      LEFT JOIN message_receipts AS existing_receipts
+        ON existing_receipts.message_id = messages.id
+        AND existing_receipts.user_id = ?
       WHERE messages.conversation_id = ?
         AND messages.sender_id <> ?
         AND messages.deleted_at IS NULL
-        AND (message_receipts.read_at IS NULL OR message_receipts.id IS NULL)
+        AND (existing_receipts.read_at IS NULL OR existing_receipts.id IS NULL)
       ON DUPLICATE KEY UPDATE
-        delivered_at = COALESCE(delivered_at, VALUES(delivered_at)),
-        read_at = COALESCE(read_at, VALUES(read_at))`,
+        delivered_at = COALESCE(message_receipts.delivered_at, VALUES(delivered_at)),
+        read_at = COALESCE(message_receipts.read_at, VALUES(read_at))`,
       [currentUserId, currentUserId, conversationId, currentUserId],
     )
 
