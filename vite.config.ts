@@ -32,10 +32,15 @@ export default defineConfig({
       output: {
           manualChunks: (id) => {
             if (id.includes('node_modules')) {
-              if (id.includes('react') || id.includes('react-dom')) return 'react-vendor'
-              if (id.includes('@tanstack/react-query')) return 'tanstack'
-              if (id.includes('emoji-picker-react')) return 'emoji'
-              if (id.includes('@mediapipe/tasks-vision')) return 'mediapipe'
+              if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('\\react\\') || id.includes('\\react-dom\\')) return 'react-core'
+              if (id.includes('@mediapipe')) return 'mediapipe-vendor'
+              if (id.includes('emoji-picker-react')) return 'emoji-vendor'
+              if (id.includes('recharts') || id.includes('d3-')) return 'charts-vendor'
+              if (id.includes('@privacyresearch')) return 'crypto-vendor'
+              if (id.includes('lucide-react')) return 'icons-vendor'
+              if (id.includes('@tanstack')) return 'tanstack-vendor'
+              if (id.includes('react-virtuoso')) return 'virtuoso-vendor'
+              if (id.includes('i18next')) return 'i18n-vendor'
               return 'vendor'
             }
           }
