@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { Plus, Trash2, ExternalLink, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { AuthUser } from '../../services/api/authApi'
@@ -30,6 +31,7 @@ export function AccountSwitcherMenu({
   const { t } = useTranslation()
   const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>([])
   const [accountToDelete, setAccountToDelete] = useState<SavedAccount | null>(null)
+  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
   // Refresh saved accounts list whenever opened
@@ -39,6 +41,39 @@ export function AccountSwitcherMenu({
       setAccountToDelete(null)
     }
   }, [isOpen])
+
+  // Dynamically calculate viewport coordinates
+  useEffect(() => {
+    if (!isOpen) return
+
+    function updateCoords() {
+      if (anchorEl) {
+        const rect = anchorEl.getBoundingClientRect()
+        const isMobile = window.innerWidth < 640
+        if (isMobile) {
+          setCoords({
+            left: 12,
+            top: Math.min(rect.bottom + 8, window.innerHeight - 380),
+          })
+        } else {
+          setCoords({
+            left: rect.right + 12,
+            top: Math.max(12, Math.min(rect.top, window.innerHeight - 450)),
+          })
+        }
+      } else {
+        setCoords({ top: 70, left: 86 })
+      }
+    }
+
+    updateCoords()
+    window.addEventListener('resize', updateCoords)
+    window.addEventListener('scroll', updateCoords, true)
+    return () => {
+      window.removeEventListener('resize', updateCoords)
+      window.removeEventListener('scroll', updateCoords, true)
+    }
+  }, [isOpen, anchorEl])
 
   // Handle escape key
   useEffect(() => {
@@ -52,40 +87,25 @@ export function AccountSwitcherMenu({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isOpen, onClose])
 
-  if (!isOpen) return null
+  if (!isOpen || typeof document === 'undefined') return null
 
-  // Calculate coordinates based on anchorEl if available
-  let menuStyle: React.CSSProperties = {
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640
+  const menuStyle: React.CSSProperties = {
     position: 'fixed',
-    zIndex: 9999,
-  }
-
-  if (anchorEl) {
-    const rect = anchorEl.getBoundingClientRect()
-    const isMobile = window.innerWidth < 640
-    if (isMobile) {
-      menuStyle = {
-        ...menuStyle,
-        left: '12px',
-        right: '12px',
-        top: `${Math.min(rect.bottom + 8, window.innerHeight - 380)}px`,
-        maxWidth: 'calc(100vw - 24px)',
-      }
-    } else {
-      menuStyle = {
-        ...menuStyle,
-        left: `${rect.right + 12}px`,
-        top: `${Math.max(12, Math.min(rect.top, window.innerHeight - 450))}px`,
-        width: '320px',
-      }
-    }
-  } else {
-    menuStyle = {
-      ...menuStyle,
-      top: '70px',
-      left: '86px',
-      width: '320px',
-    }
+    zIndex: 99999,
+    ...(coords
+      ? {
+          left: `${coords.left}px`,
+          top: `${coords.top}px`,
+          ...(isMobile
+            ? { right: '12px', maxWidth: 'calc(100vw - 24px)' }
+            : { width: '320px' }),
+        }
+      : {
+          top: '70px',
+          left: '86px',
+          width: '320px',
+        }),
   }
 
   const otherAccounts = savedAccounts.filter(
@@ -100,7 +120,7 @@ export function AccountSwitcherMenu({
     setAccountToDelete(null)
   }
 
-  return (
+  return createPortal(
     <>
       {/* Backdrop */}
       <div
@@ -109,7 +129,7 @@ export function AccountSwitcherMenu({
         style={{
           position: 'fixed',
           inset: 0,
-          zIndex: 9998,
+          zIndex: 99998,
           background: 'rgba(0, 0, 0, 0.25)',
           backdropFilter: 'blur(2px)',
         }}
@@ -553,6 +573,7 @@ export function AccountSwitcherMenu({
           </button>
         </div>
       </div>
-    </>
+    </>,
+    document.body,
   )
 }
