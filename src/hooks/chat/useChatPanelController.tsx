@@ -997,27 +997,31 @@ export function useChatPanelController(props: ChatPanelProps) {
     let title = t('callTitle')
     let subtitle = ''
     let isMissed = false
+    let isCanceled = false
     let isVideo = false
     
     if (text.includes('video')) isVideo = true
     
-    if (text.includes('Không bắt máy') || text.includes('nhỡ')) {
+    if (text.includes('Không bắt máy') || text.includes('nhỡ') || text.toLowerCase().includes('missed')) {
       title = t('missedCall', { type: isVideo ? t('callTypeVideo') : t('callTypeVoice') })
       subtitle = formatMessageTime(message, t)
       isMissed = true
-    } else if (text.includes('Thời lượng')) {
+    } else if (text.includes('Thời lượng') || text.toLowerCase().includes('duration')) {
       title = t('callDurationTitle', { type: isVideo ? t('callTypeVideo') : t('callTypeVoice') })
-      const match = text.match(/Thời lượng:\s*(.+)/) || text.match(/Thời lượng\s*(.+)/)
+      const match = text.match(/Thời lượng:\s*(.+)/) || text.match(/Thời lượng\s*(.+)/) || text.match(/Duration:\s*(.+)/i)
       subtitle = match ? match[1] : formatMessageTime(message, t)
-    } else if (text.includes('Đã hủy')) {
+    } else if (text.includes('Đã hủy') || text.toLowerCase().includes('hủy') || text.toLowerCase().includes('canceled') || text.toLowerCase().includes('cancelled')) {
       title = t('canceledCall', { type: isVideo ? t('callTypeVideo') : t('callTypeVoice') })
       subtitle = formatMessageTime(message, t)
+      isCanceled = true
     }
     
+    const isFailed = isMissed || isCanceled
+    
     return (
-      <div className={`message-call-card ${isMissed ? 'is-missed' : ''}`}>
+      <div className={`message-call-card ${isMissed ? 'is-missed' : ''} ${isCanceled ? 'is-canceled' : ''} ${isFailed ? 'is-failed' : ''}`}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div className="call-icon">
+          <div className={`call-icon ${isFailed ? 'is-danger' : ''}`}>
             {isMissed ? <PhoneMissed size={20} /> : (isVideo ? <Video size={20} /> : <Phone size={20} />)}
           </div>
           <div className="call-info">

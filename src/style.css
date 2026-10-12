@@ -12583,9 +12583,12 @@ html.dark .outgoing .message-bubble {
   min-width: 220px;
 }
 
-.message-call-card.is-missed .call-icon {
-  background: #ff4d4f;
-  color: white;
+.message-call-card.is-missed .call-icon,
+.message-call-card.is-canceled .call-icon,
+.message-call-card.is-failed .call-icon,
+.message-call-card .call-icon.is-danger {
+  background: #ef4444;
+  color: #ffffff;
 }
 
 .message-call-card .call-icon {
@@ -14105,6 +14108,23 @@ html.dark .chat-panel .message-call-card .call-icon,
 .chat-panel.has-custom-bg .message-call-card .call-icon {
   background: rgba(255, 255, 255, 0.15) !important;
   color: #ffffff !important;
+}
+
+.chat-panel .message-call-card.is-missed .call-icon,
+.chat-panel .message-call-card.is-canceled .call-icon,
+.chat-panel .message-call-card.is-failed .call-icon,
+.chat-panel .message-call-card .call-icon.is-danger,
+html.dark .chat-panel .message-call-card.is-missed .call-icon,
+html.dark .chat-panel .message-call-card.is-canceled .call-icon,
+html.dark .chat-panel .message-call-card.is-failed .call-icon,
+html.dark .chat-panel .message-call-card .call-icon.is-danger,
+.chat-panel.has-custom-bg .message-call-card.is-missed .call-icon,
+.chat-panel.has-custom-bg .message-call-card.is-canceled .call-icon,
+.chat-panel.has-custom-bg .message-call-card.is-failed .call-icon,
+.chat-panel.has-custom-bg .message-call-card .call-icon.is-danger {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4) !important;
 }
 
 .chat-panel .call-action-btn,
