@@ -6,6 +6,7 @@ if (dns.setDefaultResultOrder) {
 const http = require('http')
 const app = require('./app')
 const { pool, testConnection } = require('./config/db')
+const { ensureConversationSchemaOnce } = require('./controllers/core/conversation.controller')
 const { initRealtime } = require('./realtime/socket')
 const { getAllowedOrigins } = require('./utils/allowedOrigins')
 
@@ -39,6 +40,7 @@ async function startServer() {
   try {
     await testConnection()
     await ensureOptimalIndexes()
+    await ensureConversationSchemaOnce()
     initRealtime(server, getAllowedOrigins())
 
     server.listen(port, () => {

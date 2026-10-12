@@ -331,6 +331,18 @@ async function ensureConversationParticipantMessageRequestStatusColumn() {
   await conversationParticipantMessageRequestStatusReady
 }
 
+let isConversationSchemaEnsured = false
+async function ensureConversationSchemaOnce() {
+  if (isConversationSchemaEnsured) return
+  await Promise.all([
+    ensureMessageHiddenEntriesTable(),
+    ensureConversationParticipantHiddenAtColumn(),
+    ensureConversationParticipantMessageRequestStatusColumn(),
+    ensureConversationQuickEmojiColumn(),
+  ])
+  isConversationSchemaEnsured = true
+}
+
 async function ensureGroupInviteTables() {
   await groupInviteTokensTableReady
   await groupJoinRequestsTableReady
@@ -1373,12 +1385,16 @@ async function touchDeliveredReceipts(connection, conversationId, currentUserId)
     `INSERT INTO message_receipts (message_id, user_id, delivered_at)
     SELECT messages.id, ?, CURRENT_TIMESTAMP
     FROM messages
+    LEFT JOIN message_receipts
+      ON message_receipts.message_id = messages.id
+      AND message_receipts.user_id = ?
     WHERE messages.conversation_id = ?
       AND messages.sender_id <> ?
       AND messages.deleted_at IS NULL
+      AND (message_receipts.delivered_at IS NULL OR message_receipts.id IS NULL)
     ON DUPLICATE KEY UPDATE
       delivered_at = COALESCE(delivered_at, VALUES(delivered_at))`,
-    [currentUserId, conversationId, currentUserId],
+    [currentUserId, currentUserId, conversationId, currentUserId],
   )
 }
 
@@ -1538,10 +1554,7 @@ async function listConversations(request, response, next) {
     const currentUserId = request.user.id
     const includeArchived = request.query.archived === 'true'
 
-    await ensureMessageHiddenEntriesTable()
-    await ensureConversationParticipantHiddenAtColumn()
-    await ensureConversationParticipantMessageRequestStatusColumn()
-    await ensureConversationQuickEmojiColumn()
+    await ensureConversationSchemaOnce()
 
     const [conversationRows] = await pool.execute(
       `SELECT
@@ -4728,13 +4741,17 @@ async function markConversationRead(request, response, next) {
       `INSERT INTO message_receipts (message_id, user_id, delivered_at, read_at)
       SELECT messages.id, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
       FROM messages
+      LEFT JOIN message_receipts
+        ON message_receipts.message_id = messages.id
+        AND message_receipts.user_id = ?
       WHERE messages.conversation_id = ?
         AND messages.sender_id <> ?
         AND messages.deleted_at IS NULL
+        AND (message_receipts.read_at IS NULL OR message_receipts.id IS NULL)
       ON DUPLICATE KEY UPDATE
         delivered_at = COALESCE(delivered_at, VALUES(delivered_at)),
-        read_at = CURRENT_TIMESTAMP`,
-      [currentUserId, conversationId, currentUserId],
+        read_at = COALESCE(read_at, VALUES(read_at))`,
+      [currentUserId, currentUserId, conversationId, currentUserId],
     )
 
     await connection.execute(
@@ -5181,4 +5198,5 @@ module.exports = {
   updateTypingStatus,
   updateMessage,
   updateConversationBackground,
+  ensureConversationSchemaOnce,
 }
