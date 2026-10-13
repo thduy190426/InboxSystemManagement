@@ -8173,6 +8173,39 @@ html.dark .chat-pinned-more:hover {
   grid-column: span 3;
 }
 
+@media (max-width: 1024px) {
+  .admin-chart-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .admin-chart-panel-wide {
+    grid-column: span 1;
+  }
+
+  .admin-chart-panel {
+    grid-column: span 1;
+    padding: 18px;
+  }
+
+  .admin-chart-panel:last-child {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-chart-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .admin-chart-panel-wide,
+  .admin-chart-panel,
+  .admin-chart-panel:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
 .admin-chart-header {
   align-items: flex-start;
   display: flex;
@@ -8275,8 +8308,12 @@ html.dark .chat-pinned-more:hover {
 }
 
 .admin-distribution {
-  display: grid;
-  gap: 14px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: visible;
 }
 
 .admin-distribution-row {

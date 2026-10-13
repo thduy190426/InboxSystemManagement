@@ -222,7 +222,7 @@ function DistributionChart({
   const formattedData = data.map(d => ({ ...d, label: formatChartLabel(d.label, t) }))
 
   return (
-    <div className="admin-distribution" style={{ height: '220px', width: '100%', marginTop: '16px' }}>
+    <div className="admin-distribution" style={{ height: '240px', width: '100%', marginTop: '12px' }}>
       <ResponsiveContainer width="100%" height="100%">
         <RechartsPieChart>
           <Tooltip 
@@ -231,17 +231,19 @@ function DistributionChart({
             formatter={(value: any) => [formatNumber(Number(value)), t('countLabel')]}
           />
           <Legend 
-            wrapperStyle={{ fontSize: '13px', color: 'var(--muted)' }} 
-            layout="vertical" 
-            verticalAlign="middle" 
-            align="right"
+            wrapperStyle={{ fontSize: '12px', color: 'var(--muted)', paddingTop: '10px' }} 
+            layout="horizontal" 
+            verticalAlign="bottom" 
+            align="center"
+            iconType="circle"
+            iconSize={8}
           />
           <Pie
             data={formattedData}
-            cx="40%"
-            cy="50%"
-            innerRadius={60}
-            outerRadius={85}
+            cx="50%"
+            cy="45%"
+            innerRadius={46}
+            outerRadius={68}
             paddingAngle={4}
             dataKey="value"
             nameKey="label"
