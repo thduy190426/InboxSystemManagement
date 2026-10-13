@@ -37,6 +37,7 @@ export type AuthUser = {
 export type AuthResponse = {
   message: string
   user: AuthUser
+  wasReactivated?: boolean
   requires2FA?: boolean
   tempToken?: string
   session?: {

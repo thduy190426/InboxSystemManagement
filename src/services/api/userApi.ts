@@ -47,6 +47,11 @@ export type ChangePasswordPayload = {
   confirmNewPassword: string
 }
 
+export type DeactivateAccountPayload = {
+  password: string
+  reason?: string
+}
+
 export type DeleteAccountPayload = {
   password: string
   confirmationText: string
@@ -121,6 +126,17 @@ export function revokeOtherSessions() {
       method: 'DELETE',
     },
     i18n.t('api.error', { defaultValue: 'Không thể đăng xuất khỏi thiết bị khác!' }),
+  )
+}
+
+export function deactivateAccount(payload: DeactivateAccountPayload) {
+  return requestJson<{ message: string }>(
+    '/users/me/deactivate',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+    i18n.t('api.error', { defaultValue: 'Không thể vô hiệu hoá tài khoản!' }),
   )
 }
 
