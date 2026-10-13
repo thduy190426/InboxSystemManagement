@@ -7,6 +7,7 @@ const {
 } = require('../../middleware/rateLimit.middleware')
 const {
   changePassword,
+  deactivateAccount,
   deleteAccount,
   getProfile,
   listSessions,
@@ -27,6 +28,7 @@ router.patch('/me/avatar', uploadAvatarRateLimit, avatarUpload.single('avatar'),
 router.get('/me/sessions', listSessions)
 router.delete('/me/sessions/others', revokeOtherSessions)
 router.delete('/me/sessions/:sessionId', revokeSession)
+router.post('/me/deactivate', deactivateAccount)
 router.delete('/me', deleteAccount)
 
 module.exports = router

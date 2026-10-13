@@ -272,6 +272,26 @@ function validateDeleteAccountPayload(payload) {
   }
 }
 
+function validateDeactivateAccountPayload(payload) {
+  const source = payload && typeof payload === 'object' ? payload : {}
+  const password = typeof source.password === 'string' ? source.password : ''
+  const reason = typeof source.reason === 'string' ? source.reason.trim() : ''
+  const errors = {}
+
+  if (!password) {
+    errors.password = 'Mật khẩu hiện tại là bắt buộc!'
+  }
+
+  return {
+    data: {
+      password,
+      reason,
+    },
+    errors,
+    isValid: Object.keys(errors).length === 0,
+  }
+}
+
 async function getProfile(request, response, next) {
   try {
     const user = await getCurrentUser(request.user.id)
@@ -690,8 +710,87 @@ async function deleteAccount(request, response, next) {
   }
 }
 
+async function deactivateAccount(request, response, next) {
+  const connection = await pool.getConnection()
+
+  try {
+    const user = await getUserPasswordRecord(request.user.id)
+
+    if (!user) {
+      return response.status(404).json({
+        message: 'Không tìm thấy tài khoản!',
+      })
+    }
+
+    const validation = validateDeactivateAccountPayload(request.body)
+
+    if (!validation.isValid) {
+      return response.status(422).json({
+        message: 'Dữ liệu xác nhận vô hiệu hoá tài khoản không hợp lệ!',
+        errors: validation.errors,
+      })
+    }
+
+    const isPasswordValid = await bcrypt.compare(validation.data.password, user.password_hash)
+
+    if (!isPasswordValid) {
+      return response.status(401).json({
+        message: 'Mật khẩu hiện tại không đúng!',
+        errors: {
+          password: 'Mật khẩu hiện tại không đúng!',
+        },
+      })
+    }
+
+    await connection.beginTransaction()
+    await connection.execute(
+      `UPDATE users
+      SET
+        deactivated_at = CURRENT_TIMESTAMP,
+        presence = 'offline',
+        online_since = NULL,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?`,
+      [request.user.id],
+    )
+    await connection.execute(
+      `UPDATE user_sessions
+      SET revoked_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = ? AND revoked_at IS NULL`,
+      [request.user.id],
+    )
+    await connection.commit()
+
+    const [contactRows] = await pool.execute(
+      `SELECT contact_user_id AS user_id
+      FROM contacts
+      WHERE owner_user_id = ? AND status = 'accepted'`,
+      [request.user.id],
+    )
+
+    emitToUsers(
+      contactRows.map((row) => Number(row.user_id)),
+      'presence:changed',
+      {
+        userId: String(request.user.id),
+        presence: 'offline',
+      },
+    )
+
+    response.json({
+      message: 'Tài khoản của bạn đã được vô hiệu hoá tạm thời!',
+    })
+  } catch (error) {
+    await connection.rollback()
+    next(error)
+  } finally {
+    connection.release()
+  }
+}
+
 module.exports = {
   changePassword,
+  deactivateAccount,
   deleteAccount,
   getProfile,
   listSessions,

@@ -14,6 +14,7 @@ const profileColumns = [
   { name: 'two_factor_secret', definition: 'VARCHAR(128) NULL' },
   { name: 'two_factor_enabled', definition: 'TINYINT(1) NOT NULL DEFAULT 0' },
   { name: 'two_factor_backup_codes', definition: 'TEXT NULL' },
+  { name: 'deactivated_at', definition: 'DATETIME NULL DEFAULT NULL' },
 ]
 
 let userProfileColumnsReady = null
