@@ -143,18 +143,18 @@ git commit -m "feat(timeline): create timeline tab with composer, posts, reactio
 - Consumes: `contactApi.fetchFriends`, `timelineApi.fetchFollowersList`, `timelineApi.fetchFollowingList`, `userApi.updateProfile`.
 - Produces: `AboutTab`, `FriendsTab`, `FollowersTab`.
 
-- [ ] **Step 1: Create `src/components/profile/AboutTab.tsx`**
+- [x] **Step 1: Create `src/components/profile/AboutTab.tsx`**
 Displays contact information, bio, address, gender, birth date respecting privacy flags; embeds edit form mode when requested.
 
-- [ ] **Step 2: Create `src/components/profile/FriendsTab.tsx`**
+- [x] **Step 2: Create `src/components/profile/FriendsTab.tsx`**
 Displays grid of friend cards with avatar, name, mutual friends count, and "Nhắn tin" action.
 
-- [ ] **Step 3: Create `src/components/profile/FollowersTab.tsx`**
+- [x] **Step 3: Create `src/components/profile/FollowersTab.tsx`**
 Subtab toggle between "Followers" and "Following", user item cards with quick Follow / Unfollow actions.
 
-- [ ] **Step 4: Add CSS styling in `src/style.css`**
-- [ ] **Step 5: Verify compilation**
-- [ ] **Step 6: Commit Task 5**
+- [x] **Step 4: Add CSS styling in `src/style.css`**
+- [x] **Step 5: Verify compilation**
+- [x] **Step 6: Commit Task 5**
 ```bash
 git add src/components/profile/AboutTab.tsx src/components/profile/FriendsTab.tsx src/components/profile/FollowersTab.tsx src/style.css
 git commit -m "feat(profile): create about, friends, and followers tabs"
@@ -173,17 +173,17 @@ git commit -m "feat(profile): create about, friends, and followers tabs"
 - Consumes: Components from Tasks 3, 4, 5.
 - Produces: Fully integrated `ProfilePage` with tab switching, cover upload, timeline feed, friends list, and follow actions.
 
-- [ ] **Step 1: Refactor `ProfilePage.tsx`**
+- [x] **Step 1: Refactor `ProfilePage.tsx`**
 Incorporate `ProfileCover`, `ProfileHeader`, and tab navigation switching between `TimelineTab`, `AboutTab`, `FriendsTab`, and `FollowersTab`.
 
-- [ ] **Step 2: Wire up navigation to public profile**
+- [x] **Step 2: Wire up navigation to public profile**
 In `ChatApp.tsx` and `ContactsPanel.tsx`, enable clicking a user to view their full public profile page.
 
-- [ ] **Step 3: Verify TypeScript compilation and production build**
+- [x] **Step 3: Verify TypeScript compilation and production build**
 Run: `npm run build` (`tsc && vite build`)
 Expected: Code 0, clean build with zero errors.
 
-- [ ] **Step 4: Commit Task 6**
+- [x] **Step 4: Commit Task 6**
 ```bash
 git add src/components/views/ProfilePage.tsx src/components/views/ChatApp.tsx src/components/panels/ContactsPanel.tsx
 git commit -m "feat(profile): integrate unified public profile page with tabs and navigation"
@@ -193,7 +193,7 @@ git commit -m "feat(profile): integrate unified public profile page with tabs an
 
 ### Task 7: Final Verification & QA Testing
 
-- [ ] **Step 1: Build & bundle verification**
+- [x] **Step 1: Build & bundle verification**
 Run `npm run build`
-- [ ] **Step 2: Inspect functional behaviors**
-- [ ] **Step 3: Final review and report to user**
+- [x] **Step 2: Inspect functional behaviors**
+- [x] **Step 3: Final review and report to user**
