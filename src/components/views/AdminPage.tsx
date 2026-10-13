@@ -15,7 +15,7 @@ import {
   YAxis,
 } from 'recharts'
 import {
-  Activity,
+
   AlertCircle,
   BarChart3,
   CheckCircle2,
@@ -1048,11 +1048,11 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon active-icon"><Activity size={24} /></div>
+          <div className="stat-icon active-icon"><CheckCircle2 size={24} /></div>
           <div className="stat-info">
             <h3>{t('unlockedUsersTitle')}</h3>
             <p className="stat-value">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '80px', height: '28px', marginTop: '4px' }}></div> : formatNumber(stats.activeUsers)}</p>
-            <span className="stat-trend">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '100px', height: '14px', marginTop: '4px' }}></div> : t('onlineCount', { count: formatNumber(stats.onlineUsers) })}</span>
+            <span className="stat-trend positive">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '100px', height: '14px', marginTop: '4px' }}></div> : t('unlockedStatusSubtitle', { defaultValue: 'Hoạt động bình thường' })}</span>
           </div>
         </div>
         <div className="stat-card">
