@@ -12,74 +12,17 @@ const POSTS_STORAGE_KEY = 'inbox_timeline_posts'
 const COVERS_STORAGE_KEY = 'inbox_profile_covers'
 const FOLLOWS_STORAGE_KEY = 'inbox_profile_follows'
 
-// Default seed posts when starting fresh
-function getDefaultSeedPosts(userId: string, userName: string, userAvatar?: string | null): TimelinePost[] {
-  const now = Date.now()
-  return [
-    {
-      id: `post-seed-1-${userId}`,
-      userId,
-      authorName: userName,
-      authorAvatar: userAvatar,
-      content: 'Chào mừng bạn đến với trang cá nhân của tôi! 👋 Hãy kết nối và cùng trò chuyện nhé.',
-      mediaUrls: [],
-      privacy: 'public',
-      reactions: [
-        {
-          userId: 'seed-user-2',
-          userName: 'Trần Minh Anh',
-          type: 'love',
-          createdAt: new Date(now - 3600000).toISOString(),
-        },
-      ],
-      comments: [
-        {
-          id: `comment-seed-1`,
-          postId: `post-seed-1-${userId}`,
-          userId: 'seed-user-2',
-          userName: 'Trần Minh Anh',
-          userAvatar: null,
-          content: 'Chúc bạn một ngày làm việc hiệu quả và tràn đầy năng lượng! ✨',
-          createdAt: new Date(now - 1800000).toISOString(),
-        },
-      ],
-      createdAt: new Date(now - 7200000).toISOString(),
-    },
-    {
-      id: `post-seed-2-${userId}`,
-      userId,
-      authorName: userName,
-      authorAvatar: userAvatar,
-      content: 'Vừa hoàn thành dự án nâng cấp hệ thống liên lạc bảo mật E2EE và tính năng gọi video chất lượng cao! 🚀',
-      mediaUrls: [
-        'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1000&q=80',
-      ],
-      privacy: 'public',
-      reactions: [
-        {
-          userId: 'seed-user-3',
-          userName: 'Lê Hoàng Nam',
-          type: 'like',
-          createdAt: new Date(now - 86400000).toISOString(),
-        },
-        {
-          userId: 'seed-user-4',
-          userName: 'Nguyễn Thu Trang',
-          type: 'love',
-          createdAt: new Date(now - 80000000).toISOString(),
-        },
-      ],
-      comments: [],
-      createdAt: new Date(now - 90000000).toISOString(),
-    },
-  ]
-}
-
 function loadPostsFromStorage(): TimelinePost[] {
   try {
     const raw = localStorage.getItem(POSTS_STORAGE_KEY)
     if (!raw) return []
-    return JSON.parse(raw) as TimelinePost[]
+    const parsed = JSON.parse(raw) as TimelinePost[]
+    // Filter out and clean up any legacy seed posts
+    const cleaned = parsed.filter((p) => !p.id.startsWith('post-seed-'))
+    if (cleaned.length !== parsed.length) {
+      savePostsToStorage(cleaned)
+    }
+    return cleaned
   } catch {
     return []
   }
@@ -115,8 +58,9 @@ function saveCoversToStorage(covers: Record<string, string>) {
 function loadFollowsFromStorage(): Set<string> {
   try {
     const raw = localStorage.getItem(FOLLOWS_STORAGE_KEY)
-    if (!raw) return new Set(['seed-follower-1:1', 'seed-follower-2:1'])
-    return new Set(JSON.parse(raw) as string[])
+    if (!raw) return new Set()
+    const parsed = (JSON.parse(raw) as string[]).filter((pair) => !pair.startsWith('seed-'))
+    return new Set(parsed)
   } catch {
     return new Set()
   }
@@ -131,18 +75,9 @@ function saveFollowsToStorage(follows: Set<string>) {
 }
 
 export const timelineApi = {
-  async fetchUserPosts(userId: string, userName = 'User', userAvatar?: string | null): Promise<TimelinePost[]> {
-    let allPosts = loadPostsFromStorage()
-    let userPosts = allPosts.filter((p) => String(p.userId) === String(userId))
-
-    if (userPosts.length === 0) {
-      // Seed default posts for this user
-      const seedPosts = getDefaultSeedPosts(userId, userName, userAvatar)
-      allPosts = [...seedPosts, ...allPosts]
-      savePostsToStorage(allPosts)
-      userPosts = seedPosts
-    }
-
+  async fetchUserPosts(userId: string): Promise<TimelinePost[]> {
+    const allPosts = loadPostsFromStorage()
+    const userPosts = allPosts.filter((p) => String(p.userId) === String(userId))
     return userPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
   },
 
@@ -251,8 +186,8 @@ export const timelineApi = {
     })
 
     return {
-      followersCount: Math.max(followersCount, 12), // Baseline realistic number
-      followingCount: Math.max(followingCount, 8),
+      followersCount,
+      followingCount,
       isFollowing,
     }
   },
@@ -279,88 +214,11 @@ export const timelineApi = {
   },
 
   async fetchFollowersList(_userId: string): Promise<ContactUser[]> {
-    return [
-      {
-        id: 'follower-1',
-        userId: 101,
-        fullName: 'Nguyễn Văn Hùng',
-        email: 'hung.nguyen@example.com',
-        phone: '0901234567',
-        bio: 'Yêu công nghệ và thiết kế giao diện ✨',
-        statusMessage: 'Đang làm việc',
-        presence: 'online',
-        avatarUrl: null,
-        handle: 'vanhung',
-        friendshipStatus: 'accepted',
-        requestDirection: null,
-        contactId: 'contact-f-1',
-      },
-      {
-        id: 'follower-2',
-        userId: 102,
-        fullName: 'Trần Thị Mai',
-        email: 'mai.tran@example.com',
-        phone: '0912345678',
-        bio: 'Nhiếp ảnh gia & Content Creator',
-        statusMessage: null,
-        presence: 'away',
-        avatarUrl: null,
-        handle: 'maitran',
-        friendshipStatus: 'none',
-        requestDirection: null,
-        contactId: null,
-      },
-      {
-        id: 'follower-3',
-        userId: 103,
-        fullName: 'Lê Quốc Bảo',
-        email: 'bao.le@example.com',
-        phone: null,
-        bio: 'Frontend enthusiast',
-        statusMessage: null,
-        presence: 'offline',
-        avatarUrl: null,
-        handle: 'quocbao',
-        friendshipStatus: 'none',
-        requestDirection: null,
-        contactId: null,
-      },
-    ]
+    return []
   },
 
   async fetchFollowingList(_userId: string): Promise<ContactUser[]> {
-    return [
-      {
-        id: 'following-1',
-        userId: 104,
-        fullName: 'Phạm Thu Hương',
-        email: 'huong.pham@example.com',
-        phone: '0934567890',
-        bio: 'UI/UX Designer',
-        statusMessage: 'Đang họp team',
-        presence: 'online',
-        avatarUrl: null,
-        handle: 'thuhuong',
-        friendshipStatus: 'accepted',
-        requestDirection: null,
-        contactId: 'contact-fl-1',
-      },
-      {
-        id: 'following-2',
-        userId: 105,
-        fullName: 'Hoàng Minh Đức',
-        email: 'duc.hoang@example.com',
-        phone: null,
-        bio: 'Fullstack Developer',
-        statusMessage: null,
-        presence: 'busy',
-        avatarUrl: null,
-        handle: 'minhduc',
-        friendshipStatus: 'none',
-        requestDirection: null,
-        contactId: null,
-      },
-    ]
+    return []
   },
 
   async uploadCoverPhoto(file: File, userId: string): Promise<string> {

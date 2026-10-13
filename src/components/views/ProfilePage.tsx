@@ -84,8 +84,8 @@ export function ProfilePage({
   const [isFollowersLoading, setIsFollowersLoading] = useState(false)
 
   const [followStats, setFollowStats] = useState<FollowStats>({
-    followersCount: 12,
-    followingCount: 8,
+    followersCount: 0,
+    followingCount: 0,
     isFollowing: false,
   })
   const [isFollowLoading, setIsFollowLoading] = useState(false)
@@ -125,11 +125,7 @@ export function ProfilePage({
     if (!displayUser) return
     try {
       setIsPostsLoading(true)
-      const fetched = await timelineApi.fetchUserPosts(
-        displayUser.id,
-        displayUser.fullName,
-        displayUser.avatarUrl,
-      )
+      const fetched = await timelineApi.fetchUserPosts(displayUser.id)
       setPosts(fetched)
     } catch (err) {
       console.error(err)
