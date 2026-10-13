@@ -109,6 +109,7 @@ async function getUserByEmail(email) {
       last_seen_at,
       online_since,
       show_activity_status,
+      deactivated_at,
       created_at,
       updated_at
     FROM users
@@ -428,6 +429,19 @@ async function login(request, response, next) {
       })
     }
 
+    let wasReactivated = false
+    if (user.deactivated_at) {
+      await pool.execute(
+        `UPDATE users
+        SET deactivated_at = NULL,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?`,
+        [user.id],
+      )
+      user.deactivated_at = null
+      wasReactivated = true
+    }
+
     const session = await createUserSession(user.id, request)
 
     await pool.execute(
@@ -442,7 +456,10 @@ async function login(request, response, next) {
     await emitPresenceChanged(user.id, 'online')
 
     return response.json({
-      message: 'Đăng nhập thành công!',
+      message: wasReactivated
+        ? 'Chào mừng trở lại! Tài khoản của bạn đã được kích hoạt lại thành công.'
+        : 'Đăng nhập thành công!',
+      wasReactivated,
       user: toPublicUser({
         ...user,
         presence: 'online',
@@ -814,6 +831,16 @@ async function googleLogin(req, res, next) {
       await ensureUserProfileColumns(pool, user.id);
     }
 
+    let wasReactivated = false;
+    if (user.deactivated_at) {
+      await pool.execute(
+        'UPDATE users SET deactivated_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [user.id],
+      );
+      user.deactivated_at = null;
+      wasReactivated = true;
+    }
+
     const session = await createUserSession(user.id, req);
 
     await pool.execute(
@@ -828,7 +855,10 @@ async function googleLogin(req, res, next) {
     await emitPresenceChanged(user.id, 'online');
 
     res.status(200).json({
-      message: 'Đăng nhập thành công',
+      message: wasReactivated
+        ? 'Chào mừng trở lại! Tài khoản của bạn đã được kích hoạt lại thành công.'
+        : 'Đăng nhập thành công',
+      wasReactivated,
       user: toPublicUser({
         ...user,
         presence: 'online',
@@ -876,6 +906,16 @@ async function facebookLogin(req, res, next) {
       await ensureUserProfileColumns(pool, user.id);
     }
 
+    let wasReactivated = false;
+    if (user.deactivated_at) {
+      await pool.execute(
+        'UPDATE users SET deactivated_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [user.id],
+      );
+      user.deactivated_at = null;
+      wasReactivated = true;
+    }
+
     const session = await createUserSession(user.id, req);
 
     await pool.execute(
@@ -890,7 +930,10 @@ async function facebookLogin(req, res, next) {
     await emitPresenceChanged(user.id, 'online');
 
     res.status(200).json({
-      message: 'Đăng nhập thành công',
+      message: wasReactivated
+        ? 'Chào mừng trở lại! Tài khoản của bạn đã được kích hoạt lại thành công.'
+        : 'Đăng nhập thành công',
+      wasReactivated,
       user: toPublicUser({
         ...user,
         presence: 'online',
@@ -969,11 +1012,25 @@ async function login2FA(req, res, next) {
     if (!isValid) return res.status(400).json({ message: 'Mã xác thực không đúng!' });
     
     twoFactorLoginCache.delete(tempToken);
+
+    let wasReactivated = false;
+    if (user.deactivated_at) {
+      await pool.execute(
+        'UPDATE users SET deactivated_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [user.id],
+      );
+      user.deactivated_at = null;
+      wasReactivated = true;
+    }
+
     const session = await createUserSession(user.id, req);
     await pool.execute("UPDATE users SET presence = 'online', last_seen_at = CURRENT_TIMESTAMP, online_since = COALESCE(online_since, CURRENT_TIMESTAMP), updated_at = CURRENT_TIMESTAMP WHERE id = ?", [user.id]);
     await emitPresenceChanged(user.id, 'online');
     res.json({
-      message: 'Đăng nhập thành công!',
+      message: wasReactivated
+        ? 'Chào mừng trở lại! Tài khoản của bạn đã được kích hoạt lại thành công.'
+        : 'Đăng nhập thành công!',
+      wasReactivated,
       user: toPublicUser({ ...user, presence: 'online', online_since: user.online_since || new Date() }),
       session: { refreshToken: session.refreshToken, expiresAt: session.expiresAt }
     });
