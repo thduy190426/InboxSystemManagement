@@ -1,16 +1,29 @@
 import { useState, useEffect } from 'react'
 import {
+  Activity,
   AlertTriangle,
+  AlignLeft,
+  Calendar,
+  Camera,
+  CheckCheck,
   ChevronDown,
   Compass,
   Eye,
   EyeOff,
+  Globe,
+  HelpCircle,
   IdCard,
   KeyRound,
   Laptop,
+  Lock,
   LogOut,
+  MapPin,
+  MessageCircle,
   MessageSquare,
+  MessageSquareDot,
+  Mic,
   PauseCircle,
+  Phone,
   Plus,
   RefreshCw,
   RotateCcw,
@@ -18,6 +31,7 @@ import {
   ShieldCheck,
   Sparkles,
   Trash2,
+  UserCheck,
   UserRound,
   Users,
 } from 'lucide-react'
@@ -78,6 +92,7 @@ function getSessionTitle(session: UserSession, t: any) {
 }
 
 type ToggleRowProps = {
+  icon?: React.ReactNode
   label: string
   description?: string
   checked: boolean
@@ -85,11 +100,14 @@ type ToggleRowProps = {
   onChange: (value: boolean) => void
 }
 
-function ToggleRow({ label, description, checked, disabled, onChange }: ToggleRowProps) {
+function ToggleRow({ icon, label, description, checked, disabled, onChange }: ToggleRowProps) {
   return (
     <label className="sp-toggle-row">
       <div className="sp-toggle-text">
-        <strong>{label}</strong>
+        <strong>
+          {icon && <span className="sp-label-icon">{icon}</span>}
+          <span>{label}</span>
+        </strong>
         {description && <small>{description}</small>}
       </div>
       <div className="sp-toggle-switch">
@@ -316,6 +334,7 @@ export function SettingsPage(props: SettingsPageProps) {
           >
             <div className="sp-toggle-group">
               <ToggleRow
+                icon={<Activity size={15} />}
                 label={t('showOnline')}
                 description={showActivityStatus ? t('showOnlineDesc') : t('showOnlineDescOff')}
                 checked={showActivityStatus}
@@ -323,6 +342,7 @@ export function SettingsPage(props: SettingsPageProps) {
                 onChange={(v) => handlePrivacyChange('showActivityStatus', v)}
               />
               <ToggleRow
+                icon={<MessageSquareDot size={15} />}
                 label={t('showTyping')}
                 description={showTypingIndicator ? t('showTypingDesc') : t('showTypingDescOff')}
                 checked={showTypingIndicator}
@@ -330,6 +350,7 @@ export function SettingsPage(props: SettingsPageProps) {
                 onChange={(v) => handlePrivacyChange('showTypingIndicator', v)}
               />
               <ToggleRow
+                icon={<CheckCheck size={15} />}
                 label={t('showRead')}
                 description={showReadReceipts ? t('showReadDesc') : t('showReadDescOff')}
                 checked={showReadReceipts}
@@ -347,12 +368,14 @@ export function SettingsPage(props: SettingsPageProps) {
           >
             <div className="sp-toggle-group">
               <ToggleRow
+                icon={<Camera size={15} />}
                 label={t('allowCamera')}
                 description={allowCamera ? t('allowCameraDesc') : t('allowCameraDescOff')}
                 checked={allowCamera}
                 onChange={handleAllowCameraChange}
               />
               <ToggleRow
+                icon={<Mic size={15} />}
                 label={t('allowMicrophone')}
                 description={allowMicrophone ? t('allowMicrophoneDesc') : t('allowMicrophoneDescOff')}
                 checked={allowMicrophone}
@@ -371,7 +394,10 @@ export function SettingsPage(props: SettingsPageProps) {
             <div className="sp-toggle-group">
               <label className="sp-toggle-row">
                 <div className="sp-toggle-text">
-                  <strong>{t('language')}</strong>
+                  <strong>
+                    <span className="sp-label-icon"><Globe size={15} /></span>
+                    <span>{t('language')}</span>
+                  </strong>
                   <small>{t('languageDesc')}</small>
                 </div>
                 <div className="sp-toggle-select">
@@ -399,12 +425,12 @@ export function SettingsPage(props: SettingsPageProps) {
             description={t('profileDisplayDesc')}
           >
             <div className="sp-toggle-group">
-              <ToggleRow label={t('phone')} description={showPhone ? t('phoneDesc') : t('phoneDescOff')} checked={showPhone} disabled={isSavingPrivacy} onChange={(v) => handlePrivacyChange('showPhone', v)} />
-              <ToggleRow label={t('statusMsg')} description={showStatusMessage ? t('statusMsgDesc') : t('statusMsgDescOff')} checked={showStatusMessage} disabled={isSavingPrivacy} onChange={(v) => handlePrivacyChange('showStatusMessage', v)} />
-              <ToggleRow label={t('address')} description={showAddress ? t('addressDesc') : t('addressDescOff')} checked={showAddress} disabled={isSavingPrivacy} onChange={(v) => handlePrivacyChange('showAddress', v)} />
-              <ToggleRow label={t('gender')} checked={showGender} disabled={isSavingPrivacy} onChange={(v) => handlePrivacyChange('showGender', v)} />
-              <ToggleRow label={t('birthDate')} checked={showBirthDate} disabled={isSavingPrivacy} onChange={(v) => handlePrivacyChange('showBirthDate', v)} />
-              <ToggleRow label={t('bio')} description={showBio ? t('bioDesc') : t('bioDescOff')} checked={showBio} disabled={isSavingPrivacy} onChange={(v) => handlePrivacyChange('showBio', v)} />
+              <ToggleRow icon={<Phone size={15} />} label={t('phone')} description={showPhone ? t('phoneDesc') : t('phoneDescOff')} checked={showPhone} disabled={isSavingPrivacy} onChange={(v) => handlePrivacyChange('showPhone', v)} />
+              <ToggleRow icon={<MessageCircle size={15} />} label={t('statusMsg')} description={showStatusMessage ? t('statusMsgDesc') : t('statusMsgDescOff')} checked={showStatusMessage} disabled={isSavingPrivacy} onChange={(v) => handlePrivacyChange('showStatusMessage', v)} />
+              <ToggleRow icon={<MapPin size={15} />} label={t('address')} description={showAddress ? t('addressDesc') : t('addressDescOff')} checked={showAddress} disabled={isSavingPrivacy} onChange={(v) => handlePrivacyChange('showAddress', v)} />
+              <ToggleRow icon={<UserCheck size={15} />} label={t('gender')} checked={showGender} disabled={isSavingPrivacy} onChange={(v) => handlePrivacyChange('showGender', v)} />
+              <ToggleRow icon={<Calendar size={15} />} label={t('birthDate')} checked={showBirthDate} disabled={isSavingPrivacy} onChange={(v) => handlePrivacyChange('showBirthDate', v)} />
+              <ToggleRow icon={<AlignLeft size={15} />} label={t('bio')} description={showBio ? t('bioDesc') : t('bioDescOff')} checked={showBio} disabled={isSavingPrivacy} onChange={(v) => handlePrivacyChange('showBio', v)} />
             </div>
           </Card>
 
@@ -427,7 +453,10 @@ export function SettingsPage(props: SettingsPageProps) {
           >
             <form id="password-form" className="sp-field-group" onSubmit={handlePasswordSubmit}>
               <div className="sp-field">
-                <label htmlFor="currentPassword">{t('currentPwd')}</label>
+                <label htmlFor="currentPassword">
+                  <Lock size={13} />
+                  <span>{t('currentPwd')}</span>
+                </label>
                 <input
                   autoComplete="current-password"
                   id="currentPassword"
@@ -440,7 +469,10 @@ export function SettingsPage(props: SettingsPageProps) {
                 {passwordErrors.currentPassword && <span className="sp-field-error">{passwordErrors.currentPassword}</span>}
               </div>
               <div className="sp-field">
-                <label htmlFor="newPassword">{t('newPwd')}</label>
+                <label htmlFor="newPassword">
+                  <KeyRound size={13} />
+                  <span>{t('newPwd')}</span>
+                </label>
                 <input
                   autoComplete="new-password"
                   id="newPassword"
@@ -455,7 +487,10 @@ export function SettingsPage(props: SettingsPageProps) {
                 {passwordErrors.newPassword && <span className="sp-field-error">{passwordErrors.newPassword}</span>}
               </div>
               <div className="sp-field">
-                <label htmlFor="confirmNewPassword">{t('confirmNewPwd')}</label>
+                <label htmlFor="confirmNewPassword">
+                  <ShieldCheck size={13} />
+                  <span>{t('confirmNewPwd')}</span>
+                </label>
                 <input
                   autoComplete="new-password"
                   id="confirmNewPassword"
@@ -845,7 +880,10 @@ export function SettingsPage(props: SettingsPageProps) {
           >
             <form id="deactivate-form" className="sp-field-group" onSubmit={handleDeactivateAccountSubmit}>
               <div className="sp-field">
-                <label htmlFor="deactivate-reason">{t('deactivateReason')}</label>
+                <label htmlFor="deactivate-reason" className="sp-field-label--warning">
+                  <HelpCircle size={13} />
+                  <span>{t('deactivateReason')}</span>
+                </label>
                 <select
                   id="deactivate-reason"
                   name="reason"
@@ -861,7 +899,10 @@ export function SettingsPage(props: SettingsPageProps) {
                 </select>
               </div>
               <div className="sp-field">
-                <label htmlFor="deactivate-password">{t('currentPwd')}</label>
+                <label htmlFor="deactivate-password" className="sp-field-label--warning">
+                  <Lock size={13} />
+                  <span>{t('currentPwd')}</span>
+                </label>
                 <input
                   autoComplete="current-password"
                   id="deactivate-password"
@@ -897,7 +938,10 @@ export function SettingsPage(props: SettingsPageProps) {
           >
             <form id="delete-form" className="sp-field-group" onSubmit={handleDeleteAccountSubmit}>
               <div className="sp-field">
-                <label htmlFor="delete-password">{t('currentPwd')}</label>
+                <label htmlFor="delete-password" className="sp-field-label--danger">
+                  <Lock size={13} />
+                  <span>{t('currentPwd')}</span>
+                </label>
                 <input
                   autoComplete="current-password"
                   id="delete-password"
@@ -910,7 +954,10 @@ export function SettingsPage(props: SettingsPageProps) {
                 {deleteErrors.password && <span className="sp-field-error">{deleteErrors.password}</span>}
               </div>
               <div className="sp-field">
-                <label htmlFor="delete-confirm">{t('deleteConfirmLabel')}</label>
+                <label htmlFor="delete-confirm" className="sp-field-label--danger">
+                  <AlertTriangle size={13} />
+                  <span>{t('deleteConfirmLabel')}</span>
+                </label>
                 <input
                   autoComplete="off"
                   id="delete-confirm"

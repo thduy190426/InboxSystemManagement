@@ -10111,11 +10111,21 @@ html.dark .message-search-button.is-active {
 }
 
 .sp-toggle-text strong {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 16px;
   font-weight: 500;
   color: var(--sp-text, #e8eaf2);
   margin-bottom: 6px;
+}
+
+.sp-label-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sp-accent, #6382ff);
+  flex-shrink: 0;
 }
 
 .sp-toggle-text small {
@@ -10196,6 +10206,23 @@ html.dark .message-search-button.is-active {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--sp-text-muted, #7c8299);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sp-field label svg {
+  flex-shrink: 0;
+  color: var(--sp-accent, #6382ff);
+  opacity: 0.9;
+}
+
+.sp-field label.sp-field-label--warning svg {
+  color: #f59e0b;
+}
+
+.sp-field label.sp-field-label--danger svg {
+  color: var(--sp-danger, #ff5a5a);
 }
 
 .sp-field input {
