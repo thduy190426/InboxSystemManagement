@@ -13,7 +13,8 @@
   },
   "accountSwitcher": {
     "title": "Switch Account",
-    "switchAccount": "Switch Account",
+    "switchAccount": "Switch",
+    "switch": "Switch",
     "currentAccount": "Current Account",
     "activeNow": "Active now",
     "savedAccounts": "Saved Accounts",
@@ -26,6 +27,8 @@
     "viewProfile": "View profile",
     "recentAccounts": "Recent Accounts",
     "recentAccountsSub": "Click your profile picture or log into another account.",
+    "subtitle": "Quickly switch between accounts logged in on this device.",
+    "desc": "Quickly switch between accounts logged in on this device.",
     "loginAnotherAccount": "Log into another account",
     "switchedAccountSuccess": "Switched to {{name}} successfully!",
     "switchFailed": "Unable to switch account or session expired. Please log in again!",
@@ -394,6 +397,7 @@
     "expand": "Expand",
     "editProfile": "Edit profile",
     "newNotifications": "{{count}} new notifications!",
+    "switchAccounts": "Switch Accounts",
     "logout": "Logout"
   },
   "settings": {
@@ -433,8 +437,22 @@
     "navPassword": "Password",
     "navTwoFactor": "Two-Factor Auth",
     "navSessions": "Sessions",
+    "navSwitchAccounts": "Switch accounts",
     "navTutorial": "Guide & Help",
     "navDelete": "Delete Account",
+    "accountSwitcher": {
+      "title": "Switch Account",
+      "subtitle": "Quickly switch between accounts logged in on this device.",
+      "recentAccountsSub": "Quickly switch between accounts logged in on this device.",
+      "desc": "Quickly switch between accounts logged in on this device.",
+      "activeNow": "Active now",
+      "switchAccount": "Switch",
+      "switch": "Switch",
+      "removeAccount": "Remove account from device",
+      "removeAccountConfirm": "Are you sure you want to remove {{name}} from this device? You will need to enter your credentials to log in again.",
+      "addAccount": "Log into another account",
+      "noSavedAccounts": "No saved accounts on this device."
+    },
     "tutorial": {
       "cardTitle": "User Guide & Product Tour",
       "cardDesc": "Replay visual walkthrough steps or reset discovery state across the system.",

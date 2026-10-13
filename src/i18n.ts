@@ -31,6 +31,7 @@ const ALL_NAMESPACES = [
   'panels',
   'admin',
   'tutorial',
+  'accountSwitcher',
 ];
 
 i18n
@@ -40,7 +41,17 @@ i18n
     resourcesToBackend(async (language: string, namespace: string) => {
       const data = await loadLocaleData(language);
       if (namespace && namespace !== 'translation') {
-        return data[namespace] || {};
+        const nsData = data[namespace] || {};
+        if (data.accountSwitcher) {
+          return {
+            ...nsData,
+            accountSwitcher: {
+              ...data.accountSwitcher,
+              ...(nsData.accountSwitcher || {}),
+            },
+          };
+        }
+        return nsData;
       }
       return data;
     })

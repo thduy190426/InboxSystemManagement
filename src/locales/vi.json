@@ -13,7 +13,8 @@
   },
   "accountSwitcher": {
     "title": "Chuyển tài khoản",
-    "switchAccount": "Chuyển tài khoản",
+    "switchAccount": "Chuyển",
+    "switch": "Chuyển",
     "currentAccount": "Tài khoản hiện tại",
     "activeNow": "Đang hoạt động",
     "savedAccounts": "Tài khoản đã lưu",
@@ -26,6 +27,8 @@
     "viewProfile": "Xem trang cá nhân",
     "recentAccounts": "Tài khoản gần đây",
     "recentAccountsSub": "Nhấp vào ảnh đại diện hoặc đăng nhập bằng tài khoản khác.",
+    "subtitle": "Chuyển đổi nhanh giữa các tài khoản đã đăng nhập trên thiết bị này.",
+    "desc": "Chuyển đổi nhanh giữa các tài khoản đã đăng nhập trên thiết bị này.",
     "loginAnotherAccount": "Đăng nhập bằng tài khoản khác",
     "switchedAccountSuccess": "Đã chuyển sang tài khoản {{name}}!",
     "switchFailed": "Không thể chuyển tài khoản hoặc phiên đã hết hạn. Vui lòng đăng nhập lại!",
@@ -394,6 +397,7 @@
     "expand": "Mở rộng",
     "editProfile": "Chỉnh sửa hồ sơ",
     "newNotifications": "{{count}} thông báo mới!",
+    "switchAccounts": "Chuyển tài khoản",
     "logout": "Đăng xuất"
   },
   "settings": {
@@ -433,8 +437,22 @@
     "navPassword": "Mật khẩu",
     "navTwoFactor": "Xác thực 2 bước",
     "navSessions": "Phiên đăng nhập",
+    "navSwitchAccounts": "Chuyển tài khoản",
     "navTutorial": "Hướng dẫn & Trợ giúp",
     "navDelete": "Xóa tài khoản",
+    "accountSwitcher": {
+      "title": "Chuyển tài khoản",
+      "subtitle": "Chuyển đổi nhanh giữa các tài khoản đã đăng nhập trên thiết bị này.",
+      "recentAccountsSub": "Chuyển đổi nhanh giữa các tài khoản đã đăng nhập trên thiết bị này.",
+      "desc": "Chuyển đổi nhanh giữa các tài khoản đã đăng nhập trên thiết bị này.",
+      "activeNow": "Đang hoạt động",
+      "switchAccount": "Chuyển",
+      "switch": "Chuyển",
+      "removeAccount": "Xóa tài khoản khỏi thiết bị",
+      "removeAccountConfirm": "Bạn có chắc chắn muốn xóa tài khoản {{name}} khỏi thiết bị này không? Bạn sẽ cần nhập lại thông tin để đăng nhập lại.",
+      "addAccount": "Đăng nhập bằng tài khoản khác",
+      "noSavedAccounts": "Chưa có tài khoản nào được lưu trên thiết bị này."
+    },
     "tutorial": {
       "cardTitle": "Hướng dẫn sử dụng & Khám phá (Product Tour)",
       "cardDesc": "Trải nghiệm lại các bước hướng dẫn trực quan hoặc đặt lại trạng thái khám phá của hệ thống.",

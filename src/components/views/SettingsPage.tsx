@@ -585,6 +585,11 @@ export function SettingsPage(props: SettingsPageProps) {
             </div>
             <div className="sp-card-body">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {savedAccounts.length === 0 && (
+                  <p style={{ color: 'var(--color-text-muted, #94a3b8)', fontSize: '13px', margin: '4px 0' }}>
+                    {t('accountSwitcher.noSavedAccounts', { defaultValue: 'Chưa có tài khoản nào được lưu trên thiết bị này.' })}
+                  </p>
+                )}
                 {savedAccounts.map((account: SavedAccount) => {
                   const isCurrent = String(account.user.id) === String(currentUser?.id) || account.user.email === currentUser?.email
                   return (
@@ -689,8 +694,14 @@ export function SettingsPage(props: SettingsPageProps) {
                             type="button"
                             className="sp-btn sp-btn--danger"
                             onClick={() => {
-                              removeSavedAccount(account.user.id)
-                              setSavedAccounts(getSavedAccounts())
+                              const confirmMsg = t('accountSwitcher.removeAccountConfirm', {
+                                name: account.user.displayName || account.user.fullName || account.user.email,
+                                defaultValue: `Bạn có chắc chắn muốn xóa tài khoản ${account.user.displayName || account.user.fullName || account.user.email} khỏi thiết bị này không?`,
+                              })
+                              if (window.confirm(confirmMsg)) {
+                                removeSavedAccount(account.user.id)
+                                setSavedAccounts(getSavedAccounts())
+                              }
                             }}
                             title={t('accountSwitcher.removeAccount', { defaultValue: 'Xóa tài khoản khỏi thiết bị' })}
                             style={{ padding: '6px 8px' }}
