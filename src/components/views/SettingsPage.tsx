@@ -10,6 +10,7 @@ import {
   Laptop,
   LogOut,
   MessageSquare,
+  PauseCircle,
   Plus,
   RefreshCw,
   RotateCcw,
@@ -39,6 +40,7 @@ import type { AppView } from '../../types'
 export type SettingsPageProps = {
   currentUser: AuthUser | null
   onAccountDeleted: () => void
+  onAccountDeactivated?: () => void
   onLogout?: () => void
   onUserChange: (user: AuthUser) => void
   pushToast: (text: string, tone?: 'info' | 'error') => void
@@ -107,19 +109,21 @@ function ToggleRow({ label, description, checked, disabled, onChange }: ToggleRo
 
 type CardProps = {
   icon: React.ReactNode
-  iconVariant?: 'default' | 'neutral' | 'danger'
+  iconVariant?: 'default' | 'neutral' | 'danger' | 'warning'
   title: string
   description: string
   children: React.ReactNode
   footer?: React.ReactNode
   dangerBorder?: boolean
+  warningBorder?: boolean
   id?: string
   dataTour?: string
 }
 
-function Card({ id, icon, iconVariant = 'default', title, description, children, footer, dangerBorder, dataTour }: CardProps) {
+function Card({ id, icon, iconVariant = 'default', title, description, children, footer, dangerBorder, warningBorder, dataTour }: CardProps) {
+  const borderClass = dangerBorder ? ' sp-card--danger' : warningBorder ? ' sp-card--warning' : ''
   return (
-    <div id={id} data-tour={dataTour} className={`sp-card${dangerBorder ? ' sp-card--danger' : ''}`}>
+    <div id={id} data-tour={dataTour} className={`sp-card${borderClass}`}>
       <div className="sp-card-header">
         <div className={`sp-card-icon sp-card-icon--${iconVariant}`}>{icon}</div>
         <div className="sp-card-header-text">
@@ -192,6 +196,8 @@ export function SettingsPage(props: SettingsPageProps) {
     confirmDialog,
     confirmRevokeOtherSessions,
     confirmRevokeSession,
+    deactivateErrors,
+    deactivateForm,
     deleteErrors,
     deleteForm,
     expandedSessionHeight,
@@ -200,6 +206,8 @@ export function SettingsPage(props: SettingsPageProps) {
     handleAllowCameraChange,
     handleAllowMicrophoneChange,
     handleConfirmDialog,
+    handleDeactivateAccountSubmit,
+    handleDeactivateFieldChange,
     handleDeleteAccountSubmit,
     handleDeleteFieldChange,
     handlePasswordFieldChange,
@@ -209,6 +217,7 @@ export function SettingsPage(props: SettingsPageProps) {
     hiddenSessionCount,
     i18n,
     isChangingPassword,
+    isDeactivatingAccount,
     isDeletingAccount,
     isLoadingSessions,
     isRevokingOtherSessions,
@@ -290,6 +299,9 @@ export function SettingsPage(props: SettingsPageProps) {
             <Compass size={15} /> {t('navTutorial')}
           </button>
           <div className="sp-nav-divider" />
+          <button className={`sp-nav-item sp-nav-item--warning${activeSection === 'deactivate-account' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('deactivate-account')}>
+            <PauseCircle size={15} /> {t('navDeactivate')}
+          </button>
           <button className={`sp-nav-item sp-nav-item--danger${activeSection === 'delete-account' ? ' sp-nav-item--active' : ''}`} type="button" onClick={() => scrollToSection('delete-account')}>
             <Trash2 size={15} /> {t('navDelete')}
           </button>
@@ -813,6 +825,58 @@ export function SettingsPage(props: SettingsPageProps) {
           </Card>
 
           <Card
+            id="deactivate-account"
+            icon={<PauseCircle size={16} />}
+            iconVariant="warning"
+            title={t('deactivateAccount')}
+            description={t('deactivateDesc')}
+            warningBorder
+            footer={
+              <button
+                className="sp-btn sp-btn--warning"
+                disabled={isDeactivatingAccount || !deactivateForm.password}
+                form="deactivate-form"
+                type="submit"
+              >
+                <PauseCircle size={14} />
+                {isDeactivatingAccount ? t('deactivatingBtn') : t('deactivateBtn')}
+              </button>
+            }
+          >
+            <form id="deactivate-form" className="sp-field-group" onSubmit={handleDeactivateAccountSubmit}>
+              <div className="sp-field">
+                <label htmlFor="deactivate-reason">{t('deactivateReason')}</label>
+                <select
+                  id="deactivate-reason"
+                  name="reason"
+                  value={deactivateForm.reason || ''}
+                  onChange={handleDeactivateFieldChange}
+                  className="sp-select"
+                >
+                  <option value="">{t('deactivateReasonPlaceholder')}</option>
+                  <option value="break">{t('deactivateReasonBreak')}</option>
+                  <option value="not_needed">{t('deactivateReasonNotNeeded')}</option>
+                  <option value="privacy">{t('deactivateReasonPrivacy')}</option>
+                  <option value="other">{t('deactivateReasonOther')}</option>
+                </select>
+              </div>
+              <div className="sp-field">
+                <label htmlFor="deactivate-password">{t('currentPwd')}</label>
+                <input
+                  autoComplete="current-password"
+                  id="deactivate-password"
+                  name="password"
+                  onChange={handleDeactivateFieldChange}
+                  placeholder={t('pwdPlaceholder')}
+                  type="password"
+                  value={deactivateForm.password}
+                />
+                {deactivateErrors.password && <span className="sp-field-error">{deactivateErrors.password}</span>}
+              </div>
+            </form>
+          </Card>
+
+          <Card
             id="delete-account"
             icon={<AlertTriangle size={16} />}
             iconVariant="danger"
@@ -864,7 +928,7 @@ export function SettingsPage(props: SettingsPageProps) {
 
       <ConfirmDialog
         dialog={confirmDialog}
-        isWorking={isDeletingAccount}
+        isWorking={isDeletingAccount || isDeactivatingAccount}
         onCancel={() => setConfirmDialog(null)}
         onConfirm={() => void handleConfirmDialog()}
       />

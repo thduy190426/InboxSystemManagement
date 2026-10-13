@@ -2,12 +2,14 @@ import type { ChangeEvent, FormEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import {
   changePassword,
+  deactivateAccount,
   deleteAccount,
   fetchSessions,
   revokeOtherSessions,
   revokeSession,
   updatePrivacy,
   type ChangePasswordPayload,
+  type DeactivateAccountPayload,
   type DeleteAccountPayload,
   type UserSession,
 } from '../../services/api/userApi'
@@ -27,6 +29,11 @@ const initialPasswordForm: ChangePasswordPayload = {
   currentPassword: '',
   newPassword: '',
   confirmNewPassword: '',
+}
+
+const initialDeactivateForm: DeactivateAccountPayload = {
+  password: '',
+  reason: '',
 }
 
 const initialDeleteForm: DeleteAccountPayload = {
@@ -62,6 +69,12 @@ function validatePasswordForm(form: ChangePasswordPayload, t: any) {
   return errors
 }
 
+function validateDeactivateForm(form: DeactivateAccountPayload, t: any) {
+  const errors: Partial<Record<keyof DeactivateAccountPayload, string>> = {}
+  if (!form.password) errors.password = t('errDeactivatePwd')
+  return errors
+}
+
 function validateDeleteForm(form: DeleteAccountPayload, t: any) {
   const errors: Partial<Record<keyof DeleteAccountPayload, string>> = {}
   if (!form.password) errors.password = t('errDeletePwd')
@@ -74,7 +87,7 @@ import type { SettingsPageProps } from '../../components/views/SettingsPage'
 
 export function useSettingsPageController(props: SettingsPageProps) {
   const {
-    currentUser, onAccountDeleted, onLogout, onUserChange, pushToast
+    currentUser, onAccountDeactivated, onAccountDeleted, onLogout, onUserChange, pushToast
   } = props
 
   const { t, i18n } = useTranslation('settings')
@@ -83,12 +96,15 @@ export function useSettingsPageController(props: SettingsPageProps) {
   const [isLoadingSessions, setIsLoadingSessions] = useState(false)
   const [revokingSessionId, setRevokingSessionId] = useState<string | null>(null)
   const [isRevokingOtherSessions, setIsRevokingOtherSessions] = useState(false)
+  const [isDeactivatingAccount, setIsDeactivatingAccount] = useState(false)
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null)
   const [sessions, setSessions] = useState<UserSession[]>([])
   const [passwordForm, setPasswordForm] = useState<ChangePasswordPayload>(initialPasswordForm)
+  const [deactivateForm, setDeactivateForm] = useState<DeactivateAccountPayload>(initialDeactivateForm)
   const [deleteForm, setDeleteForm] = useState<DeleteAccountPayload>(initialDeleteForm)
   const [passwordErrors, setPasswordErrors] = useState<Partial<Record<keyof ChangePasswordPayload, string>>>({})
+  const [deactivateErrors, setDeactivateErrors] = useState<Partial<Record<keyof DeactivateAccountPayload, string>>>({})
   const [deleteErrors, setDeleteErrors] = useState<Partial<Record<keyof DeleteAccountPayload, string>>>({})
 
   const [showActivityStatus, setShowActivityStatus] = useState(currentUser?.showActivityStatus ?? true)
@@ -248,6 +264,12 @@ export function useSettingsPageController(props: SettingsPageProps) {
     setPasswordErrors((c) => ({ ...c, [name]: '' }))
   }
 
+  function handleDeactivateFieldChange(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+    const { name, value } = e.target
+    setDeactivateForm((c) => ({ ...c, [name]: value }))
+    setDeactivateErrors((c) => ({ ...c, [name]: '' }))
+  }
+
   function handleDeleteFieldChange(e: ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target
     setDeleteForm((c) => ({ ...c, [name]: value }))
@@ -327,6 +349,36 @@ export function useSettingsPageController(props: SettingsPageProps) {
       setters[key](!value)
     } finally {
       setIsSavingPrivacy(false)
+    }
+  }
+
+  async function handleDeactivateAccountSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const errors = validateDeactivateForm(deactivateForm, t)
+    if (Object.keys(errors).length > 0) {
+      setDeactivateErrors(errors)
+      pushToast(errors.password || t('toastDeleteInvalid'), 'error')
+      return
+    }
+    setConfirmDialog({
+      title: t('deactivateDialogTitle'),
+      description: t('deactivateDialogDesc'),
+      confirmLabel: t('deactivateBtn'),
+      tone: 'danger',
+      onConfirm: deactivateCurrentAccount,
+    })
+  }
+
+  async function deactivateCurrentAccount() {
+    try {
+      setIsDeactivatingAccount(true)
+      setDeactivateErrors({})
+      await deactivateAccount(deactivateForm)
+      onAccountDeactivated?.()
+    } catch (err) {
+      pushToast(err instanceof Error ? err.message : t('api.error'), 'error')
+    } finally {
+      setIsDeactivatingAccount(false)
     }
   }
 
@@ -423,6 +475,8 @@ export function useSettingsPageController(props: SettingsPageProps) {
     confirmRevokeSession,
     cooldownIntervalRef,
     currentSession,
+    deactivateErrors,
+    deactivateForm,
     deleteCurrentAccount,
     deleteErrors,
     deleteForm,
@@ -432,6 +486,8 @@ export function useSettingsPageController(props: SettingsPageProps) {
     handleAllowCameraChange,
     handleAllowMicrophoneChange,
     handleConfirmDialog,
+    handleDeactivateAccountSubmit,
+    handleDeactivateFieldChange,
     handleDeleteAccountSubmit,
     handleDeleteFieldChange,
     handlePasswordFieldChange,
@@ -442,6 +498,7 @@ export function useSettingsPageController(props: SettingsPageProps) {
     historySessions,
     i18n,
     isChangingPassword,
+    isDeactivatingAccount,
     isDeletingAccount,
     isLoadingSessions,
     isRevokingOtherSessions,

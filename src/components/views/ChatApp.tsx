@@ -20,6 +20,7 @@ import type { SavedAccount } from '../../services/storage/authStorage'
 
 type ChatAppProps = {
   currentUser: AuthUser | null
+  onAccountDeactivated?: () => void
   onAccountDeleted: () => void
   onLogout: () => void
   onUserChange: (user: AuthUser) => void
@@ -166,6 +167,7 @@ export function ChatApp(props: ChatAppProps) {
         <Suspense fallback={<div className="skeleton-loader" style={{ flex: 1, margin: '16px', borderRadius: '16px' }} />}>
           <SettingsPage
             currentUser={props.currentUser}
+            onAccountDeactivated={props.onAccountDeactivated}
             onAccountDeleted={props.onAccountDeleted}
             onLogout={ctrl.handleLogout}
             onUserChange={props.onUserChange}

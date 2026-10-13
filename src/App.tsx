@@ -295,7 +295,8 @@ export function App() {
 
     setIsRouteKnown(true)
     setIsAuthenticated(true)
-    pushToast(successMessage, 'info')
+    const toastMessage = response.wasReactivated ? t('accountReactivated') : successMessage
+    pushToast(toastMessage, 'info')
   }
 
   async function handleLogout() {
@@ -310,6 +311,16 @@ export function App() {
     setCurrentUser(null)
     setAuthScreen('login')
     pushToast(t('logoutSuccess'), 'info')
+  }
+
+  function handleAccountDeactivated() {
+    clearStoredAuthSession()
+    window.history.replaceState(null, '', toAuthPath('login'))
+    setIsRouteKnown(true)
+    setIsAuthenticated(false)
+    setCurrentUser(null)
+    setAuthScreen('login')
+    pushToast(t('toastDeactivateSuccess'), 'info')
   }
 
   function handleAccountDeleted() {
@@ -529,6 +540,7 @@ export function App() {
         <ChatApp
           key={currentUser?.id}
           currentUser={currentUser}
+          onAccountDeactivated={handleAccountDeactivated}
           onAccountDeleted={handleAccountDeleted}
           onLogout={handleLogout}
           onUserChange={handleUserChange}
