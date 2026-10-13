@@ -25,6 +25,7 @@ type TimelineTabProps = {
   posts: TimelinePost[]
   currentUser: AuthUser | null
   isOwnProfile: boolean
+  isLoading?: boolean
   onCreatePost: (payload: {
     content: string
     mediaUrls: string[]
@@ -39,6 +40,7 @@ export function TimelineTab({
   posts,
   currentUser,
   isOwnProfile,
+  isLoading = false,
   onCreatePost,
   onDeletePost,
   onToggleReaction,
@@ -132,11 +134,23 @@ export function TimelineTab({
   const renderPrivacyIcon = (p: PostPrivacy) => {
     switch (p) {
       case 'friends':
-        return <Users size={13} title={t('privacyFriends', { defaultValue: 'Bạn bè' })} />
+        return (
+          <span title={t('privacyFriends', { defaultValue: 'Bạn bè' })}>
+            <Users size={13} />
+          </span>
+        )
       case 'only_me':
-        return <Lock size={13} title={t('privacyOnlyMe', { defaultValue: 'Chỉ mình tôi' })} />
+        return (
+          <span title={t('privacyOnlyMe', { defaultValue: 'Chỉ mình tôi' })}>
+            <Lock size={13} />
+          </span>
+        )
       default:
-        return <Globe size={13} title={t('privacyPublic', { defaultValue: 'Công khai' })} />
+        return (
+          <span title={t('privacyPublic', { defaultValue: 'Công khai' })}>
+            <Globe size={13} />
+          </span>
+        )
     }
   }
 
@@ -229,7 +243,11 @@ export function TimelineTab({
 
       {/* Feed List */}
       <div className="timeline-posts-feed">
-        {posts.length === 0 ? (
+        {isLoading && posts.length === 0 ? (
+          <div className="empty-tab-state">
+            <p>{t('loadingPosts', { defaultValue: 'Đang tải bài viết trên dòng thời gian...' })}</p>
+          </div>
+        ) : posts.length === 0 ? (
           <div className="empty-tab-state">
             <p>{t('noPostsYet', { defaultValue: 'Chưa có bài viết nào trên dòng thời gian.' })}</p>
           </div>

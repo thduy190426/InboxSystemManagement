@@ -86,9 +86,10 @@ type ContactProfileProps = {
   isClosing: boolean
   onClose: () => void
   onOpenMutualModal?: (targetUserId: string, targetName: string) => void
+  onViewFullProfile?: (user: ContactUser) => void
 }
 
-export function ContactProfile({ user, isClosing, onClose, onOpenMutualModal }: ContactProfileProps) {
+export function ContactProfile({ user, isClosing, onClose, onOpenMutualModal, onViewFullProfile }: ContactProfileProps) {
   const { t } = useTranslation('panels')
   const safePresence = ['online', 'away', 'busy'].includes(user.presence) ? user.presence : 'offline'
   const presenceLabel =
@@ -202,6 +203,20 @@ export function ContactProfile({ user, isClosing, onClose, onOpenMutualModal }: 
           <div className="cp-bio">
             <small>{t('bioLabel')}</small>
             <p>{user.bio || t('bioEmpty')}</p>
+          </div>
+        )}
+
+        {onViewFullProfile && (
+          <div style={{ padding: '0 20px 20px', display: 'flex', justifyContent: 'center' }}>
+            <button
+              className="cp-btn cp-btn--primary"
+              onClick={() => onViewFullProfile(user)}
+              style={{ width: '100%', justifyContent: 'center', gap: '8px', padding: '10px 16px', borderRadius: '12px' }}
+              type="button"
+            >
+              <User size={15} />
+              <span>{t('viewFullProfile', { defaultValue: 'Xem trang cá nhân đầy đủ' })}</span>
+            </button>
           </div>
         )}
       </section>

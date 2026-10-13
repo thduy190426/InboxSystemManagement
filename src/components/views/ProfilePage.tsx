@@ -1,532 +1,519 @@
-import type { ChangeEvent, FormEvent } from 'react'
-import { useEffect, useState, lazy, Suspense } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import {
-  AlignLeft, AtSign, CalendarDays, Camera, IdCard, MapPin,
-  MessageSquare, Phone, Save, Shield, Sparkles, User, Users,
+  FileText,
+  IdCard,
+  Users,
+  Heart,
+  ArrowLeft,
 } from 'lucide-react'
-import { StoryHighlightBar } from '../story/StoryHighlightBar'
+import { useTranslation } from 'react-i18next'
+import { useAutoTour } from '../../hooks/tutorial/useAutoTour'
 import type { AuthUser } from '../../services/api/authApi'
+import type { ContactUser } from '../../types'
 import {
-  fetchProfile,
   updateProfile,
   uploadAvatar,
   type ProfilePayload,
 } from '../../services/api/userApi'
+import {
+  fetchFriends,
+  sendFriendRequest,
+  cancelFriendRequest,
+} from '../../services/api/contactApi'
+import { timelineApi } from '../../services/api/timelineApi'
+import type {
+  TimelinePost,
+  PostPrivacy,
+  PostReactionType,
+  FollowStats,
+} from '../../types/timeline'
 import { AvatarCropper } from '../ui/AvatarCropper'
-import { AvatarFallback } from '../ui/AvatarFallback'
-import { useTranslation } from 'react-i18next'
-import { useAutoTour } from '../../hooks/tutorial/useAutoTour'
-import type { EmojiClickData, EmojiStyle, Theme } from 'emoji-picker-react'
-const EmojiPicker = lazy(() => import('emoji-picker-react'))
+import { ProfileCover } from '../profile/ProfileCover'
+import { ProfileHeader } from '../profile/ProfileHeader'
+import { TimelineTab } from '../profile/TimelineTab'
+import { AboutTab } from '../profile/AboutTab'
+import { FriendsTab } from '../profile/FriendsTab'
+import { FollowersTab } from '../profile/FollowersTab'
 
-type ProfilePageProps = {
+export type ProfilePageProps = {
   currentUser: AuthUser | null
+  targetUser?: ContactUser | AuthUser | null
   onUserChange: (user: AuthUser) => void
   pushToast: (text: string, tone?: 'info' | 'error') => void
+  onBackToMyProfile?: () => void
+  onSendMessage?: (user: ContactUser | AuthUser) => void
 }
 
-type ProfileErrors = Partial<Record<keyof ProfilePayload, string>>
+type TabType = 'timeline' | 'about' | 'friends' | 'followers'
 
-function createInitialForm(user: AuthUser | null): ProfilePayload {
-  return {
-    displayName: user?.displayName ?? '',
-    handle: user?.handle ?? '',
-    phone: user?.phone ?? '',
-    gender: user?.gender ?? '',
-    address: user?.address ?? '',
-    birthDate: user?.birthDate ? user.birthDate.slice(0, 10) : '',
-    bio: user?.bio ?? '',
-    statusMessage: user?.statusMessage ?? '',
-    statusEmoji: user?.statusEmoji ?? '💬',
-    statusDuration: user?.statusDuration ?? 'none',
-  }
-}
-
-function getLocalDateInputValue(date = new Date()) {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-function getGenderLabel(gender: string, t: (key: string) => string) {
-  if (gender === 'male') return t('genderMale')
-  if (gender === 'female') return t('genderFemale')
-  if (gender === 'other') return t('genderOther')
-  if (gender === 'prefer_not_to_say') return t('genderPreferNotToSay')
-  return t('genderUnknown')
-}
-
-function getGlobalRoleLabel(role: string, t: (key: string) => string) {
-  if (role === 'owner') return t('roleOwner')
-  if (role === 'admin') return t('roleAdmin')
-  if (role === 'moderator') return t('roleModerator')
-  if (role === 'user') return t('roleUser')
-  return role ? role.charAt(0).toUpperCase() + role.slice(1) : t('roleUser')
-}
-
-function validateProfileForm(form: ProfilePayload, t: (key: string) => string) {
-  const errors: ProfileErrors = {}
-
-  if (!form.displayName.trim()) {
-    errors.displayName = t('errors.displayNameRequired')
-  } else if (form.displayName.trim().length > 80) {
-    errors.displayName = t('errors.displayNameMax')
-  }
-
-  if (form.handle.trim() && !/^[a-z0-9][a-z0-9._]{2,31}$/.test(form.handle.trim())) {
-    errors.handle = t('errors.handleInvalid')
-  }
-
-  if (!form.phone.trim()) {
-    errors.phone = t('errors.phoneRequired')
-  } else if (!/^\+?[0-9\s.-]{8,32}$/.test(form.phone.trim())) {
-    errors.phone = t('errors.phoneInvalid')
-  }
-
-  if (!form.gender) {
-    errors.gender = t('errors.genderRequired')
-  }
-
-  if (!form.birthDate) {
-    errors.birthDate = t('errors.birthDateRequired')
-  } else if (form.birthDate > getLocalDateInputValue()) {
-    errors.birthDate = t('errors.birthDateMax')
-  }
-
-  if (!form.address.trim()) {
-    errors.address = t('errors.addressRequired')
-  } else if (form.address.trim().length > 255) {
-    errors.address = t('errors.addressMax')
-  }
-
-  if (!form.statusMessage.trim()) {
-    errors.statusMessage = t('errors.statusMessageRequired')
-  } else if (form.statusMessage.trim().length > 120) {
-    errors.statusMessage = t('errors.statusMessageMax')
-  }
-
-  if (!form.bio.trim()) {
-    errors.bio = t('errors.bioRequired')
-  } else if (form.bio.trim().length > 255) {
-    errors.bio = t('errors.bioMax')
-  }
-
-  return errors
-}
-
-type ProfileSectionProps = {
-  icon: React.ReactNode
-  title: string
-  children: React.ReactNode
-  dataTour?: string
-}
-
-function ProfileSection({ icon, title, children, dataTour }: ProfileSectionProps) {
-  return (
-    <section className="pp-section" data-tour={dataTour}>
-      <div className="pp-section-header">
-        <span className="pp-section-icon">{icon}</span>
-        <h2>{title}</h2>
-      </div>
-      <div className="pp-section-body">
-        {children}
-      </div>
-    </section>
-  )
-}
-
-type ProfileFieldProps = {
-  label: string
-  icon: React.ReactNode
-  error?: string
-  wide?: boolean
-  children: React.ReactNode
-}
-
-function ProfileField({ label, icon, error, wide, children }: ProfileFieldProps) {
-  return (
-    <label className={`pp-field${wide ? ' pp-field--wide' : ''}${error ? ' pp-field--error' : ''}`}>
-      <span className="pp-field-label">
-        {icon}
-        {label}
-      </span>
-      {children}
-      {error && <span className="pp-field-error">{error}</span>}
-    </label>
-  )
-}
-
-export function ProfilePage({ currentUser, onUserChange, pushToast }: ProfilePageProps) {
+export function ProfilePage({
+  currentUser,
+  targetUser,
+  onUserChange,
+  pushToast,
+  onBackToMyProfile,
+  onSendMessage,
+}: ProfilePageProps) {
   useAutoTour('profile', true, currentUser?.id)
-  const [fullName, setFullName] = useState(currentUser?.fullName ?? '')
-  const [form, setForm] = useState<ProfilePayload>(() => createInitialForm(currentUser))
-  const [initialForm, setInitialForm] = useState<ProfilePayload>(() => createInitialForm(currentUser))
-  const [avatarUrl, setAvatarUrl] = useState(currentUser?.avatarUrl ?? '')
-  const [isSaving, setIsSaving] = useState(false)
-  const [isUploading, setIsUploading] = useState(false)
-  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null)
-  const [profileErrors, setProfileErrors] = useState<ProfileErrors>({})
-  const [isBioExpanded, setIsBioExpanded] = useState(false)
-  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false)
   const { t } = useTranslation('profile')
 
-  const handleEmojiClick = (emojiData: EmojiClickData) => {
-    setForm(prev => ({ ...prev, statusEmoji: emojiData.emoji }))
-    setIsEmojiPickerOpen(false)
-  }
+  const isOwnProfile =
+    !targetUser || String(targetUser.id) === String(currentUser?.id)
+  const displayUser = isOwnProfile ? currentUser : targetUser
 
-  const hasChanges = JSON.stringify(form) !== JSON.stringify(initialForm)
-  const hasLongBio = form.bio.trim().length > 120
+  const [activeTab, setActiveTab] = useState<TabType>('timeline')
+  const [isEditingAbout, setIsEditingAbout] = useState(false)
+
+  // Cover photo state
+  const [coverUrl, setCoverUrl] = useState<string | null>(null)
+  const [isUploadingCover, setIsUploadingCover] = useState(false)
+
+  // Avatar crop state
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null)
+  const [isAvatarUploading, setIsAvatarUploading] = useState(false)
+
+  // Timeline posts state
+  const [posts, setPosts] = useState<TimelinePost[]>([])
+  const [isPostsLoading, setIsPostsLoading] = useState(false)
+
+  // Friends & Followers states
+  const [friends, setFriends] = useState<ContactUser[]>([])
+  const [isFriendsLoading, setIsFriendsLoading] = useState(false)
+  const [followers, setFollowers] = useState<ContactUser[]>([])
+  const [following, setFollowing] = useState<ContactUser[]>([])
+  const [isFollowersLoading, setIsFollowersLoading] = useState(false)
+
+  const [followStats, setFollowStats] = useState<FollowStats>({
+    followersCount: 12,
+    followingCount: 8,
+    isFollowing: false,
+  })
+  const [isFollowLoading, setIsFollowLoading] = useState(false)
+  const [friendshipStatus, setFriendshipStatus] = useState<string>(
+    targetUser && 'friendshipStatus' in targetUser ? targetUser.friendshipStatus : 'none',
+  )
+  const [isFriendLoading, setIsFriendLoading] = useState(false)
+  const [isSavingProfile, setIsSavingProfile] = useState(false)
+
+  // Load user data & cover
+  const loadProfileData = useCallback(async () => {
+    if (!displayUser) return
+
+    try {
+      const cover = await timelineApi.getCoverPhoto(displayUser.id)
+      setCoverUrl(cover)
+    } catch {
+      // Ignored
+    }
+
+    if (currentUser) {
+      try {
+        const stats = await timelineApi.fetchFollowStats(displayUser.id, currentUser.id)
+        setFollowStats(stats)
+      } catch {
+        // Ignored
+      }
+    }
+  }, [displayUser, currentUser])
 
   useEffect(() => {
-    let isMounted = true
+    loadProfileData()
+  }, [loadProfileData])
 
-    fetchProfile()
-      .then((response) => {
-        if (!isMounted) return
-        onUserChange(response.user)
-        const nextForm = createInitialForm(response.user)
-        setFullName(response.user.fullName)
-        setForm(nextForm)
-        setInitialForm(nextForm)
-        setAvatarUrl(response.user.avatarUrl ?? '')
-      })
-      .catch((error) => {
-        if (isMounted) {
-          pushToast(error instanceof Error ? error.message : t('profileLoadFailed'), 'error')
-        }
-      })
+  // Load timeline posts
+  const loadPosts = useCallback(async () => {
+    if (!displayUser) return
+    try {
+      setIsPostsLoading(true)
+      const fetched = await timelineApi.fetchUserPosts(
+        displayUser.id,
+        displayUser.fullName,
+        displayUser.avatarUrl,
+      )
+      setPosts(fetched)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setIsPostsLoading(false)
+    }
+  }, [displayUser])
 
-    return () => { isMounted = false }
+  useEffect(() => {
+    loadPosts()
+  }, [loadPosts])
+
+  // Load friends
+  const loadFriends = useCallback(async () => {
+    try {
+      setIsFriendsLoading(true)
+      const list = await fetchFriends()
+      setFriends(list)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setIsFriendsLoading(false)
+    }
   }, [])
 
-  function handleChange(event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
-    const { name, value } = event.target
-    setForm((current) => ({
-      ...current,
-      [name]: name === 'handle' ? value.toLocaleLowerCase('en-US') : value,
-    }))
-    setProfileErrors((current) => ({ ...current, [name]: '' }))
+  useEffect(() => {
+    loadFriends()
+  }, [loadFriends])
+
+  // Load followers/following
+  const loadFollowersAndFollowing = useCallback(async () => {
+    if (!displayUser) return
+    try {
+      setIsFollowersLoading(true)
+      const [fList, fgList] = await Promise.all([
+        timelineApi.fetchFollowersList(displayUser.id),
+        timelineApi.fetchFollowingList(displayUser.id),
+      ])
+      setFollowers(fList)
+      setFollowing(fgList)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setIsFollowersLoading(false)
+    }
+  }, [displayUser])
+
+  useEffect(() => {
+    loadFollowersAndFollowing()
+  }, [loadFollowersAndFollowing])
+
+  // Handlers
+  async function handleCoverChange(file: File) {
+    if (!currentUser) return
+    try {
+      setIsUploadingCover(true)
+      const newUrl = await timelineApi.uploadCoverPhoto(file, currentUser.id)
+      setCoverUrl(newUrl)
+      pushToast(t('coverUpdated', { defaultValue: 'Đã cập nhật ảnh bìa!' }), 'info')
+    } catch (err) {
+      pushToast(
+        err instanceof Error
+          ? err.message
+          : t('coverUpdateFailed', { defaultValue: 'Không thể cập nhật ảnh bìa!' }),
+        'error',
+      )
+    } finally {
+      setIsUploadingCover(false)
+    }
   }
 
-  async function handleAvatarChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]
-    if (!file) return
-
+  function handleAvatarSelect(file: File) {
     if (file.type === 'image/gif') {
-      try {
-        setIsUploading(true)
-        const response = await uploadAvatar(file)
-        onUserChange(response.user)
-        setAvatarUrl(response.user.avatarUrl ?? '')
-        pushToast(t('avatarUpdated'), 'info')
-      } catch (error) {
-        pushToast(error instanceof Error ? error.message : t('avatarUpdateFailed'), 'error')
-      } finally {
-        setIsUploading(false)
-      }
-      event.target.value = ''
+      setIsAvatarUploading(true)
+      uploadAvatar(file)
+        .then((res) => {
+          onUserChange(res.user)
+          pushToast(t('avatarUpdated', { defaultValue: 'Đã cập nhật ảnh đại diện!' }), 'info')
+        })
+        .catch((err) => {
+          pushToast(err instanceof Error ? err.message : t('avatarUpdateFailed'), 'error')
+        })
+        .finally(() => setIsAvatarUploading(false))
       return
     }
 
     const reader = new FileReader()
-    reader.addEventListener('load', () => {
+    reader.onload = () => {
       setCropImageSrc(reader.result?.toString() || null)
-    })
+    }
     reader.readAsDataURL(file)
-    event.target.value = ''
   }
 
-  async function handleCroppedImage(croppedBlob: Blob) {
+  async function handleCroppedAvatar(croppedBlob: Blob) {
     setCropImageSrc(null)
     const file = new File([croppedBlob], 'avatar.jpg', { type: 'image/jpeg' })
     try {
-      setIsUploading(true)
+      setIsAvatarUploading(true)
       const response = await uploadAvatar(file)
       onUserChange(response.user)
-      setAvatarUrl(response.user.avatarUrl ?? '')
-      pushToast(t('avatarUpdated'), 'info')
-    } catch (error) {
-      pushToast(error instanceof Error ? error.message : t('avatarUpdateFailed'), 'error')
+      pushToast(t('avatarUpdated', { defaultValue: 'Đã cập nhật ảnh đại diện!' }), 'info')
+    } catch (err) {
+      pushToast(err instanceof Error ? err.message : t('avatarUpdateFailed'), 'error')
     } finally {
-      setIsUploading(false)
+      setIsAvatarUploading(false)
     }
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (!hasChanges) return
-
-    const errors = validateProfileForm(form, t)
-    if (Object.keys(errors).length > 0) {
-      setProfileErrors(errors)
-      pushToast(t('errors.fillRequired'), 'error')
-      return
-    }
-
+  async function handleCreatePost(payload: {
+    content: string
+    mediaUrls: string[]
+    privacy: PostPrivacy
+  }) {
+    if (!currentUser) return
     try {
-      setIsSaving(true)
-      setProfileErrors({})
-      const response = await updateProfile(form)
-      onUserChange(response.user)
-      const nextForm = createInitialForm(response.user)
-      setFullName(response.user.fullName)
-      setForm(nextForm)
-      setInitialForm(nextForm)
-      pushToast(t('profileSaved'), 'info')
-    } catch (error) {
-      pushToast(error instanceof Error ? error.message : t('profileSaveFailed'), 'error')
-    } finally {
-      setIsSaving(false)
+      const newPost = await timelineApi.createPost(currentUser, payload)
+      setPosts((prev) => [newPost, ...prev])
+      pushToast(t('postCreated', { defaultValue: 'Đã đăng bài viết mới!' }), 'info')
+    } catch (err) {
+      pushToast(
+        err instanceof Error
+          ? err.message
+          : t('postCreateFailed', { defaultValue: 'Không thể đăng bài viết!' }),
+        'error',
+      )
     }
+  }
+
+  async function handleDeletePost(postId: string) {
+    if (!currentUser) return
+    try {
+      await timelineApi.deletePost(postId, currentUser.id)
+      setPosts((prev) => prev.filter((p) => p.id !== postId))
+      pushToast(t('postDeleted', { defaultValue: 'Đã xóa bài viết!' }), 'info')
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  async function handleToggleReaction(postId: string, type: PostReactionType) {
+    if (!currentUser) return
+    try {
+      const updatedPost = await timelineApi.toggleReaction(postId, currentUser, type)
+      setPosts((prev) => prev.map((p) => (p.id === postId ? updatedPost : p)))
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  async function handleAddComment(postId: string, content: string) {
+    if (!currentUser) return
+    try {
+      const newComment = await timelineApi.addComment(postId, currentUser, content)
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p,
+        ),
+      )
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  async function handleToggleFollow() {
+    if (!currentUser || !displayUser) return
+    try {
+      setIsFollowLoading(true)
+      const res = await timelineApi.toggleFollowUser(displayUser.id, currentUser.id)
+      setFollowStats(res.stats)
+      if (res.isFollowing) {
+        pushToast(
+          t('followedSuccess', {
+            name: displayUser.fullName,
+            defaultValue: `Đã theo dõi ${displayUser.fullName}!`,
+          }),
+          'info',
+        )
+      } else {
+        pushToast(
+          t('unfollowedSuccess', {
+            name: displayUser.fullName,
+            defaultValue: `Đã bỏ theo dõi ${displayUser.fullName}!`,
+          }),
+          'info',
+        )
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setIsFollowLoading(false)
+    }
+  }
+
+  async function handleFriendAction() {
+    if (!displayUser) return
+    try {
+      setIsFriendLoading(true)
+      if (friendshipStatus === 'none') {
+        await sendFriendRequest(displayUser.id)
+        setFriendshipStatus('pending')
+        pushToast(t('friendRequestSent', { defaultValue: 'Đã gửi lời mời kết bạn!' }), 'info')
+      } else if (friendshipStatus === 'pending') {
+        await cancelFriendRequest(displayUser.id)
+        setFriendshipStatus('none')
+        pushToast(t('friendRequestCancelled', { defaultValue: 'Đã hủy lời mời kết bạn!' }), 'info')
+      }
+    } catch (err) {
+      pushToast(err instanceof Error ? err.message : 'Lỗi thao tác kết bạn', 'error')
+    } finally {
+      setIsFriendLoading(false)
+    }
+  }
+
+  async function handleSaveProfile(payload: ProfilePayload) {
+    try {
+      setIsSavingProfile(true)
+      const res = await updateProfile(payload)
+      onUserChange(res.user)
+      pushToast(t('profileSaved', { defaultValue: 'Đã lưu hồ sơ!' }), 'info')
+    } catch (err) {
+      pushToast(err instanceof Error ? err.message : t('profileSaveFailed'), 'error')
+    } finally {
+      setIsSavingProfile(false)
+    }
+  }
+
+  if (!displayUser) {
+    return (
+      <div className="public-profile-shell" style={{ padding: '40px', textAlign: 'center' }}>
+        <p>{t('loading', { defaultValue: 'Đang tải thông tin hồ sơ...' })}</p>
+      </div>
+    )
   }
 
   return (
-    <section className="pp-page" aria-labelledby="profile-title">
-      <header className="pp-page-header">
-        <div>
-          <div className="pp-page-kicker">
-            <User size={12} />
-            {t('kicker')}
-          </div>
-          <h1 id="profile-title">{t('title')}</h1>
-        </div>
-        <div className="pp-header-aside">
-          {hasChanges && (
-            <span className="pp-unsaved-badge">{t('unsaved')}</span>
-          )}
-        </div>
-      </header>
-
-      <form className="pp-form-wrapper" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <div className="pp-grid">
-          <ProfileSection icon={<Camera size={15} />} title={t('avatarSection')} dataTour="profile-avatar-cover">
-          <div className="pp-avatar-card">
-            <div className="pp-avatar-wrap">
-              <AvatarFallback
-                name={form.displayName || fullName}
-                src={avatarUrl}
-              />
-              {currentUser?.role && (
-                <div className={`pp-role-badge pp-role-badge--${currentUser.role.toLowerCase()}`}>
-                  <Shield size={11} />
-                  <span>{getGlobalRoleLabel(currentUser.role, t)}</span>
-                </div>
-              )}
-            </div>
-            <div className="pp-avatar-info">
-              <strong className="pp-avatar-name">{form.displayName || fullName || t('defaultUser')}</strong>
-              {form.handle && (
-                <span className="pp-avatar-handle">@{form.handle}</span>
-              )}
-              <span className="pp-avatar-status">
-                {form.statusEmoji} {form.statusMessage || t('statusNotUpdated')}
-              </span>
-            </div>
-            <label className="pp-upload-btn">
-              <Camera size={14} />
-              {isUploading ? t('uploading') : t('changeAvatar')}
-              <input accept="image/*" disabled={isUploading} onChange={handleAvatarChange} type="file" />
-            </label>
-          </div>
-        </ProfileSection>
-
-        <ProfileSection icon={<Sparkles size={15} />} title={t('storyHighlights')}>
-          <StoryHighlightBar
-            userId={currentUser ? Number(currentUser.id) : undefined}
-            isOwnProfile={true}
-          />
-        </ProfileSection>
-
-        <ProfileSection icon={<AlignLeft size={15} />} title={t('bioSection')}>
-          <div className="pp-bio-preview">
-            <p className={isBioExpanded ? 'is-expanded' : ''}>
-              {form.bio || t('bioEmpty')}
-            </p>
-            {hasLongBio && (
-              <button
-                className="pp-bio-toggle"
-                onClick={() => setIsBioExpanded((v) => !v)}
-                type="button"
-              >
-                {isBioExpanded ? t('collapse') : t('seeMore')}
-              </button>
-            )}
-          </div>
-          <div className="pp-meta-chips">
-            <span className="pp-chip"><Users size={12} />{getGenderLabel(form.gender, t)}</span>
-            {form.address && <span className="pp-chip"><MapPin size={12} />{form.address}</span>}
-          </div>
-        </ProfileSection>
-
-        <ProfileSection icon={<IdCard size={15} />} title={t('basicInfoSection')} dataTour="profile-info-fields">
-            <div className="pp-fields">
-
-              <ProfileField label={t('displayNameLabel')} icon={<IdCard size={14} />} error={profileErrors.displayName}>
-                <input
-                  className="pp-input"
-                  maxLength={80}
-                  name="displayName"
-                  onChange={handleChange}
-                  placeholder={t('displayNamePlaceholder')}
-                  required
-                  value={form.displayName}
-                />
-              </ProfileField>
-
-              <ProfileField label={t('handleLabel')} icon={<AtSign size={14} />} error={profileErrors.handle}>
-                <div className="pp-input-prefix">
-                  <span>@</span>
-                  <input
-                    className="pp-input"
-                    maxLength={32}
-                    name="handle"
-                    onChange={handleChange}
-                    placeholder={t('handlePlaceholder')}
-                    value={form.handle}
-                  />
-                </div>
-              </ProfileField>
-
-              <ProfileField label={t('phoneLabel')} icon={<Phone size={14} />} error={profileErrors.phone}>
-                <input
-                  className="pp-input"
-                  maxLength={32}
-                  name="phone"
-                  onChange={handleChange}
-                  placeholder={t('phonePlaceholder')}
-                  required
-                  value={form.phone}
-                />
-              </ProfileField>
-
-              <ProfileField label={t('genderLabel')} icon={<Users size={14} />} error={profileErrors.gender}>
-                <select
-                  className={`pp-input pp-select${form.gender ? ' has-value' : ''}`}
-                  name="gender"
-                  onChange={handleChange}
-                  required
-                  value={form.gender}
-                >
-                  <option value="">{t('genderPlaceholder')}</option>
-                  <option value="male">{t('genderMale')}</option>
-                  <option value="female">{t('genderFemale')}</option>
-                  <option value="other">{t('genderOther')}</option>
-                  <option value="prefer_not_to_say">{t('genderPreferNotToSay')}</option>
-                </select>
-              </ProfileField>
-
-              <ProfileField label={t('birthDateLabel')} icon={<CalendarDays size={14} />} error={profileErrors.birthDate} wide>
-                <input
-                  className="pp-input"
-                  max={getLocalDateInputValue()}
-                  name="birthDate"
-                  onChange={handleChange}
-                  required
-                  type="date"
-                  value={form.birthDate}
-                />
-              </ProfileField>
-            </div>
-          </ProfileSection>
-
-          <ProfileSection icon={<MapPin size={15} />} title={t('additionalInfoSection')} dataTour="profile-privacy-toggles">
-            <div className="pp-fields">
-              <ProfileField label={t('addressLabel')} icon={<MapPin size={14} />} error={profileErrors.address} wide>
-                <input
-                  className="pp-input"
-                  maxLength={255}
-                  name="address"
-                  onChange={handleChange}
-                  placeholder={t('addressPlaceholder')}
-                  required
-                  value={form.address}
-                />
-              </ProfileField>
-
-              <ProfileField label={t('statusLabel')} icon={<MessageSquare size={14} />} error={profileErrors.statusMessage} wide>
-                <div style={{ display: 'flex', gap: '8px', position: 'relative' }}>
-                  <button
-                    className="pp-input pp-select"
-                    onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
-                    style={{ width: '60px', flexShrink: 0, padding: '0 4px', textAlign: 'center', cursor: 'pointer', background: 'var(--surface)' }}
-                    type="button"
-                  >
-                    {form.statusEmoji}
-                  </button>
-                  {isEmojiPickerOpen && (
-                    <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 50, marginTop: '4px' }}>
-                      <Suspense fallback={<div style={{ padding: '20px', background: 'var(--surface)', color: 'var(--text)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>{t('loading', { defaultValue: 'Đang tải...' })}</div>}>
-                        <EmojiPicker
-                          emojiStyle={'native' as EmojiStyle}
-                          onEmojiClick={handleEmojiClick}
-                          theme={'dark' as Theme}
-                        />
-                      </Suspense>
-                    </div>
-                  )}
-                  <input
-                    className="pp-input"
-                    maxLength={120}
-                    name="statusMessage"
-                    onChange={handleChange}
-                    placeholder={t('statusPlaceholder')}
-                    required
-                    style={{ flexGrow: 1 }}
-                    value={form.statusMessage}
-                  />
-                </div>
-              </ProfileField>
-
-              <ProfileField label={t('statusDurationLabel')} icon={<CalendarDays size={14} />} wide>
-                <select
-                  className={`pp-input pp-select${form.statusDuration ? ' has-value' : ''}`}
-                  name="statusDuration"
-                  onChange={handleChange}
-                  value={form.statusDuration}
-                >
-                  <option value="none">{t('durationNone')}</option>
-                  <option value="1h">{t('duration1h')}</option>
-                  <option value="4h">{t('duration4h')}</option>
-                  <option value="today">{t('durationToday')}</option>
-                  <option value="week">{t('durationWeek')}</option>
-                </select>
-              </ProfileField>
-
-              <ProfileField label={t('bioLabel')} icon={<AlignLeft size={14} />} error={profileErrors.bio} wide>
-                <textarea
-                  className={`pp-input pp-textarea${form.bio ? ' has-value' : ''}`}
-                  maxLength={255}
-                  name="bio"
-                  onChange={handleChange}
-                  placeholder={t('bioPlaceholder')}
-                  required
-                  rows={4}
-                  value={form.bio}
-                />
-              </ProfileField>
-            </div>
-          </ProfileSection>
-        </div>
-
-        <div className="pp-form-footer" style={{ marginTop: '24px' }}>
+    <section className="public-profile-shell" aria-labelledby="profile-heading">
+      {/* Back to my profile bar when viewing another user */}
+      {!isOwnProfile && onBackToMyProfile && (
+        <div style={{ marginBottom: '14px' }}>
           <button
-            className="pp-save-btn"
-            disabled={isSaving || !hasChanges}
-            type="submit"
+            className="profile-btn profile-btn--secondary"
+            onClick={onBackToMyProfile}
+            type="button"
           >
-            <Save size={15} />
-            {isSaving ? t('saving') : t('saveChanges')}
+            <ArrowLeft size={15} />
+            <span>{t('backToMyProfile', { defaultValue: 'Quay lại trang cá nhân của tôi' })}</span>
           </button>
         </div>
-      </form>
+      )}
 
+      {/* 1. Cover Photo */}
+      <ProfileCover
+        coverUrl={coverUrl}
+        isOwnProfile={isOwnProfile}
+        isUploading={isUploadingCover}
+        onCoverChange={handleCoverChange}
+      />
+
+      {/* 2. Profile Header Card */}
+      <ProfileHeader
+        friendshipStatus={friendshipStatus}
+        isAvatarUploading={isAvatarUploading}
+        isFollowLoading={isFollowLoading}
+        isFollowing={followStats.isFollowing}
+        isFriendLoading={isFriendLoading}
+        isOwnProfile={isOwnProfile}
+        onAvatarChange={handleAvatarSelect}
+        onEditProfile={() => {
+          setActiveTab('about')
+          setIsEditingAbout(true)
+        }}
+        onFollowToggle={handleToggleFollow}
+        onFriendAction={handleFriendAction}
+        onSendMessage={() => onSendMessage?.(displayUser)}
+        onStatClick={(tab) => setActiveTab(tab as TabType)}
+        stats={{
+          postsCount: posts.length,
+          friendsCount: friends.length,
+          followersCount: followStats.followersCount,
+          followingCount: followStats.followingCount,
+        }}
+        user={displayUser}
+      />
+
+      {/* 3. Navigation Tabs */}
+      <nav className="profile-nav-tabs" aria-label="Profile tabs">
+        <button
+          className={`profile-nav-tab${activeTab === 'timeline' ? ' profile-nav-tab--active' : ''}`}
+          onClick={() => setActiveTab('timeline')}
+          type="button"
+        >
+          <FileText size={16} />
+          <span>{t('tabTimeline', { defaultValue: 'Dòng thời gian' })}</span>
+          <span className="profile-nav-tab-badge">{posts.length}</span>
+        </button>
+
+        <button
+          className={`profile-nav-tab${activeTab === 'about' ? ' profile-nav-tab--active' : ''}`}
+          onClick={() => setActiveTab('about')}
+          type="button"
+        >
+          <IdCard size={16} />
+          <span>{t('tabAbout', { defaultValue: 'Giới thiệu' })}</span>
+        </button>
+
+        <button
+          className={`profile-nav-tab${activeTab === 'friends' ? ' profile-nav-tab--active' : ''}`}
+          onClick={() => setActiveTab('friends')}
+          type="button"
+        >
+          <Users size={16} />
+          <span>{t('tabFriends', { defaultValue: 'Bạn bè' })}</span>
+          <span className="profile-nav-tab-badge">{friends.length}</span>
+        </button>
+
+        <button
+          className={`profile-nav-tab${activeTab === 'followers' ? ' profile-nav-tab--active' : ''}`}
+          onClick={() => setActiveTab('followers')}
+          type="button"
+        >
+          <Heart size={16} />
+          <span>{t('tabFollowers', { defaultValue: 'Người theo dõi' })}</span>
+          <span className="profile-nav-tab-badge">{followStats.followersCount}</span>
+        </button>
+      </nav>
+
+      {/* 4. Tab Content Panels */}
+      {activeTab === 'timeline' && (
+        <TimelineTab
+          currentUser={currentUser}
+          isLoading={isPostsLoading}
+          isOwnProfile={isOwnProfile}
+          onAddComment={handleAddComment}
+          onCreatePost={handleCreatePost}
+          onDeletePost={handleDeletePost}
+          onToggleReaction={handleToggleReaction}
+          posts={posts}
+        />
+      )}
+
+      {activeTab === 'about' && (
+        <AboutTab
+          isEditing={isEditingAbout}
+          isOwnProfile={isOwnProfile}
+          isSaving={isSavingProfile}
+          onSaveProfile={handleSaveProfile}
+          onToggleEdit={setIsEditingAbout}
+          user={displayUser}
+        />
+      )}
+
+      {activeTab === 'friends' && (
+        <FriendsTab
+          friends={friends}
+          isLoading={isFriendsLoading}
+          onSendMessage={onSendMessage}
+          onViewFriendProfile={(friend) => {
+            // view friend profile
+            if (onSendMessage) {
+              onSendMessage(friend)
+            }
+          }}
+        />
+      )}
+
+      {activeTab === 'followers' && (
+        <FollowersTab
+          followers={followers}
+          following={following}
+          isLoading={isFollowersLoading}
+          onToggleFollow={async (user) => {
+            if (!currentUser) return
+            await timelineApi.toggleFollowUser(user.id, currentUser.id)
+            loadFollowersAndFollowing()
+          }}
+        />
+      )}
+
+      {/* Avatar Cropper Modal */}
       {cropImageSrc && (
         <AvatarCropper
           imageSrc={cropImageSrc}
-          onCropped={handleCroppedImage}
           onCancel={() => setCropImageSrc(null)}
+          onCropped={handleCroppedAvatar}
         />
       )}
     </section>

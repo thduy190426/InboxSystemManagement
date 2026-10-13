@@ -144,8 +144,13 @@ export function ChatApp(props: ChatAppProps) {
         <Suspense fallback={<div className="skeleton-loader" style={{ flex: 1, margin: '16px', borderRadius: '16px' }} />}>
           <ProfilePage
             currentUser={props.currentUser}
+            onBackToMyProfile={() => ctrl.setProfileContactToOpen(null)}
+            onSendMessage={(user) => {
+              ctrl.handleSelectConversation(String(user.id))
+            }}
             onUserChange={props.onUserChange}
             pushToast={ctrl.pushToast}
+            targetUser={ctrl.profileContactToOpen}
           />
         </Suspense>
         {renderCallOverlay()}
@@ -326,9 +331,13 @@ export function ChatApp(props: ChatAppProps) {
       />
       {ctrl.profileContactToOpen && (
         <ContactProfile
-          user={ctrl.profileContactToOpen}
           isClosing={ctrl.isProfileClosing}
           onClose={ctrl.closeContactProfile}
+          onViewFullProfile={() => {
+            ctrl.closeContactProfile()
+            ctrl.handleChangeView('profile')
+          }}
+          user={ctrl.profileContactToOpen}
         />
       )}
       {renderCallOverlay()}
