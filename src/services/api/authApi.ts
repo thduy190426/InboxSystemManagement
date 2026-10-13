@@ -1,4 +1,4 @@
-import { apiFetch, ApiRequestError, requestJson } from './apiClient'
+import { apiFetch, ApiRequestError, requestJson, API_BASE_URL } from './apiClient'
 
 export type AuthUser = {
   id: string
@@ -224,4 +224,22 @@ export function verifySetup2FA(payload: { secret: string, token: string }) {
 
 export function disable2FA(payload: { token: string, password: string }) {
   return requestJson<{success: boolean, message: string}>('/auth/2fa/disable', { auth: true, method: 'POST', body: JSON.stringify(payload) })
+}
+
+export async function verifyAccountSession(token: string): Promise<AuthUser | null> {
+  if (!token) return null
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    if (!response.ok) {
+      return null
+    }
+    const data = await response.json()
+    return data.user || null
+  } catch {
+    return null
+  }
 }

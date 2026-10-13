@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { Plus, Trash2, ExternalLink, X } from 'lucide-react'
+import { Plus, Trash2, ExternalLink, RefreshCw, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { AuthUser } from '../../services/api/authApi'
 import {
@@ -14,7 +14,7 @@ type AccountSwitcherMenuProps = {
   currentUser: AuthUser | null
   anchorEl?: HTMLElement | null
   onClose: () => void
-  onSwitchAccount: (account: SavedAccount) => void
+  onSwitchAccount: (account: SavedAccount) => Promise<boolean> | void
   onAddAccount: () => void
   onViewProfile?: () => void
 }
@@ -31,6 +31,7 @@ export function AccountSwitcherMenu({
   const { t } = useTranslation()
   const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>([])
   const [accountToDelete, setAccountToDelete] = useState<SavedAccount | null>(null)
+  const [switchingId, setSwitchingId] = useState<string | number | null>(null)
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -351,6 +352,7 @@ export function AccountSwitcherMenu({
             return (
               <div
                 key={account.user.id}
+                className="account-item-row"
                 style={{
                   position: 'relative',
                   display: 'flex',
@@ -360,15 +362,23 @@ export function AccountSwitcherMenu({
                   margin: '3px 0',
                   borderRadius: '10px',
                   background: 'transparent',
-                  cursor: 'pointer',
+                  cursor: switchingId ? 'wait' : 'pointer',
+                  opacity: switchingId && switchingId !== account.user.id ? 0.6 : 1,
                   transition: 'background 150ms ease, transform 150ms ease',
                   border: '1px solid transparent',
+                  pointerEvents: switchingId ? 'none' : 'auto',
                 }}
-                className="account-item-row"
-                onClick={() => {
-                  if (!isDeleting) {
-                    onClose()
-                    onSwitchAccount(account)
+                onClick={async () => {
+                  if (!isDeleting && !switchingId) {
+                    setSwitchingId(account.user.id)
+                    try {
+                      const success = await onSwitchAccount(account)
+                      if (success !== false) {
+                        onClose()
+                      }
+                    } finally {
+                      setSwitchingId(null)
+                    }
                   }
                 }}
               >
@@ -430,30 +440,35 @@ export function AccountSwitcherMenu({
                   </div>
                 </div>
 
-                {/* Remove account button */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setAccountToDelete(account)
-                  }}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--color-text-muted, #94a3b8)',
-                    cursor: 'pointer',
-                    padding: '6px',
-                    borderRadius: '6px',
-                    display: 'grid',
-                    placeItems: 'center',
-                    opacity: 0.7,
-                    transition: 'opacity 150ms ease, background 150ms ease, color 150ms ease',
-                  }}
-                  className="account-remove-btn"
-                  title={t('accountSwitcher.removeAccount', { defaultValue: 'Xóa tài khoản khỏi thiết bị' })}
-                >
-                  <Trash2 size={15} />
-                </button>
+                {switchingId === account.user.id ? (
+                  <div style={{ padding: '6px', display: 'grid', placeItems: 'center', color: 'var(--color-primary, #14b8a6)' }}>
+                    <RefreshCw size={14} className="animate-spin" />
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setAccountToDelete(account)
+                    }}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--color-text-muted, #94a3b8)',
+                      cursor: 'pointer',
+                      padding: '6px',
+                      borderRadius: '6px',
+                      display: 'grid',
+                      placeItems: 'center',
+                      opacity: 0.7,
+                      transition: 'opacity 150ms ease, background 150ms ease, color 150ms ease',
+                    }}
+                    className="account-remove-btn"
+                    title={t('accountSwitcher.removeAccount', { defaultValue: 'Xóa tài khoản khỏi thiết bị' })}
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                )}
               </div>
             )
           })}

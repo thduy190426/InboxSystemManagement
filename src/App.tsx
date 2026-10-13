@@ -18,6 +18,7 @@ import {
   logout,
   register,
   type AuthUser,
+  verifyAccountSession,
 } from './services/api/authApi'
 import { onSessionExpired } from './services/api/apiClient'
 import {
@@ -35,6 +36,8 @@ import {
   storeAuthSession,
   updateStoredAuthUser,
   switchActiveAccount,
+  invalidateSavedAccountToken,
+  isSavedAccountSessionActive,
   type SavedAccount,
 } from './services/storage/authStorage'
 import { disconnectRealtimeSocket } from './services/realtime/realtime'
@@ -254,17 +257,17 @@ export function App() {
       setIsAuthenticated(false)
       setCurrentUser(null)
       setAuthScreen('login')
-      pushToast(t('sessionExpired'), 'error')
+      toast.error(t('sessionExpired'), { id: 'session-expired-toast' })
       setIsSubmitting(false)
     })
-  }, [])
+  }, [t])
 
   const pushToast = useCallback(
-    (text: string, tone: 'info' | 'error' = 'info') => {
+    (text: string, tone: 'info' | 'error' = 'info', id?: string) => {
       if (tone === 'error') {
-        toast.error(text)
+        toast.error(text, id ? { id } : undefined)
       } else {
-        toast.success(text)
+        toast.success(text, id ? { id } : undefined)
       }
     },
     [],
@@ -296,6 +299,9 @@ export function App() {
   }
 
   async function handleLogout() {
+    if (currentUser?.id) {
+      invalidateSavedAccountToken(currentUser.id)
+    }
     await logout().catch(() => undefined)
     clearStoredAuthSession()
     window.history.replaceState(null, '', toAuthPath('login'))
@@ -321,7 +327,32 @@ export function App() {
     setCurrentUser(user)
   }
 
-  function handleSwitchAccount(targetAccount: SavedAccount) {
+  async function handleSwitchAccount(targetAccount: SavedAccount): Promise<boolean> {
+    if (!isSavedAccountSessionActive(targetAccount) || !targetAccount.refreshToken) {
+      invalidateSavedAccountToken(targetAccount.user.id)
+      pushToast(
+        t('accountSwitcher.switchFailed', {
+          defaultValue: 'Phiên đăng nhập của tài khoản này đã hết hạn. Vui lòng đăng nhập lại!',
+        }),
+        'error',
+        'switch-failed',
+      )
+      return false
+    }
+
+    const verifiedUser = await verifyAccountSession(targetAccount.refreshToken)
+    if (!verifiedUser) {
+      invalidateSavedAccountToken(targetAccount.user.id)
+      pushToast(
+        t('accountSwitcher.switchFailed', {
+          defaultValue: 'Phiên đăng nhập của tài khoản này đã hết hạn. Vui lòng đăng nhập lại!',
+        }),
+        'error',
+        'switch-failed',
+      )
+      return false
+    }
+
     const switched = switchActiveAccount(targetAccount.user.id)
     if (!switched) {
       pushToast(
@@ -329,20 +360,23 @@ export function App() {
           defaultValue: 'Không thể chuyển tài khoản hoặc phiên đã hết hạn. Vui lòng đăng nhập lại!',
         }),
         'error',
+        'switch-failed',
       )
-      return
+      return false
     }
 
     disconnectRealtimeSocket()
-    setCurrentUser(switched.user)
+    setCurrentUser(verifiedUser)
     setIsAuthenticated(true)
     pushToast(
       t('accountSwitcher.switchedAccountSuccess', {
-        name: switched.user.displayName || switched.user.fullName,
-        defaultValue: `Đã chuyển sang tài khoản ${switched.user.displayName || switched.user.fullName}!`,
+        name: verifiedUser.displayName || verifiedUser.fullName,
+        defaultValue: `Đã chuyển sang tài khoản ${verifiedUser.displayName || verifiedUser.fullName}!`,
       }),
       'info',
+      'switch-success',
     )
+    return true
   }
 
   function handleAddAccount() {

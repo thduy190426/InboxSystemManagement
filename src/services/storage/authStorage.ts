@@ -14,9 +14,15 @@ export type StoredAuthSession = {
 
 export type SavedAccount = {
   user: AuthUser
-  refreshToken: string
-  expiresAt: string
+  refreshToken?: string
+  expiresAt?: string
   lastActiveAt: string
+}
+
+export function isSavedAccountSessionActive(account: SavedAccount): boolean {
+  if (!account.refreshToken || !account.expiresAt) return false
+  const exp = new Date(account.expiresAt).getTime()
+  return !Number.isNaN(exp) && exp > Date.now()
 }
 
 function getStorage(rememberLogin: boolean) {
@@ -72,7 +78,7 @@ export function getSavedAccounts(): SavedAccount[] {
     if (!Array.isArray(parsed)) return []
 
     return parsed
-      .filter((item) => item?.user?.id && item.refreshToken && item.expiresAt)
+      .filter((item) => item?.user?.id)
       .sort((a, b) => new Date(b.lastActiveAt || 0).getTime() - new Date(a.lastActiveAt || 0).getTime())
   } catch {
     return []
@@ -86,7 +92,6 @@ export function saveAccountSession(
   try {
     const accounts = getSavedAccounts()
     const currentSession = session ?? getStoredAuthSession()
-    if (!currentSession?.refreshToken || !currentSession.expiresAt) return
 
     const existingIndex = accounts.findIndex(
       (acc) => String(acc.user.id) === String(user.id) || acc.user.email === user.email,
@@ -94,8 +99,8 @@ export function saveAccountSession(
 
     const updatedAccount: SavedAccount = {
       user,
-      refreshToken: currentSession.refreshToken,
-      expiresAt: currentSession.expiresAt,
+      refreshToken: currentSession?.refreshToken || accounts[existingIndex]?.refreshToken || '',
+      expiresAt: currentSession?.expiresAt || accounts[existingIndex]?.expiresAt || '',
       lastActiveAt: new Date().toISOString(),
     }
 
@@ -108,6 +113,22 @@ export function saveAccountSession(
     window.localStorage.setItem(SAVED_ACCOUNTS_KEY, JSON.stringify(accounts))
   } catch (error) {
     console.error('Failed to save account to saved_accounts:', error)
+  }
+}
+
+export function invalidateSavedAccountToken(userIdOrEmail: string | number): void {
+  try {
+    const accounts = getSavedAccounts()
+    const targetIndex = accounts.findIndex(
+      (acc) => String(acc.user.id) === String(userIdOrEmail) || acc.user.email === String(userIdOrEmail),
+    )
+    if (targetIndex >= 0) {
+      accounts[targetIndex].refreshToken = ''
+      accounts[targetIndex].expiresAt = ''
+      window.localStorage.setItem(SAVED_ACCOUNTS_KEY, JSON.stringify(accounts))
+    }
+  } catch (error) {
+    console.error('Failed to invalidate token in saved_accounts:', error)
   }
 }
 
@@ -128,11 +149,13 @@ export function switchActiveAccount(userIdOrEmail: string | number): SavedAccoun
     (acc) => String(acc.user.id) === String(userIdOrEmail) || acc.user.email === String(userIdOrEmail),
   )
 
-  if (!target) return null
+  if (!target || !target.refreshToken || !isSavedAccountSessionActive(target)) {
+    return null
+  }
 
   window.localStorage.setItem(AUTH_USER_KEY, JSON.stringify(target.user))
   window.localStorage.setItem(REFRESH_TOKEN_KEY, target.refreshToken)
-  window.localStorage.setItem(REFRESH_TOKEN_EXPIRES_AT_KEY, target.expiresAt)
+  window.localStorage.setItem(REFRESH_TOKEN_EXPIRES_AT_KEY, target.expiresAt || '')
   cacheAuthToken(target.refreshToken).catch(console.error)
 
   target.lastActiveAt = new Date().toISOString()

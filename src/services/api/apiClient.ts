@@ -34,7 +34,16 @@ export class ApiRequestError extends Error {
   }
 }
 
+let lastExpireTimestamp = 0
+
 export function expireSession() {
+  const now = Date.now()
+  // Throttle session expiration to prevent cascading 401 toast storms
+  if (now - lastExpireTimestamp < 3000) {
+    return
+  }
+  lastExpireTimestamp = now
+
   clearStoredAuthSession()
   disconnectRealtimeSocket()
   window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT))

@@ -1,6 +1,6 @@
 import type { FormEvent } from 'react'
 import { useState, useRef, useEffect } from 'react'
-import { ArrowRight, ChevronLeft, Eye, EyeOff, Lock, LogIn, Mail, Plus, X } from 'lucide-react'
+import { ArrowRight, ChevronLeft, Eye, EyeOff, Lock, LogIn, Mail, Plus, RefreshCw, X } from 'lucide-react'
 import ReCAPTCHA from 'react-google-recaptcha'
 import { useGoogleLogin } from '@react-oauth/google'
 import FacebookLoginDefault from '@greatsumini/react-facebook-login'
@@ -12,6 +12,7 @@ import loginBg from '../../bg-images/LoginBG.jpg'
 import {
   getSavedAccounts,
   removeSavedAccount,
+  isSavedAccountSessionActive,
   type SavedAccount,
 } from '../../services/storage/authStorage'
 
@@ -20,7 +21,7 @@ type LoginPageProps = AuthPageProps & {
   twoFactorToken?: string | null
   onLogin2FA?: (code: string) => void
   onCancel2FA?: () => void
-  onSelectSavedAccount?: (account: SavedAccount) => void
+  onSelectSavedAccount?: (account: SavedAccount) => Promise<boolean> | void
 }
 
 export function LoginPage({
@@ -38,6 +39,8 @@ export function LoginPage({
 }: LoginPageProps) {
   const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>(() => getSavedAccounts())
   const [showStandardForm, setShowStandardForm] = useState<boolean>(() => savedAccounts.length === 0)
+  const [selectedAccount, setSelectedAccount] = useState<SavedAccount | null>(null)
+  const [isVerifyingAccount, setIsVerifyingAccount] = useState<string | null>(null)
   const [prefilledEmail, setPrefilledEmail] = useState<string>('')
   const [showPassword, setShowPassword] = useState(false)
   const [isFormFilled, setIsFormFilled] = useState(false)
@@ -92,12 +95,30 @@ export function LoginPage({
     })
   }
 
-  function handleSelectSavedAccount(account: SavedAccount) {
-    if (onSelectSavedAccount) {
-      onSelectSavedAccount(account)
-    } else {
-      setPrefilledEmail(account.user.email)
+  async function handleSelectSavedAccount(account: SavedAccount) {
+    setSelectedAccount(account)
+    setPrefilledEmail(account.user.email)
+
+    // If session is not active or token is missing, jump straight to password entry
+    if (!isSavedAccountSessionActive(account) || !account.refreshToken) {
       setShowStandardForm(true)
+      return
+    }
+
+    setIsVerifyingAccount(String(account.user.id))
+    try {
+      if (onSelectSavedAccount) {
+        const success = await onSelectSavedAccount(account)
+        if (!success) {
+          setShowStandardForm(true)
+        }
+      } else {
+        setShowStandardForm(true)
+      }
+    } catch {
+      setShowStandardForm(true)
+    } finally {
+      setIsVerifyingAccount(null)
     }
   }
 
@@ -106,6 +127,10 @@ export function LoginPage({
     removeSavedAccount(account.user.id)
     const remaining = getSavedAccounts()
     setSavedAccounts(remaining)
+    if (selectedAccount?.user.id === account.user.id) {
+      setSelectedAccount(null)
+      setPrefilledEmail('')
+    }
     if (remaining.length === 0) {
       setShowStandardForm(true)
     }
@@ -149,59 +174,78 @@ export function LoginPage({
             ) : null}
 
             <div className="recent-accounts-container">
-              {savedAccounts.map((account) => (
-                <div
-                  key={account.user.id}
-                  className="recent-account-card"
-                  onClick={() => handleSelectSavedAccount(account)}
-                >
-                  {account.user.avatarUrl ? (
-                    <img
-                      src={account.user.avatarUrl}
-                      alt=""
-                      className="recent-account-avatar"
-                    />
-                  ) : (
-                    <div className="recent-account-avatar-fallback">
-                      {account.user.displayName?.[0] || account.user.fullName?.[0] || 'U'}
-                    </div>
-                  )}
-
-                  <div style={{ flex: 1, minWidth: 0, paddingRight: '16px' }}>
-                    <div
-                      style={{
-                        fontWeight: 700,
-                        fontSize: '14.5px',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {account.user.displayName || account.user.fullName}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: '12px',
-                        color: 'var(--color-text-muted, #94a3b8)',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {account.user.email}
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="recent-account-remove-btn"
-                    title={t('accountSwitcher.removeAccount', { defaultValue: 'Xóa tài khoản khỏi thiết bị' })}
-                    onClick={(e) => handleRemoveSavedAccount(e, account)}
+              {savedAccounts.map((account) => {
+                const isThisVerifying = isVerifyingAccount === String(account.user.id)
+                return (
+                  <div
+                    key={account.user.id}
+                    className="recent-account-card"
+                    style={{
+                      opacity: isVerifyingAccount && !isThisVerifying ? 0.6 : 1,
+                      cursor: isVerifyingAccount ? 'wait' : 'pointer',
+                      pointerEvents: isVerifyingAccount ? 'none' : 'auto',
+                    }}
+                    onClick={() => handleSelectSavedAccount(account)}
                   >
-                    <X size={14} />
-                  </button>
-                </div>
-              ))}
+                    {account.user.avatarUrl ? (
+                      <img
+                        src={account.user.avatarUrl}
+                        alt=""
+                        className="recent-account-avatar"
+                      />
+                    ) : (
+                      <div className="recent-account-avatar-fallback">
+                        {account.user.displayName?.[0] || account.user.fullName?.[0] || 'U'}
+                      </div>
+                    )}
+
+                    <div style={{ flex: 1, minWidth: 0, paddingRight: '16px' }}>
+                      <div
+                        style={{
+                          fontWeight: 700,
+                          fontSize: '14.5px',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {account.user.displayName || account.user.fullName}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '12px',
+                          color: isThisVerifying ? 'var(--color-primary, #14b8a6)' : 'var(--color-text-muted, #94a3b8)',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        {isThisVerifying ? (
+                          <>
+                            <RefreshCw size={12} className="animate-spin" />
+                            <span>{t('app.loadingTitle', { defaultValue: 'Đang kiểm tra phiên...' })}</span>
+                          </>
+                        ) : (
+                          account.user.email
+                        )}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="recent-account-remove-btn"
+                      title={t('accountSwitcher.removeAccount', { defaultValue: 'Xóa tài khoản khỏi thiết bị' })}
+                      onClick={(e) => handleRemoveSavedAccount(e, account)}
+                      disabled={Boolean(isVerifyingAccount)}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                )
+              })}
 
               <button
                 type="button"
@@ -219,10 +263,12 @@ export function LoginPage({
                   color: 'var(--color-text-main, #e2e8f0)',
                   fontSize: '13.5px',
                   fontWeight: 600,
-                  cursor: 'pointer',
+                  cursor: isVerifyingAccount ? 'wait' : 'pointer',
                   marginTop: '4px',
                 }}
+                disabled={Boolean(isVerifyingAccount)}
                 onClick={() => {
+                  setSelectedAccount(null)
                   setPrefilledEmail('')
                   setShowStandardForm(true)
                 }}
@@ -238,7 +284,11 @@ export function LoginPage({
               {savedAccounts.length > 0 && !twoFactorToken && (
                 <button
                   type="button"
-                  onClick={() => setShowStandardForm(false)}
+                  onClick={() => {
+                    setSelectedAccount(null)
+                    setPrefilledEmail('')
+                    setShowStandardForm(false)
+                  }}
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -263,6 +313,89 @@ export function LoginPage({
               <h1 id="login-title">{t('login.title')}</h1>
               <p>{t('login.subtitle')}</p>
             </div>
+
+            {selectedAccount && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '10px 14px',
+                  borderRadius: '12px',
+                  background: 'rgba(20, 184, 166, 0.08)',
+                  border: '1px solid rgba(20, 184, 166, 0.25)',
+                  marginBottom: '16px',
+                }}
+              >
+                {selectedAccount.user.avatarUrl ? (
+                  <img
+                    src={selectedAccount.user.avatarUrl}
+                    alt=""
+                    style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #14b8a6, #2563eb)',
+                      color: '#fff',
+                      display: 'grid',
+                      placeItems: 'center',
+                      fontWeight: 700,
+                      fontSize: '15px',
+                    }}
+                  >
+                    {selectedAccount.user.displayName?.[0] || selectedAccount.user.fullName?.[0] || 'U'}
+                  </div>
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      fontSize: '14px',
+                      color: 'var(--color-text-main, #e2e8f0)',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {selectedAccount.user.displayName || selectedAccount.user.fullName}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '12px',
+                      color: 'var(--color-text-muted, #94a3b8)',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {selectedAccount.user.email}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedAccount(null)
+                    setPrefilledEmail('')
+                    setShowStandardForm(false)
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--color-primary, #14b8a6)',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    padding: '4px 6px',
+                  }}
+                >
+                  {t('accountSwitcher.switchAccount', { defaultValue: 'Đổi' })}
+                </button>
+              </div>
+            )}
 
             {errorMessage ? (
               <div className="auth-error-notice" role="alert">
@@ -306,6 +439,7 @@ export function LoginPage({
                 <div className="auth-input-row">
                   <Mail size={18} />
                   <input
+                    key={prefilledEmail}
                     id="login-email"
                     autoComplete="email"
                     defaultValue={prefilledEmail}

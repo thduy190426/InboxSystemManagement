@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   AlertTriangle,
   ChevronDown,
@@ -240,6 +240,11 @@ export function SettingsPage(props: SettingsPageProps) {
   useAutoTour('settings', true, props.currentUser?.id)
 
   const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>(() => getSavedAccounts())
+  const [switchingId, setSwitchingId] = useState<string | number | null>(null)
+
+  useEffect(() => {
+    setSavedAccounts(getSavedAccounts())
+  }, [props.currentUser?.id])
 
   const {
     currentUser, onUserChange, pushToast
@@ -652,10 +657,31 @@ export function SettingsPage(props: SettingsPageProps) {
                           <button
                             type="button"
                             className="sp-btn sp-btn--ghost"
-                            onClick={() => props.onSwitchAccount?.(account)}
-                            style={{ fontSize: '12.5px', padding: '6px 12px' }}
+                            disabled={Boolean(switchingId)}
+                            onClick={async () => {
+                              setSwitchingId(account.user.id)
+                              try {
+                                await props.onSwitchAccount?.(account)
+                              } finally {
+                                setSwitchingId(null)
+                                setSavedAccounts(getSavedAccounts())
+                              }
+                            }}
+                            style={{
+                              fontSize: '12.5px',
+                              padding: '6px 12px',
+                              minWidth: '68px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '6px',
+                            }}
                           >
-                            {t('accountSwitcher.switchAccount', { defaultValue: 'Chuyển' })}
+                            {switchingId === account.user.id ? (
+                              <RefreshCw size={13} className="animate-spin" />
+                            ) : (
+                              t('accountSwitcher.switchAccount', { defaultValue: 'Chuyển' })
+                            )}
                           </button>
                         )}
                         {!isCurrent && (
