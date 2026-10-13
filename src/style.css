@@ -14226,28 +14226,277 @@ html.dark .chat-panel .message-edit-form input,
 }
 
 
+/* ==========================================================================
+   Chat Header & Message Search - Dark Mode & Custom Background Improvements
+   ========================================================================== */
+
+/* Chat Header Container */
+html.dark .chat-header,
+[data-theme='dark'] .chat-header,
+.chat-panel.has-custom-bg .chat-header {
+  background: rgba(20, 24, 33, 0.88) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+}
+
+/* Chat Identity & Profile */
 html.dark .chat-panel .chat-profile-copy h2,
+[data-theme='dark'] .chat-panel .chat-profile-copy h2,
 .chat-panel.has-custom-bg .chat-profile-copy h2 {
   color: #ffffff !important;
 }
 
 html.dark .chat-panel .chat-profile-copy p,
+[data-theme='dark'] .chat-panel .chat-profile-copy p,
 .chat-panel.has-custom-bg .chat-profile-copy p {
   color: rgba(255, 255, 255, 0.8) !important;
 }
 
+html.dark .chat-profile-trigger:hover,
+[data-theme='dark'] .chat-profile-trigger:hover,
+.chat-panel.has-custom-bg .chat-profile-trigger:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Header Action Buttons & Mobile Menu */
+html.dark .chat-header .icon-button,
 html.dark .chat-panel .header-actions button,
-.chat-panel.has-custom-bg .header-actions button {
+html.dark .chat-panel .mobile-menu,
+[data-theme='dark'] .chat-header .icon-button,
+[data-theme='dark'] .chat-panel .header-actions button,
+[data-theme='dark'] .chat-panel .mobile-menu,
+.chat-panel.has-custom-bg .chat-header .icon-button,
+.chat-panel.has-custom-bg .header-actions button,
+.chat-panel.has-custom-bg .mobile-menu {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+  transition: all 160ms ease !important;
+}
+
+html.dark .chat-header .icon-button svg,
+html.dark .chat-panel .header-actions button svg,
+html.dark .chat-panel .mobile-menu svg,
+[data-theme='dark'] .chat-header .icon-button svg,
+[data-theme='dark'] .chat-panel .header-actions button svg,
+[data-theme='dark'] .chat-panel .mobile-menu svg,
+.chat-panel.has-custom-bg .chat-header .icon-button svg,
+.chat-panel.has-custom-bg .header-actions button svg,
+.chat-panel.has-custom-bg .mobile-menu svg {
   color: #ffffff !important;
 }
 
-html.dark .chat-panel .message-search-count,
+html.dark .chat-header .icon-button:hover:not(:disabled),
+html.dark .chat-panel .header-actions button:hover:not(:disabled),
+html.dark .chat-panel .mobile-menu:hover:not(:disabled),
+[data-theme='dark'] .chat-header .icon-button:hover:not(:disabled),
+[data-theme='dark'] .chat-panel .header-actions button:hover:not(:disabled),
+[data-theme='dark'] .chat-panel .mobile-menu:hover:not(:disabled),
+.chat-panel.has-custom-bg .chat-header .icon-button:hover:not(:disabled),
+.chat-panel.has-custom-bg .header-actions button:hover:not(:disabled),
+.chat-panel.has-custom-bg .mobile-menu:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18) !important;
+  border-color: rgba(255, 255, 255, 0.28) !important;
+  color: #ffffff !important;
+  transform: translateY(-1px) !important;
+}
+
+html.dark .chat-header .icon-button.is-active,
+html.dark .chat-panel .header-actions button.is-active,
+[data-theme='dark'] .chat-header .icon-button.is-active,
+[data-theme='dark'] .chat-panel .header-actions button.is-active,
+.chat-panel.has-custom-bg .chat-header .icon-button.is-active,
+.chat-panel.has-custom-bg .header-actions button.is-active {
+  background: rgba(20, 184, 166, 0.25) !important;
+  border-color: rgba(20, 184, 166, 0.55) !important;
+  color: #5eead4 !important;
+  box-shadow: 0 0 12px rgba(20, 184, 166, 0.35) !important;
+}
+
+html.dark .chat-header .icon-button.is-active svg,
+html.dark .chat-panel .header-actions button.is-active svg,
+[data-theme='dark'] .chat-header .icon-button.is-active svg,
+[data-theme='dark'] .chat-panel .header-actions button.is-active svg,
+.chat-panel.has-custom-bg .chat-header .icon-button.is-active svg,
+.chat-panel.has-custom-bg .header-actions button.is-active svg {
+  color: #5eead4 !important;
+}
+
+html.dark .chat-header .icon-button:disabled,
+html.dark .chat-panel .header-actions button:disabled,
+[data-theme='dark'] .chat-header .icon-button:disabled,
+[data-theme='dark'] .chat-panel .header-actions button:disabled,
+.chat-panel.has-custom-bg .chat-header .icon-button:disabled,
+.chat-panel.has-custom-bg .header-actions button:disabled {
+  opacity: 0.45 !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: rgba(255, 255, 255, 0.45) !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+html.dark .chat-header .icon-button:disabled svg,
+html.dark .chat-panel .header-actions button:disabled svg,
+[data-theme='dark'] .chat-header .icon-button:disabled svg,
+[data-theme='dark'] .chat-panel .header-actions button:disabled svg,
+.chat-panel.has-custom-bg .chat-header .icon-button:disabled svg,
+.chat-panel.has-custom-bg .header-actions button:disabled svg {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+
+/* Message Search Field (Input Container & Magnifying Icon & Placeholder) */
+html.dark .message-search-field,
+[data-theme='dark'] .message-search-field,
+.chat-panel.has-custom-bg .message-search-field {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  transition: all 180ms ease;
+}
+
+html.dark .message-search-field:focus-within,
+[data-theme='dark'] .message-search-field:focus-within,
+.chat-panel.has-custom-bg .message-search-field:focus-within {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(20, 184, 166, 0.7) !important;
+  box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.25) !important;
+}
+
+html.dark .message-search-field svg,
+[data-theme='dark'] .message-search-field svg,
+.chat-panel.has-custom-bg .message-search-field svg {
+  color: #ffffff !important;
+  opacity: 0.9 !important;
+  flex-shrink: 0;
+}
+
+html.dark .message-search-field input,
+[data-theme='dark'] .message-search-field input,
+.chat-panel.has-custom-bg .message-search-field input {
+  color: #ffffff !important;
+}
+
+html.dark .message-search-field input::placeholder,
+[data-theme='dark'] .message-search-field input::placeholder,
+.chat-panel.has-custom-bg .message-search-field input::placeholder {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+html.dark .message-search-field input::-webkit-search-cancel-button,
+[data-theme='dark'] .message-search-field input::-webkit-search-cancel-button,
+.chat-panel.has-custom-bg .message-search-field input::-webkit-search-cancel-button {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+/* Message Search Action Buttons (Filter, Search, Prev, Next, Clear) */
+html.dark .message-search-button,
+[data-theme='dark'] .message-search-button,
+.chat-panel.has-custom-bg .message-search-button {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+  transition: all 180ms ease;
+}
+
+html.dark .message-search-button svg,
+[data-theme='dark'] .message-search-button svg,
+.chat-panel.has-custom-bg .message-search-button svg {
+  color: #ffffff !important;
+}
+
+html.dark .message-search-button:hover:not(:disabled),
+[data-theme='dark'] .message-search-button:hover:not(:disabled),
+.chat-panel.has-custom-bg .message-search-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+}
+
+html.dark .message-search-button.is-active,
+[data-theme='dark'] .message-search-button.is-active,
+.chat-panel.has-custom-bg .message-search-button.is-active {
+  background: rgba(20, 184, 166, 0.3) !important;
+  border-color: #14b8a6 !important;
+  color: #5eead4 !important;
+  box-shadow: 0 0 10px rgba(20, 184, 166, 0.35) !important;
+}
+
+html.dark .message-search-button.is-active svg,
+[data-theme='dark'] .message-search-button.is-active svg,
+.chat-panel.has-custom-bg .message-search-button.is-active svg {
+  color: #5eead4 !important;
+}
+
+html.dark .message-search-button:disabled,
+[data-theme='dark'] .message-search-button:disabled,
+.chat-panel.has-custom-bg .message-search-button:disabled {
+  opacity: 0.45 !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+html.dark .message-search-button:disabled svg,
+[data-theme='dark'] .message-search-button:disabled svg,
+.chat-panel.has-custom-bg .message-search-button:disabled svg {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Search Counter */
+html.dark .message-search-count,
+[data-theme='dark'] .message-search-count,
 .chat-panel.has-custom-bg .message-search-count {
   color: #ffffff !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
 }
 
-html.dark .chat-panel .message-search-field input,
-.chat-panel.has-custom-bg .message-search-field input {
+/* Search Filter Popover & Dropdowns */
+html.dark .message-search-filter-popover,
+[data-theme='dark'] .message-search-filter-popover,
+.chat-panel.has-custom-bg .message-search-filter-popover {
+  background: rgba(22, 27, 38, 0.96) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  color: #ffffff !important;
+}
+
+html.dark .message-search-date,
+html.dark .message-search-select,
+[data-theme='dark'] .message-search-date,
+[data-theme='dark'] .message-search-select,
+.chat-panel.has-custom-bg .message-search-date,
+.chat-panel.has-custom-bg .message-search-select {
+  background: rgba(33, 40, 54, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+}
+
+html.dark .message-search-date:focus,
+html.dark .message-search-select:focus,
+[data-theme='dark'] .message-search-date:focus,
+[data-theme='dark'] .message-search-select:focus,
+.chat-panel.has-custom-bg .message-search-date:focus,
+.chat-panel.has-custom-bg .message-search-select:focus {
+  border-color: #14b8a6 !important;
+  box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.25) !important;
+  outline: none !important;
+}
+
+html.dark .message-search-select option,
+[data-theme='dark'] .message-search-select option,
+.chat-panel.has-custom-bg .message-search-select option {
+  background: #181c26 !important;
   color: #ffffff !important;
 }
 
