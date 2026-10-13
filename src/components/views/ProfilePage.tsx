@@ -358,14 +358,17 @@ export function ProfilePage({
 
   if (!displayUser) {
     return (
-      <div className="public-profile-shell" style={{ padding: '40px', textAlign: 'center' }}>
-        <p>{t('loading', { defaultValue: 'Đang tải thông tin hồ sơ...' })}</p>
+      <div className="public-profile-viewport">
+        <div className="public-profile-shell" style={{ padding: '60px 20px', textAlign: 'center' }}>
+          <p>{t('loading', { defaultValue: 'Đang tải thông tin hồ sơ...' })}</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <section className="public-profile-shell" aria-labelledby="profile-heading">
+    <div className="public-profile-viewport">
+      <section className="public-profile-shell" aria-labelledby="profile-heading">
       {/* Back to my profile bar when viewing another user */}
       {!isOwnProfile && onBackToMyProfile && (
         <div style={{ marginBottom: '14px' }}>
@@ -517,5 +520,6 @@ export function ProfilePage({
         />
       )}
     </section>
+  </div>
   )
 }

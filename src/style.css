@@ -15131,14 +15131,59 @@ html:not(.dark) .recent-account-card:hover {
    Public Profile, Cover, Header, Timeline & Tabs
    ========================================================================== */
 
+/* Universal Visually Hidden utility */
+.sr-only,
+input.sr-only {
+  display: none !important;
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border-width: 0 !important;
+}
+
+/* Scrollable Viewport Wrapper */
+.public-profile-viewport {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg, #0f1115);
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.public-profile-viewport::-webkit-scrollbar {
+  width: 7px;
+}
+
+.public-profile-viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.public-profile-viewport::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 4px;
+}
+
+.public-profile-viewport::-webkit-scrollbar-thumb:hover {
+  background: rgba(20, 184, 166, 0.5);
+}
+
 .public-profile-shell {
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 1080px;
+  max-width: 1040px;
   margin: 0 auto;
-  padding: 0 16px 40px;
+  padding: 24px 20px 80px;
   box-sizing: border-box;
+  min-height: 100%;
 }
 
 /* --- Cover Photo --- */
@@ -15146,17 +15191,17 @@ html:not(.dark) .recent-account-card:hover {
   position: relative;
   width: 100%;
   height: 240px;
-  border-radius: 20px;
+  border-radius: 24px 24px 0 0;
   overflow: hidden;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
   background: #0f172a;
-  margin-bottom: -60px;
+  margin-bottom: -56px;
 }
 
 @media (min-width: 768px) {
   .profile-cover-container {
     height: 300px;
-    margin-bottom: -72px;
+    margin-bottom: -68px;
   }
 }
 
@@ -15190,7 +15235,7 @@ html:not(.dark) .recent-account-card:hover {
 
 .profile-cover-actions {
   position: absolute;
-  bottom: 16px;
+  top: 16px;
   right: 16px;
   z-index: 10;
 }
@@ -15242,7 +15287,8 @@ html:not(.dark) .recent-account-card:hover {
 @media (min-width: 768px) {
   .profile-header-top {
     flex-direction: row;
-    align-items: flex-end;
+    align-items: flex-start;
+    justify-content: space-between;
     gap: 24px;
   }
 }
@@ -15254,7 +15300,7 @@ html:not(.dark) .recent-account-card:hover {
 
 @media (min-width: 768px) {
   .profile-avatar-container {
-    margin-top: -88px;
+    margin-top: -84px;
   }
 }
 
@@ -15270,8 +15316,8 @@ html:not(.dark) .recent-account-card:hover {
 
 @media (min-width: 768px) {
   .profile-avatar-frame {
-    width: 144px;
-    height: 144px;
+    width: 140px;
+    height: 140px;
   }
 }
 
@@ -15318,7 +15364,8 @@ html:not(.dark) .recent-account-card:hover {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+  padding-top: 4px;
 }
 
 .profile-names-row {
@@ -15340,6 +15387,21 @@ html:not(.dark) .recent-account-card:hover {
   .profile-display-name {
     font-size: 28px;
   }
+}
+
+.profile-header-role-badge {
+  position: static !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  white-space: nowrap;
+  vertical-align: middle;
 }
 
 .profile-handle-tag {
@@ -15386,6 +15448,7 @@ html:not(.dark) .recent-account-card:hover {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+  padding-top: 4px;
 }
 
 .profile-btn {
@@ -15464,7 +15527,7 @@ html:not(.dark) .recent-account-card:hover {
 .profile-stats-bar {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  gap: 10px;
   padding: 12px 16px;
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.03);
@@ -15480,18 +15543,20 @@ html:not(.dark) .recent-account-card:hover {
 .profile-stat-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  border-radius: 10px;
-  border: none;
-  background: transparent;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.02);
   cursor: pointer;
-  transition: all 160ms ease;
+  transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
   text-align: left;
 }
 
 .profile-stat-item:hover {
-  background: rgba(20, 184, 166, 0.08);
+  background: rgba(20, 184, 166, 0.1);
+  border-color: rgba(20, 184, 166, 0.3);
+  transform: translateY(-1px);
 }
 
 .profile-stat-icon {
@@ -15519,13 +15584,31 @@ html:not(.dark) .recent-account-card:hover {
   font-weight: 500;
 }
 
+/* --- Story Highlights in Header --- */
+.profile-highlights-wrapper {
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.profile-highlights-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted, #94a3b8);
+  margin-bottom: 8px;
+}
+
 /* --- Profile Nav Tabs --- */
 .profile-nav-tabs {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   border-bottom: 2px solid rgba(255, 255, 255, 0.08);
-  margin-top: 20px;
+  margin-top: 24px;
   margin-bottom: 24px;
   overflow-x: auto;
   scrollbar-width: none;
@@ -15539,7 +15622,7 @@ html:not(.dark) .recent-account-card:hover {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 18px;
+  padding: 12px 20px;
   background: transparent;
   border: none;
   border-bottom: 3px solid transparent;
@@ -15550,15 +15633,18 @@ html:not(.dark) .recent-account-card:hover {
   transition: all 180ms ease;
   white-space: nowrap;
   margin-bottom: -2px;
+  border-radius: 8px 8px 0 0;
 }
 
 .profile-nav-tab:hover {
   color: var(--color-text-main, #f8fafc);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .profile-nav-tab--active {
   color: #14b8a6 !important;
   border-bottom-color: #14b8a6 !important;
+  background: rgba(20, 184, 166, 0.05) !important;
 }
 
 .profile-nav-tab-badge {

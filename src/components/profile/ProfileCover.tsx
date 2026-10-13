@@ -51,6 +51,7 @@ export function ProfileCover({
             disabled={isUploading}
             onChange={handleFileSelect}
             ref={fileInputRef}
+            style={{ display: 'none' }}
             type="file"
           />
           <button

@@ -12,6 +12,7 @@ import {
   FileText,
   Heart,
   Sparkles,
+  Bookmark,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { AvatarFallback } from '../ui/AvatarFallback'
@@ -126,6 +127,7 @@ export function ProfileHeader({
                   disabled={isAvatarUploading}
                   onChange={handleAvatarInput}
                   ref={avatarInputRef}
+                  style={{ display: 'none' }}
                   type="file"
                 />
                 <button
@@ -147,7 +149,7 @@ export function ProfileHeader({
           <div className="profile-names-row">
             <h1 className="profile-display-name">{displayName}</h1>
             {role && (
-              <span className={`pp-role-badge pp-role-badge--${role.toLowerCase()}`}>
+              <span className={`profile-header-role-badge pp-role-badge--${role.toLowerCase()}`}>
                 <Shield size={11} />
                 <span>{role.toUpperCase()}</span>
               </span>
@@ -260,6 +262,10 @@ export function ProfileHeader({
 
       {/* Story Highlights Bar */}
       <div className="profile-highlights-wrapper">
+        <div className="profile-highlights-label">
+          <Bookmark size={13} />
+          <span>{t('highlightsTitle', { defaultValue: 'Tin nổi bật' })}</span>
+        </div>
         <StoryHighlightBar
           isOwnProfile={isOwnProfile}
           userId={Number(user.id)}

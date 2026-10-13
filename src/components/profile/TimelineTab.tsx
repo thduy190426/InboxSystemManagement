@@ -201,6 +201,7 @@ export function TimelineTab({
                 multiple
                 onChange={handleImageSelect}
                 ref={imageInputRef}
+                style={{ display: 'none' }}
                 type="file"
               />
               <button
