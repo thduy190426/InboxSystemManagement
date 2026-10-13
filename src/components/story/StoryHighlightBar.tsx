@@ -62,7 +62,6 @@ export function StoryHighlightBar({
   return (
     <div className="story-highlights-bar-container">
       <div className="story-highlights-bar">
-        {}
         {isOwnProfile && (
           <button
             type="button"
@@ -79,7 +78,6 @@ export function StoryHighlightBar({
           </button>
         )}
 
-        {}
         {highlights.map(hl => {
           const isLoadingThis = loadingHighlightId === hl.id
           return (
@@ -122,14 +120,12 @@ export function StoryHighlightBar({
         )}
       </div>
 
-      {}
       <StoryHighlightModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={loadHighlights}
       />
 
-      {}
       {activeStoryGroup && (
         <StoryViewerOverlay
           initialGroup={activeStoryGroup}

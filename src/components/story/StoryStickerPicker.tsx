@@ -176,7 +176,6 @@ export function StoryStickerPicker({ onAddOverlay, onClose }: StoryStickerPicker
 
   return (
     <div className="story-picker-drawer">
-      {}
       <div className="story-picker-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Smile size={20} color="#ec4899" />
@@ -192,7 +191,6 @@ export function StoryStickerPicker({ onAddOverlay, onClose }: StoryStickerPicker
         </button>
       </div>
 
-      {}
       <div className="story-sticker-tabs" style={{ overflowX: 'auto', scrollbarWidth: 'none' }}>
         <button
           type="button"
@@ -245,7 +243,6 @@ export function StoryStickerPicker({ onAddOverlay, onClose }: StoryStickerPicker
         </button>
       </div>
 
-      {}
       {activeTab === 'emoji' && (
         <div className="story-emoji-grid">
           {POPULAR_EMOJIS.map(emoji => (
@@ -261,7 +258,6 @@ export function StoryStickerPicker({ onAddOverlay, onClose }: StoryStickerPicker
         </div>
       )}
 
-      {}
       {activeTab === 'poll' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div>
@@ -317,7 +313,6 @@ export function StoryStickerPicker({ onAddOverlay, onClose }: StoryStickerPicker
         </div>
       )}
 
-      {}
       {activeTab === 'slider' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div>
@@ -373,7 +368,6 @@ export function StoryStickerPicker({ onAddOverlay, onClose }: StoryStickerPicker
         </div>
       )}
 
-      {}
       {activeTab === 'countdown' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div>
@@ -415,7 +409,6 @@ export function StoryStickerPicker({ onAddOverlay, onClose }: StoryStickerPicker
         </div>
       )}
 
-      {}
       {activeTab === 'location' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -458,7 +451,6 @@ export function StoryStickerPicker({ onAddOverlay, onClose }: StoryStickerPicker
         </div>
       )}
 
-      {}
       {activeTab === 'hashtag' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -500,7 +492,6 @@ export function StoryStickerPicker({ onAddOverlay, onClose }: StoryStickerPicker
         </div>
       )}
 
-      {}
       {activeTab === 'mention' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div style={{ display: 'flex', gap: '8px' }}>

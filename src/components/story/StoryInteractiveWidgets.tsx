@@ -60,7 +60,6 @@ export function InteractivePollWidget({
       </div>
 
       <div className="story-interactive-poll-options">
-        {}
         <button
           type="button"
           className={`story-poll-option-btn ${stats?.myVote === 0 ? 'is-my-choice' : ''}`}
@@ -82,7 +81,6 @@ export function InteractivePollWidget({
           )}
         </button>
 
-        {}
         <button
           type="button"
           className={`story-poll-option-btn ${stats?.myVote === 1 ? 'is-my-choice' : ''}`}
@@ -175,7 +173,6 @@ export function InteractiveSliderWidget({
       </div>
 
       <div className="story-interactive-slider-track-wrap">
-        {}
         {showBurst && (
           <div className="story-slider-burst-container">
             <span className="story-slider-particle p1">{emoji}</span>
@@ -200,7 +197,6 @@ export function InteractiveSliderWidget({
           }}
         />
 
-        {}
         <div
           className={`story-slider-thumb-emoji ${isDragging ? 'is-dragging' : ''}`}
           style={{
@@ -210,7 +206,6 @@ export function InteractiveSliderWidget({
           {emoji}
         </div>
 
-        {}
         {stats && stats.average !== undefined && (
           <div
             className="story-slider-average-marker"

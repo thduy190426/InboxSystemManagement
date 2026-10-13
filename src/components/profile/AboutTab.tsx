@@ -118,7 +118,6 @@ export function AboutTab({
 
   return (
     <div className="profile-tab-content">
-      {/* If isOwnProfile and isEditing is true -> Show Editor Form */}
       {isOwnProfile && isEditing ? (
         <form className="pp-card" onSubmit={handleSubmit} style={{ padding: '24px', background: 'var(--surface, #1e293b)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.08)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
@@ -276,7 +275,6 @@ export function AboutTab({
           </div>
         </form>
       ) : (
-        /* View Mode */
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#f8fafc' }}>

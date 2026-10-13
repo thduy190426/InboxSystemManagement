@@ -48,14 +48,12 @@ export function TimelineTab({
 }: TimelineTabProps) {
   const { t } = useTranslation('profile')
 
-  // Composer states
   const [content, setContent] = useState('')
   const [mediaUrls, setMediaUrls] = useState<string[]>([])
   const [privacy, setPrivacy] = useState<PostPrivacy>('public')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const imageInputRef = useRef<HTMLInputElement>(null)
 
-  // Expanded comments state (by postId)
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({})
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({})
   const [submittingCommentPostId, setSubmittingCommentPostId] = useState<string | null>(null)
@@ -156,7 +154,6 @@ export function TimelineTab({
 
   return (
     <div className="profile-tab-content">
-      {/* Post Composer - Shown for own profile */}
       {isOwnProfile && currentUser && (
         <form className="timeline-composer-card" onSubmit={handleComposerSubmit}>
           <div className="composer-input-row">
@@ -174,7 +171,6 @@ export function TimelineTab({
             />
           </div>
 
-          {/* Media Previews */}
           {mediaUrls.length > 0 && (
             <div className="composer-media-previews">
               {mediaUrls.map((url, idx) => (
@@ -192,7 +188,6 @@ export function TimelineTab({
             </div>
           )}
 
-          {/* Composer Toolbar */}
           <div className="composer-toolbar">
             <div className="composer-actions-left">
               <input
@@ -242,7 +237,6 @@ export function TimelineTab({
         </form>
       )}
 
-      {/* Feed List */}
       <div className="timeline-posts-feed">
         {isLoading && posts.length === 0 ? (
           <div className="empty-tab-state">
@@ -263,7 +257,6 @@ export function TimelineTab({
 
             return (
               <article className="timeline-post-card" key={post.id}>
-                {/* Header */}
                 <header className="post-header-row">
                   <div className="post-author-info">
                     <AvatarFallback
@@ -301,12 +294,10 @@ export function TimelineTab({
                   )}
                 </header>
 
-                {/* Body Content */}
                 {post.content && (
                   <div className="post-content-text">{post.content}</div>
                 )}
 
-                {/* Media Grid */}
                 {post.mediaUrls.length > 0 && (
                   <div className="post-media-grid">
                     {post.mediaUrls.map((imgUrl, i) => (
@@ -315,7 +306,6 @@ export function TimelineTab({
                   </div>
                 )}
 
-                {/* Actions Toolbar */}
                 <div className="post-actions-bar">
                   <button
                     className={`post-action-btn${isLiked ? ' post-action-btn--liked' : ''}`}
@@ -342,10 +332,8 @@ export function TimelineTab({
                   </button>
                 </div>
 
-                {/* Comments Section */}
                 {isCommentsOpen && (
                   <div className="post-comments-container">
-                    {/* List of comments */}
                     {post.comments.map((comment) => (
                       <div className="comment-item-row" key={comment.id}>
                         <AvatarFallback
@@ -360,7 +348,6 @@ export function TimelineTab({
                       </div>
                     ))}
 
-                    {/* Quick Comment Input */}
                     {currentUser && (
                       <div className="comment-input-row">
                         <input

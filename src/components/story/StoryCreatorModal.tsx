@@ -135,7 +135,6 @@ export function StoryCreatorModal({
 
         <div className="story-creator-body">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', padding: '16px 0' }}>
-            {}
             <button
               type="button"
               className="upload-placeholder"
@@ -165,7 +164,6 @@ export function StoryCreatorModal({
               </span>
             </button>
 
-            {}
             <button
               type="button"
               className="upload-placeholder"

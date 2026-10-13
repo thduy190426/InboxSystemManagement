@@ -17,7 +17,6 @@ function loadPostsFromStorage(): TimelinePost[] {
     const raw = localStorage.getItem(POSTS_STORAGE_KEY)
     if (!raw) return []
     const parsed = JSON.parse(raw) as TimelinePost[]
-    // Filter out and clean up any legacy seed posts
     const cleaned = parsed.filter((p) => !p.id.startsWith('post-seed-'))
     if (cleaned.length !== parsed.length) {
       savePostsToStorage(cleaned)
@@ -54,7 +53,6 @@ function saveCoversToStorage(covers: Record<string, string>) {
   }
 }
 
-// Follow pairs: "followerId:followingId"
 function loadFollowsFromStorage(): Set<string> {
   try {
     const raw = localStorage.getItem(FOLLOWS_STORAGE_KEY)
@@ -124,10 +122,8 @@ export const timelineApi = {
     const existingIdx = targetPost.reactions.findIndex((r) => String(r.userId) === String(user.id))
     if (existingIdx >= 0) {
       if (targetPost.reactions[existingIdx].type === type) {
-        // Remove reaction
         targetPost.reactions.splice(existingIdx, 1)
       } else {
-        // Change reaction type
         targetPost.reactions[existingIdx].type = type
       }
     } else {

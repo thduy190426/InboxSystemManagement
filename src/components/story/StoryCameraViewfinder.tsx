@@ -167,7 +167,6 @@ export function StoryCameraViewfinder({
 
   return (
     <div className="story-camera-viewfinder-overlay">
-      {}
       <header className="story-camera-header">
         <button 
           className="story-camera-circle-btn" 
@@ -197,7 +196,6 @@ export function StoryCameraViewfinder({
         )}
       </header>
 
-      {}
       <div className="story-camera-viewport">
         {hasPermission === false ? (
           <div className="story-camera-fallback">
@@ -225,7 +223,6 @@ export function StoryCameraViewfinder({
         )}
       </div>
 
-      {}
       <input 
         type="file" 
         ref={fileInputRef} 
@@ -234,9 +231,7 @@ export function StoryCameraViewfinder({
         hidden 
       />
 
-      {}
       <footer className="story-camera-footer">
-        {}
         <button 
           className="story-camera-side-btn" 
           onClick={() => fileInputRef.current?.click()}
@@ -247,7 +242,6 @@ export function StoryCameraViewfinder({
           <Upload size={22} />
         </button>
 
-        {}
         {hasPermission !== false && (
           <div className="story-camera-shutter-wrap">
             {isRecording ? (

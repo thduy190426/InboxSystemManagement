@@ -351,7 +351,6 @@ export function StoryViewerOverlay({
     <div className={`story-viewer-overlay ${isClosing ? 'is-closing' : ''}`}>
       <div className="story-viewer-backdrop" onClick={onClose} />
       
-      {}
       <button 
         className="story-nav-btn prev" 
         onClick={handlePrev}
@@ -362,7 +361,6 @@ export function StoryViewerOverlay({
       </button>
 
       <div className="story-viewer-content">
-        {}
         <div className="story-progress-container">
           {currentGroup.items.map((item, idx) => (
             <div key={item.id} className="story-progress-bar">
@@ -377,7 +375,6 @@ export function StoryViewerOverlay({
           ))}
         </div>
 
-        {}
         <header className="story-viewer-header">
           <div className="story-user-info">
             <AvatarFallback name={currentGroup.full_name} src={currentGroup.avatar_url} />
@@ -396,7 +393,6 @@ export function StoryViewerOverlay({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {}
             {(currentItem.media_type === 'video' || storyMetadata?.music) && (
               <button
                 className="story-action-icon-btn"
@@ -414,7 +410,6 @@ export function StoryViewerOverlay({
           </div>
         </header>
 
-        {}
         <div 
           className="story-media-container"
           onClick={handleMediaAreaClick}
@@ -423,7 +418,6 @@ export function StoryViewerOverlay({
           onPointerCancel={handlePointerUp}
           title={t('holdToPause')}
         >
-          {}
           {currentItem.media_type === 'video' ? (
             <video 
               ref={videoRef}
@@ -441,7 +435,6 @@ export function StoryViewerOverlay({
             />
           )}
 
-          {}
           {storyMetadata?.music && (
             <div className="story-viewer-music-badge">
               <div className="story-spinning-disc" />
@@ -449,7 +442,6 @@ export function StoryViewerOverlay({
             </div>
           )}
 
-          {}
           {storyMetadata?.overlays && storyMetadata.overlays.length > 0 ? (
             storyMetadata.overlays.map(item => {
               let background = 'transparent'
@@ -537,7 +529,6 @@ export function StoryViewerOverlay({
           )}
         </div>
 
-        {}
         {isAuthor && (
           <button 
             type="button"
@@ -549,7 +540,6 @@ export function StoryViewerOverlay({
           </button>
         )}
 
-        {}
         {!isAuthor && (
           <footer className="story-viewer-footer">
             <input 
@@ -607,7 +597,6 @@ export function StoryViewerOverlay({
         )}
       </div>
 
-      {}
       <button 
         className="story-nav-btn next" 
         onClick={handleNext}
@@ -617,7 +606,6 @@ export function StoryViewerOverlay({
         <ChevronRight size={32} />
       </button>
 
-      {}
       {isAuthor && (
         <StoryViewerDrawer
           storyId={currentItem.id}

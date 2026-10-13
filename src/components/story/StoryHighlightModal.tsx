@@ -114,7 +114,6 @@ export function StoryHighlightModal({
         aria-modal="true"
         aria-labelledby="highlight-modal-title"
       >
-        {}
         <div className="story-highlight-modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Sparkles size={18} color="#ec4899" />
@@ -133,7 +132,6 @@ export function StoryHighlightModal({
           </button>
         </div>
 
-        {}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
           <div className="story-highlight-modal-body">
             {errorMsg && (
@@ -142,7 +140,6 @@ export function StoryHighlightModal({
               </div>
             )}
 
-            {}
             <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
               <div
                 style={{
@@ -178,7 +175,6 @@ export function StoryHighlightModal({
               </div>
             </div>
 
-            {}
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                 <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'rgba(255,255,255,0.85)' }}>
@@ -256,7 +252,6 @@ export function StoryHighlightModal({
             </div>
           </div>
 
-          {}
           <div className="story-highlight-modal-footer">
             <button
               type="button"

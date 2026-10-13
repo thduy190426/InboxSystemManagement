@@ -36,7 +36,6 @@ export function FollowersTab({
 
   return (
     <div className="profile-tab-content followers-tab-shell">
-      {/* Subtab Bar */}
       <div className="followers-subtab-bar">
         <button
           className={`followers-subtab-btn${subTab === 'followers' ? ' followers-subtab-btn--active' : ''}`}
@@ -61,7 +60,6 @@ export function FollowersTab({
         </button>
       </div>
 
-      {/* Content List */}
       {activeList.length === 0 ? (
         <div className="empty-tab-state">
           <p>

@@ -110,7 +110,6 @@ export function ProfileHeader({
   return (
     <div className="profile-header-card">
       <div className="profile-header-top">
-        {/* Avatar with overlap onto cover */}
         <div className="profile-avatar-container">
           <div className="profile-avatar-frame">
             <AvatarFallback
@@ -144,7 +143,6 @@ export function ProfileHeader({
           </div>
         </div>
 
-        {/* User Info */}
         <div className="profile-user-summary">
           <div className="profile-names-row">
             <h1 className="profile-display-name">{displayName}</h1>
@@ -168,7 +166,6 @@ export function ProfileHeader({
           {user.bio && <p className="profile-bio-text">{user.bio}</p>}
         </div>
 
-        {/* Action Buttons */}
         <div className="profile-actions-toolbar">
           {isOwnProfile ? (
             <button
@@ -217,7 +214,6 @@ export function ProfileHeader({
         </div>
       </div>
 
-      {/* Stats Counter Bar */}
       <div className="profile-stats-bar">
         <button
           className="profile-stat-item"
@@ -260,7 +256,6 @@ export function ProfileHeader({
         </button>
       </div>
 
-      {/* Story Highlights Bar */}
       <div className="profile-highlights-wrapper">
         <div className="profile-highlights-label">
           <Bookmark size={13} />

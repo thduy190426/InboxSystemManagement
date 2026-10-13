@@ -99,7 +99,6 @@ export function LoginPage({
     setSelectedAccount(account)
     setPrefilledEmail(account.user.email)
 
-    // If session is not active or token is missing, jump straight to password entry
     if (!isSavedAccountSessionActive(account) || !account.refreshToken) {
       setShowStandardForm(true)
       return

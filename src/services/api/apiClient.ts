@@ -38,7 +38,6 @@ let lastExpireTimestamp = 0
 
 export function expireSession() {
   const now = Date.now()
-  // Throttle session expiration to prevent cascading 401 toast storms
   if (now - lastExpireTimestamp < 3000) {
     return
   }

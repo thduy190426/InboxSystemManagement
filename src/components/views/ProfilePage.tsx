@@ -64,19 +64,15 @@ export function ProfilePage({
   const [activeTab, setActiveTab] = useState<TabType>('timeline')
   const [isEditingAbout, setIsEditingAbout] = useState(false)
 
-  // Cover photo state
   const [coverUrl, setCoverUrl] = useState<string | null>(null)
   const [isUploadingCover, setIsUploadingCover] = useState(false)
 
-  // Avatar crop state
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null)
   const [isAvatarUploading, setIsAvatarUploading] = useState(false)
 
-  // Timeline posts state
   const [posts, setPosts] = useState<TimelinePost[]>([])
   const [isPostsLoading, setIsPostsLoading] = useState(false)
 
-  // Friends & Followers states
   const [friends, setFriends] = useState<ContactUser[]>([])
   const [isFriendsLoading, setIsFriendsLoading] = useState(false)
   const [followers, setFollowers] = useState<ContactUser[]>([])
@@ -95,7 +91,6 @@ export function ProfilePage({
   const [isFriendLoading, setIsFriendLoading] = useState(false)
   const [isSavingProfile, setIsSavingProfile] = useState(false)
 
-  // Load user data & cover
   const loadProfileData = useCallback(async () => {
     if (!displayUser) return
 
@@ -103,7 +98,7 @@ export function ProfilePage({
       const cover = await timelineApi.getCoverPhoto(displayUser.id)
       setCoverUrl(cover)
     } catch {
-      // Ignored
+      
     }
 
     if (currentUser) {
@@ -111,7 +106,6 @@ export function ProfilePage({
         const stats = await timelineApi.fetchFollowStats(displayUser.id, currentUser.id)
         setFollowStats(stats)
       } catch {
-        // Ignored
       }
     }
   }, [displayUser, currentUser])
@@ -120,7 +114,6 @@ export function ProfilePage({
     loadProfileData()
   }, [loadProfileData])
 
-  // Load timeline posts
   const loadPosts = useCallback(async () => {
     if (!displayUser) return
     try {
@@ -138,7 +131,6 @@ export function ProfilePage({
     loadPosts()
   }, [loadPosts])
 
-  // Load friends
   const loadFriends = useCallback(async () => {
     try {
       setIsFriendsLoading(true)
@@ -155,7 +147,6 @@ export function ProfilePage({
     loadFriends()
   }, [loadFriends])
 
-  // Load followers/following
   const loadFollowersAndFollowing = useCallback(async () => {
     if (!displayUser) return
     try {
@@ -177,7 +168,6 @@ export function ProfilePage({
     loadFollowersAndFollowing()
   }, [loadFollowersAndFollowing])
 
-  // Handlers
   async function handleCoverChange(file: File) {
     if (!currentUser) return
     try {
@@ -365,7 +355,6 @@ export function ProfilePage({
   return (
     <div className="public-profile-viewport">
       <section className="public-profile-shell" aria-labelledby="profile-heading">
-      {/* Back to my profile bar when viewing another user */}
       {!isOwnProfile && onBackToMyProfile && (
         <div style={{ marginBottom: '14px' }}>
           <button
@@ -379,7 +368,6 @@ export function ProfilePage({
         </div>
       )}
 
-      {/* 1. Cover Photo */}
       <ProfileCover
         coverUrl={coverUrl}
         isOwnProfile={isOwnProfile}
@@ -387,7 +375,6 @@ export function ProfilePage({
         onCoverChange={handleCoverChange}
       />
 
-      {/* 2. Profile Header Card */}
       <ProfileHeader
         friendshipStatus={friendshipStatus}
         isAvatarUploading={isAvatarUploading}
@@ -413,7 +400,6 @@ export function ProfilePage({
         user={displayUser}
       />
 
-      {/* 3. Navigation Tabs */}
       <nav className="profile-nav-tabs" aria-label="Profile tabs">
         <button
           className={`profile-nav-tab${activeTab === 'timeline' ? ' profile-nav-tab--active' : ''}`}
@@ -455,7 +441,6 @@ export function ProfilePage({
         </button>
       </nav>
 
-      {/* 4. Tab Content Panels */}
       {activeTab === 'timeline' && (
         <TimelineTab
           currentUser={currentUser}
@@ -486,7 +471,6 @@ export function ProfilePage({
           isLoading={isFriendsLoading}
           onSendMessage={onSendMessage}
           onViewFriendProfile={(friend) => {
-            // view friend profile
             if (onSendMessage) {
               onSendMessage(friend)
             }
@@ -507,7 +491,6 @@ export function ProfilePage({
         />
       )}
 
-      {/* Avatar Cropper Modal */}
       {cropImageSrc && (
         <AvatarCropper
           imageSrc={cropImageSrc}

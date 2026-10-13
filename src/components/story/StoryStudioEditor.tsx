@@ -279,7 +279,6 @@ export function StoryStudioEditor({
   return (
     <div className="story-studio-modal-overlay">
       <div className="story-studio-container">
-        {}
         <header className="story-studio-top-toolbar">
           <button
             type="button"
@@ -292,7 +291,6 @@ export function StoryStudioEditor({
           </button>
 
           <div className="story-studio-tools-group">
-            {}
             <button
               type="button"
               className={`story-studio-tool-btn ${activeDrawer === 'text' ? 'is-active' : ''}`}
@@ -302,7 +300,6 @@ export function StoryStudioEditor({
               <Type size={18} />
             </button>
 
-            {}
             <button
               type="button"
               className={`story-studio-tool-btn ${activeDrawer === 'stickers' ? 'is-active' : ''}`}
@@ -312,7 +309,6 @@ export function StoryStudioEditor({
               <Smile size={18} />
             </button>
 
-            {}
             <button
               type="button"
               className={`story-studio-tool-btn ${selectedMusic ? 'is-active' : ''}`}
@@ -322,7 +318,6 @@ export function StoryStudioEditor({
               <Music size={18} />
             </button>
 
-            {}
             <button
               type="button"
               className={`story-studio-tool-btn ${selectedFilter !== 'normal' ? 'is-active' : ''}`}
@@ -332,7 +327,6 @@ export function StoryStudioEditor({
               <Sliders size={18} />
             </button>
 
-            {}
             <button
               type="button"
               className={`story-studio-tool-btn ${activeDrawer === 'preview' ? 'is-active' : ''}`}
@@ -344,7 +338,6 @@ export function StoryStudioEditor({
           </div>
         </header>
 
-        {}
         <div
           ref={canvasRef}
           className="story-studio-canvas-area"
@@ -352,7 +345,6 @@ export function StoryStudioEditor({
           onPointerUp={handlePointerUp}
           onClick={() => setActiveOverlayId(null)}
         >
-          {}
           {isVideo ? (
             <video
               src={mediaUrl}
@@ -370,7 +362,6 @@ export function StoryStudioEditor({
             />
           )}
 
-          {}
           {selectedMusic && (
             <div className="story-viewer-music-badge">
               <div className="story-spinning-disc" />
@@ -378,7 +369,6 @@ export function StoryStudioEditor({
             </div>
           )}
 
-          {}
           {overlays.map(item => {
             const isSelected = activeOverlayId === item.id
 
@@ -445,7 +435,6 @@ export function StoryStudioEditor({
             )
           })}
 
-          {}
           {draggingOverlayId && (
             <div className={`story-studio-trash-zone ${isOverTrash ? 'is-hovering' : ''}`}>
               <Trash2 size={24} />
@@ -453,7 +442,6 @@ export function StoryStudioEditor({
           )}
         </div>
 
-        {}
         {activeDrawer === 'filters' && (
           <div style={{ position: 'absolute', bottom: '80px', left: 0, right: 0, zIndex: 40, background: 'linear-gradient(to top, rgba(0,0,0,0.95), transparent)' }}>
             <StoryFilterSelector
@@ -464,7 +452,6 @@ export function StoryStudioEditor({
           </div>
         )}
 
-        {}
         {activeDrawer === 'music' && (
           <StoryMusicPicker
             selectedMusic={selectedMusic}
@@ -473,7 +460,6 @@ export function StoryStudioEditor({
           />
         )}
 
-        {}
         {activeDrawer === 'stickers' && (
           <StoryStickerPicker
             onAddOverlay={handleAddOverlay}
@@ -481,11 +467,9 @@ export function StoryStudioEditor({
           />
         )}
 
-        {}
         {activeDrawer === 'text' && (
           <div className="story-text-editor-overlay">
             <div className="story-text-editor-top">
-              {}
               <button
                 type="button"
                 className="cp-btn cp-btn--secondary"
@@ -499,7 +483,6 @@ export function StoryStudioEditor({
                 {FONT_OPTIONS.find(f => f.id === textFont)?.label}
               </button>
 
-              {}
               <button
                 type="button"
                 className="cp-btn cp-btn--secondary"
@@ -513,7 +496,6 @@ export function StoryStudioEditor({
                 Nền chữ: {textBgStyle === 'box' ? 'Mờ' : textBgStyle === 'solid' ? 'Đặc' : 'Trong suốt'}
               </button>
 
-              {}
               <button
                 type="button"
                 className="cp-btn cp-btn--primary"
@@ -524,7 +506,6 @@ export function StoryStudioEditor({
               </button>
             </div>
 
-            {}
             <textarea
               className={`story-text-editor-input story-font-${textFont}`}
               style={{
@@ -540,7 +521,6 @@ export function StoryStudioEditor({
               rows={3}
             />
 
-            {}
             <div className="story-text-editor-bottom">
               <div className="story-color-palette">
                 {TEXT_COLORS.map(color => (
@@ -557,9 +537,7 @@ export function StoryStudioEditor({
           </div>
         )}
 
-        {}
         <footer className="story-studio-bottom-bar">
-          {}
           <div style={{ position: 'relative' }}>
             <button
               type="button"
@@ -641,7 +619,6 @@ export function StoryStudioEditor({
             )}
           </div>
 
-          {}
           <button
             type="button"
             className="cp-btn cp-btn--primary"

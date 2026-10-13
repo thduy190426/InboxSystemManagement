@@ -47,7 +47,7 @@ export function CreateGroupModal({
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState('')
 
-  // Cleanup object URL
+  
   useEffect(() => {
     return () => {
       if (avatarPreview) {
@@ -56,7 +56,7 @@ export function CreateGroupModal({
     }
   }, [avatarPreview])
 
-  // Reset fields when opened
+  
   useEffect(() => {
     if (isOpen) {
       setGroupTitle('')
@@ -157,7 +157,6 @@ export function CreateGroupModal({
           boxShadow: 'var(--shadow-lg, 0 20px 40px rgba(0, 0, 0, 0.25))',
         }}
       >
-        {/* Header */}
         <div
           className="group-modal-header"
           style={{
@@ -215,9 +214,7 @@ export function CreateGroupModal({
           </button>
         </div>
 
-        {/* Group Info: Avatar & Title & Description */}
         <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-          {/* Avatar uploader with Preview */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
             <div
               onClick={() => fileInputRef.current?.click()}
@@ -249,7 +246,6 @@ export function CreateGroupModal({
                   <span style={{ fontSize: '10px', marginTop: '2px', fontWeight: 600 }}>Ảnh</span>
                 </div>
               )}
-              {/* Overlay on hover */}
               <div
                 style={{
                   position: 'absolute',
@@ -300,7 +296,6 @@ export function CreateGroupModal({
             )}
           </div>
 
-          {/* Title & Description inputs */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <label className="group-field" style={{ gap: '4px' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600 }}>
@@ -341,7 +336,6 @@ export function CreateGroupModal({
           </div>
         </div>
 
-        {/* Member Picker Section */}
         <div className="group-member-picker" style={{ gap: '8px' }}>
           <div className="group-member-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <strong style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px' }}>
@@ -361,7 +355,6 @@ export function CreateGroupModal({
             </span>
           </div>
 
-          {/* Selected Member Chips Bar */}
           {selectedFriends.length > 0 && (
             <div
               style={{
@@ -420,7 +413,6 @@ export function CreateGroupModal({
             </div>
           )}
 
-          {/* Search Box */}
           <div
             style={{
               position: 'relative',
@@ -476,7 +468,6 @@ export function CreateGroupModal({
             )}
           </div>
 
-          {/* Friends List */}
           <div
             className="group-member-list"
             style={{
@@ -554,7 +545,6 @@ export function CreateGroupModal({
           </div>
         </div>
 
-        {/* Submit Button */}
         <button
           className="group-primary-button"
           disabled={!canSubmit}

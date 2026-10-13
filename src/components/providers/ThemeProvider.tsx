@@ -24,14 +24,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [theme])
 
   const toggleTheme = () => {
-    // Temporarily disabled: always keep dark theme
-    // const root = window.document.documentElement
-    // root.classList.add('theme-transition')
-    // setTheme((prev) => (prev === 'light' ? 'dark' : 'light'))
-    // 
-    // setTimeout(() => {
-    //   root.classList.remove('theme-transition')
-    // }, 400)
+    // Keep dark theme active
   }
 
   return (

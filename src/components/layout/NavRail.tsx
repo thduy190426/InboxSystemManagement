@@ -16,7 +16,6 @@ import type { AuthUser } from '../../services/api/authApi'
 import type { AppView } from '../../types'
 import type { SavedAccount } from '../../services/storage/authStorage'
 import { AccountSwitcherMenu } from '../auth/AccountSwitcherMenu'
-// import { useTheme } from '../providers/ThemeProvider'
 import { useTranslation } from 'react-i18next'
 
 const navItemsConfig = [
@@ -52,7 +51,6 @@ export function NavRail({
   onSwitchAccount,
   onAddAccount,
 }: NavRailProps) {
-  // const { theme, toggleTheme } = useTheme()
   const { t } = useTranslation('nav')
   const [isRinging, setIsRinging] = useState(false)
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false)

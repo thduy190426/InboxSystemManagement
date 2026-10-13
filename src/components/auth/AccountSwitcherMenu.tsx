@@ -35,7 +35,7 @@ export function AccountSwitcherMenu({
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  // Refresh saved accounts list whenever opened
+  
   useEffect(() => {
     if (isOpen) {
       setSavedAccounts(getSavedAccounts())
@@ -43,7 +43,7 @@ export function AccountSwitcherMenu({
     }
   }, [isOpen])
 
-  // Dynamically calculate viewport coordinates
+  
   useEffect(() => {
     if (!isOpen) return
 
@@ -76,7 +76,7 @@ export function AccountSwitcherMenu({
     }
   }, [isOpen, anchorEl])
 
-  // Handle escape key
+  
   useEffect(() => {
     if (!isOpen) return
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -123,7 +123,6 @@ export function AccountSwitcherMenu({
 
   return createPortal(
     <>
-      {/* Backdrop */}
       <div
         className="account-switcher-backdrop"
         onClick={onClose}
@@ -136,7 +135,6 @@ export function AccountSwitcherMenu({
         }}
       />
 
-      {/* Menu Card */}
       <div
         ref={menuRef}
         className="account-switcher-popover"
@@ -156,7 +154,6 @@ export function AccountSwitcherMenu({
         role="dialog"
         aria-label={t('accountSwitcher.title', { defaultValue: 'Chuyển tài khoản' })}
       >
-        {/* Header */}
         <div
           style={{
             padding: '16px 18px 12px',
@@ -207,7 +204,6 @@ export function AccountSwitcherMenu({
           </button>
         </div>
 
-        {/* Current User Card */}
         {currentUser && (
           <div
             style={{
@@ -253,7 +249,6 @@ export function AccountSwitcherMenu({
                     {currentUser.displayName?.[0] || currentUser.fullName?.[0] || 'U'}
                   </div>
                 )}
-                {/* Active Indicator Badge */}
                 <span
                   style={{
                     position: 'absolute',
@@ -323,7 +318,6 @@ export function AccountSwitcherMenu({
           </div>
         )}
 
-        {/* Other Accounts Section */}
         <div
           style={{
             flex: 1,
@@ -489,7 +483,6 @@ export function AccountSwitcherMenu({
           )}
         </div>
 
-        {/* Delete Confirmation Dialog Modal Overlay */}
         {accountToDelete && (
           <div
             style={{
@@ -552,7 +545,6 @@ export function AccountSwitcherMenu({
           </div>
         )}
 
-        {/* Add Account Action Footer */}
         <div
           style={{
             padding: '10px 12px 14px',
