@@ -1,286 +1,418 @@
-# Inbox System Management (Real-Time Communication & Social Platform)
+# Inbox System Management
 
 ![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
-![Vite](https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E)
-![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite_8-646CFF?style=for-the-badge&logo=vite&logoColor=FFD62E)
+![TypeScript](https://img.shields.io/badge/TypeScript_6-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
-![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)
+![Express](https://img.shields.io/badge/Express-111111?style=for-the-badge&logo=express&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-005C84?style=for-the-badge&logo=mysql&logoColor=white)
-![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=for-the-badge&logo=socketdotio&logoColor=white)
-![WebRTC](https://img.shields.io/badge/WebRTC-333333?style=for-the-badge&logo=webrtc&logoColor=white)
+![Socket.IO](https://img.shields.io/badge/Socket.IO-010101?style=for-the-badge&logo=socketdotio&logoColor=white)
 ![PWA](https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)
 
-**Inbox System Management** is a full-featured real-time communication and social media platform that delivers instant messaging, high-fidelity WebRTC voice & video calling, an Instagram/Facebook-grade 24-hour Story ecosystem, Signal-protocol End-to-End Encryption (E2EE), and a comprehensive administrative management dashboard. Built with a modern Glassmorphism visual language, smooth micro-interactions, full Progressive Web App (PWA) offline support, and bilingual internationalization (i18n).
+**Inbox System Management** is a full-stack real-time communication platform that combines instant messaging, social networking features, user administration, security controls, Progressive Web App capabilities, and a modern multi-panel chat experience.
+
+The system is built with a **React + TypeScript + Vite** frontend, a **Node.js + Express** backend, **MySQL** persistence, **Socket.IO** realtime synchronization, **WebRTC** voice and video calling, web push notifications, 24-hour Stories, end-to-end encryption support, and an administrative dashboard for platform governance.
 
 ---
 
-## System Overview & Objectives
+## Table of Contents
 
-The system is architected to provide an enterprise-ready, fluid, and highly interactive communication hub for individuals, teams, and communities. It combines a reactive micro-feature frontend with persistent two-way WebSockets, self-healing database schema migrations, automated real-time content moderation, granular role-based access control, and hardware-accelerated media streaming.
-
----
-
-## Comprehensive Feature Audit by Page & Module
-
-### 1. Authentication & Login Page (`LoginPage.tsx`)
-- **Standard Authentication:** Secure login using Email and Password with real-time input validation.
-- **Social OAuth 2.0 Sign-In:** One-click single sign-on via **Google** and **Facebook**.
-- **Two-Factor Authentication (2FA TOTP):** Automatic detection of 2FA-enabled accounts, rendering a secure 6-digit TOTP verification view for Google Authenticator / Authy before granting session tokens.
-- **Persistent Session (Remember Me):** Secure token storage management across LocalStorage and SessionStorage.
-- **Bot Defense (Google reCAPTCHA):** Shielding authentication endpoints from brute-force and automated credential-stuffing attacks.
-- **Intelligent Redirects:** Automatically redirects authenticated users back to their intended route after successful sign-in.
-
-### 2. User Registration Page (`RegisterPage.tsx`)
-- **Complete Onboarding Form:** Captures Full Name, Email, Phone Number, Password, and Password Confirmation.
-- **Real-Time Password Strength Meter:** Evaluates password resilience dynamically across length, case variation, numbers, and special symbols.
-- **Legal Compliance:** In-app links to the Terms of Service and Privacy Policy agreements.
-- **Instant Activation:** Creates account credentials instantly and triggers welcome notifications.
-
-### 3. Password Recovery & Reset Page (`ForgotPasswordPage.tsx`)
-- **Email OTP Verification:** Dispatches secure single-use 6-digit OTP tokens to user email addresses via Resend API / Mailtrap.
-- **Resend Cooldown Timer:** Prevents email flooding with an automated countdown before a new OTP can be requested.
-- **Direct Password Reset:** Allows users to set a new password immediately upon successful token validation without requiring re-authentication.
-
-### 4. Legal & Error Navigation Pages (`TermsPage.tsx`, `PrivacyPolicyPage.tsx`, `NotFoundPage.tsx`)
-- **Terms of Service (`/terms`):** Detailed guidelines on user rights, account responsibilities, communication standards, and acceptable use policies.
-- **Privacy Policy (`/privacy`):** Transparent disclosures regarding data collection, encryption, cookie handling, and personal data retention.
-- **Custom 404 Error Page (`NotFoundPage.tsx`):** Friendly, interactive fallback page offering quick actions to "Return to previous page" or "Navigate to Inbox".
-
-### 5. Real-Time Chat & Instant Messaging (`ChatApp.tsx`, `InboxPanel.tsx`, `ChatPanel.tsx`, `DetailPanel.tsx`)
-
-#### a. Conversation List & Inbox Management (Inbox Panel):
-- **Smart Category Filtering:**
-  - *All:* Complete list of active conversations.
-  - *Unread:* Quick filter for conversations containing unread messages.
-  - *Requests:* Message requests from non-contacts.
-  - *Groups:* Direct filter for joined group channels.
-  - *Archived:* Vault for hidden or archived conversation threads.
-- **Conversation Pinning (Pin / Unpin):** Priority pinning of vital chats to the top of the conversation list.
-- **Global Search:** Instant searching across contacts, users, and message history with highlighted matching terms.
-- **Custom Resizable Sidebar:** Interactive divider handle allowing users to resize the conversation panel from 320px up to 45vw, or collapse it into a space-efficient Mini Icon bar (100px).
-- **Online Presence Indicator:** Live online status dot coupled with duration badges (`OnlineDurationBadge`).
-
-#### b. Direct Messaging & Group Collaboration (Chat Panel):
-- **Advanced Group Creation:** Custom group name, group avatar upload, member search, and minimum member validation.
-- **Group Governance & Permissions:** Role segregation between Owner and Members; join request moderation, group invite links, avatar/name updates, and individual member nicknames.
-- **Disbandment & Leaving:** Group owners can transfer ownership or disband groups; members can leave chats freely.
-- **Rich Message Types:**
-  - Standard formatted text with automated URL link preview and detection.
-  - Full Emoji library (`emoji-picker-react`).
-  - Animated GIF search powered by the **GIPHY API**.
-  - Static and animated sticker collections.
-  - File and media attachments: Images, videos, audio clips, and documents with Drag & Drop and Clipboard paste (`Ctrl + V`) support.
-  - Voice audio messaging recorded directly via microphone with waveform preview.
-- **Real-Time Delivery Lifecycle:** Visual status tags for *Sending*, *Sent*, *Delivered*, and *Seen* (with avatar indicators of who viewed the message).
-- **Typing Indicator:** Real-time animated indicator displaying when the other party is typing.
-- **Message Context Actions:**
-  - Reply with quote context.
-  - Message forwarding (`ForwardMessageModal.tsx`) to individuals or groups.
-  - Message pinning (`PinnedMessagesDrawer.tsx`) within the chat stream.
-  - Revoke / Delete messages for everyone or for oneself only.
-  - Edit sent message content inline.
-  - Flag and report inappropriate messages directly to administrators.
-  - Emoji Reactions with interactive **"Reaction Storm"** screen-filling animations on long-press.
-- **Interactive Group Polls:**
-  - Create custom polls (`CreatePollModal.tsx`) with multiple options.
-  - Configurable multiple selections and anonymous voting modes.
-  - Live vote distribution bar and percentage display updating in real-time (`PollMessage.tsx`).
-- **End-to-End Encryption (E2EE Secret Chat):** Integrated Curve25519 Signal Protocol engine (`E2EEEngine.ts`) guaranteeing zero-knowledge confidentiality for secret conversations.
-
-#### c. Conversation Details Panel (Detail Panel):
-- **Profile & Member Overview:** Inspect recipient contact details, group member rosters, custom nicknames, and presence.
-- **Categorized Media Vault:** Segmented tabs for convenient browsing:
-  - *Photos:* Filtered collection of shared images (automatically excludes GIF stickers and emojis).
-  - *Videos:* Dedicated player grid for shared video clips.
-  - *Files:* Document repository displaying file extensions, sizes, and timestamps.
-  - *Links:* Aggregated history of all shared external web URLs.
-- **Fullscreen Gallery Viewer (`GalleryViewer.tsx`):** Lightbox-style preview with image zooming, pan, and adjacent photo navigation.
-- **Custom Chat Wallpapers:** Set unique custom background wallpapers per conversation, persisted in local storage.
-
-### 6. High-Definition Voice & Video Calling (`CallOverlay.tsx`, `callRealtime.ts`)
-- **Peer-to-Peer WebRTC Architecture:** Ultra-low latency Audio and Video calls directly between clients.
-- **Floating Call Overlay:** Minimize active calls into a movable picture-in-picture window to continue chatting without interrupting the stream.
-- **In-Call Stream Controls:** Toggle microphone mute, switch active camera devices, toggle video feed, and perform live Desktop Screen Sharing.
-- **Call Session Logging:** Automatic generation of call summary bubbles in the chat thread (call duration, timestamps, and missed call alerts).
-
-### 7. Contacts & Social Graph Management (`ContactsPanel.tsx`)
-- **Global Directory Search:** Search users across the platform by display name, email, or `@handle`.
-- **Relationship Lifecycle:**
-  - Send and cancel pending friend requests.
-  - Review incoming friend requests: Accept or Decline.
-  - Friend roster with one-click direct messaging and calling shortcuts.
-  - Blocked users manager: Block and unblock users with instant access restriction.
-- **Private Nicknames:** Assign personalized private nicknames to friends.
-- **Quick Contact Profile Modal (`ContactProfile`):** View public user information before initiating contact requests.
-- **Multi-State Presence:** Live status updates reflecting *Online*, *Offline*, *Busy*, and *Away*.
-
-### 8. 24-Hour Story Ecosystem (Facebook / Instagram Grade)
-
-#### a. Story Feed (`StoryFeed.tsx`):
-- Circular avatar reel stationed prominently above the chat list.
-- Highlights "+ Add Story", user's active story, and friend stories.
-- Visual distinction with vibrant purple/pink gradient rings for standard stories, and **signature emerald green rings** for "Close Friends" posts.
-- Instant seen/unseen ring status synchronization via WebSockets.
-
-#### b. Story Creator Studio (`StoryStudioEditor.tsx`, `StoryCreatorModal.tsx`):
-- **Flexible Content Sources:**
-  - Live 15-second photo/video capture through camera viewfinder (`StoryCameraViewfinder.tsx`).
-  - Device media upload (JPG, PNG, MP4, MOV).
-  - Text Story mode with curated solid colors and modern gradient backdrops.
-- **Cinematic Visual Filters (`StoryFilterSelector.tsx`):** Normal, Warm, Cool, Vintage, Noir, Vivid, Cyberpunk, and Dreamy.
-- **Story Music Soundtrack Picker (`StoryMusicPicker.tsx`):**
-  - Integrated music library with live animated audio soundwaves.
-  - Custom audio file upload (MP3/AAC).
-  - Spinning vinyl record badge displayed dynamically during playback.
-- **Stickers & Social Tags (`StoryStickerPicker.tsx`):**
-  - Draggable, resizable Emoji stickers on a 9:16 canvas.
-  - Interactive Location Tag with automated city autocomplete.
-  - Topical `#hashtag` sticker.
-  - User mention `@username` sticker.
-
-#### c. Interactive Stickers & Widgets (`StoryInteractiveWidgets.tsx`):
-- **Interactive Poll Widget:** Create two-option questions; viewers tap to cast votes and immediately inspect percentage distributions.
-- **Emoji Slider Widget:** Viewers drag their favorite emoji across a slider gradient, triggering animated floating emoji particles and calculating the community score.
-- **Live Event Countdown Widget:** Set event milestones with real-time Day : Hour : Minute : Second countdown timers.
-
-#### d. Full-Screen Story Viewer (`StoryViewerOverlay.tsx`):
-- Standard 9:16 mobile/desktop viewport with automatic story segment progression bars.
-- Press-and-hold to pause playback; click left/right bounds to jump forward/backward.
-- Quick interactive reaction dock: Tap emojis or type direct responses routed straight to the creator's 1-on-1 chat.
-- Creator Viewers Drawer (`StoryViewerDrawer.tsx`): Displays viewer lists and reaction breakdowns for the author's stories.
-- Author management: Delete individual stories on demand.
-
-#### e. Close Friends System (`CloseFriendsModal.tsx`):
-- Manage a curated list of Close Friends.
-- Flexible audience privacy tiers when publishing stories: *Public*, *Friends*, *Close Friends*, or *Only Me*.
-
-#### f. Story Highlights & Archive (`StoryHighlightBar.tsx`, `StoryHighlightModal.tsx`):
-- **Story Archive:** Automatically archives expired stories beyond the 24-hour window.
-- **Create Highlights:** Group archived stories into named highlight collections with custom cover images.
-- **Profile Integration (`ProfilePage.tsx`):** Circular highlight reels rendered directly on user profiles, playable anytime through the Story Viewer.
-
-### 9. User Profile Management (`ProfilePage.tsx`)
-- **Avatar & Cover Photo Customization:**
-  - Support for animated **GIF Avatars** with preserved motion loops.
-  - In-browser interactive image cropping tool (`AvatarCropper`) for static profile pictures.
-- **Detailed Identity Metadata:** Display Name, Username (`@handle`), Phone, Gender, Address, Birthdate, and Bio.
-- **Custom Status:** Custom emoji + text status with automatic expiration options (1 hour, 4 hours, end of day, end of week, or never).
-- **Story Highlights Section:** "+ New" creation button and interactive highlight albums with localized labels.
-
-### 10. Settings & Security (`SettingsPage.tsx`, `TwoFactorSettings.tsx`)
-- **Theme & Styling Engine:** Seamless Dark Mode / Light Mode switching via global CSS variable tokens.
-- **Internationalization (i18n):** Instant on-the-fly toggling between English and Vietnamese (`vi` / `en`).
-- **Account Security:**
-  - Password change management.
-  - 2FA TOTP configuration: Generates QR codes for authenticator apps and verifies 6-digit codes to enable/disable protection.
-- **Active Sessions Manager:** Inspect active device types, browsers, IP addresses, and session timestamps; supports remote single-session revocation or logging out all other devices.
-- **Privacy Controls:** Granular visibility toggles for online presence, phone number, birthday, location, gender, bio, and Read Receipts.
-- **Product Tour Controls:** Replay introductory tours or reset guide flags.
-- **Permanent Account Deletion:** Secure self-service account termination with confirmation safeguards.
-
-### 11. Administration Dashboard (`AdminPage.tsx`)
-- **Hierarchical Role-Based Access Control:** Multi-level permissions (Owner, Admin, Moderator, User).
-- **Visual System Analytics:** 7-day registration and traffic trajectory charts, total users, and active concurrent counts.
-- **User Account Management:** Search, filter by role/status, adjust access privileges, ban, or unban user accounts.
-- **Automated Content Moderation:**
-  - System-wide Banned Words list with automatic message masking.
-  - Blocked File Extensions list to protect users from malicious payloads (`.exe`, `.bat`, `.sh`, `.vbs`, etc.).
-- **Incident & Report Handling:** Review user-flagged messages within conversational context; approve punitive actions or dismiss reports.
-- **System Rate Limiting Configuration:** Real-time monitoring and threshold configuration to safeguard endpoints from DDoS and API abuse.
-
-### 12. Notification Center & Web Push (`NotificationsPanel.tsx`)
-- **In-App Real-Time Alerts:** Live notifications for incoming messages, friend requests, story replies, and missed calls.
-- **Batch Actions:** Filter by Read/Unread, mark all as read, and bulk delete notifications.
-- **Web Push Notifications:** Standalone Service Worker (`push-service-worker.js`) delivering system notifications even when browser tabs are closed.
-
-### 13. Interactive Product Tour (`useAutoTour.ts`)
-- Intelligent spotlight tours guiding new users through four critical platform journeys:
-  - Chat Experience Tour.
-  - Story Creation & Viewer Tour.
-  - User Profile Tour.
-  - Settings & Security Tour.
-- Automatically triggered for first-time sign-ins, with local completion persistence and manual replay support.
+- [Overview](#overview)
+- [Core Highlights](#core-highlights)
+- [Architecture](#architecture)
+- [Feature Modules](#feature-modules)
+- [Technology Stack](#technology-stack)
+- [Project Structure](#project-structure)
+- [Configuration Surface](#configuration-surface)
+- [Database Model](#database-model)
+- [API and Realtime Layer](#api-and-realtime-layer)
+- [Development Notes](#development-notes)
+- [Deployment Readiness](#deployment-readiness)
+- [License](#license)
 
 ---
 
-## Technical Stack & Architecture
+## Overview
+
+Inbox System Management is designed as a complete communication hub for individuals, teams, and communities. It provides account management, contact relationships, private and group messaging, file sharing, voice messages, polls, video calls, user Stories, profile customization, notification delivery, and role-based administration.
+
+The application follows a realtime-first model. REST APIs provide authenticated data access and domain operations, while Socket.IO keeps messages, presence, notifications, Story events, reactions, read states, typing indicators, and call signaling synchronized across active clients.
+
+---
+
+## Core Highlights
+
+- **Realtime communication:** instant message delivery, typing indicators, presence updates, read receipts, reactions, notifications, and Story synchronization.
+- **Rich messaging experience:** text, links, emojis, GIFs, stickers, images, videos, documents, audio files, voice recordings, polls, replies, forwarding, pinning, editing, revocation, and reporting.
+- **WebRTC calling:** peer-to-peer audio and video calls with microphone control, camera control, screen sharing, floating call windows, and call history summaries.
+- **24-hour Stories:** media Stories, text Stories, camera capture, filters, music, stickers, mentions, hashtags, locations, polls, emoji sliders, countdowns, close friends, archives, and highlights.
+- **Security-focused account layer:** email/password authentication, Google OAuth, Facebook login, TOTP-based two-factor authentication, session management, password reset, reCAPTCHA, and role-based access control.
+- **End-to-end encryption support:** frontend E2EE modules based on Signal-style key management and Curve25519 cryptographic primitives.
+- **Administrative governance:** user management, role management, ban/unban workflows, moderation settings, report handling, blocked words, blocked file extensions, and dashboard analytics.
+- **Progressive Web App capabilities:** app manifest, service worker integration, offline-aware behavior, and web push notification support.
+- **Internationalization:** English and Vietnamese language resources powered by `i18next` and `react-i18next`.
+- **Modern interface:** responsive chat workspace, resizable panels, dark/light themes, glass-style visual language, smooth transitions, and domain-specific UI components.
+
+---
+
+## Architecture
+
+```text
+React / Vite Client
+  |-- REST API: authentication, users, contacts, conversations, stories, notifications, admin
+  |-- Socket.IO: messages, presence, typing, reactions, calls, stories, notifications
+  |-- WebRTC: peer-to-peer media streams with backend-assisted signaling
+  |
+Express API Server
+  |-- Middleware: authentication, authorization, CORS, Helmet, rate limiting, logging, errors
+  |-- Controllers: auth, admin, contacts, conversations, users, stories, E2EE, notifications
+  |-- Services: mail delivery, web push, upload/media integrations
+  |
+MySQL Database
+  |-- users, sessions, contacts, conversations, participants, messages, attachments
+  |-- stories, viewers, highlights, notifications, reports, moderation settings
+```
+
+Primary application flow:
+
+1. The client authenticates users through the REST API.
+2. Authenticated clients fetch profile, contact, conversation, notification, and Story data through domain-specific API clients.
+3. The client opens a Socket.IO connection for realtime synchronization.
+4. Message state, typing state, reactions, presence, Story updates, notifications, and call events are broadcast through the realtime layer.
+5. WebRTC calls use Socket.IO for signaling while media streams flow directly between browser peers whenever network conditions allow.
+6. Persistent application data is stored in MySQL, while media handling can be delegated to configured upload and cloud storage services.
+
+---
+
+## Feature Modules
+
+### Authentication and Accounts
+
+- Email and password authentication.
+- User registration with identity, email, phone, and password fields.
+- Google OAuth and Facebook login.
+- TOTP-based two-factor authentication for authenticator apps.
+- Password recovery through email OTP verification.
+- Remember-me session behavior through browser storage.
+- Login protection through reCAPTCHA.
+- Active session inspection and remote session revocation.
+
+### Realtime Chat
+
+- Conversation inbox with All, Unread, Requests, Groups, and Archived filters.
+- Conversation pinning and unpinning.
+- Search across users, contacts, conversations, and message content.
+- Resizable and collapsible inbox sidebar.
+- One-to-one and group conversations.
+- Group creation with name, avatar, member selection, and validation.
+- Group governance for owners and members, including invites, join requests, nicknames, leaving, and disbanding.
+- Text messages, link previews, emoji, GIFs, stickers, files, images, videos, audio, and voice messages.
+- Drag-and-drop uploads, clipboard paste support, and attachment previews.
+- Message lifecycle states: sending, sent, delivered, and seen.
+- Typing indicators.
+- Reply, forward, pin, edit, revoke/delete, and report actions.
+- Emoji reactions and animated reaction effects.
+- Interactive polls with multiple-choice and anonymous voting modes.
+
+### Voice and Video Calls
+
+- Peer-to-peer WebRTC audio and video calls.
+- Floating call overlay for multitasking during active conversations.
+- Microphone, camera, and screen-sharing controls.
+- Camera switching where supported by the browser.
+- Missed-call records, call duration summaries, and call event bubbles in chat.
+
+### Stories
+
+- Avatar-based Story feed.
+- Story creation from camera capture, uploaded media, or text backgrounds.
+- Visual filters such as Normal, Warm, Cool, Vintage, Noir, Vivid, Cyberpunk, and Dreamy.
+- Music selection, custom audio uploads, and animated playback indicators.
+- Emoji, location, hashtag, and mention stickers.
+- Poll, emoji slider, and countdown widgets.
+- Full-screen Story viewer with progress bars, pause, next/previous navigation, and reactions.
+- Viewer list and reaction breakdown for Story authors.
+- Audience controls for Public, Friends, Close Friends, and Only Me.
+- Story archive and profile highlights.
+
+### Contacts and Social Graph
+
+- Global user search by name, email, or handle.
+- Friend request creation, cancellation, acceptance, and rejection.
+- Friend list with direct messaging and calling shortcuts.
+- Blocking and unblocking workflows.
+- Private nicknames for contacts.
+- Mutual friends display.
+- Online, offline, busy, and away presence states.
+
+### User Profiles
+
+- Avatar, cover photo, display name, username, phone, gender, address, birthday, and bio management.
+- Animated GIF avatar support.
+- In-browser avatar cropping.
+- Custom status with emoji and expiration settings.
+- Story Highlights displayed on user profiles.
+
+### Settings and Security
+
+- Dark and light theme switching.
+- English and Vietnamese language switching.
+- Password changes.
+- Two-factor authentication setup and removal.
+- Active session management.
+- Privacy controls for presence, phone number, birthday, address, gender, bio, and read receipts.
+- Product tour reset and replay.
+- Permanent account deletion with confirmation safeguards.
+
+### Notifications and Web Push
+
+- In-app notifications for messages, friend requests, Story replies, and missed calls.
+- Read/unread filtering.
+- Mark-all-read and bulk deletion actions.
+- Browser push notifications through the service worker at `src/push-service-worker.js`.
+- VAPID-based web push delivery.
+
+### Administration
+
+- Role-based access control for `user`, `agent`, `admin`, and `owner` roles.
+- Dashboard analytics for registrations, traffic, and user activity.
+- User search, filtering, role changes, ban, and unban actions.
+- Banned-word and blocked-file-extension management.
+- User report review and moderation workflows.
+- Endpoint protection through rate-limit configuration.
+
+### Product Tour
+
+- Guided onboarding flows for core product areas.
+- Tours for Chat, Stories, Profile, and Settings.
+- Persisted tour completion state with manual replay support.
+
+---
+
+## Technology Stack
 
 ### Frontend
-- **Framework & Language:** React 19, TypeScript
-- **Build Tool:** Vite (optimized code-splitting, HMR, and ultra-fast bundle delivery)
-- **Styling Architecture:** Pure Vanilla CSS with CSS Variables, Design Token system, Glassmorphism aesthetics, and smooth micro-animations
-- **Core Dependencies:**
-  - `lucide-react`: Lightweight SVG icon set
-  - `emoji-picker-react`: Emoji selector
-  - `socket.io-client`: Low-latency bidirectional WebSocket client
-  - `i18next` & `react-i18next`: Internationalization engine
-  - `react-easy-crop`: In-browser canvas image cropper
-  - `sonner`: Toast notification framework
-  - `@privacyresearch/curve25519-typescript`: Curve25519 cryptographic primitives for Signal E2EE
+
+| Area | Technology |
+| --- | --- |
+| Framework | React 19, React DOM |
+| Language | TypeScript 6 |
+| Build system | Vite 8 |
+| State and data | Zustand, TanStack Query |
+| Realtime client | socket.io-client |
+| Interface | CSS variables, vanilla CSS, lucide-react, sonner |
+| Internationalization | i18next, react-i18next |
+| Media | WebRTC, MediaRecorder, react-easy-crop, browser-image-compression |
+| PWA | vite-plugin-pwa, Workbox |
+| Charts | Recharts |
+| Guided tours | driver.js |
 
 ### Backend
-- **Runtime & Framework:** Node.js, Express.js
-- **Database:** MySQL (managed with `mysql2` connection pooling)
-- **Self-Healing Schema Migration:** Automated runtime table and column discovery, ensuring schema consistency across server boots without manual intervention
-- **Real-Time Engine:** Socket.IO (message transport, presence sync, calling signals, typing indicators, reactions, story events)
-- **Signaling Layer:** WebRTC Signaling Server for peer-to-peer audio/video calling
-- **Cloud Media Storage:** Cloudinary (secure asset transformation, image/video optimization, and hosting)
-- **Email & Delivery Service:** Resend API / Nodemailer / Mailtrap
-- **Security & Optimization:**
-  - `web-push`: VAPID-compliant push notifications
-  - `bcryptjs`: One-way cryptographic password hashing
-  - `speakeasy` & `qrcode`: TOTP secret generation and QR encoding
-  - `helmet`, `cors`: HTTP security headers
-  - `rateLimit.middleware.js`: Multi-tiered rate limiters protecting against endpoint abuse
-  - `multer`: Multi-part stream upload handling
+
+| Area | Technology |
+| --- | --- |
+| Runtime | Node.js |
+| Framework | Express.js |
+| Database | MySQL, mysql2 connection pool |
+| Realtime server | Socket.IO |
+| Security | Helmet, CORS, bcryptjs, authentication middleware, rate limiting |
+| Uploads | multer, Cloudinary integration |
+| Email | Resend, Nodemailer, SMTP fallback |
+| Push notifications | web-push, VAPID |
+| Two-factor auth | otplib, qrcode |
+| Development runtime | nodemon |
 
 ---
 
-## Project Directory Structure
+## Project Structure
 
-```plaintext
+```text
 InboxSystemManagement/
-├── backend/                        # Backend source (Node.js & Express)
+├── backend/
 │   ├── src/
-│   │   ├── config/                 # Database, Cloudinary, WebPush, Mailer configs
-│   │   ├── controllers/            # Route business controllers
-│   │   │   ├── core/               # Chat, Messages, Contacts, Stories, E2EE
-│   │   │   └── system/             # Administration, Auth, Reports
-│   │   ├── middleware/             # JWT auth, Rate Limiting, Error handling
-│   │   ├── realtime/               # Socket.IO handlers, WebRTC Signaling
-│   │   ├── routes/                 # RESTful API route definitions
-│   │   │   ├── communications/     # Notifications, Web Push routes
-│   │   │   ├── core/               # Conversations, Contacts, Stories, Search
-│   │   │   └── system/             # Auth, Admin routes
-│   │   ├── services/               # Mailer, Cloudinary, WebPush services
-│   │   └── utils/                  # Helper utilities
-│   └── package.json
-├── database/                       # Initial database SQL bootstrap scripts
-├── public/                         # Static assets (Favicons, Logo, PWA Manifest)
-├── src/                            # Frontend source (React & TypeScript)
-│   ├── components/                 # UI components
-│   │   ├── chat/                   # Message area, message items, toolbars
-│   │   ├── layout/                 # Navigation Rail (NavRail), Sidebar
-│   │   ├── media/                  # WebRTC Call Overlay
-│   │   ├── panels/                 # Inbox, Contacts, Notifications, Detail, Polls
-│   │   ├── story/                  # Story module (Studio, Viewer, Widgets, Highlights)
-│   │   ├── ui/                     # AvatarFallback, Cropper, Dialogs, Badges
-│   │   └── views/                  # ChatApp, ProfilePage, SettingsPage, AdminPage
+│   │   ├── config/                 # Database, upload, and Cloudinary configuration
+│   │   ├── controllers/
+│   │   │   ├── communications/     # Notifications and web push controllers
+│   │   │   ├── core/               # Users, contacts, conversations, stories, E2EE
+│   │   │   └── system/             # Authentication and administration
+│   │   ├── middleware/             # Auth, rate limits, logging, error handling
+│   │   ├── realtime/               # Socket.IO and WebRTC signaling
+│   │   ├── routes/
+│   │   │   ├── communications/     # Notification and push routes
+│   │   │   ├── core/               # Contact, conversation, story, user, search routes
+│   │   │   └── system/             # Auth and admin routes
+│   │   ├── services/               # Mail and push services
+│   │   ├── utils/                  # Validation, logging, and shared helpers
+│   │   ├── app.js                  # Express application composition
+│   │   └── server.js               # HTTP server, database bootstrap, realtime init
+│   ├── tests/                      # Backend and database verification scripts
+│   └── uploads/                    # Local upload placeholder
+├── database/
+│   └── schema.sql                  # Initial MySQL schema
+├── docs/
+│   └── superpowers/plans/          # Planning and feature notes
+├── public/
+│   ├── _redirects                  # SPA redirect configuration
+│   └── Favicon.png
+├── src/
+│   ├── bg-images/                  # Authentication background assets
+│   ├── components/
+│   │   ├── auth/                   # Account switching UI
+│   │   ├── chat/                   # Chat-adjacent components
+│   │   ├── layout/                 # Navigation rail and layout components
+│   │   ├── media/                  # Call overlay
+│   │   ├── panels/                 # Inbox, chat, details, contacts, notifications
+│   │   ├── providers/              # Theme provider
+│   │   ├── story/                  # Story feed, editor, viewer, widgets
+│   │   ├── ui/                     # Shared UI primitives
+│   │   └── views/                  # Chat, profile, settings, admin views
+│   ├── features/                   # Feature configuration and tour steps
 │   ├── hooks/                      # Domain-specific React hooks
-│   ├── lib/                        # Internal cryptographic libraries (E2EE Signal Engine)
-│   ├── locales/                    # Multilingual dictionaries (vi.json, en.json)
-│   ├── pages/                      # Standalone routes (Auth, Legal, 404)
-│   ├── services/                   # API clients and browser storage services
-│   ├── stores/                     # Global state management (Zustand)
-│   ├── styles/                     # CSS stylesheets & Design Tokens (story.css, tour.css)
-│   ├── types.ts                    # Platform TypeScript type definitions
-│   ├── main.tsx                    # React client entry point
-│   └── App.tsx                     # Core application routing & session provider
-├── package.json                    # Frontend package dependencies
-└── README.md                       # Comprehensive platform documentation
+│   ├── lib/e2ee/                   # E2EE engine, key manager, signal store
+│   ├── locales/                    # English and Vietnamese dictionaries
+│   ├── pages/                      # Auth, legal, and error pages
+│   ├── services/
+│   │   ├── api/                    # REST API clients
+│   │   ├── core/                   # Routing, notifications, IndexedDB, offline queue
+│   │   ├── realtime/               # Socket.IO and RTC configuration
+│   │   ├── storage/                # Authentication storage
+│   │   └── tutorial/               # Product tour service
+│   ├── stores/                     # Zustand stores
+│   ├── styles/                     # Story and tour styles
+│   ├── App.tsx                     # Application shell and routing
+│   ├── main.tsx                    # React entry point
+│   ├── style.css                   # Global styles
+│   └── types.ts                    # Shared frontend types
+├── index.html
+├── package.json                    # Frontend package metadata and scripts
+├── tsconfig.json
+├── vite.config.ts
+└── README.md
 ```
+
 ---
 
-## License & Attribution
+## Configuration Surface
 
-This project is developed for educational, research, and communication management purposes. All rights concerning commercial distribution or adaptation are reserved by the author.
+The application is configured through frontend `VITE_*` variables and backend environment variables. These settings define API routing, OAuth providers, CAPTCHA, GIF search, WebRTC ICE servers, database connectivity, CORS origins, upload providers, mail delivery, logging, password hashing, and web push credentials.
+
+### Frontend-facing settings
+
+| Variable | Purpose |
+| --- | --- |
+| `VITE_API_URL` | Base URL for REST API requests |
+| `VITE_GOOGLE_CLIENT_ID` | Google OAuth client identifier |
+| `VITE_FACEBOOK_APP_ID` | Facebook application identifier |
+| `VITE_RECAPTCHA_SITE_KEY` | reCAPTCHA site key used by the login page |
+| `VITE_GIPHY_API_KEY` | GIPHY API key used by GIF search |
+| `VITE_RTC_ICE_SERVERS` | JSON array of WebRTC ICE server definitions |
+
+### Backend-facing settings
+
+| Variable | Purpose |
+| --- | --- |
+| `PORT` | HTTP server port |
+| `CLIENT_ORIGIN`, `CLIENT_ORIGINS` | Allowed frontend origins for CORS |
+| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | MySQL connection settings |
+| `DB_CONNECTION_LIMIT` | MySQL pool connection limit |
+| `BCRYPT_SALT_ROUNDS` | Password hashing cost |
+| `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Cloudinary media upload integration |
+| `CLOUDINARY_ROOT_FOLDER` | Root folder for uploaded media assets |
+| `RESEND_API_KEY`, `RESEND_SENDER_EMAIL` | Resend email delivery configuration |
+| `SMTP_USER`, `SMTP_PASS` | SMTP fallback credentials |
+| `MAIL_SENDER_NAME` | Sender display name for system email |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Web push notification credentials |
+| `LOG_LEVEL`, `DEBUG` | Runtime logging behavior |
+
+---
+
+## Database Model
+
+The MySQL schema in `database/schema.sql` defines the foundational persistence model for the platform. Major table groups include:
+
+- **Identity and access:** users, sessions, password reset tokens, verification tokens, roles, and account state.
+- **Social graph:** contacts, friend requests, blocked relationships, private nicknames, and mutual friend support.
+- **Messaging:** conversations, participants, messages, attachments, reactions, read receipts, pinned messages, and group metadata.
+- **Stories:** Story entries, viewers, reactions, audience settings, close friends, archives, and highlights.
+- **Notifications:** in-app notifications and push subscriptions.
+- **Moderation and administration:** reports, moderation settings, banned words, blocked extensions, user status, and administrative controls.
+
+During backend startup, `server.js` verifies database connectivity, applies selected performance indexes when needed, and invokes conversation schema guards to keep the running environment aligned with expected conversation features.
+
+---
+
+## API and Realtime Layer
+
+### REST API
+
+The backend registers its API under the `/api` prefix.
+
+| Prefix | Responsibility |
+| --- | --- |
+| `GET /api/health` | API health check |
+| `/api/auth` | Authentication, registration, OAuth, password reset, 2FA, sessions |
+| `/api/admin` | Dashboard, user management, moderation, reports |
+| `/api/contacts` | Friend requests, contacts, blocking, nicknames |
+| `/api/conversations` | Conversations, messages, groups, files, polls |
+| `/api/notifications` | Notification center operations |
+| `/api/push` | Push subscriptions and web push delivery |
+| `/api/search` | Search across users, contacts, and conversations |
+| `/api/users` | User profiles and privacy settings |
+| `/api/stories` | Story feed, viewers, archive, highlights |
+| `/api/e2ee` | E2EE key bundle and secret chat support |
+| `/api/link-preview` | URL metadata preview |
+
+Most domain routes require authenticated access through the `authenticate` middleware. Administrative routes also require elevated privileges through `requireAdmin`.
+
+### Socket.IO
+
+The realtime layer is implemented in `backend/src/realtime/socket.js` and initialized from `backend/src/server.js`. It coordinates:
+
+- User connection state and presence.
+- Realtime message delivery.
+- Typing indicators.
+- Delivery and read receipts.
+- Message reactions and message updates.
+- Story events.
+- Notification events.
+- WebRTC call signaling.
+
+### WebRTC
+
+The frontend manages RTC configuration in `src/services/realtime/rtcConfig.ts` and call signaling in `src/services/realtime/callRealtime.ts`. The backend is responsible for signaling only; audio and video streams are exchanged peer-to-peer between browsers when supported by the active network path.
+
+---
+
+## Development Notes
+
+- Frontend route parsing lives in `src/services/core/appRoutes.ts` and supports both modern path routes and selected legacy hash routes.
+- REST API clients are grouped under `src/services/api`.
+- View-level orchestration is separated into domain hooks under `src/hooks`.
+- Global client state is stored in Zustand stores under `src/stores`.
+- Theme behavior is coordinated by `src/components/providers/ThemeProvider.tsx` and CSS variables in `src/style.css`.
+- Language resources are stored in `src/locales/en.json` and `src/locales/vi.json`.
+- E2EE logic is isolated under `src/lib/e2ee`; changes in this area should be reviewed carefully because they affect key material and encrypted-session behavior.
+- Backend routes are grouped by domain under `backend/src/routes`, with matching controller domains under `backend/src/controllers`.
+- Cross-cutting backend concerns such as authentication, rate limiting, request logging, and error handling live in `backend/src/middleware`.
+- Secrets, provider credentials, production database dumps, private keys, and environment files should remain outside version control.
+
+---
+
+## Deployment Readiness
+
+- Confirm production CORS origins before public deployment.
+- Ensure frontend API routing points to the production API endpoint.
+- Use HTTPS for OAuth, camera access, microphone access, Web Push, and WebRTC.
+- Configure a production media storage strategy.
+- Configure a real email provider for OTP, verification, and password reset flows.
+- Generate and secure VAPID keys for browser push notifications.
+- Review upload restrictions, blocked extensions, request limits, and moderation settings.
+- Validate TypeScript and production bundling before release.
+- Back up the database before schema migrations or major production updates.
+
+---
+
+## License
+
+This project is distributed under the terms defined in [LICENSE](LICENSE). Review the license before redistributing, modifying, or using the project for commercial purposes.
+
