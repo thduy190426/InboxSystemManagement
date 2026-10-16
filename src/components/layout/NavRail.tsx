@@ -213,7 +213,7 @@ export function NavRail({
         })}
       </nav>
       <div className="nav-bottom-actions">
-        {/* Nút chuyển đổi giao diện sáng/tối đang tạm ẩn
+        {/* 
         <button
           className="nav-button nav-settings"
           onClick={toggleTheme}

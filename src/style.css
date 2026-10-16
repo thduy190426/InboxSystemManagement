@@ -15400,7 +15400,19 @@ input.sr-only {
 .profile-btn--ghost:hover {
   background: rgba(255, 255, 255, 0.05);
   color: var(--color-text-main, #fff);
-}.profile-stats-bar {
+}
+
+.profile-btn:disabled,
+.profile-btn[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: grayscale(0.6);
+}
+
+.profile-stats-bar {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
@@ -15913,4 +15925,150 @@ input.sr-only {
   border-radius: 20px;
   color: var(--color-text-muted, #94a3b8);
   font-size: 14px;
+}
+
+/* ============================================================
+   Profile About Cards (Responsive, Multi-line, Overflow Safe)
+   ============================================================ */
+.profile-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.profile-info-card {
+  background: var(--surface, #1e293b);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  border-radius: 18px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+  transition: all 180ms ease;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.profile-info-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(20, 184, 166, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.profile-info-card--align-top {
+  align-items: flex-start;
+}
+
+.profile-info-card-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  flex: 1;
+  width: 100%;
+}
+
+.profile-info-card--align-top .profile-info-card-left {
+  align-items: flex-start;
+}
+
+.profile-info-card-body {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.profile-info-sub {
+  font-size: 12px;
+  color: var(--color-text-muted, #94a3b8);
+  margin-bottom: 2px;
+  font-weight: 500;
+}
+
+.profile-info-value {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--color-text-main, #f8fafc);
+  word-break: break-word;
+  white-space: normal;
+  line-height: 1.45;
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .profile-info-card--wide {
+    grid-column: span 2;
+  }
+}
+
+/* ============================================================
+   Public Profile Form (Dark Theme Inputs & Textareas)
+   ============================================================ */
+.public-profile-shell .pp-card {
+  background: var(--surface, #1e293b) !important;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08)) !important;
+  color: #f8fafc;
+}
+
+.public-profile-shell .pp-field-label {
+  color: #cbd5e1 !important;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.public-profile-shell .pp-field-label svg {
+  color: #94a3b8 !important;
+}
+
+.public-profile-shell .pp-input {
+  background: rgba(15, 23, 42, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #f8fafc !important;
+  border-radius: 12px !important;
+  padding: 10px 14px !important;
+  font-size: 14.5px !important;
+  transition: all 180ms ease;
+  min-width: 0;
+}
+
+.public-profile-shell .pp-input::placeholder {
+  color: #64748b !important;
+}
+
+.public-profile-shell .pp-input:focus {
+  background: rgba(15, 23, 42, 0.95) !important;
+  border-color: #14b8a6 !important;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.22) !important;
+  color: #ffffff !important;
+}
+
+.public-profile-shell .pp-select {
+  background-color: rgba(15, 23, 42, 0.75) !important;
+  color: #f8fafc !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 14px center !important;
+  padding-right: 36px !important;
+  cursor: pointer;
+}
+
+.public-profile-shell .pp-select option {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  padding: 8px;
+}
+
+.public-profile-shell .pp-input[type="date"] {
+  color-scheme: dark;
+}
+
+.public-profile-shell .pp-textarea {
+  background: rgba(15, 23, 42, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #f8fafc !important;
+  border-radius: 12px !important;
+  padding: 12px 14px !important;
+  line-height: 1.6;
 }

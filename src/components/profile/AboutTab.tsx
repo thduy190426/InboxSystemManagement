@@ -1,5 +1,5 @@
 import type { ChangeEvent, FormEvent } from 'react'
-import { useState, lazy, Suspense } from 'react'
+import { useState, lazy, Suspense, useMemo } from 'react'
 import {
   IdCard,
   AtSign,
@@ -70,6 +70,9 @@ export function AboutTab({
   const [errors, setErrors] = useState<ProfileErrors>({})
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false)
 
+  const formValidation = useMemo(() => validateProfileForm(form, t), [form, t])
+  const isFormValid = formValidation.isValid
+
   function handleChange(
     event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) {
@@ -90,9 +93,8 @@ export function AboutTab({
     event.preventDefault()
     if (!onSaveProfile) return
 
-    const validation = validateProfileForm(form, t)
-    if (!validation.isValid) {
-      setErrors(validation.errors)
+    if (!formValidation.isValid) {
+      setErrors(formValidation.errors)
       return
     }
 
@@ -286,7 +288,8 @@ export function AboutTab({
             </button>
             <button
               className="profile-btn profile-btn--primary"
-              disabled={isSaving}
+              disabled={!isFormValid || isSaving}
+              title={!isFormValid ? t('errors.formHasErrors', { defaultValue: 'Vui lòng nhập đúng và đủ các thông tin hợp lệ!' }) : undefined}
               type="submit"
             >
               <Save size={15} />
@@ -312,62 +315,62 @@ export function AboutTab({
             )}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+          <div className="profile-info-grid">
             {user.email && (
-              <div className="friend-profile-card">
-                <div className="friend-card-left">
+              <div className="profile-info-card" title={user.email}>
+                <div className="profile-info-card-left">
                   <div className="profile-stat-icon"><Mail size={16} /></div>
-                  <div>
-                    <div className="friend-card-sub">{t('emailLabel', { defaultValue: 'Email' })}</div>
-                    <strong className="friend-card-name">{user.email}</strong>
+                  <div className="profile-info-card-body">
+                    <div className="profile-info-sub">{t('emailLabel', { defaultValue: 'Email' })}</div>
+                    <strong className="profile-info-value" style={{ wordBreak: 'break-all' }}>{user.email}</strong>
                   </div>
                 </div>
               </div>
             )}
 
             {user.phone && user.showPhone !== false && (
-              <div className="friend-profile-card">
-                <div className="friend-card-left">
+              <div className="profile-info-card" title={user.phone}>
+                <div className="profile-info-card-left">
                   <div className="profile-stat-icon"><Phone size={16} /></div>
-                  <div>
-                    <div className="friend-card-sub">{t('phoneLabel', { defaultValue: 'Số điện thoại' })}</div>
-                    <strong className="friend-card-name">{user.phone}</strong>
+                  <div className="profile-info-card-body">
+                    <div className="profile-info-sub">{t('phoneLabel', { defaultValue: 'Số điện thoại' })}</div>
+                    <strong className="profile-info-value">{user.phone}</strong>
                   </div>
                 </div>
               </div>
             )}
 
             {user.gender && user.showGender !== false && (
-              <div className="friend-profile-card">
-                <div className="friend-card-left">
+              <div className="profile-info-card" title={getGenderLabel(user.gender)}>
+                <div className="profile-info-card-left">
                   <div className="profile-stat-icon"><Users size={16} /></div>
-                  <div>
-                    <div className="friend-card-sub">{t('genderLabel', { defaultValue: 'Giới tính' })}</div>
-                    <strong className="friend-card-name">{getGenderLabel(user.gender)}</strong>
+                  <div className="profile-info-card-body">
+                    <div className="profile-info-sub">{t('genderLabel', { defaultValue: 'Giới tính' })}</div>
+                    <strong className="profile-info-value">{getGenderLabel(user.gender)}</strong>
                   </div>
                 </div>
               </div>
             )}
 
             {user.birthDate && user.showBirthDate !== false && (
-              <div className="friend-profile-card">
-                <div className="friend-card-left">
+              <div className="profile-info-card" title={user.birthDate.slice(0, 10)}>
+                <div className="profile-info-card-left">
                   <div className="profile-stat-icon"><CalendarDays size={16} /></div>
-                  <div>
-                    <div className="friend-card-sub">{t('birthDateLabel', { defaultValue: 'Ngày sinh' })}</div>
-                    <strong className="friend-card-name">{user.birthDate.slice(0, 10)}</strong>
+                  <div className="profile-info-card-body">
+                    <div className="profile-info-sub">{t('birthDateLabel', { defaultValue: 'Ngày sinh' })}</div>
+                    <strong className="profile-info-value">{user.birthDate.slice(0, 10)}</strong>
                   </div>
                 </div>
               </div>
             )}
 
             {user.address && user.showAddress !== false && (
-              <div className="friend-profile-card">
-                <div className="friend-card-left">
-                  <div className="profile-stat-icon"><MapPin size={16} /></div>
-                  <div>
-                    <div className="friend-card-sub">{t('addressLabel', { defaultValue: 'Địa chỉ' })}</div>
-                    <strong className="friend-card-name">{user.address}</strong>
+              <div className="profile-info-card profile-info-card--wide profile-info-card--align-top" title={user.address}>
+                <div className="profile-info-card-left">
+                  <div className="profile-stat-icon" style={{ marginTop: '2px' }}><MapPin size={16} /></div>
+                  <div className="profile-info-card-body">
+                    <div className="profile-info-sub">{t('addressLabel', { defaultValue: 'Địa chỉ' })}</div>
+                    <strong className="profile-info-value">{user.address}</strong>
                   </div>
                 </div>
               </div>
