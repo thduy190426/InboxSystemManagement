@@ -34,6 +34,10 @@ import { TimelineTab } from '../profile/TimelineTab'
 import { AboutTab } from '../profile/AboutTab'
 import { FriendsTab } from '../profile/FriendsTab'
 import { FollowersTab } from '../profile/FollowersTab'
+import {
+  validateImageFile,
+  PROFILE_LIMITS,
+} from '../../utils/profileValidation'
 
 export type ProfilePageProps = {
   currentUser: AuthUser | null
@@ -170,6 +174,23 @@ export function ProfilePage({
 
   async function handleCoverChange(file: File) {
     if (!currentUser) return
+
+    const validation = validateImageFile(
+      file,
+      {
+        maxSizeBytes: PROFILE_LIMITS.MAX_COVER_SIZE,
+        label: t('coverPhotoLabel', { defaultValue: 'ảnh bìa' }),
+      },
+      t,
+    )
+    if (!validation.isValid) {
+      pushToast(
+        validation.error || t('errors.invalidImage', { defaultValue: 'Ảnh không hợp lệ!' }),
+        'error',
+      )
+      return
+    }
+
     try {
       setIsUploadingCover(true)
       const newUrl = await timelineApi.uploadCoverPhoto(file, currentUser.id)
@@ -188,6 +209,22 @@ export function ProfilePage({
   }
 
   function handleAvatarSelect(file: File) {
+    const validation = validateImageFile(
+      file,
+      {
+        maxSizeBytes: PROFILE_LIMITS.MAX_AVATAR_SIZE,
+        label: t('avatarPhotoLabel', { defaultValue: 'ảnh đại diện' }),
+      },
+      t,
+    )
+    if (!validation.isValid) {
+      pushToast(
+        validation.error || t('errors.invalidImage', { defaultValue: 'Ảnh không hợp lệ!' }),
+        'error',
+      )
+      return
+    }
+
     if (file.type === 'image/gif') {
       setIsAvatarUploading(true)
       uploadAvatar(file)

@@ -19,6 +19,11 @@ import type { AuthUser } from '../../services/api/authApi'
 import type { ContactUser } from '../../types'
 import type { ProfilePayload } from '../../services/api/userApi'
 import type { EmojiClickData, EmojiStyle, Theme } from 'emoji-picker-react'
+import {
+  validateProfileForm,
+  PROFILE_LIMITS,
+  type ProfileErrors,
+} from '../../utils/profileValidation'
 
 const EmojiPicker = lazy(() => import('emoji-picker-react'))
 
@@ -30,8 +35,6 @@ type AboutTabProps = {
   onSaveProfile?: (payload: ProfilePayload) => Promise<void>
   isSaving?: boolean
 }
-
-type ProfileErrors = Partial<Record<keyof ProfilePayload, string>>
 
 function getLocalDateInputValue(date = new Date()) {
   const year = date.getFullYear()
@@ -87,20 +90,9 @@ export function AboutTab({
     event.preventDefault()
     if (!onSaveProfile) return
 
-    const newErrors: ProfileErrors = {}
-    if (!form.displayName.trim()) {
-      newErrors.displayName = t('errors.displayNameRequired', {
-        defaultValue: 'Vui lòng nhập tên hiển thị!',
-      })
-    }
-    if (form.handle.trim() && !/^[a-z0-9][a-z0-9._]{2,31}$/.test(form.handle.trim())) {
-      newErrors.handle = t('errors.handleInvalid', {
-        defaultValue: 'Tên định danh không hợp lệ!',
-      })
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
+    const validation = validateProfileForm(form, t)
+    if (!validation.isValid) {
+      setErrors(validation.errors)
       return
     }
 
@@ -135,22 +127,27 @@ export function AboutTab({
           </div>
 
           <div className="pp-fields" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-            <label className="pp-field">
-              <span className="pp-field-label"><IdCard size={14} /> {t('displayNameLabel', { defaultValue: 'Tên hiển thị' })}</span>
+            <label className={`pp-field${errors.displayName ? ' pp-field--error' : ''}`}>
+              <span className="pp-field-label">
+                <IdCard size={14} /> {t('displayNameLabel', { defaultValue: 'Tên hiển thị' })} <span style={{ color: '#ef4444' }}>*</span>
+              </span>
               <input
                 className="pp-input"
+                maxLength={PROFILE_LIMITS.DISPLAY_NAME_MAX}
                 name="displayName"
                 onChange={handleChange}
+                placeholder={t('displayNamePlaceholder', { defaultValue: 'Nhập tên hiển thị' })}
                 required
                 value={form.displayName}
               />
               {errors.displayName && <span className="pp-field-error">{errors.displayName}</span>}
             </label>
 
-            <label className="pp-field">
+            <label className={`pp-field${errors.handle ? ' pp-field--error' : ''}`}>
               <span className="pp-field-label"><AtSign size={14} /> {t('handleLabel', { defaultValue: 'Tên định danh' })}</span>
               <input
                 className="pp-input"
+                maxLength={PROFILE_LIMITS.HANDLE_MAX}
                 name="handle"
                 onChange={handleChange}
                 placeholder="username"
@@ -159,14 +156,17 @@ export function AboutTab({
               {errors.handle && <span className="pp-field-error">{errors.handle}</span>}
             </label>
 
-            <label className="pp-field">
+            <label className={`pp-field${errors.phone ? ' pp-field--error' : ''}`}>
               <span className="pp-field-label"><Phone size={14} /> {t('phoneLabel', { defaultValue: 'Số điện thoại' })}</span>
               <input
                 className="pp-input"
                 name="phone"
                 onChange={handleChange}
+                placeholder="0912345678"
+                type="tel"
                 value={form.phone}
               />
+              {errors.phone && <span className="pp-field-error">{errors.phone}</span>}
             </label>
 
             <label className="pp-field">
@@ -185,32 +185,42 @@ export function AboutTab({
               </select>
             </label>
 
-            <label className="pp-field">
+            <label className={`pp-field${errors.birthDate ? ' pp-field--error' : ''}`}>
               <span className="pp-field-label"><CalendarDays size={14} /> {t('birthDateLabel', { defaultValue: 'Ngày sinh' })}</span>
               <input
                 className="pp-input"
                 max={getLocalDateInputValue()}
+                min="1900-01-01"
                 name="birthDate"
                 onChange={handleChange}
                 type="date"
                 value={form.birthDate}
               />
+              {errors.birthDate && <span className="pp-field-error">{errors.birthDate}</span>}
             </label>
 
-            <label className="pp-field">
+            <label className={`pp-field${errors.address ? ' pp-field--error' : ''}`}>
               <span className="pp-field-label"><MapPin size={14} /> {t('addressLabel', { defaultValue: 'Địa chỉ' })}</span>
               <input
                 className="pp-input"
+                maxLength={PROFILE_LIMITS.ADDRESS_MAX}
                 name="address"
                 onChange={handleChange}
+                placeholder={t('addressPlaceholder', { defaultValue: 'Ví dụ: Hà Nội, Việt Nam' })}
                 value={form.address}
               />
+              {errors.address && <span className="pp-field-error">{errors.address}</span>}
             </label>
           </div>
 
           <div style={{ marginTop: '16px' }}>
-            <label className="pp-field">
-              <span className="pp-field-label"><MessageSquare size={14} /> {t('statusLabel', { defaultValue: 'Trạng thái cá nhân' })}</span>
+            <label className={`pp-field${errors.statusMessage ? ' pp-field--error' : ''}`}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className="pp-field-label"><MessageSquare size={14} /> {t('statusLabel', { defaultValue: 'Trạng thái cá nhân' })}</span>
+                <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                  {form.statusMessage ? form.statusMessage.length : 0}/{PROFILE_LIMITS.STATUS_MESSAGE_MAX}
+                </span>
+              </div>
               <div style={{ display: 'flex', gap: '8px', position: 'relative' }}>
                 <button
                   className="pp-input pp-select"
@@ -233,6 +243,7 @@ export function AboutTab({
                 )}
                 <input
                   className="pp-input"
+                  maxLength={PROFILE_LIMITS.STATUS_MESSAGE_MAX}
                   name="statusMessage"
                   onChange={handleChange}
                   placeholder={t('statusPlaceholder', { defaultValue: 'Đang sẵn sàng hỗ trợ' })}
@@ -240,19 +251,28 @@ export function AboutTab({
                   value={form.statusMessage}
                 />
               </div>
+              {errors.statusMessage && <span className="pp-field-error">{errors.statusMessage}</span>}
             </label>
           </div>
 
           <div style={{ marginTop: '16px' }}>
-            <label className="pp-field">
-              <span className="pp-field-label"><AlignLeft size={14} /> {t('bioLabel', { defaultValue: 'Giới thiệu' })}</span>
+            <label className={`pp-field${errors.bio ? ' pp-field--error' : ''}`}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className="pp-field-label"><AlignLeft size={14} /> {t('bioLabel', { defaultValue: 'Giới thiệu' })}</span>
+                <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                  {form.bio ? form.bio.length : 0}/{PROFILE_LIMITS.BIO_MAX}
+                </span>
+              </div>
               <textarea
                 className="pp-input pp-textarea"
+                maxLength={PROFILE_LIMITS.BIO_MAX}
                 name="bio"
                 onChange={handleChange}
+                placeholder={t('bioPlaceholder', { defaultValue: 'Viết vài dòng giới thiệu về bản thân bạn...' })}
                 rows={3}
                 value={form.bio}
               />
+              {errors.bio && <span className="pp-field-error">{errors.bio}</span>}
             </label>
           </div>
 

@@ -20,6 +20,12 @@ import type {
   PostPrivacy,
   PostReactionType,
 } from '../../types/timeline'
+import {
+  validateImageFile,
+  validatePostContent,
+  validateCommentContent,
+  PROFILE_LIMITS,
+} from '../../utils/profileValidation'
 
 type TimelineTabProps = {
   posts: TimelinePost[]
@@ -52,6 +58,7 @@ export function TimelineTab({
   const [mediaUrls, setMediaUrls] = useState<string[]>([])
   const [privacy, setPrivacy] = useState<PostPrivacy>('public')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [composerError, setComposerError] = useState<string | null>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
 
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({})
@@ -62,7 +69,38 @@ export function TimelineTab({
     const files = event.target.files
     if (!files || files.length === 0) return
 
-    Array.from(files).forEach((file) => {
+    setComposerError(null)
+    const incomingFiles = Array.from(files)
+
+    if (mediaUrls.length + incomingFiles.length > PROFILE_LIMITS.POST_MAX_MEDIA) {
+      setComposerError(
+        t('errors.postMediaTooMany', {
+          defaultValue: `Mỗi bài viết chỉ được đính kèm tối đa ${PROFILE_LIMITS.POST_MAX_MEDIA} hình ảnh!`,
+        }),
+      )
+      event.target.value = ''
+      return
+    }
+
+    for (const file of incomingFiles) {
+      const validation = validateImageFile(
+        file,
+        {
+          maxSizeBytes: PROFILE_LIMITS.MAX_MEDIA_FILE_SIZE,
+          label: t('postMediaPhotoLabel', { defaultValue: 'ảnh đính kèm' }),
+        },
+        t,
+      )
+      if (!validation.isValid) {
+        setComposerError(
+          validation.error || t('errors.invalidImage', { defaultValue: 'Ảnh không hợp lệ!' }),
+        )
+        event.target.value = ''
+        return
+      }
+    }
+
+    incomingFiles.forEach((file) => {
       const reader = new FileReader()
       reader.onload = () => {
         const url = reader.result as string
@@ -75,11 +113,20 @@ export function TimelineTab({
 
   function handleRemoveMedia(index: number) {
     setMediaUrls((prev) => prev.filter((_, i) => i !== index))
+    setComposerError(null)
   }
 
   async function handleComposerSubmit(event: FormEvent) {
     event.preventDefault()
-    if (!content.trim() && mediaUrls.length === 0) return
+    setComposerError(null)
+
+    const validation = validatePostContent(content, mediaUrls.length, t)
+    if (!validation.isValid) {
+      setComposerError(
+        validation.error || t('errors.postInvalid', { defaultValue: 'Bài viết không hợp lệ!' }),
+      )
+      return
+    }
 
     try {
       setIsSubmitting(true)
@@ -104,7 +151,10 @@ export function TimelineTab({
 
   async function handleSendComment(postId: string) {
     const text = commentInputs[postId]?.trim()
-    if (!text) return
+    const validation = validateCommentContent(text || '', t)
+    if (!validation.isValid) {
+      return
+    }
 
     try {
       setSubmittingCommentPostId(postId)
@@ -164,12 +214,22 @@ export function TimelineTab({
             />
             <textarea
               className="composer-textarea"
-              onChange={(e) => setContent(e.target.value)}
+              maxLength={PROFILE_LIMITS.POST_CONTENT_MAX}
+              onChange={(e) => {
+                setContent(e.target.value)
+                if (composerError) setComposerError(null)
+              }}
               placeholder={t('composerPlaceholder', { defaultValue: 'Bạn đang nghĩ gì thế?' })}
               rows={3}
               value={content}
             />
           </div>
+
+          {composerError && (
+            <div className="pp-field-error" style={{ padding: '4px 16px', color: '#ef4444' }}>
+              {composerError}
+            </div>
+          )}
 
           {mediaUrls.length > 0 && (
             <div className="composer-media-previews">
@@ -205,7 +265,9 @@ export function TimelineTab({
                 type="button"
               >
                 <ImageIcon size={16} />
-                <span>{t('addPhotos', { defaultValue: 'Thêm hình ảnh' })}</span>
+                <span>
+                  {t('addPhotos', { defaultValue: 'Thêm hình ảnh' })} ({mediaUrls.length}/{PROFILE_LIMITS.POST_MAX_MEDIA})
+                </span>
               </button>
 
               <select
@@ -353,6 +415,7 @@ export function TimelineTab({
                         <input
                           className="comment-input-field"
                           disabled={submittingCommentPostId === post.id}
+                          maxLength={PROFILE_LIMITS.COMMENT_CONTENT_MAX}
                           onChange={(e) =>
                             setCommentInputs((prev) => ({
                               ...prev,
