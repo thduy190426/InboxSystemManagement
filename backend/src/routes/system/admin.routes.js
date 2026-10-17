@@ -4,6 +4,8 @@ const {
   deleteAdminUser,
   getAdminStats,
   getAdminUsers,
+  getAdminUserDetails,
+  getAdminAuditLogs,
   getMessageReports,
   lockAdminUser,
   unlockAdminUser,
@@ -16,6 +18,8 @@ const router = express.Router()
 router.get('/stats', getAdminStats)
 router.get('/message-reports', getMessageReports)
 router.get('/users', getAdminUsers)
+router.get('/users/:id/details', getAdminUserDetails)
+router.get('/audit-logs', getAdminAuditLogs)
 router.post('/users', createAdminUser)
 router.put('/users/:id', updateAdminUser)
 router.patch('/message-reports/:id', updateMessageReport)

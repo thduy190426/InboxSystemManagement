@@ -78,12 +78,12 @@ function toAdminUser(row) {
   }
 }
 
-function createLastSevenDaysMap() {
+function createDaysMap(numDays = 7) {
   const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'UTC' })
   const days = []
   const today = new Date()
 
-  for (let index = 6; index >= 0; index -= 1) {
+  for (let index = numDays - 1; index >= 0; index -= 1) {
     const date = new Date(Date.UTC(
       today.getUTCFullYear(),
       today.getUTCMonth(),
@@ -113,8 +113,8 @@ function normalizeChartDateKey(value) {
   return String(value).slice(0, 10)
 }
 
-function fillLastSevenDays(rows, countKey) {
-  const days = createLastSevenDaysMap()
+function fillDays(rows, countKey, numDays = 7) {
+  const days = createDaysMap(numDays)
   const rowMap = new Map(rows.map((row) => [normalizeChartDateKey(row.day_key), Number(row[countKey] || 0)]))
 
   return days.map((day) => ({
@@ -155,9 +155,21 @@ function toMessageReport(row) {
   }
 }
 
-async function getAdminStats(_request, response, next) {
+async function getAdminStats(request, response, next) {
   try {
     await ensureMessageReportsTable()
+
+    const timeFilter = String(request.query?.timeFilter || '30days').toLowerCase()
+    let numDays = 30
+    let intervalDays = 29
+
+    if (timeFilter === '7days') {
+      numDays = 7
+      intervalDays = 6
+    } else if (timeFilter === 'all') {
+      numDays = 90
+      intervalDays = 89
+    }
 
     const [
       [userStats],
@@ -198,7 +210,7 @@ async function getAdminStats(_request, response, next) {
         FROM users
         WHERE deleted_at IS NULL
           AND role <> 'admin'
-          AND created_at >= UTC_DATE() - INTERVAL 6 DAY
+          AND created_at >= UTC_DATE() - INTERVAL ${intervalDays} DAY
         GROUP BY DATE(created_at)
         ORDER BY DATE(created_at) ASC`,
       ),
@@ -208,7 +220,7 @@ async function getAdminStats(_request, response, next) {
           COUNT(*) AS sent_messages
         FROM messages
         WHERE deleted_at IS NULL
-          AND created_at >= UTC_DATE() - INTERVAL 6 DAY
+          AND created_at >= UTC_DATE() - INTERVAL ${intervalDays} DAY
         GROUP BY DATE(created_at)
         ORDER BY DATE(created_at) ASC`,
       ),
@@ -244,8 +256,8 @@ async function getAdminStats(_request, response, next) {
         suspendedUsers: Number(stats.suspended_users || 0),
         onlineUsers: Number(stats.online_users || 0),
         alertCount: Number(alerts.unread_system_alerts || 0),
-        userGrowth: fillLastSevenDays(userGrowthRows, 'created_users'),
-        messageVolume: fillLastSevenDays(messageVolumeRows, 'sent_messages'),
+        userGrowth: fillDays(userGrowthRows, 'created_users', numDays),
+        messageVolume: fillDays(messageVolumeRows, 'sent_messages', numDays),
         roleDistribution: roleRows.map((row) => ({
           label: row.role,
           value: Number(row.total || 0),
@@ -601,6 +613,15 @@ async function updateMessageReport(request, response, next) {
       [reportId],
     )
 
+    void logAdminAction(
+      request.user,
+      'resolve_report',
+      'report',
+      reportId,
+      `Quản trị viên cập nhật báo cáo thành: ${status}`,
+      request,
+    )
+
     response.json({
       message: 'Đã cập nhật báo cáo!',
       report: toMessageReport(rows[0]),
@@ -727,6 +748,15 @@ async function updateAdminUser(request, response, next) {
       [userId],
     )
 
+    void logAdminAction(
+      request.user,
+      'update_user',
+      'user',
+      userId,
+      `Quản trị viên cập nhật thông tin người dùng ${rows[0]?.email || userId}`,
+      request,
+    )
+
     response.json({
       message: 'Cập nhật người dùng thành công!',
       user: toAdminUser(rows[0]),
@@ -801,6 +831,15 @@ async function setAdminUserLockState(request, response, next, shouldLock) {
       [user.id],
     )
 
+    void logAdminAction(
+      request.user,
+      shouldLock ? 'lock_user' : 'unlock_user',
+      'user',
+      userId,
+      `Quản trị viên ${shouldLock ? 'khóa' : 'mở khóa'} tài khoản ${updatedRows[0]?.email || userId}`,
+      request,
+    )
+
     response.json({
       message: shouldLock ? 'Đã khóa tài khoản thành công!' : 'Đã mở khóa tài khoản thành công!',
       user: toAdminUser(updatedRows[0]),
@@ -871,6 +910,15 @@ async function deleteAdminUser(request, response, next) {
     )
     await connection.commit()
 
+    void logAdminAction(
+      request.user,
+      'delete_user',
+      'user',
+      userId,
+      `Quản trị viên đã xóa vĩnh viễn tài khoản ${user?.email || userId}`,
+      request,
+    )
+
     response.json({
       message: 'Đã xóa vĩnh viễn người dùng khỏi hệ thống!',
       deletedUserId: userId,
@@ -883,11 +931,182 @@ async function deleteAdminUser(request, response, next) {
   }
 }
 
+let auditLogsTableEnsured = false
+
+async function ensureAdminAuditLogsTable() {
+  if (auditLogsTableEnsured) return
+
+  try {
+    await pool.execute(
+      `CREATE TABLE IF NOT EXISTS admin_audit_logs (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        admin_id VARCHAR(64) NOT NULL,
+        admin_name VARCHAR(255) NOT NULL,
+        action VARCHAR(64) NOT NULL,
+        target_type VARCHAR(64) NOT NULL,
+        target_id VARCHAR(64) NULL,
+        details TEXT NULL,
+        ip_address VARCHAR(45) NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_admin_created_at (created_at DESC),
+        INDEX idx_admin_action (action)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+    )
+    auditLogsTableEnsured = true
+  } catch (err) {
+    console.error('ensureAdminAuditLogsTable error:', err)
+  }
+}
+
+async function logAdminAction(adminUser, action, targetType, targetId, details, req) {
+  try {
+    await ensureAdminAuditLogsTable()
+    const adminId = adminUser?.public_id || String(adminUser?.id || 'admin')
+    const adminName = adminUser?.displayName || adminUser?.fullName || adminUser?.full_name || 'Admin'
+    const ipAddress = req?.ip || req?.headers?.['x-forwarded-for'] || null
+
+    await pool.execute(
+      `INSERT INTO admin_audit_logs (admin_id, admin_name, action, target_type, target_id, details, ip_address)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [adminId, adminName, action, targetType, targetId ? String(targetId) : null, typeof details === 'object' ? JSON.stringify(details) : String(details || ''), ipAddress],
+    )
+  } catch (err) {
+    console.error('Failed to log admin action:', err)
+  }
+}
+
+async function getAdminAuditLogs(_request, response, next) {
+  try {
+    await ensureAdminAuditLogsTable()
+
+    const [rows] = await pool.execute(
+      `SELECT id, admin_id, admin_name, action, target_type, target_id, details, ip_address, created_at
+       FROM admin_audit_logs
+       ORDER BY created_at DESC
+       LIMIT 100`,
+    )
+
+    response.json({
+      logs: rows.map((r) => ({
+        id: r.id,
+        adminId: r.admin_id,
+        adminName: r.admin_name,
+        action: r.action,
+        targetType: r.target_type,
+        targetId: r.target_id,
+        details: r.details,
+        ipAddress: r.ip_address,
+        createdAt: r.created_at,
+      })),
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+async function getAdminUserDetails(request, response, next) {
+  try {
+    const userId = String(request.params.id || '').trim()
+
+    const [userRows] = await pool.execute(
+      `SELECT
+        id,
+        public_id,
+        email,
+        phone,
+        full_name,
+        display_name,
+        avatar_url,
+        role,
+        is_active,
+        presence,
+        gender,
+        two_factor_enabled,
+        created_at,
+        updated_at
+      FROM users
+      WHERE (id = ? OR public_id = ?)
+        AND deleted_at IS NULL
+      LIMIT 1`,
+      [userId, userId],
+    )
+
+    const user = userRows[0]
+    if (!user) {
+      return response.status(404).json({ message: 'Không tìm thấy người dùng!' })
+    }
+
+    const internalId = user.id
+
+    const [
+      [sessionsRows],
+      [conversationStats],
+      [messageStats],
+    ] = await Promise.all([
+      pool.execute(
+        `SELECT
+          id,
+          device_name,
+          ip_address,
+          user_agent,
+          expires_at,
+          revoked_at,
+          created_at,
+          updated_at
+        FROM user_sessions
+        WHERE user_id = ?
+        ORDER BY revoked_at IS NULL DESC, updated_at DESC, created_at DESC
+        LIMIT 20`,
+        [internalId],
+      ),
+      pool.execute(
+        `SELECT COUNT(*) AS total
+        FROM conversation_participants
+        WHERE user_id = ?`,
+        [internalId],
+      ),
+      pool.execute(
+        `SELECT COUNT(*) AS total
+        FROM messages
+        WHERE sender_id = ? AND deleted_at IS NULL`,
+        [internalId],
+      ),
+    ])
+
+    const now = new Date()
+    const sessions = (sessionsRows || []).map((s) => ({
+      id: s.id,
+      deviceName: s.device_name || 'Trình duyệt web',
+      ipAddress: s.ip_address || '—',
+      userAgent: s.user_agent || '',
+      createdAt: s.created_at,
+      updatedAt: s.updated_at,
+      expiresAt: s.expires_at,
+      revokedAt: s.revoked_at,
+      isActive: !s.revoked_at && new Date(s.expires_at) > now,
+    }))
+
+    response.json({
+      user: toAdminUser(user),
+      twoFactorEnabled: Boolean(user.two_factor_enabled),
+      stats: {
+        conversationsCount: Number(conversationStats[0]?.total || 0),
+        messagesCount: Number(messageStats[0]?.total || 0),
+      },
+      sessions,
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
 module.exports = {
   createAdminUser,
   deleteAdminUser,
   getAdminStats,
   getAdminUsers,
+  getAdminUserDetails,
+  getAdminAuditLogs,
   getMessageReports,
   lockAdminUser,
   unlockAdminUser,
