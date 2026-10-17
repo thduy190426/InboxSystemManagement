@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import type { AuthPageProps } from '../../types'
 import loginBg from '../../bg-images/LoginBG.jpg'
+import { AuthLanguageSwitcher } from '../../components/auth/AuthLanguageSwitcher'
 import {
   getSavedAccounts,
   removeSavedAccount,
@@ -145,6 +146,7 @@ export function LoginPage({
         backgroundRepeat: 'no-repeat',
       }}
     >
+      <AuthLanguageSwitcher />
       <section 
         className="auth-card" 
         aria-labelledby="login-title"

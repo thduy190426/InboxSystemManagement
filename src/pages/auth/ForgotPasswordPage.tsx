@@ -3,6 +3,7 @@ import { ArrowRight, Lock, Mail, ArrowLeft, EyeOff, Eye, KeyRound } from 'lucide
 import { toast } from 'sonner'
 import { useTranslation } from 'react-i18next'
 import loginBg from '../../bg-images/LoginBG.jpg'
+import { AuthLanguageSwitcher } from '../../components/auth/AuthLanguageSwitcher'
 import { forgotPassword, resetPassword } from '../../services/api/authApi'
 
 export interface ForgotPasswordPageProps {
@@ -85,6 +86,7 @@ export function ForgotPasswordPage({ onBackToLogin }: ForgotPasswordPageProps) {
         backgroundRepeat: 'no-repeat',
       }}
     >
+      <AuthLanguageSwitcher />
       <section 
         className="auth-card forgot-password-card" 
         aria-labelledby="forgot-password-title"

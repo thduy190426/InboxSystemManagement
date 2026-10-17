@@ -14,6 +14,7 @@ import {
 import { useTranslation } from 'react-i18next'
 import type { AuthPageProps } from '../../types'
 import registerBg from '../../bg-images/RegisterBG.jpg'
+import { AuthLanguageSwitcher } from '../../components/auth/AuthLanguageSwitcher'
 
 type RegisterPageProps = AuthPageProps & {
   pushToast: (text: string, tone?: 'info' | 'error') => void
@@ -169,6 +170,7 @@ export function RegisterPage({
         backgroundRepeat: 'no-repeat',
       }}
     >
+      <AuthLanguageSwitcher />
       <section 
         className="auth-card" 
         aria-labelledby="register-title"
