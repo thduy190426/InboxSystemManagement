@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import type { FormEvent } from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   BookUser,
   CalendarDays,
@@ -14,6 +14,7 @@ import {
   Phone,
   Search,
   SearchX,
+  SlidersHorizontal,
   User,
   UserMinus,
   UserPlus,
@@ -43,6 +44,7 @@ type ContactsPanelProps = {
   onAccepted: (conversationId: string) => void
   onMessage: (user: ContactUser) => Promise<void> | void
   onProfileOpened?: () => void
+  onViewFullProfile?: (user: ContactUser) => void
   pushToast: (text: string, tone?: 'info' | 'error') => void
 }
 
@@ -307,9 +309,13 @@ export function ContactsPanel({
   onAccepted,
   onMessage,
   onProfileOpened,
+  onViewFullProfile,
   pushToast,
 }: ContactsPanelProps) {
   const { t } = useTranslation('panels')
+  const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'suggestions'>('friends')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'online' | 'recent'>('all')
+  const [sortOrder, setSortOrder] = useState<'default' | 'az' | 'za'>('default')
   const [query, setQuery] = useState(readContactsQuery)
   const [results, setResults] = useState<ContactUser[]>([])
   const [friends, setFriends] = useState<ContactUser[]>([])
@@ -325,6 +331,68 @@ export function ContactsPanel({
   const [mutualModalUser, setMutualModalUser] = useState<{ id: string; name: string } | null>(null)
   const pendingContactActionsRef = useRef(new Set<string>())
   const queryRef = useRef(query)
+
+  const onlineCount = useMemo(() => {
+    return friends.filter((f) => f.presence === 'online').length
+  }, [friends])
+
+  const recentCount = useMemo(() => {
+    return friends.filter((f) => ['online', 'away', 'busy'].includes(f.presence)).length
+  }, [friends])
+
+  const filteredFriends = useMemo(() => {
+    let list = friends.slice()
+    const q = query.trim().toLowerCase()
+    if (q) {
+      list = list.filter((friend) =>
+        (friend.fullName?.toLowerCase().includes(q)) ||
+        (friend.handle?.toLowerCase().includes(q)) ||
+        (friend.email?.toLowerCase().includes(q)) ||
+        (friend.phone?.toLowerCase().includes(q))
+      )
+    }
+
+    if (statusFilter === 'online') {
+      list = list.filter((f) => f.presence === 'online')
+    } else if (statusFilter === 'recent') {
+      list = list.filter((f) => ['online', 'away', 'busy'].includes(f.presence))
+    }
+
+    if (sortOrder === 'az') {
+      list.sort((a, b) => (a.fullName || '').localeCompare(b.fullName || '', 'vi', { sensitivity: 'base' }))
+    } else if (sortOrder === 'za') {
+      list.sort((a, b) => (b.fullName || '').localeCompare(a.fullName || '', 'vi', { sensitivity: 'base' }))
+    }
+
+    return list
+  }, [friends, query, statusFilter, sortOrder])
+
+  const filteredSuggestions = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return suggestions
+    return suggestions.filter((user) =>
+      (user.fullName?.toLowerCase().includes(q)) ||
+      (user.handle?.toLowerCase().includes(q)) ||
+      (user.email?.toLowerCase().includes(q)) ||
+      (user.phone?.toLowerCase().includes(q))
+    )
+  }, [suggestions, query])
+
+  const filteredRequests = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return requests
+    return requests.filter((req) =>
+      (req.fullName?.toLowerCase().includes(q)) ||
+      (req.handle?.toLowerCase().includes(q)) ||
+      (req.email?.toLowerCase().includes(q)) ||
+      (req.phone?.toLowerCase().includes(q))
+    )
+  }, [requests, query])
+
+  function handleViewFullProfile(user: ContactUser) {
+    setSelectedUser(null)
+    onViewFullProfile?.(user)
+  }
 
   function openMutualModal(userId: string, name: string) {
     setMutualModalUser({ id: userId, name })
@@ -548,154 +616,282 @@ export function ContactsPanel({
         <h1 id="contacts-title">{t('contactsHeader')}</h1>
       </header>
 
-      <form className="cp-search" onSubmit={handleSearch}>
-        <span className="cp-search-icon"><Search size={16} /></span>
-        <input
-          className="cp-search-input"
-          onChange={(e) => handleQueryChange(e.target.value)}
-          placeholder={t('searchPlaceholderContact')}
-          value={query}
-        />
+      <div className="cp-tabs-bar" role="tablist">
         <button
-          className="cp-btn cp-btn--primary cp-btn--sm"
-          disabled={isLoading || query.trim().length < 2}
-          type="submit"
+          className={`cp-tab-btn ${activeTab === 'friends' ? 'is-active' : ''}`}
+          onClick={() => setActiveTab('friends')}
+          role="tab"
+          aria-selected={activeTab === 'friends'}
+          type="button"
         >
-          {isLoading ? t('searchingBtn') : t('searchBtn')}
+          <Users size={16} />
+          <span>{t('tabFriends', { defaultValue: 'Tất cả bạn bè' })}</span>
+          <span className="cp-tab-badge">{friends.length}</span>
         </button>
-      </form>
 
-      {message && <p className="cp-search-hint">{message}</p>}
-
-      <div className="cp-grid">
-        <ContactSection
-          icon={<Users size={15} />}
-          title={t('friendsSection')}
-          count={friends.length}
-          emptyIcon={<Users size={28} strokeWidth={1.5} />}
-          emptyText={t('noFriends')}
+        <button
+          className={`cp-tab-btn ${activeTab === 'requests' ? 'is-active' : ''}`}
+          onClick={() => setActiveTab('requests')}
+          role="tab"
+          aria-selected={activeTab === 'requests'}
+          type="button"
         >
-          {friends.map((friend) => (
-            <ContactCard
-              key={friend.id}
-              user={friend}
-              busyId={busyId}
-              onProfile={openContactProfile}
-              onMessage={handleMessageUser}
-              action={
-                <button
-                  className="cp-btn cp-btn--danger cp-btn--sm"
-                  disabled={busyId === friend.id}
-                  onClick={() => confirmUnfriend(friend)}
-                  type="button"
-                >
-                  <UserMinus size={14} />
-                  {busyId === friend.id ? t('processingBtn') : t('unfriendAction')}
-                </button>
-              }
-            />
-          ))}
-        </ContactSection>
+          <Inbox size={16} />
+          <span>{t('tabRequests', { defaultValue: 'Lời mời kết bạn' })}</span>
+          {requests.length > 0 && (
+            <span className="cp-tab-badge cp-tab-badge--highlight">{requests.length}</span>
+          )}
+        </button>
 
-        <ContactSection
-          icon={<UserPlus size={15} />}
-          title={t('suggestionsSection')}
-          count={suggestions.length}
-          emptyIcon={<UserPlus size={28} strokeWidth={1.5} />}
-          emptyText={t('noSuggestions')}
+        <button
+          className={`cp-tab-btn ${activeTab === 'suggestions' ? 'is-active' : ''}`}
+          onClick={() => setActiveTab('suggestions')}
+          role="tab"
+          aria-selected={activeTab === 'suggestions'}
+          type="button"
         >
-          {suggestions.map((user) => (
-            <ContactCard
-              key={user.id}
-              user={user}
-              busyId={busyId}
-              onProfile={openContactProfile}
-              onMessage={handleMessageUser}
-              onOpenMutualModal={openMutualModal}
-              action={
-                <button
-                  className={`cp-btn cp-btn--sm ${user.friendshipStatus === 'pending' && user.requestDirection === 'outgoing' ? 'cp-btn--ghost' : 'cp-btn--primary'}`}
-                  disabled={busyId === user.id || user.friendshipStatus === 'accepted'}
-                  onClick={() => handleSendRequest(user)}
-                  type="button"
-                >
-                  {user.friendshipStatus === 'pending' && user.requestDirection === 'outgoing' ? <X size={14} /> : <UserPlus size={14} />}
-                  {busyId === user.id ? t('processingBtn') : getActionLabel(user, t)}
-                </button>
-              }
-            />
-          ))}
-        </ContactSection>
+          <UserPlus size={16} />
+          <span>{t('tabSuggestions', { defaultValue: 'Gợi ý' })}</span>
+          <span className="cp-tab-badge">{suggestions.length}</span>
+        </button>
+      </div>
 
-        <ContactSection
-          icon={<Search size={15} />}
-          title={t('searchResultsSection')}
-          count={results.length}
-          emptyIcon={<SearchX size={28} strokeWidth={1.5} />}
-          emptyText={t('noSearchResults')}
-        >
-          {results.map((user) => (
-            <ContactCard
-              key={user.id}
-              user={user}
-              busyId={busyId}
-              onProfile={openContactProfile}
-              onMessage={handleMessageUser}
-              onOpenMutualModal={openMutualModal}
-              action={
-                <button
-                  className={`cp-btn cp-btn--sm ${user.friendshipStatus === 'pending' && user.requestDirection === 'outgoing' ? 'cp-btn--ghost' : 'cp-btn--primary'}`}
-                  disabled={busyId === user.id || user.friendshipStatus === 'accepted'}
-                  onClick={() => handleSendRequest(user)}
-                  type="button"
-                >
-                  {user.friendshipStatus === 'pending' && user.requestDirection === 'outgoing' ? <X size={14} /> : <UserPlus size={14} />}
-                  {busyId === user.id ? t('processingBtn') : getActionLabel(user, t)}
-                </button>
-              }
-            />
-          ))}
-        </ContactSection>
+      <div className="cp-toolbar">
+        <form className="cp-search" onSubmit={handleSearch}>
+          <span className="cp-search-icon"><Search size={16} /></span>
+          <input
+            className="cp-search-input"
+            onChange={(e) => handleQueryChange(e.target.value)}
+            placeholder={
+              activeTab === 'friends'
+                ? t('searchPlaceholderFriends', { defaultValue: 'Tìm nhanh trong bạn bè hoặc tìm toàn hệ thống...' })
+                : t('searchPlaceholderContact')
+            }
+            value={query}
+          />
+          {query.trim().length > 0 && (
+            <button
+              className="cp-btn cp-btn--ghost cp-btn--sm"
+              onClick={() => handleQueryChange('')}
+              type="button"
+              title={t('clearSearchBtn', { defaultValue: 'Xóa tìm kiếm' })}
+            >
+              <X size={14} />
+            </button>
+          )}
+          <button
+            className="cp-btn cp-btn--primary cp-btn--sm"
+            disabled={isLoading || query.trim().length < 2}
+            type="submit"
+            title={t('searchGlobalBtn', { defaultValue: 'Tìm kiếm toàn hệ thống' })}
+          >
+            {isLoading ? t('searchingBtn') : t('searchGlobalBtn', { defaultValue: 'Tìm toàn hệ thống' })}
+          </button>
+        </form>
 
-        <ContactSection
-          icon={<Inbox size={15} />}
-          title={t('friendRequestsSection')}
-          count={requests.length}
-          emptyIcon={<Ghost size={28} strokeWidth={1.5} />}
-          emptyText={t('noFriendRequests')}
-        >
-          {requests.map((request) => (
-            <article className="cp-card" key={request.id}>
-              <div className="cp-card-avatar-wrap">
-                <AvatarFallback name={request.fullName} src={request.avatarUrl} />
-              </div>
-              <div className="cp-card-info">
-                <strong>{request.fullName}</strong>
-                <span className="cp-card-handle">{getGenderLabel(request.gender, t)}</span>
-                <MutualFriendsBadge
-                  mutualCount={request.mutualCount}
-                  mutualPreviews={request.mutualPreviews}
-                  targetUserId={request.id}
-                  targetName={request.fullName}
-                  onOpenModal={openMutualModal}
+        {message && <p className="cp-search-hint">{message}</p>}
+
+        {activeTab === 'friends' && (
+          <div className="cp-toolbar-actions">
+            <div className="cp-filter-chips">
+              <button
+                className={`cp-filter-chip ${statusFilter === 'all' ? 'is-active' : ''}`}
+                onClick={() => setStatusFilter('all')}
+                type="button"
+              >
+                {t('filterAll', { defaultValue: 'Tất cả' })} ({friends.length})
+              </button>
+              <button
+                className={`cp-filter-chip ${statusFilter === 'online' ? 'is-active' : ''}`}
+                onClick={() => setStatusFilter('online')}
+                type="button"
+              >
+                <span className="cp-status-dot cp-status-dot--online" />
+                {t('filterOnline', { defaultValue: 'Đang online' })} ({onlineCount})
+              </button>
+              <button
+                className={`cp-filter-chip ${statusFilter === 'recent' ? 'is-active' : ''}`}
+                onClick={() => setStatusFilter('recent')}
+                type="button"
+              >
+                <span className="cp-status-dot cp-status-dot--recent" />
+                {t('filterRecent', { defaultValue: 'Hoạt động gần đây' })} ({recentCount})
+              </button>
+            </div>
+
+            <div className="cp-sort-container">
+              <SlidersHorizontal size={14} className="cp-sort-icon" />
+              <label htmlFor="cp-sort-select" className="cp-sort-label">{t('sortLabel', { defaultValue: 'Sắp xếp:' })}</label>
+              <select
+                id="cp-sort-select"
+                className="cp-sort-select"
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value as 'default' | 'az' | 'za')}
+              >
+                <option value="default">{t('sortDefault', { defaultValue: 'Mặc định' })}</option>
+                <option value="az">{t('sortAZ', { defaultValue: 'Tên A → Z' })}</option>
+                <option value="za">{t('sortZA', { defaultValue: 'Tên Z → A' })}</option>
+              </select>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="cp-tab-pane">
+        {results.length > 0 && (
+          <ContactSection
+            icon={<Search size={15} />}
+            title={`${t('searchResultsSection')} (${results.length})`}
+            count={results.length}
+            emptyIcon={<SearchX size={28} strokeWidth={1.5} />}
+            emptyText={t('noSearchResults')}
+          >
+            <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 16px 8px' }}>
+              <button
+                className="cp-btn cp-btn--ghost cp-btn--sm"
+                onClick={() => { setResults([]); updateContactsQuery(''); }}
+                type="button"
+              >
+                <X size={14} />
+                {t('clearSearchBtn', { defaultValue: 'Xóa kết quả tìm kiếm' })}
+              </button>
+            </div>
+            <div className="cp-cards-grid">
+              {results.map((user) => (
+                <ContactCard
+                  key={user.id}
+                  user={user}
+                  busyId={busyId}
+                  onProfile={openContactProfile}
+                  onMessage={handleMessageUser}
+                  onOpenMutualModal={openMutualModal}
+                  action={
+                    <button
+                      className={`cp-btn cp-btn--sm ${user.friendshipStatus === 'pending' && user.requestDirection === 'outgoing' ? 'cp-btn--ghost' : 'cp-btn--primary'}`}
+                      disabled={busyId === user.id || user.friendshipStatus === 'accepted'}
+                      onClick={() => handleSendRequest(user)}
+                      type="button"
+                    >
+                      {user.friendshipStatus === 'pending' && user.requestDirection === 'outgoing' ? <X size={14} /> : <UserPlus size={14} />}
+                      {busyId === user.id ? t('processingBtn') : getActionLabel(user, t)}
+                    </button>
+                  }
                 />
-                <small className="cp-card-bio">{request.address || t('addressEmptyCompact')}</small>
-              </div>
-              <div className="cp-card-actions">
-                <button className="cp-btn cp-btn--ghost cp-btn--sm" onClick={() => openContactProfile(request)} type="button">
-                  <IdCard size={14} /> {t('profileBtn')}
-                </button>
-                <button className="cp-btn cp-btn--primary cp-btn--sm" disabled={busyId === request.id} onClick={() => handleAcceptRequest(request)} type="button">
-                  <Check size={14} />
-                  {busyId === request.id ? t('processing', { defaultValue: 'Đang xử lý...' }) : t('statusAcceptReq')}
-                </button>
-                <button className="cp-btn cp-btn--danger cp-btn--sm" disabled={busyId === request.id} onClick={() => handleDeclineRequest(request)} type="button">
-                  <X size={14} /> {t('rejectBtn')}
-                </button>
-              </div>
-            </article>
-          ))}
-        </ContactSection>
+              ))}
+            </div>
+          </ContactSection>
+        )}
+
+        {activeTab === 'friends' && (
+          <ContactSection
+            icon={<Users size={15} />}
+            title={t('friendsSection')}
+            count={filteredFriends.length}
+            emptyIcon={<Users size={28} strokeWidth={1.5} />}
+            emptyText={query || statusFilter !== 'all' ? t('noFilteredFriends', { defaultValue: 'Không tìm thấy bạn bè phù hợp!' }) : t('noFriends')}
+          >
+            <div className="cp-cards-grid">
+              {filteredFriends.map((friend) => (
+                <ContactCard
+                  key={friend.id}
+                  user={friend}
+                  busyId={busyId}
+                  onProfile={openContactProfile}
+                  onMessage={handleMessageUser}
+                  action={
+                    <button
+                      className="cp-btn cp-btn--danger cp-btn--sm"
+                      disabled={busyId === friend.id}
+                      onClick={() => confirmUnfriend(friend)}
+                      type="button"
+                    >
+                      <UserMinus size={14} />
+                      {busyId === friend.id ? t('processingBtn') : t('unfriendAction')}
+                    </button>
+                  }
+                />
+              ))}
+            </div>
+          </ContactSection>
+        )}
+
+        {activeTab === 'requests' && (
+          <ContactSection
+            icon={<Inbox size={15} />}
+            title={t('friendRequestsSection')}
+            count={filteredRequests.length}
+            emptyIcon={<Ghost size={28} strokeWidth={1.5} />}
+            emptyText={t('noFriendRequests')}
+          >
+            <div className="cp-cards-grid">
+              {filteredRequests.map((request) => (
+                <article className="cp-card" key={request.id}>
+                  <div className="cp-card-avatar-wrap">
+                    <AvatarFallback name={request.fullName} src={request.avatarUrl} />
+                  </div>
+                  <div className="cp-card-info">
+                    <strong>{request.fullName}</strong>
+                    <span className="cp-card-handle">{getGenderLabel(request.gender, t)}</span>
+                    <MutualFriendsBadge
+                      mutualCount={request.mutualCount}
+                      mutualPreviews={request.mutualPreviews}
+                      targetUserId={request.id}
+                      targetName={request.fullName}
+                      onOpenModal={openMutualModal}
+                    />
+                    <small className="cp-card-bio">{request.address || t('addressEmptyCompact')}</small>
+                  </div>
+                  <div className="cp-card-actions">
+                    <button className="cp-btn cp-btn--ghost cp-btn--sm" onClick={() => openContactProfile(request)} type="button">
+                      <IdCard size={14} /> {t('profileBtn')}
+                    </button>
+                    <button className="cp-btn cp-btn--primary cp-btn--sm" disabled={busyId === request.id} onClick={() => handleAcceptRequest(request)} type="button">
+                      <Check size={14} />
+                      {busyId === request.id ? t('processing', { defaultValue: 'Đang xử lý...' }) : t('statusAcceptReq')}
+                    </button>
+                    <button className="cp-btn cp-btn--danger cp-btn--sm" disabled={busyId === request.id} onClick={() => handleDeclineRequest(request)} type="button">
+                      <X size={14} /> {t('rejectBtn')}
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </ContactSection>
+        )}
+
+        {activeTab === 'suggestions' && (
+          <ContactSection
+            icon={<UserPlus size={15} />}
+            title={t('suggestionsSection')}
+            count={filteredSuggestions.length}
+            emptyIcon={<UserPlus size={28} strokeWidth={1.5} />}
+            emptyText={t('noSuggestions')}
+          >
+            <div className="cp-cards-grid">
+              {filteredSuggestions.map((user) => (
+                <ContactCard
+                  key={user.id}
+                  user={user}
+                  busyId={busyId}
+                  onProfile={openContactProfile}
+                  onMessage={handleMessageUser}
+                  onOpenMutualModal={openMutualModal}
+                  action={
+                    <button
+                      className={`cp-btn cp-btn--sm ${user.friendshipStatus === 'pending' && user.requestDirection === 'outgoing' ? 'cp-btn--ghost' : 'cp-btn--primary'}`}
+                      disabled={busyId === user.id || user.friendshipStatus === 'accepted'}
+                      onClick={() => handleSendRequest(user)}
+                      type="button"
+                    >
+                      {user.friendshipStatus === 'pending' && user.requestDirection === 'outgoing' ? <X size={14} /> : <UserPlus size={14} />}
+                      {busyId === user.id ? t('processingBtn') : getActionLabel(user, t)}
+                    </button>
+                  }
+                />
+              ))}
+            </div>
+          </ContactSection>
+        )}
       </div>
 
       {selectedUser && (
@@ -704,6 +900,7 @@ export function ContactsPanel({
           isClosing={isProfileClosing}
           onClose={closeContactProfile}
           onOpenMutualModal={openMutualModal}
+          onViewFullProfile={handleViewFullProfile}
         />
       )}
 

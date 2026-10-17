@@ -131,6 +131,10 @@ export function ChatApp(props: ChatAppProps) {
         <ContactsPanel
           onAccepted={ctrl.handleAcceptedFriend}
           onMessage={ctrl.handleStartDirectMessage}
+          onViewFullProfile={(user) => {
+            ctrl.setProfileContactToOpen(user)
+            ctrl.handleChangeView('profile')
+          }}
           pushToast={ctrl.pushToast}
         />
         {renderCallOverlay()}
@@ -342,8 +346,8 @@ export function ChatApp(props: ChatAppProps) {
         <ContactProfile
           isClosing={ctrl.isProfileClosing}
           onClose={ctrl.closeContactProfile}
-          onViewFullProfile={() => {
-            ctrl.closeContactProfile()
+          onViewFullProfile={(user) => {
+            ctrl.setProfileContactToOpen(user)
             ctrl.handleChangeView('profile')
           }}
           user={ctrl.profileContactToOpen}

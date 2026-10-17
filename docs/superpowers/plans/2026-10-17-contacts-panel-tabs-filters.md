@@ -25,8 +25,8 @@
 **Interfaces:**
 - Produces: `onViewFullProfile?: (user: ContactUser) => void` in `ContactsPanelProps`
 
-- [ ] **Step 1: Add `onViewFullProfile` to `ContactsPanelProps` and pass to `<ContactProfile />`**
-- [ ] **Step 2: Connect `onViewFullProfile` in `ChatApp.tsx`**
+- [x] **Step 1: Add `onViewFullProfile` to `ContactsPanelProps` and pass to `<ContactProfile />`**
+- [x] **Step 2: Connect `onViewFullProfile` in `ChatApp.tsx`**
 For both `<ContactsPanel />` and `<ContactProfile />` in `ChatApp.tsx`, implement:
 ```tsx
 onViewFullProfile={(user) => {
@@ -42,10 +42,10 @@ onViewFullProfile={(user) => {
 **Files:**
 - Modify: `src/components/panels/ContactsPanel.tsx`
 
-- [ ] **Step 1: Add `activeTab` state and Tab switching header**
+- [x] **Step 1: Add `activeTab` state and Tab switching header**
 Tabs: `'friends' | 'requests' | 'suggestions'`.
 Badges: total friends, requests count (`requests.length`), suggestions count.
-- [ ] **Step 2: Render active tab content**
+- [x] **Step 2: Render active tab content**
 Render only the active tab's list, with global search results shown when a global search is triggered.
 
 ---
@@ -55,12 +55,12 @@ Render only the active tab's list, with global search results shown when a globa
 **Files:**
 - Modify: `src/components/panels/ContactsPanel.tsx`
 
-- [ ] **Step 1: Add `statusFilter` and `sortOrder` states**
+- [x] **Step 1: Add `statusFilter` and `sortOrder` states**
 Status: `'all' | 'online' | 'recent'`.
 Sort: `'default' | 'az' | 'za'`.
-- [ ] **Step 2: Compute filtered and sorted friends**
+- [x] **Step 2: Compute filtered and sorted friends**
 Apply query search, presence filter (`online` / `recent`), and alphabetical sorting.
-- [ ] **Step 3: Render toolbar**
+- [x] **Step 3: Render toolbar**
 Search input, filter chips (`Tất cả`, `Đang online`, `Hoạt động gần đây`), and sort dropdown (`Mặc định`, `Tên A → Z`, `Tên Z → A`).
 
 ---
@@ -72,13 +72,13 @@ Search input, filter chips (`Tất cả`, `Đang online`, `Hoạt động gần 
 - Modify: `src/locales/en.json`
 - Modify: `src/style.css`
 
-- [ ] **Step 1: Add translation keys for tabs, filters, and sort options**
-- [ ] **Step 2: Add CSS rules for tabs, badges, toolbar, chips, and sort controls**
+- [x] **Step 1: Add translation keys for tabs, filters, and sort options**
+- [x] **Step 2: Add CSS rules for tabs, badges, toolbar, chips, and sort controls**
 
 ---
 
 ### Task 5: Build Verification, Commit & Push
 
-- [ ] **Step 1: Run `npm run build` and ensure 0 TypeScript or bundling errors**
-- [ ] **Step 2: Commit all changes with descriptive commit message**
-- [ ] **Step 3: Push to `origin main` and notify the user**
+- [x] **Step 1: Run `npm run build` and ensure 0 TypeScript or bundling errors**
+- [x] **Step 2: Commit all changes with descriptive commit message**
+- [x] **Step 3: Push to `origin main` and notify the user**
