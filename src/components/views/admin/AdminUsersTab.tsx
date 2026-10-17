@@ -40,6 +40,7 @@ type Props = {
   isLoading: boolean;
   t: any;
   formatNumber: (n: number) => string;
+  onSelectUser?: (user: AdminUser) => void;
 };
 
 export function AdminUsersTab({
@@ -49,7 +50,7 @@ export function AdminUsersTab({
   setRoleFilter, setStatusFilter, setGenderFilter, setPage, refreshUsers, handleExportUsers,
   setCreateUser, emptyCreateUser, handleUserFilterChange, openBulkLockDialog, openBulkDeleteDialog,
   toggleCurrentPageSelection, toggleUserSelection, setEditUser, createEditState, openLockDialog,
-  openDeleteDialog, isLoading, t, formatNumber
+  openDeleteDialog, isLoading, t, formatNumber, onSelectUser
 }: Props) {
 const tableContent = useMemo(() => {
     if (isUsersLoading) {
@@ -70,7 +71,7 @@ const tableContent = useMemo(() => {
           <td data-label={t('colGender')}><div className="skeleton skeleton-text" style={{ width: '60px', height: '16px' }}></div></td>
           <td data-label={t('colCreatedAt')}><div className="skeleton skeleton-text" style={{ width: '120px', height: '16px' }}></div></td>
           <td data-label={t('colLastLogin')}><div className="skeleton skeleton-text" style={{ width: '140px', height: '16px' }}></div></td>
-          <td data-label={t('colActions')}>
+          <td data-label={t('colActions')} onClick={(e) => e.stopPropagation()}>
             <div className="action-buttons">
               <div className="skeleton skeleton-icon"></div>
               <div className="skeleton skeleton-icon"></div>
@@ -98,8 +99,8 @@ const tableContent = useMemo(() => {
       const isLockBusy = busyLockUserId === user.id
 
       return (
-        <tr key={user.id}>
-          <td className="admin-select-cell" data-label={t('selectUserLabel')}>
+        <tr key={user.id} className="admin-user-row clickable" onClick={() => onSelectUser?.(user)} style={{ cursor: "pointer" }}>
+          <td className="admin-select-cell" data-label={t('selectUserLabel')} onClick={(e) => e.stopPropagation()}>
             <input
               aria-label={t('selectUserAria', { name: user.name })}
               checked={selectedUserIds.has(user.id)}
@@ -161,7 +162,7 @@ const tableContent = useMemo(() => {
         </tr>
       )
     })
-  }, [busyLockUserId, debouncedSearch, isUsersLoading, selectedUserIds, users])
+  }, [busyLockUserId, debouncedSearch, isUsersLoading, onSelectUser, selectedUserIds, users])
 
   return (
       <div className="admin-content-section">
