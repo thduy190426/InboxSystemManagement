@@ -10495,10 +10495,14 @@ html.dark .message-search-button.is-active {
   .sp-nav-item { font-size: 13.5px; padding: 10px 12px; }
 }
 
-.cp-page { overflow-y: auto; height: 100%; min-height: 0;
+.cp-page {
+  overflow-y: auto;
+  height: 100%;
+  min-height: 0;
   width: 100%;
-  min-height: 100%;
-  padding: 56px 40px 96px;
+  padding: 36px 40px 96px;
+  max-width: 1440px;
+  margin: 0 auto;
 }
 
 .cp-page-header {
@@ -10858,24 +10862,59 @@ html.dark .message-search-button.is-active {
 
 .cp-card {
   display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
-  background: var(--sp-surface-2, #1e2333);
-  border: 1px solid var(--sp-border, rgba(255,255,255,0.07));
-  border-radius: 14px;
-  transition: border-color 0.14s;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 20px 14px;
+  background: var(--sp-surface-2, #181d28);
+  border: 1px solid var(--sp-border, rgba(255, 255, 255, 0.08));
+  border-radius: 16px;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.cp-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(99, 130, 255, 0.7), transparent);
+  opacity: 0;
+  transition: opacity 0.25s ease;
 }
 
 .cp-card:hover {
-  border-color: rgba(255,255,255,0.12);
+  transform: translateY(-2px);
+  border-color: rgba(99, 130, 255, 0.35);
+  box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.35), 0 0 16px rgba(99, 130, 255, 0.08);
+}
+
+.cp-card:hover::before {
+  opacity: 1;
+}
+
+.cp-card-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
 }
 
 .cp-card-avatar-wrap {
   position: relative;
   flex-shrink: 0;
-  width: 48px;
-  height: 48px;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cp-card-avatar-wrap:hover {
+  transform: scale(1.05);
 }
 
 .cp-card-info {
@@ -10883,109 +10922,195 @@ html.dark .message-search-button.is-active {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  min-width: 0;
   gap: 4px;
 }
 
-.cp-card-info strong {
+.cp-card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.cp-card-name {
   font-size: 15.5px;
   font-weight: 600;
-  color: var(--sp-text, #e8eaf2);
+  color: var(--sp-text, #f1f5f9);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  flex: 1;
+  min-width: 0;
+  letter-spacing: -0.01em;
+}
+
+.cp-card-name:hover {
+  color: var(--sp-accent, #6382ff);
+}
+
+.cp-card-badge {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--sp-text-muted, #94a3b8);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cp-card-status-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #4ade80;
+  margin-top: 1px;
 }
 
 .cp-card-handle {
-  font-size: 13.5px;
+  font-size: 13px;
   color: var(--sp-text-muted, #7c8299);
 }
 
 .cp-card-bio {
-  font-size: 13.5px;
-  color: var(--sp-text-dim, #4a5068);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  color: var(--sp-text-dim, #64748b);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.cp-card-bio-icon {
+  flex-shrink: 0;
+  opacity: 0.7;
 }
 
 .cp-card-actions {
   display: flex;
-  gap: 10px;
+  align-items: center;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--sp-border, rgba(255, 255, 255, 0.06));
+  margin-top: auto;
+}
+
+.cp-card-actions .cp-btn {
+  flex: 1;
+  min-width: 0;
+  justify-content: center;
+  padding: 8px 10px;
+  font-size: 12.5px;
+  font-weight: 500;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.cp-card-actions .cp-btn span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cp-card-actions .cp-btn svg {
   flex-shrink: 0;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  width: 14px;
+  height: 14px;
 }
 
 .cp-presence-dot {
   position: absolute;
-  bottom: 1px;
-  right: 1px;
+  bottom: 0;
+  right: 0;
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  border: 2.5px solid var(--sp-surface-2, #1e2333);
+  border: 2.5px solid var(--sp-surface-2, #181d28);
   z-index: 2;
 }
 
-.cp-presence--online { background: #4ade80; }
-.cp-presence--away   { background: #fbbf24; }
-.cp-presence--busy   { background: #f87171; }
-.cp-presence-dot.cp-presence--offline { display: none !important; }
+.cp-presence--online {
+  background: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
+}
+.cp-presence--away {
+  background: #f59e0b;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+}
+.cp-presence--busy {
+  background: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+}
+.cp-presence-dot.cp-presence--offline {
+  display: none !important;
+}
 
 .cp-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 13.5px;
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
-  border: none;
+  border: 1px solid transparent;
   padding: 9px 16px;
-  transition: background 0.14s, opacity 0.14s, box-shadow 0.14s;
+  transition: all 0.15s ease;
   white-space: nowrap;
 }
 
 .cp-btn--sm {
-  padding: 6px 11px;
+  padding: 7px 12px;
   font-size: 12.5px;
-  border-radius: 7px;
+  border-radius: 8px;
 }
 
 .cp-btn:disabled {
-  opacity: 0.42;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
 .cp-btn--primary {
   background: var(--sp-accent, #6382ff);
   color: #fff;
+  border-color: rgba(99, 130, 255, 0.4);
+  box-shadow: 0 2px 6px rgba(99, 130, 255, 0.25);
 }
 .cp-btn--primary:hover:not(:disabled) {
-  background: #7a96ff;
-  box-shadow: 0 0 0 3px rgba(99,130,255,0.2);
+  background: #4f70fa;
+  border-color: rgba(99, 130, 255, 0.6);
+  box-shadow: 0 4px 12px rgba(99, 130, 255, 0.35);
 }
 
 .cp-btn--ghost {
-  background: var(--sp-surface, #181c26);
-  color: var(--sp-text-muted, #7c8299);
-  border: 1px solid var(--sp-border, rgba(255,255,255,0.07));
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 .cp-btn--ghost:hover:not(:disabled) {
-  background: rgba(255,255,255,0.06);
-  color: var(--sp-text, #e8eaf2);
+  background: rgba(255, 255, 255, 0.09);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.16);
 }
 
 .cp-btn--danger {
-  background: rgba(255,90,90,0.1);
-  color: var(--sp-danger, #ff5a5a);
-  border: 1px solid rgba(255,90,90,0.18);
+  background: rgba(239, 68, 68, 0.08);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.2);
 }
 .cp-btn--danger:hover:not(:disabled) {
-  background: rgba(255,90,90,0.18);
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.4);
 }
 
 .cp-backdrop {
@@ -11191,15 +11316,19 @@ html.dark .message-search-button.is-active {
 }
 
 @media (max-width: 1024px) {
-  .cp-page { overflow-y: auto; height: 100%; min-height: 0; padding: 32px 24px 80px; }
+  .cp-page { overflow-y: auto; height: 100%; min-height: 0; padding: 28px 20px 80px; }
 }
 @media (max-width: 768px) {
-  .cp-page { overflow-y: auto; height: 100%; min-height: 0; padding: 24px 16px 80px; }
-  .cp-card-actions { gap: 8px; flex-direction: column; width: 100%; }
-  .cp-card-actions .cp-btn { width: 100%; justify-content: center; }
-  .cp-btn--sm { padding: 8px 12px; font-size: 13px; }
-  .cp-card { flex-direction: column; align-items: stretch; text-align: center; }
-  .cp-card-avatar-wrap { margin: 0 auto; }
+  .cp-page { overflow-y: auto; height: 100%; min-height: 0; padding: 20px 14px 80px; }
+  .cp-cards-grid { grid-template-columns: 1fr; }
+  .cp-card-actions { gap: 8px; }
+  .cp-card-actions .cp-btn { padding: 8px 6px; font-size: 12px; }
+}
+@media (max-width: 480px) {
+  .cp-card { padding: 14px; }
+  .cp-card-avatar-wrap { width: 46px; height: 46px; }
+  .cp-card-actions { gap: 6px; }
+  .cp-card-actions .cp-btn { padding: 7px 4px; font-size: 11.5px; }
 }
 
 .np-page { overflow-y: auto; height: 100%; min-height: 0;

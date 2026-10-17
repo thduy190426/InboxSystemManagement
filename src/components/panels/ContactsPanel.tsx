@@ -238,36 +238,78 @@ type ContactCardProps = {
 function ContactCard({ user, busyId, onProfile, onMessage, action, onOpenMutualModal }: ContactCardProps) {
   const { t } = useTranslation('panels')
   const safePresence = ['online', 'away', 'busy'].includes(user.presence) ? user.presence : 'offline'
+  const isFriend = user.friendshipStatus === 'accepted'
+
   return (
     <article className="cp-card">
-      <div className="cp-card-avatar-wrap">
-        <AvatarFallback name={user.fullName} src={user.avatarUrl} />
-        <span className={`cp-presence-dot cp-presence--${safePresence}`} />
+      <div className="cp-card-main">
+        <div
+          className="cp-card-avatar-wrap"
+          onClick={() => onProfile(user)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onProfile(user) }}
+          role="button"
+          tabIndex={0}
+          title={t('profileBtn')}
+        >
+          <AvatarFallback name={user.fullName} src={user.avatarUrl} />
+          <span className={`cp-presence-dot cp-presence--${safePresence}`} />
+        </div>
+        <div className="cp-card-info">
+          <div className="cp-card-title-row">
+            <strong
+              className="cp-card-name"
+              onClick={() => onProfile(user)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onProfile(user) }}
+              role="button"
+              tabIndex={0}
+              title={user.fullName}
+            >
+              {user.nickname || user.fullName}
+            </strong>
+            <span className="cp-card-badge">{getGenderLabel(user.gender, t)}</span>
+          </div>
+
+          {safePresence === 'online' && (
+            <div className="cp-card-status-text cp-card-status-text--online">
+              <span className="cp-status-dot cp-status-dot--online" />
+              <span>{t('filterOnline', { defaultValue: 'Đang online' })}</span>
+            </div>
+          )}
+
+          <MutualFriendsBadge
+            mutualCount={user.mutualCount}
+            mutualPreviews={user.mutualPreviews}
+            targetUserId={user.id}
+            targetName={user.fullName}
+            onOpenModal={onOpenMutualModal}
+          />
+
+          <small className="cp-card-bio" title={user.address || user.bio || t('addressEmptyCompact')}>
+            {user.address ? (
+              <>
+                <MapPin size={12} className="cp-card-bio-icon" />
+                <span>{user.address}</span>
+              </>
+            ) : (
+              <span>{user.bio || t('addressEmptyCompact')}</span>
+            )}
+          </small>
+        </div>
       </div>
-      <div className="cp-card-info">
-        <strong>{user.nickname || user.fullName}</strong>
-        <span className="cp-card-handle">{getGenderLabel(user.gender, t)}</span>
-        <MutualFriendsBadge
-          mutualCount={user.mutualCount}
-          mutualPreviews={user.mutualPreviews}
-          targetUserId={user.id}
-          targetName={user.fullName}
-          onOpenModal={onOpenMutualModal}
-        />
-        <small className="cp-card-bio">{user.address || t('addressEmptyCompact')}</small>
-      </div>
+
       <div className="cp-card-actions">
         <button className="cp-btn cp-btn--ghost cp-btn--sm" onClick={() => onProfile(user)} type="button">
-          <IdCard size={14} /> {t('profileBtn')}
+          <IdCard size={14} />
+          <span>{t('profileBtn')}</span>
         </button>
         <button
-          className="cp-btn cp-btn--ghost cp-btn--sm"
+          className={`cp-btn cp-btn--sm ${isFriend ? 'cp-btn--primary' : 'cp-btn--ghost'}`}
           disabled={busyId === `message:${user.id}` || user.friendshipStatus === 'blocked'}
           onClick={() => onMessage(user)}
           type="button"
         >
           <MessageCircle size={14} />
-          {busyId === `message:${user.id}` ? t('messageBusy') : t('messageBtn')}
+          <span>{busyId === `message:${user.id}` ? t('messageBusy') : t('messageBtn')}</span>
         </button>
         {action}
       </div>
@@ -773,7 +815,7 @@ export function ContactsPanel({
                       type="button"
                     >
                       {user.friendshipStatus === 'pending' && user.requestDirection === 'outgoing' ? <X size={14} /> : <UserPlus size={14} />}
-                      {busyId === user.id ? t('processingBtn') : getActionLabel(user, t)}
+                      <span>{busyId === user.id ? t('processingBtn') : getActionLabel(user, t)}</span>
                     </button>
                   }
                 />
@@ -806,7 +848,7 @@ export function ContactsPanel({
                       type="button"
                     >
                       <UserMinus size={14} />
-                      {busyId === friend.id ? t('processingBtn') : t('unfriendAction')}
+                      <span>{busyId === friend.id ? t('processingBtn') : t('unfriendAction')}</span>
                     </button>
                   }
                 />
@@ -826,31 +868,62 @@ export function ContactsPanel({
             <div className="cp-cards-grid">
               {filteredRequests.map((request) => (
                 <article className="cp-card" key={request.id}>
-                  <div className="cp-card-avatar-wrap">
-                    <AvatarFallback name={request.fullName} src={request.avatarUrl} />
-                  </div>
-                  <div className="cp-card-info">
-                    <strong>{request.fullName}</strong>
-                    <span className="cp-card-handle">{getGenderLabel(request.gender, t)}</span>
-                    <MutualFriendsBadge
-                      mutualCount={request.mutualCount}
-                      mutualPreviews={request.mutualPreviews}
-                      targetUserId={request.id}
-                      targetName={request.fullName}
-                      onOpenModal={openMutualModal}
-                    />
-                    <small className="cp-card-bio">{request.address || t('addressEmptyCompact')}</small>
+                  <div className="cp-card-main">
+                    <div
+                      className="cp-card-avatar-wrap"
+                      onClick={() => openContactProfile(request)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') openContactProfile(request) }}
+                      role="button"
+                      tabIndex={0}
+                      title={t('profileBtn')}
+                    >
+                      <AvatarFallback name={request.fullName} src={request.avatarUrl} />
+                    </div>
+                    <div className="cp-card-info">
+                      <div className="cp-card-title-row">
+                        <strong
+                          className="cp-card-name"
+                          onClick={() => openContactProfile(request)}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') openContactProfile(request) }}
+                          role="button"
+                          tabIndex={0}
+                          title={request.fullName}
+                        >
+                          {request.fullName}
+                        </strong>
+                        <span className="cp-card-badge">{getGenderLabel(request.gender, t)}</span>
+                      </div>
+                      <MutualFriendsBadge
+                        mutualCount={request.mutualCount}
+                        mutualPreviews={request.mutualPreviews}
+                        targetUserId={request.id}
+                        targetName={request.fullName}
+                        onOpenModal={openMutualModal}
+                      />
+                      <small className="cp-card-bio" title={request.address || t('addressEmptyCompact')}>
+                        {request.address ? (
+                          <>
+                            <MapPin size={12} className="cp-card-bio-icon" />
+                            <span>{request.address}</span>
+                          </>
+                        ) : (
+                          <span>{t('addressEmptyCompact')}</span>
+                        )}
+                      </small>
+                    </div>
                   </div>
                   <div className="cp-card-actions">
                     <button className="cp-btn cp-btn--ghost cp-btn--sm" onClick={() => openContactProfile(request)} type="button">
-                      <IdCard size={14} /> {t('profileBtn')}
+                      <IdCard size={14} />
+                      <span>{t('profileBtn')}</span>
                     </button>
                     <button className="cp-btn cp-btn--primary cp-btn--sm" disabled={busyId === request.id} onClick={() => handleAcceptRequest(request)} type="button">
                       <Check size={14} />
-                      {busyId === request.id ? t('processing', { defaultValue: 'Đang xử lý...' }) : t('statusAcceptReq')}
+                      <span>{busyId === request.id ? t('processing', { defaultValue: 'Đang xử lý...' }) : t('statusAcceptReq')}</span>
                     </button>
                     <button className="cp-btn cp-btn--danger cp-btn--sm" disabled={busyId === request.id} onClick={() => handleDeclineRequest(request)} type="button">
-                      <X size={14} /> {t('rejectBtn')}
+                      <X size={14} />
+                      <span>{t('rejectBtn')}</span>
                     </button>
                   </div>
                 </article>
@@ -884,7 +957,7 @@ export function ContactsPanel({
                       type="button"
                     >
                       {user.friendshipStatus === 'pending' && user.requestDirection === 'outgoing' ? <X size={14} /> : <UserPlus size={14} />}
-                      {busyId === user.id ? t('processingBtn') : getActionLabel(user, t)}
+                      <span>{busyId === user.id ? t('processingBtn') : getActionLabel(user, t)}</span>
                     </button>
                   }
                 />
