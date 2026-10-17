@@ -16278,3 +16278,302 @@ input.sr-only {
   padding: 12px 14px !important;
   line-height: 1.6;
 }
+
+/* ============================================================
+   Profile Enhancements: Lightbox, Inline Editor, 3-Dots & Modal
+   ============================================================ */
+
+/* Lightbox Modal */
+.post-lightbox-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(10, 15, 29, 0.92);
+  backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  animation: fadeInLightbox 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInLightbox {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.post-lightbox-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%);
+  z-index: 2;
+}
+
+.post-lightbox-counter {
+  color: #cbd5e1;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.post-lightbox-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.post-lightbox-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.post-lightbox-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  transform: scale(1.06);
+}
+
+.post-lightbox-body {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 16px;
+}
+
+.post-lightbox-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 5;
+}
+
+.post-lightbox-nav-btn:hover {
+  background: rgba(20, 184, 166, 0.85);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.post-lightbox-nav-prev {
+  left: 20px;
+}
+
+.post-lightbox-nav-next {
+  right: 20px;
+}
+
+.post-lightbox-img-wrapper {
+  max-width: 90vw;
+  max-height: 85vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.post-lightbox-img {
+  max-width: 100%;
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  animation: zoomInImg 0.2s ease-out;
+}
+
+@keyframes zoomInImg {
+  from {
+    transform: scale(0.96);
+    opacity: 0.8;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Timeline Post Inline Editor */
+.timeline-post-inline-editor {
+  margin: 12px 0;
+  padding: 14px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(20, 184, 166, 0.35);
+  border-radius: 14px;
+}
+
+.timeline-post-inline-editor .composer-textarea {
+  width: 100%;
+  background: rgba(30, 41, 59, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f8fafc;
+  border-radius: 10px;
+  padding: 10px 12px;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.timeline-post-inline-editor .composer-textarea:focus {
+  outline: none;
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.2);
+}
+
+/* Profile 3-Dots Options Dropdown */
+.profile-options-menu-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.profile-options-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  padding: 6px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: dropdownPop 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes dropdownPop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.profile-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.profile-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+}
+
+.profile-dropdown-item--danger {
+  color: #f87171;
+}
+
+.profile-dropdown-item--danger:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
+/* Report User Modal */
+.report-modal-card {
+  width: 100%;
+  max-width: 500px;
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+
+.report-modal-icon-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.report-modal-desc {
+  font-size: 14px;
+  color: #94a3b8;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.report-modal-desc strong {
+  color: #f8fafc;
+}
+
+.report-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #cbd5e1;
+  margin-bottom: 8px;
+}
+
+.report-reasons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.report-reason-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 13px;
+  color: #cbd5e1;
+}
+
+.report-reason-item:hover {
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(20, 184, 166, 0.4);
+}
+
+.report-reason-item input[type="radio"] {
+  accent-color: #14b8a6;
+  cursor: pointer;
+}

@@ -11,9 +11,11 @@ import {
   MessageCircle,
   X,
   Sparkles,
+  Edit3,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { AvatarFallback } from '../ui/AvatarFallback'
+import { PostMediaLightbox } from './PostMediaLightbox'
 import type { AuthUser } from '../../services/api/authApi'
 import type {
   TimelinePost,
@@ -38,6 +40,14 @@ type TimelineTabProps = {
     privacy: PostPrivacy
   }) => Promise<void>
   onDeletePost: (postId: string) => Promise<void>
+  onUpdatePost?: (
+    postId: string,
+    updates: {
+      content: string
+      privacy: PostPrivacy
+      mediaUrls: string[]
+    },
+  ) => Promise<void>
   onToggleReaction: (postId: string, type: PostReactionType) => Promise<void>
   onAddComment: (postId: string, content: string) => Promise<void>
 }
@@ -49,6 +59,7 @@ export function TimelineTab({
   isLoading = false,
   onCreatePost,
   onDeletePost,
+  onUpdatePost,
   onToggleReaction,
   onAddComment,
 }: TimelineTabProps) {
@@ -64,6 +75,61 @@ export function TimelineTab({
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({})
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({})
   const [submittingCommentPostId, setSubmittingCommentPostId] = useState<string | null>(null)
+
+  const [lightboxState, setLightboxState] = useState<{
+    images: string[]
+    initialIndex: number
+  } | null>(null)
+
+  const [editingPostId, setEditingPostId] = useState<string | null>(null)
+  const [editContent, setEditContent] = useState('')
+  const [editPrivacy, setEditPrivacy] = useState<PostPrivacy>('public')
+  const [editMediaUrls, setEditMediaUrls] = useState<string[]>([])
+  const [isUpdatingPost, setIsUpdatingPost] = useState(false)
+  const [editError, setEditError] = useState<string | null>(null)
+
+  function startEditingPost(post: TimelinePost) {
+    setEditingPostId(post.id)
+    setEditContent(post.content)
+    setEditPrivacy(post.privacy)
+    setEditMediaUrls([...post.mediaUrls])
+    setEditError(null)
+  }
+
+  function cancelEditingPost() {
+    setEditingPostId(null)
+    setEditContent('')
+    setEditMediaUrls([])
+    setEditError(null)
+  }
+
+  async function handleSaveEdit(postId: string) {
+    setEditError(null)
+    const validation = validatePostContent(editContent, editMediaUrls.length, t)
+    if (!validation.isValid) {
+      setEditError(validation.error || t('errors.postInvalid', { defaultValue: 'Bài viết không hợp lệ!' }))
+      return
+    }
+
+    if (!onUpdatePost) return
+    try {
+      setIsUpdatingPost(true)
+      await onUpdatePost(postId, {
+        content: editContent.trim(),
+        privacy: editPrivacy,
+        mediaUrls: editMediaUrls,
+      })
+      setEditingPostId(null)
+    } catch {
+      setEditError(t('postUpdateFailed', { defaultValue: 'Không thể cập nhật bài viết!' }))
+    } finally {
+      setIsUpdatingPost(false)
+    }
+  }
+
+  function handleRemoveEditMedia(index: number) {
+    setEditMediaUrls((prev) => prev.filter((_, i) => i !== index))
+  }
 
   function handleImageSelect(event: ChangeEvent<HTMLInputElement>) {
     const files = event.target.files
@@ -336,36 +402,131 @@ export function TimelineTab({
                     </div>
                   </div>
 
-                  {isAuthor && (
-                    <button
-                      className="profile-btn profile-btn--ghost"
-                      onClick={() => {
-                        const confirmMsg = t('deletePostConfirm', {
-                          defaultValue: 'Bạn có chắc chắn muốn xóa bài viết này không?',
-                        })
-                        if (window.confirm(confirmMsg)) {
-                          onDeletePost(post.id)
-                        }
-                      }}
-                      style={{ padding: '6px' }}
-                      title={t('deletePost', { defaultValue: 'Xóa bài viết' })}
-                      type="button"
-                    >
-                      <Trash2 size={15} />
-                    </button>
+                  {isAuthor && editingPostId !== post.id && (
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      <button
+                        className="profile-btn profile-btn--ghost"
+                        onClick={() => startEditingPost(post)}
+                        style={{ padding: '6px' }}
+                        title={t('editPost', { defaultValue: 'Chỉnh sửa bài viết' })}
+                        type="button"
+                      >
+                        <Edit3 size={15} />
+                      </button>
+                      <button
+                        className="profile-btn profile-btn--ghost"
+                        onClick={() => {
+                          const confirmMsg = t('deletePostConfirm', {
+                            defaultValue: 'Bạn có chắc chắn muốn xóa bài viết này không?',
+                          })
+                          if (window.confirm(confirmMsg)) {
+                            onDeletePost(post.id)
+                          }
+                        }}
+                        style={{ padding: '6px' }}
+                        title={t('deletePost', { defaultValue: 'Xóa bài viết' })}
+                        type="button"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
                   )}
                 </header>
 
-                {post.content && (
-                  <div className="post-content-text">{post.content}</div>
-                )}
+                {editingPostId === post.id ? (
+                  <div className="timeline-post-inline-editor">
+                    <textarea
+                      className="composer-textarea"
+                      maxLength={PROFILE_LIMITS.POST_CONTENT_MAX}
+                      onChange={(e) => {
+                        setEditContent(e.target.value)
+                        if (editError) setEditError(null)
+                      }}
+                      rows={3}
+                      value={editContent}
+                    />
 
-                {post.mediaUrls.length > 0 && (
-                  <div className="post-media-grid">
-                    {post.mediaUrls.map((imgUrl, i) => (
-                      <img alt="" key={i} src={imgUrl} />
-                    ))}
+                    {editError && (
+                      <div className="pp-field-error" style={{ padding: '4px 0', color: '#ef4444' }}>
+                        {editError}
+                      </div>
+                    )}
+
+                    {editMediaUrls.length > 0 && (
+                      <div className="composer-media-previews" style={{ marginTop: '8px' }}>
+                        {editMediaUrls.map((url, idx) => (
+                          <div className="composer-media-item" key={idx}>
+                            <img alt="" src={url} />
+                            <button
+                              className="composer-media-remove"
+                              onClick={() => handleRemoveEditMedia(idx)}
+                              type="button"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="inline-editor-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+                      <select
+                        className="composer-privacy-select"
+                        onChange={(e) => setEditPrivacy(e.target.value as PostPrivacy)}
+                        value={editPrivacy}
+                      >
+                        <option value="public">{t('privacyPublic', { defaultValue: 'Công khai' })}</option>
+                        <option value="friends">{t('privacyFriends', { defaultValue: 'Bạn bè' })}</option>
+                        <option value="only_me">{t('privacyOnlyMe', { defaultValue: 'Chỉ mình tôi' })}</option>
+                      </select>
+
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          className="profile-btn profile-btn--ghost"
+                          disabled={isUpdatingPost}
+                          onClick={cancelEditingPost}
+                          type="button"
+                        >
+                          {t('cancelEdit', { defaultValue: 'Hủy' })}
+                        </button>
+                        <button
+                          className="profile-btn profile-btn--primary"
+                          disabled={isUpdatingPost || (!editContent.trim() && editMediaUrls.length === 0)}
+                          onClick={() => handleSaveEdit(post.id)}
+                          type="button"
+                        >
+                          {isUpdatingPost
+                            ? t('saving', { defaultValue: 'Đang lưu...' })
+                            : t('savePost', { defaultValue: 'Lưu thay đổi' })}
+                        </button>
+                      </div>
+                    </div>
                   </div>
+                ) : (
+                  <>
+                    {post.content && (
+                      <div className="post-content-text">{post.content}</div>
+                    )}
+
+                    {post.mediaUrls.length > 0 && (
+                      <div className="post-media-grid">
+                        {post.mediaUrls.map((imgUrl, i) => (
+                          <img
+                            alt=""
+                            key={i}
+                            onClick={() =>
+                              setLightboxState({
+                                images: post.mediaUrls,
+                                initialIndex: i,
+                              })
+                            }
+                            src={imgUrl}
+                            style={{ cursor: 'pointer' }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </>
                 )}
 
                 <div className="post-actions-bar">
@@ -454,6 +615,14 @@ export function TimelineTab({
           })
         )}
       </div>
+
+      {lightboxState && (
+        <PostMediaLightbox
+          images={lightboxState.images}
+          initialIndex={lightboxState.initialIndex}
+          onClose={() => setLightboxState(null)}
+        />
+      )}
     </div>
   )
 }

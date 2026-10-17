@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
 import type { AuthUser } from '../../services/api/authApi'
+import type { ContactUser } from '../../types'
 import { useChatAppController } from '../../hooks/chat/useChatAppController'
 const AdminPage = lazy(() => import('./AdminPage').then(m => ({ default: m.AdminPage })))
 const CallOverlay = lazy(() => import('../media/CallOverlay').then(m => ({ default: m.CallOverlay })))
@@ -150,6 +151,9 @@ export function ChatApp(props: ChatAppProps) {
               ctrl.handleSelectConversation(String(user.id))
             }}
             onUserChange={props.onUserChange}
+            onViewUserProfile={(user) => {
+              ctrl.setProfileContactToOpen(user as ContactUser)
+            }}
             pushToast={ctrl.pushToast}
             targetUser={ctrl.profileContactToOpen}
           />

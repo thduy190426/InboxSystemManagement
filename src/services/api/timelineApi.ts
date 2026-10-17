@@ -6,6 +6,7 @@ import type {
   PostReactionType,
   FollowStats,
   CreatePostPayload,
+  PostPrivacy,
 } from '../../types/timeline'
 
 const POSTS_STORAGE_KEY = 'inbox_timeline_posts'
@@ -106,6 +107,32 @@ export const timelineApi = {
     const filtered = allPosts.filter((p) => p.id !== postId || String(p.userId) !== String(userId))
     savePostsToStorage(filtered)
     return true
+  },
+
+  async updatePost(
+    postId: string,
+    userId: string,
+    updates: { content?: string; privacy?: PostPrivacy; mediaUrls?: string[] },
+  ): Promise<TimelinePost> {
+    const allPosts = loadPostsFromStorage()
+    const targetPost = allPosts.find((p) => p.id === postId && String(p.userId) === String(userId))
+    if (!targetPost) {
+      throw new Error('Bài viết không tồn tại hoặc bạn không có quyền chỉnh sửa')
+    }
+
+    if (updates.content !== undefined) {
+      targetPost.content = updates.content
+    }
+    if (updates.privacy !== undefined) {
+      targetPost.privacy = updates.privacy
+    }
+    if (updates.mediaUrls !== undefined) {
+      targetPost.mediaUrls = updates.mediaUrls
+    }
+    targetPost.updatedAt = new Date().toISOString()
+
+    savePostsToStorage(allPosts)
+    return { ...targetPost }
   },
 
   async toggleReaction(

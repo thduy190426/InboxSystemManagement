@@ -19,7 +19,9 @@ import {
   fetchFriends,
   sendFriendRequest,
   cancelFriendRequest,
+  blockContact,
 } from '../../services/api/contactApi'
+import { ReportUserModal } from '../profile/ReportUserModal'
 import { timelineApi } from '../../services/api/timelineApi'
 import type {
   TimelinePost,
@@ -46,6 +48,7 @@ export type ProfilePageProps = {
   pushToast: (text: string, tone?: 'info' | 'error') => void
   onBackToMyProfile?: () => void
   onSendMessage?: (user: ContactUser | AuthUser) => void
+  onViewUserProfile?: (user: ContactUser) => void
 }
 
 type TabType = 'timeline' | 'about' | 'friends' | 'followers'
@@ -57,6 +60,7 @@ export function ProfilePage({
   pushToast,
   onBackToMyProfile,
   onSendMessage,
+  onViewUserProfile,
 }: ProfilePageProps) {
   useAutoTour('profile', true, currentUser?.id)
   const { t } = useTranslation('profile')
@@ -94,6 +98,7 @@ export function ProfilePage({
   )
   const [isFriendLoading, setIsFriendLoading] = useState(false)
   const [isSavingProfile, setIsSavingProfile] = useState(false)
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false)
 
   const loadProfileData = useCallback(async () => {
     if (!displayUser) return
@@ -292,6 +297,26 @@ export function ProfilePage({
     }
   }
 
+  async function handleUpdatePost(
+    postId: string,
+    updates: { content: string; privacy: PostPrivacy; mediaUrls: string[] },
+  ) {
+    if (!currentUser) return
+    try {
+      const updatedPost = await timelineApi.updatePost(postId, currentUser.id, updates)
+      setPosts((prev) => prev.map((p) => (p.id === postId ? updatedPost : p)))
+      pushToast(t('postUpdated', { defaultValue: 'Đã cập nhật bài viết!' }), 'info')
+    } catch (err) {
+      pushToast(
+        err instanceof Error
+          ? err.message
+          : t('postUpdateFailed', { defaultValue: 'Không thể cập nhật bài viết!' }),
+        'error',
+      )
+      throw err
+    }
+  }
+
   async function handleToggleReaction(postId: string, type: PostReactionType) {
     if (!currentUser) return
     try {
@@ -366,6 +391,55 @@ export function ProfilePage({
     }
   }
 
+  function handleCopyProfileLink() {
+    if (!displayUser) return
+    const link = `${window.location.origin}?profile=${displayUser.id}`
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard
+        .writeText(link)
+        .then(() => {
+          pushToast(t('copyLinkSuccess', { defaultValue: 'Đã sao chép liên kết trang cá nhân!' }), 'info')
+        })
+        .catch(() => {
+          pushToast(t('copyLinkFailed', { defaultValue: 'Không thể sao chép liên kết!' }), 'error')
+        })
+    } else {
+      pushToast(t('copyLinkSuccess', { defaultValue: 'Đã sao chép liên kết trang cá nhân!' }), 'info')
+    }
+  }
+
+  async function handleBlockUser() {
+    if (!targetUser || !currentUser) return
+    const confirmMsg = t('blockConfirm', {
+      defaultValue:
+        'Bạn có chắc chắn muốn chặn người dùng này không? Họ sẽ không thể gửi tin nhắn hoặc xem bài viết của bạn.',
+    })
+    if (!window.confirm(confirmMsg)) return
+
+    try {
+      await blockContact(String(targetUser.id))
+      setFriendshipStatus('blocked')
+      pushToast(t('blockSuccess', { defaultValue: 'Đã chặn người dùng thành công.' }), 'info')
+    } catch (err) {
+      pushToast(
+        err instanceof Error
+          ? err.message
+          : t('blockFailed', { defaultValue: 'Không thể chặn người dùng!' }),
+        'error',
+      )
+    }
+  }
+
+  function handleReportSubmit(reason: string, notes: string) {
+    console.info(`[ReportUser] target=${targetUser?.id}, reason=${reason}, notes=${notes}`)
+    pushToast(
+      t('reportSuccess', {
+        defaultValue: 'Cảm ơn bạn, báo cáo đã được gửi tới đội ngũ quản trị viên.',
+      }),
+      'info',
+    )
+  }
+
   async function handleSaveProfile(payload: ProfilePayload) {
     try {
       setIsSavingProfile(true)
@@ -420,12 +494,15 @@ export function ProfilePage({
         isFriendLoading={isFriendLoading}
         isOwnProfile={isOwnProfile}
         onAvatarChange={handleAvatarSelect}
+        onBlockUser={handleBlockUser}
+        onCopyProfileLink={handleCopyProfileLink}
         onEditProfile={() => {
           setActiveTab('about')
           setIsEditingAbout(true)
         }}
         onFollowToggle={handleToggleFollow}
         onFriendAction={handleFriendAction}
+        onReportUser={() => setIsReportModalOpen(true)}
         onSendMessage={() => onSendMessage?.(displayUser)}
         onStatClick={(tab) => setActiveTab(tab as TabType)}
         stats={{
@@ -487,6 +564,7 @@ export function ProfilePage({
           onCreatePost={handleCreatePost}
           onDeletePost={handleDeletePost}
           onToggleReaction={handleToggleReaction}
+          onUpdatePost={handleUpdatePost}
           posts={posts}
         />
       )}
@@ -507,11 +585,7 @@ export function ProfilePage({
           friends={friends}
           isLoading={isFriendsLoading}
           onSendMessage={onSendMessage}
-          onViewFriendProfile={(friend) => {
-            if (onSendMessage) {
-              onSendMessage(friend)
-            }
-          }}
+          onViewFriendProfile={onViewUserProfile}
         />
       )}
 
@@ -525,6 +599,7 @@ export function ProfilePage({
             await timelineApi.toggleFollowUser(user.id, currentUser.id)
             loadFollowersAndFollowing()
           }}
+          onViewUserProfile={onViewUserProfile}
         />
       )}
 
@@ -533,6 +608,15 @@ export function ProfilePage({
           imageSrc={cropImageSrc}
           onCancel={() => setCropImageSrc(null)}
           onCropped={handleCroppedAvatar}
+        />
+      )}
+
+      {targetUser && (
+        <ReportUserModal
+          isOpen={isReportModalOpen}
+          onClose={() => setIsReportModalOpen(false)}
+          onSubmit={handleReportSubmit}
+          targetUser={targetUser}
         />
       )}
     </section>

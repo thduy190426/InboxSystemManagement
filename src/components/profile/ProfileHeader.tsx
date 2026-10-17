@@ -1,5 +1,5 @@
 import type { ChangeEvent } from 'react'
-import { useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import {
   Camera,
   Edit3,
@@ -13,6 +13,9 @@ import {
   Heart,
   Sparkles,
   Bookmark,
+  MoreVertical,
+  Copy,
+  Flag,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { AvatarFallback } from '../ui/AvatarFallback'
@@ -40,6 +43,9 @@ type ProfileHeaderProps = {
   onAvatarChange?: (file: File) => void
   isAvatarUploading?: boolean
   onStatClick?: (targetTab: string) => void
+  onCopyProfileLink?: () => void
+  onReportUser?: () => void
+  onBlockUser?: () => void
 }
 
 export function ProfileHeader({
@@ -57,9 +63,25 @@ export function ProfileHeader({
   onAvatarChange,
   isAvatarUploading = false,
   onStatClick,
+  onCopyProfileLink,
+  onReportUser,
+  onBlockUser,
 }: ProfileHeaderProps) {
   const { t } = useTranslation('profile')
   const avatarInputRef = useRef<HTMLInputElement>(null)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!isMenuOpen) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isMenuOpen])
 
   const displayName =
     ('displayName' in user && user.displayName) || user.fullName || t('defaultUser')
@@ -209,6 +231,64 @@ export function ProfileHeader({
                   </>
                 )}
               </button>
+
+              <div className="profile-options-menu-wrapper" ref={menuRef} style={{ position: 'relative' }}>
+                <button
+                  aria-expanded={isMenuOpen}
+                  aria-haspopup="menu"
+                  aria-label={t('optionsMenu', { defaultValue: 'Tùy chọn khác' })}
+                  className="profile-btn profile-btn--ghost"
+                  onClick={() => setIsMenuOpen((prev) => !prev)}
+                  style={{ padding: '8px 10px' }}
+                  title={t('optionsMenu', { defaultValue: 'Tùy chọn khác' })}
+                  type="button"
+                >
+                  <MoreVertical size={16} />
+                </button>
+
+                {isMenuOpen && (
+                  <div className="profile-options-dropdown" role="menu">
+                    <button
+                      className="profile-dropdown-item"
+                      onClick={() => {
+                        setIsMenuOpen(false)
+                        onCopyProfileLink?.()
+                      }}
+                      role="menuitem"
+                      type="button"
+                    >
+                      <Copy size={14} />
+                      <span>{t('copyProfileLink', { defaultValue: 'Sao chép liên kết trang cá nhân' })}</span>
+                    </button>
+
+                    <button
+                      className="profile-dropdown-item"
+                      onClick={() => {
+                        setIsMenuOpen(false)
+                        onReportUser?.()
+                      }}
+                      role="menuitem"
+                      type="button"
+                    >
+                      <Flag size={14} />
+                      <span>{t('reportAccount', { defaultValue: 'Báo cáo tài khoản' })}</span>
+                    </button>
+
+                    <button
+                      className="profile-dropdown-item profile-dropdown-item--danger"
+                      onClick={() => {
+                        setIsMenuOpen(false)
+                        onBlockUser?.()
+                      }}
+                      role="menuitem"
+                      type="button"
+                    >
+                      <UserX size={14} />
+                      <span>{t('blockUser', { defaultValue: 'Chặn người này' })}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>
