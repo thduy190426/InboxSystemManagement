@@ -94,7 +94,7 @@ export function useChatAppController({ currentUser, onLogout }: ChatAppProps) {
       !initialRoute.conversationId,
   )
   const [isDetailOpen, setIsDetailOpen] = useState(false)
-    const { t } = useTranslation('chatapp')
+  const { t } = useTranslation(['chatapp', 'notifications'])
 
     const { conversations, isConversationsLoading, setConversations, archivedConversations, setArchivedConversations, friends, setFriends, friendRequests, setFriendRequests, notifications, setNotifications } = useChatData()
 
@@ -1060,9 +1060,9 @@ export function useChatAppController({ currentUser, onLogout }: ChatAppProps) {
       await markAllNotificationsRead()
       const refreshed = await fetchNotifications()
       setNotifications(refreshed)
-      pushToast(t('notifications.markedAllAsReadSuccess', { defaultValue: 'Đã đánh dấu tất cả thông báo là đã đọc!' }), 'info')
+      pushToast(t('notifications:markedAllAsReadSuccess'), 'info')
     } catch {
-      pushToast(t('notifications.markedAllAsReadError', { defaultValue: 'Không thể đánh dấu đã đọc. Vui lòng thử lại!' }), 'error')
+      pushToast(t('notifications:markedAllAsReadError'), 'error')
     }
   }
 
@@ -1072,9 +1072,9 @@ export function useChatAppController({ currentUser, onLogout }: ChatAppProps) {
         current.filter((item) => item.id !== notificationId),
       )
       await deleteNotification(notificationId)
-      pushToast(t('notifications.deleteSuccess', { defaultValue: 'Đã xóa thông báo!' }), 'info')
+      pushToast(t('notifications:deleteSuccess'), 'info')
     } catch {
-      pushToast(t('notifications.deleteError', { defaultValue: 'Không thể xóa thông báo!' }), 'error')
+      pushToast(t('notifications:deleteError'), 'error')
       fetchNotifications().then(setNotifications).catch(() => undefined)
     }
   }
@@ -1083,9 +1083,9 @@ export function useChatAppController({ currentUser, onLogout }: ChatAppProps) {
     try {
       setNotifications([])
       await clearAllNotifications()
-      pushToast(t('notifications.clearAllSuccess', { defaultValue: 'Đã dọn dẹp toàn bộ thông báo!' }), 'info')
+      pushToast(t('notifications:clearAllSuccess'), 'info')
     } catch {
-      pushToast(t('notifications.clearAllError', { defaultValue: 'Không thể dọn dẹp thông báo!' }), 'error')
+      pushToast(t('notifications:clearAllError'), 'error')
       fetchNotifications().then(setNotifications).catch(() => undefined)
     }
   }

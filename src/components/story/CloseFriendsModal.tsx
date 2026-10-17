@@ -63,7 +63,7 @@ export function CloseFriendsModal({ onClose, pushToast }: CloseFriendsModalProps
       const res = await storyApi.toggleCloseFriend(friendId)
       if (res?.success) {
         if (pushToast) {
-          pushToast(res.isCloseFriend ? 'Đã thêm vào Bạn thân' : 'Đã xóa khỏi Bạn thân', 'info')
+          pushToast(res.isCloseFriend ? t('addedCloseFriend') : t('removedCloseFriend'), 'info')
         }
       }
     } catch (err) {
@@ -74,7 +74,7 @@ export function CloseFriendsModal({ onClose, pushToast }: CloseFriendsModalProps
         else next.delete(friendId)
         return next
       })
-      if (pushToast) pushToast(t('postError'), 'error')
+      if (pushToast) pushToast(t('toggleCloseFriendErr'), 'error')
     } finally {
       setTogglingId(null)
     }

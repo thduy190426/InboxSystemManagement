@@ -9,7 +9,8 @@
     "loginErr": "Cannot log in!",
     "googleLoginErr": "Cannot log in with Google!",
     "facebookLoginErr": "Cannot log in with Facebook!",
-    "registerErr": "Cannot register!"
+    "registerErr": "Cannot register!",
+    "toastDeactivateSuccess": "Your account has been temporarily deactivated!"
   },
   "accountSwitcher": {
     "title": "Switch Account",
@@ -230,7 +231,8 @@
       "statusMessageMax": "Status cannot exceed 120 characters!",
       "bioRequired": "Please enter a bio!",
       "bioMax": "Bio cannot exceed 255 characters!",
-      "fillRequired": "Please fill in all required profile information!"
+      "fillRequired": "Please fill in all required profile information!",
+      "invalidImage": "Invalid image!"
     },
     "kicker": "Personal Profile",
     "title": "Edit Profile",
@@ -298,6 +300,10 @@
     "followBtn": "Follow",
     "followingBtn": "Following",
     "unfollowBtn": "Unfollow",
+    "friendRequestSent": "Friend request sent!",
+    "friendRequestCancelled": "Friend request cancelled!",
+    "friendActionError": "Friend action failed!",
+    "avatarPhotoLabel": "profile picture",
     "followedSuccess": "Followed {{name}} successfully!",
     "unfollowedSuccess": "Unfollowed {{name}} successfully!",
     "composerPlaceholder": "What's on your mind?",
@@ -413,8 +419,13 @@
     "allTab": "All",
     "replyPlaceholder": "Reply to story...",
     "replySent": "Sent reply to chat",
+    "replyError": "Cannot send reply",
     "reactSent": "Reacted {{emoji}}",
     "reactTooltip": "React with {{emoji}}",
+    "removeReactSuccess": "Reaction removed",
+    "addedCloseFriend": "Added to Close Friends",
+    "removedCloseFriend": "Removed from Close Friends",
+    "toggleCloseFriendErr": "Cannot update Close Friends list!",
     "replyPrefix": "[Story Reply]: ",
     "reactPrefix": "[Story Reaction]: ",
     "deleteStory": "Delete story",
@@ -507,6 +518,9 @@
     },
     "activeSessionsSummary": "{{count}} active",
     "revokedSessionsSummary": "{{count}} revoked",
+    "api": {
+      "error": "An error occurred. Please try again!"
+    },
     "navPrivacy": "Privacy",
     "navDevice": "Device",
     "navApp": "App Settings",
@@ -768,6 +782,9 @@
     "disbandGroupDesc": "All members will no longer see this group. This action cannot be undone.",
     "disbandGroupBtn": "Disband group",
     "disbandGroupErr": "Cannot disband group!",
+    "groupDisbandedNamed": "Group \"{{name}}\" was disbanded!",
+    "groupDisbanded": "Group was disbanded!",
+    "offlineMessagesSent": "Offline messages have been resent.",
     "startCallErr": "Cannot start call!",
     "closeChatList": "Close chat list",
     "closeChatInfo": "Close chat info",

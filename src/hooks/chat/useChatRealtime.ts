@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { getRealtimeSocket } from '../../services/realtime/realtime'
 import { fetchConversations, fetchMessagesPage, fetchConversationMembers, markConversationRead } from '../../services/api/chatApi'
 import { mergeLatestMessages } from '../../services/core/offlineQueue'
@@ -58,6 +59,7 @@ export function useChatRealtime({
   showDedupedBrowserNotification,
   setTypingByConversation,
 }: UseChatRealtimeProps) {
+  const { t } = useTranslation('chatapp')
   useEffect(() => {
     const socket = getRealtimeSocket()
 
@@ -182,8 +184,8 @@ export function useChatRealtime({
 
         pushToast(
           disbandedConversation
-            ? `Nhóm "${disbandedConversation.name}" đã bị giải tán!`
-            : 'Nhóm đã bị giải tán!',
+            ? t('groupDisbandedNamed', { name: disbandedConversation.name })
+            : t('groupDisbanded'),
         )
         removeConversationLocally(conversationId)
         fetchConversations().then(setConversations).catch(() => undefined)

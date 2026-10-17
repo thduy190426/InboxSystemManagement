@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { getQueuedMessagesForUser, removeQueuedMessage, mergeQueuedMessages, type QueuedMessage } from '../../services/core/offlineQueue'
 import { sendMessage } from '../../services/api/chatApi'
 import type { Message } from '../../types'
@@ -10,6 +11,7 @@ type UseOfflineQueueProps = {
 }
 
 export function useOfflineQueue({ currentUserId, setMessagesByConversation, pushToast }: UseOfflineQueueProps) {
+  const { t } = useTranslation('chatapp')
   const isFlushingOfflineQueueRef = useRef(false)
 
   useEffect(() => {
@@ -90,7 +92,7 @@ export function useOfflineQueue({ currentUserId, setMessagesByConversation, push
         .then(async () => {
           const remaining = await getQueuedMessagesForUser(currentUserId as string)
           if (remaining.length === 0) {
-            pushToast('Tin nhắn offline đã được gửi lại.', 'info')
+            pushToast(t('offlineMessagesSent'), 'info')
           }
         })
         .catch(() => undefined)

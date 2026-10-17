@@ -13,9 +13,9 @@ export const PROFILE_LIMITS = {
   POST_CONTENT_MAX: 2000,
   POST_MAX_MEDIA: 10,
   COMMENT_CONTENT_MAX: 500,
-  MAX_AVATAR_SIZE: 5 * 1024 * 1024, // 5MB
-  MAX_COVER_SIZE: 10 * 1024 * 1024,  // 10MB
-  MAX_MEDIA_FILE_SIZE: 5 * 1024 * 1024, // 5MB
+  MAX_AVATAR_SIZE: 5 * 1024 * 1024, 
+  MAX_COVER_SIZE: 10 * 1024 * 1024,  
+  MAX_MEDIA_FILE_SIZE: 5 * 1024 * 1024,
 } as const
 
 export const ALLOWED_IMAGE_MIME_TYPES = [
@@ -74,16 +74,12 @@ export function validateImageFile(
   return { isValid: true }
 }
 
-/**
- * Validate profile editing form inputs
- */
 export function validateProfileForm(
   form: ProfilePayload,
   t: TranslateFn = defaultTranslate,
 ): { isValid: boolean; errors: ProfileErrors } {
   const errors: ProfileErrors = {}
 
-  // 1. Display name validation
   const trimmedName = form.displayName ? form.displayName.trim() : ''
   if (!trimmedName) {
     errors.displayName = t('errors.displayNameRequired', {
@@ -99,7 +95,6 @@ export function validateProfileForm(
     })
   }
 
-  // 2. Handle validation
   const trimmedHandle = form.handle ? form.handle.trim().toLowerCase() : ''
   if (trimmedHandle) {
     if (!/^[a-z0-9][a-z0-9._]{2,31}$/.test(trimmedHandle)) {
@@ -109,7 +104,6 @@ export function validateProfileForm(
     }
   }
 
-  // 3. Phone validation
   const trimmedPhone = form.phone ? form.phone.trim() : ''
   if (trimmedPhone) {
     const cleanDigits = trimmedPhone.replace(/[\s().-]/g, '')
@@ -121,7 +115,6 @@ export function validateProfileForm(
     }
   }
 
-  // 4. Birth date validation
   if (form.birthDate) {
     const birthDateObj = new Date(form.birthDate)
     const now = new Date()
@@ -139,7 +132,6 @@ export function validateProfileForm(
         defaultValue: 'Năm sinh không hợp lệ (phải từ năm 1900 trở lại đây)!',
       })
     } else {
-      // Check minimum age: 6 years old
       const minAgeDate = new Date(now.getFullYear() - 6, now.getMonth(), now.getDate())
       if (birthDateObj > minAgeDate) {
         errors.birthDate = t('errors.birthDateTooYoung', {
@@ -149,21 +141,18 @@ export function validateProfileForm(
     }
   }
 
-  // 5. Address validation
   if (form.address && form.address.length > PROFILE_LIMITS.ADDRESS_MAX) {
     errors.address = t('errors.addressTooLong', {
       defaultValue: `Địa chỉ không được vượt quá ${PROFILE_LIMITS.ADDRESS_MAX} ký tự!`,
     })
   }
 
-  // 6. Bio validation
   if (form.bio && form.bio.length > PROFILE_LIMITS.BIO_MAX) {
     errors.bio = t('errors.bioTooLong', {
       defaultValue: `Tiểu sử không được vượt quá ${PROFILE_LIMITS.BIO_MAX} ký tự!`,
     })
   }
 
-  // 7. Status message validation
   if (form.statusMessage && form.statusMessage.length > PROFILE_LIMITS.STATUS_MESSAGE_MAX) {
     errors.statusMessage = t('errors.statusMessageTooLong', {
       defaultValue: `Trạng thái không được vượt quá ${PROFILE_LIMITS.STATUS_MESSAGE_MAX} ký tự!`,

@@ -195,12 +195,12 @@ export function ProfilePage({
       setIsUploadingCover(true)
       const newUrl = await timelineApi.uploadCoverPhoto(file, currentUser.id)
       setCoverUrl(newUrl)
-      pushToast(t('coverUpdated', { defaultValue: 'Đã cập nhật ảnh bìa!' }), 'info')
+      pushToast(t('coverUpdated'), 'info')
     } catch (err) {
       pushToast(
         err instanceof Error
           ? err.message
-          : t('coverUpdateFailed', { defaultValue: 'Không thể cập nhật ảnh bìa!' }),
+          : t('coverUpdateFailed'),
         'error',
       )
     } finally {
@@ -213,13 +213,13 @@ export function ProfilePage({
       file,
       {
         maxSizeBytes: PROFILE_LIMITS.MAX_AVATAR_SIZE,
-        label: t('avatarPhotoLabel', { defaultValue: 'ảnh đại diện' }),
+        label: t('avatarPhotoLabel'),
       },
       t,
     )
     if (!validation.isValid) {
       pushToast(
-        validation.error || t('errors.invalidImage', { defaultValue: 'Ảnh không hợp lệ!' }),
+        validation.error || t('errors.invalidImage'),
         'error',
       )
       return
@@ -230,7 +230,7 @@ export function ProfilePage({
       uploadAvatar(file)
         .then((res) => {
           onUserChange(res.user)
-          pushToast(t('avatarUpdated', { defaultValue: 'Đã cập nhật ảnh đại diện!' }), 'info')
+          pushToast(t('avatarUpdated'), 'info')
         })
         .catch((err) => {
           pushToast(err instanceof Error ? err.message : t('avatarUpdateFailed'), 'error')
@@ -253,7 +253,7 @@ export function ProfilePage({
       setIsAvatarUploading(true)
       const response = await uploadAvatar(file)
       onUserChange(response.user)
-      pushToast(t('avatarUpdated', { defaultValue: 'Đã cập nhật ảnh đại diện!' }), 'info')
+      pushToast(t('avatarUpdated'), 'info')
     } catch (err) {
       pushToast(err instanceof Error ? err.message : t('avatarUpdateFailed'), 'error')
     } finally {
@@ -270,12 +270,12 @@ export function ProfilePage({
     try {
       const newPost = await timelineApi.createPost(currentUser, payload)
       setPosts((prev) => [newPost, ...prev])
-      pushToast(t('postCreated', { defaultValue: 'Đã đăng bài viết mới!' }), 'info')
+      pushToast(t('postCreated'), 'info')
     } catch (err) {
       pushToast(
         err instanceof Error
           ? err.message
-          : t('postCreateFailed', { defaultValue: 'Không thể đăng bài viết!' }),
+          : t('postCreateFailed'),
         'error',
       )
     }
@@ -286,7 +286,7 @@ export function ProfilePage({
     try {
       await timelineApi.deletePost(postId, currentUser.id)
       setPosts((prev) => prev.filter((p) => p.id !== postId))
-      pushToast(t('postDeleted', { defaultValue: 'Đã xóa bài viết!' }), 'info')
+      pushToast(t('postDeleted'), 'info')
     } catch (err) {
       console.error(err)
     }
@@ -353,14 +353,14 @@ export function ProfilePage({
       if (friendshipStatus === 'none') {
         await sendFriendRequest(displayUser.id)
         setFriendshipStatus('pending')
-        pushToast(t('friendRequestSent', { defaultValue: 'Đã gửi lời mời kết bạn!' }), 'info')
+        pushToast(t('friendRequestSent'), 'info')
       } else if (friendshipStatus === 'pending') {
         await cancelFriendRequest(displayUser.id)
         setFriendshipStatus('none')
-        pushToast(t('friendRequestCancelled', { defaultValue: 'Đã hủy lời mời kết bạn!' }), 'info')
+        pushToast(t('friendRequestCancelled'), 'info')
       }
     } catch (err) {
-      pushToast(err instanceof Error ? err.message : 'Lỗi thao tác kết bạn', 'error')
+      pushToast(err instanceof Error ? err.message : t('friendActionError'), 'error')
     } finally {
       setIsFriendLoading(false)
     }
@@ -371,7 +371,7 @@ export function ProfilePage({
       setIsSavingProfile(true)
       const res = await updateProfile(payload)
       onUserChange(res.user)
-      pushToast(t('profileSaved', { defaultValue: 'Đã lưu hồ sơ!' }), 'info')
+      pushToast(t('profileSaved'), 'info')
     } catch (err) {
       pushToast(err instanceof Error ? err.message : t('profileSaveFailed'), 'error')
     } finally {

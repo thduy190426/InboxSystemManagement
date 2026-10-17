@@ -287,7 +287,7 @@ export function StoryViewerOverlay({
     try {
       await storyApi.reactToStory(currentItem.id, emoji)
       if (pushToast) {
-        pushToast(isRemoving ? 'Đã gỡ cảm xúc' : t('reactSent', { emoji }), 'info')
+        pushToast(isRemoving ? t('removeReactSuccess') : t('reactSent', { emoji }), 'info')
       }
 
       
@@ -316,7 +316,7 @@ export function StoryViewerOverlay({
       if (pushToast) pushToast(t('replySent'), 'info')
     } catch (err: any) {
       console.error('Failed to send reply:', err)
-      if (pushToast) pushToast(err?.message || 'Không thể gửi phản hồi', 'error')
+      if (pushToast) pushToast(err?.message || t('replyError'), 'error')
     }
   }
 

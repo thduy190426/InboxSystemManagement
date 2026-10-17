@@ -9,7 +9,8 @@
     "loginErr": "Không thể đăng nhập!",
     "googleLoginErr": "Không thể đăng nhập bằng Google!",
     "facebookLoginErr": "Không thể đăng nhập bằng Facebook!",
-    "registerErr": "Không thể đăng ký!"
+    "registerErr": "Không thể đăng ký!",
+    "toastDeactivateSuccess": "Tài khoản của bạn đã được vô hiệu hóa tạm thời!"
   },
   "accountSwitcher": {
     "title": "Chuyển tài khoản",
@@ -230,7 +231,8 @@
       "statusMessageMax": "Trạng thái không được vượt quá 120 ký tự!",
       "bioRequired": "Vui lòng nhập giới thiệu!",
       "bioMax": "Giới thiệu không được vượt quá 255 ký tự!",
-      "fillRequired": "Vui lòng điền đầy đủ thông tin hồ sơ bắt buộc!"
+      "fillRequired": "Vui lòng điền đầy đủ thông tin hồ sơ bắt buộc!",
+      "invalidImage": "Ảnh không hợp lệ!"
     },
     "kicker": "Hồ sơ cá nhân",
     "title": "Chỉnh sửa profile",
@@ -298,6 +300,10 @@
     "followBtn": "Theo dõi",
     "followingBtn": "Đang theo dõi",
     "unfollowBtn": "Bỏ theo dõi",
+    "friendRequestSent": "Đã gửi lời mời kết bạn!",
+    "friendRequestCancelled": "Đã hủy lời mời kết bạn!",
+    "friendActionError": "Lỗi thao tác kết bạn!",
+    "avatarPhotoLabel": "ảnh đại diện",
     "followedSuccess": "Đã theo dõi {{name}}!",
     "unfollowedSuccess": "Đã bỏ theo dõi {{name}}!",
     "composerPlaceholder": "Bạn đang nghĩ gì thế?",
@@ -413,8 +419,13 @@
     "allTab": "Tất cả",
     "replyPlaceholder": "Gửi tin nhắn phản hồi story...",
     "replySent": "Đã gửi phản hồi vào tin nhắn chat",
+    "replyError": "Không thể gửi phản hồi",
     "reactSent": "Đã thả cảm xúc {{emoji}}",
     "reactTooltip": "Thả cảm xúc {{emoji}}",
+    "removeReactSuccess": "Đã gỡ cảm xúc",
+    "addedCloseFriend": "Đã thêm vào Bạn thân",
+    "removedCloseFriend": "Đã xóa khỏi Bạn thân",
+    "toggleCloseFriendErr": "Không thể cập nhật danh sách Bạn thân!",
     "replyPrefix": "[Phản hồi Story]: ",
     "reactPrefix": "[Cảm xúc Story]: ",
     "deleteStory": "Xóa tin",
@@ -507,6 +518,9 @@
     },
     "activeSessionsSummary": "{{count}} đang hoạt động",
     "revokedSessionsSummary": "{{count}} đã thu hồi",
+    "api": {
+      "error": "Có lỗi xảy ra. Vui lòng thử lại!"
+    },
     "navPrivacy": "Quyền riêng tư",
     "navDevice": "Thiết bị",
     "navApp": "Ứng dụng",
@@ -768,6 +782,9 @@
     "disbandGroupDesc": "Tất cả thành viên sẽ không còn thấy nhóm này. Hành động này không thể hoàn tác trong ứng dụng.",
     "disbandGroupBtn": "Giải tán nhóm",
     "disbandGroupErr": "Không thể giải tán nhóm!",
+    "groupDisbandedNamed": "Nhóm \"{{name}}\" đã bị giải tán!",
+    "groupDisbanded": "Nhóm đã bị giải tán!",
+    "offlineMessagesSent": "Tin nhắn offline đã được gửi lại.",
     "startCallErr": "Không thể bắt đầu cuộc gọi!",
     "closeChatList": "Đóng danh sách hội thoại",
     "closeChatInfo": "Đóng thông tin hội thoại",

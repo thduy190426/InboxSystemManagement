@@ -64,10 +64,10 @@ export function StoryCreatorModal({
       const textPayload = JSON.stringify(metadata)
       await storyApi.createStory(fileToUpload, privacy, textPayload)
 
-      pushToast(t('postSuccess', { defaultValue: 'Đã đăng tin mới thành công!' }), 'info')
+      pushToast(t('postSuccess'), 'info')
       onSuccess()
     } catch (err: any) {
-      pushToast(err?.message || t('postError', { defaultValue: 'Đăng tin thất bại' }), 'error')
+      pushToast(err?.message || t('postError'), 'error')
       setIsUploading(false)
     }
   }
