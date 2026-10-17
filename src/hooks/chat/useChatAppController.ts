@@ -8,7 +8,7 @@ import { readAppRouteFromLocation, toAppPath } from '../../services/core/appRout
 import { getBrowserNotificationPermission, registerWebPushSubscription, requestBrowserNotificationPermission, showBrowserNotification, type BrowserNotificationPermission } from '../../services/core/browserNotifications'
 import { fetchConversations, fetchConversationCalls, fetchConversationMembers, fetchGroupInvite, fetchGroupJoinRequests, markConversationDelivered, markConversationRead, requestGroupJoin, updateTypingStatus, fetchMessagesPage } from '../../services/api/chatApi'
 import { startRealtimeCall } from '../../services/realtime/callRealtime'
-import { fetchNotifications, markAllNotificationsRead, markConversationNotificationsRead, markNotificationRead } from '../../services/api/notificationApi'
+import { fetchNotifications, markAllNotificationsRead, markConversationNotificationsRead, markNotificationRead, deleteNotification, clearAllNotifications } from '../../services/api/notificationApi'
 import { disconnectRealtimeSocket, emitTypingStart, emitTypingStop } from '../../services/realtime/realtime'
 import { playAlertSound, flashDocumentTitle, playCallRing } from '../../services/core/alertNotifier'
 import type { AppNotification, AppView, CallSession, CallType, ContactUser, Conversation, ConversationMember, GroupJoinRequest, Message } from '../../types'
@@ -937,19 +937,6 @@ export function useChatAppController({ currentUser, onLogout }: ChatAppProps) {
   function handleChangeView(view: AppView) {
     setActiveView(view)
 
-    if (view === 'notifications') {
-      const readAt = new Date().toISOString()
-      setNotifications((current: AppNotification[] = []) =>
-        current.map((notification) => ({
-          ...notification,
-          readAt: notification.readAt || readAt,
-        })),
-      )
-      markAllNotificationsRead()
-        .then(() => fetchNotifications().then(setNotifications))
-        .catch(() => undefined)
-    }
-
     if (view === 'chat') {
       const pendingTour = useTutorialStore.getState().pendingTourKey
       if (pendingTour === 'story') {
@@ -1056,6 +1043,48 @@ export function useChatAppController({ currentUser, onLogout }: ChatAppProps) {
 
     if (notification.conversationId) {
       handleSelectConversation(notification.conversationId)
+    }
+  }
+
+  async function handleMarkAllNotificationsRead() {
+    try {
+      const readAt = new Date().toISOString()
+      setNotifications((current: AppNotification[] = []) =>
+        current.map((notification) => ({
+          ...notification,
+          readAt: notification.readAt || readAt,
+        })),
+      )
+      await markAllNotificationsRead()
+      const refreshed = await fetchNotifications()
+      setNotifications(refreshed)
+      pushToast(t('notifications.markedAllAsReadSuccess', { defaultValue: 'Đã đánh dấu tất cả thông báo là đã đọc!' }), 'info')
+    } catch {
+      pushToast(t('notifications.markedAllAsReadError', { defaultValue: 'Không thể đánh dấu đã đọc. Vui lòng thử lại!' }), 'error')
+    }
+  }
+
+  async function handleDeleteNotification(notificationId: string) {
+    try {
+      setNotifications((current: AppNotification[] = []) =>
+        current.filter((item) => item.id !== notificationId),
+      )
+      await deleteNotification(notificationId)
+      pushToast(t('notifications.deleteSuccess', { defaultValue: 'Đã xóa thông báo!' }), 'info')
+    } catch {
+      pushToast(t('notifications.deleteError', { defaultValue: 'Không thể xóa thông báo!' }), 'error')
+      fetchNotifications().then(setNotifications).catch(() => undefined)
+    }
+  }
+
+  async function handleClearAllNotifications() {
+    try {
+      setNotifications([])
+      await clearAllNotifications()
+      pushToast(t('notifications.clearAllSuccess', { defaultValue: 'Đã dọn dẹp toàn bộ thông báo!' }), 'info')
+    } catch {
+      pushToast(t('notifications.clearAllError', { defaultValue: 'Không thể dọn dẹp thông báo!' }), 'error')
+      fetchNotifications().then(setNotifications).catch(() => undefined)
     }
   }
 
@@ -1272,7 +1301,7 @@ export function useChatAppController({ currentUser, onLogout }: ChatAppProps) {
     readSyncKey, pageErrorMessage, typingByConversation, activeCall, setActiveCall, shouldAutoScrollToLatest, setShouldAutoScrollToLatest,
     activeConversation, messages, activeMessagePagination, hasOlderMessages, isLoadingOlderMessages, pinnedMessages, activeMembers, activeGroupInviteToken, activeGroupJoinRequests, activeMemberRole, canManageActiveGroup,
     isLoading, notificationBadgeCount,
-    handleAcceptedFriend, handleEnableBrowserNotifications, handleChangeView, handleOpenContacts, handleOpenActiveContactProfile, closeContactProfile, handleSelectConversation, handleOpenNotification, handleDraftChange, handleSubmit, handleConfirmDialog, handleOpenPinnedMessage, handleStartCall, handleLogout, handleResizerMouseDown, pushToast,
+    handleAcceptedFriend, handleEnableBrowserNotifications, handleChangeView, handleOpenContacts, handleOpenActiveContactProfile, closeContactProfile, handleSelectConversation, handleOpenNotification, handleMarkAllNotificationsRead, handleDeleteNotification, handleClearAllNotifications, handleDraftChange, handleSubmit, handleConfirmDialog, handleOpenPinnedMessage, handleStartCall, handleLogout, handleResizerMouseDown, pushToast,
     handleUpdateGroup, handleAddMember, handleRemoveMember, handleUpdateMemberNickname, handleUpdateMemberRole, handleTransferOwner, handleCopyGroupInviteLink, handleResetGroupInviteLink, handleReviewGroupJoinRequest, handleLeaveGroup, handleDisbandGroup,
     handleDeleteConversation, handleRestoreConversation, handleArchiveConversation, handleStartDirectMessage, handleTogglePinConversation, handleToggleMuted, handleToggleBlocked, handleCreateGroup, handleUpdateContactNickname, handleTogglePinned, handleUpdateBackground, handleUpdateQuickEmoji,
     handleDeleteMessage, handleRecallMessage, handleEditMessage, handleForwardMessage, handleReportMessage, handleSendGif, handleToggleMessagePin, handleRemoveMessageReaction, handleRetryMessage, handleLoadOlderMessages, handleSendQuickMessage, handleSendPoll, handleVotePoll, handleToggleMessageReaction, handleUploadAttachment, handleSearchMessages, handleJumpToMessage, handleSendSticker, sendActiveConversationMessage,

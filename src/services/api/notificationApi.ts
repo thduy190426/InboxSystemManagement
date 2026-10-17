@@ -28,3 +28,15 @@ export async function markConversationNotificationsRead(conversationId: string) 
     method: 'POST',
   })
 }
+
+export async function deleteNotification(notificationId: string) {
+  await requestJson(`/notifications/${notificationId}`, {
+    method: 'DELETE',
+  })
+}
+
+export async function clearAllNotifications() {
+  await requestJson('/notifications', {
+    method: 'DELETE',
+  })
+}

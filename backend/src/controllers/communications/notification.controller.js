@@ -138,9 +138,45 @@ async function markAllNotificationsRead(request, response, next) {
   }
 }
 
+async function deleteNotification(request, response, next) {
+  try {
+    const notificationId = Number(request.params.notificationId)
+
+    if (!Number.isInteger(notificationId)) {
+      return response.status(400).json({
+        message: 'Thông báo không hợp lệ!',
+      })
+    }
+
+    await pool.execute(
+      `DELETE FROM notifications WHERE id = ? AND user_id = ?`,
+      [notificationId, request.user.id],
+    )
+
+    response.status(204).send()
+  } catch (error) {
+    next(error)
+  }
+}
+
+async function clearNotifications(request, response, next) {
+  try {
+    await pool.execute(
+      `DELETE FROM notifications WHERE user_id = ?`,
+      [request.user.id],
+    )
+
+    response.status(204).send()
+  } catch (error) {
+    next(error)
+  }
+}
+
 module.exports = {
   listNotifications,
   markAllNotificationsRead,
   markConversationNotificationsRead,
   markNotificationRead,
+  deleteNotification,
+  clearNotifications,
 }

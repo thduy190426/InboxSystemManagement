@@ -1,10 +1,27 @@
-import { AtSign, Bell, BellOff, BellRing, HelpCircle, MessageCircle, RefreshCw, ShieldAlert, UserPlus, X } from 'lucide-react'
-import { useState } from 'react'
+import {
+  AtSign,
+  Bell,
+  BellOff,
+  BellRing,
+  CheckCheck,
+  HelpCircle,
+  Inbox,
+  MessageCircle,
+  RefreshCw,
+  ShieldAlert,
+  Trash2,
+  UserPlus,
+  X,
+} from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { showBrowserNotification, type BrowserNotificationPermission } from '../../services/core/browserNotifications'
 import type { AppNotification, ContactUser, Conversation } from '../../types'
 import { AvatarFallback } from '../ui/AvatarFallback'
+import { ConfirmDialog, type ConfirmDialogState } from '../ui/ConfirmDialog'
+
+export type NotificationTab = 'all' | 'unread' | 'messages' | 'requests'
 
 type NotificationsPanelProps = {
   browserNotificationPermission: BrowserNotificationPermission
@@ -15,6 +32,9 @@ type NotificationsPanelProps = {
   onOpenContacts: () => void
   onOpenConversation: (conversationId: string) => void
   onOpenNotification: (notification: AppNotification) => void
+  onMarkAllAsRead?: () => Promise<void> | void
+  onDeleteNotification?: (notificationId: string) => Promise<void> | void
+  onClearAllNotifications?: () => Promise<void> | void
 }
 
 type NotificationSectionProps = {
@@ -54,17 +74,48 @@ export function NotificationsPanel({
   onOpenContacts,
   onOpenConversation,
   onOpenNotification,
+  onMarkAllAsRead,
+  onDeleteNotification,
+  onClearAllNotifications,
 }: NotificationsPanelProps) {
   const { t } = useTranslation('notifications')
 
+  const [activeTab, setActiveTab] = useState<NotificationTab>('all')
   const [isSyncing, setIsSyncing] = useState(false)
+  const [isMarkingAll, setIsMarkingAll] = useState(false)
+  const [isClearing, setIsClearing] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [showGuideModal, setShowGuideModal] = useState(false)
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null)
 
-  const unreadConversations = conversations.filter((c) => c.unread > 0)
-  const mentionNotifications = notifications.filter((n) => n.type === 'mention')
-  const unreadMentionCount = mentionNotifications.filter((n) => !n.readAt).length
-  const totalUnreadMessages = unreadConversations.reduce((total, c) => total + c.unread, 0)
-  const totalNotifications = totalUnreadMessages + friendRequests.length + unreadMentionCount
+  const unreadConversations = useMemo(
+    () => conversations.filter((c) => c.unread > 0),
+    [conversations],
+  )
+  const totalUnreadMessages = useMemo(
+    () => unreadConversations.reduce((total, c) => total + c.unread, 0),
+    [unreadConversations],
+  )
+
+  const mentionNotifications = useMemo(
+    () => notifications.filter((n) => n.type === 'mention'),
+    [notifications],
+  )
+
+  const unreadNotifications = useMemo(
+    () => notifications.filter((n) => !n.readAt),
+    [notifications],
+  )
+
+  const totalUnreadCount = totalUnreadMessages + unreadNotifications.length + friendRequests.length
+  const totalNotifications = totalUnreadMessages + friendRequests.length + notifications.length
+
+  const tabCounts = {
+    all: totalNotifications,
+    unread: totalUnreadCount,
+    messages: totalUnreadMessages + mentionNotifications.length,
+    requests: friendRequests.length,
+  }
 
   async function handleResync() {
     if (isSyncing) return
@@ -82,6 +133,74 @@ export function NotificationsPanel({
       setTimeout(() => setIsSyncing(false), 600)
     }
   }
+
+  async function handleMarkAll() {
+    if (!onMarkAllAsRead || totalUnreadCount === 0 || isMarkingAll) return
+    setIsMarkingAll(true)
+    try {
+      await onMarkAllAsRead()
+    } finally {
+      setIsMarkingAll(false)
+    }
+  }
+
+  function handleOpenClearConfirm() {
+    if (!onClearAllNotifications || notifications.length === 0) return
+    setConfirmDialog({
+      title: t('clearAllConfirmTitle'),
+      description: t('clearAllConfirmDesc'),
+      confirmLabel: t('clearAllConfirmBtn'),
+      cancelLabel: t('cancel'),
+      tone: 'danger',
+      onConfirm: async () => {
+        setIsClearing(true)
+        try {
+          await onClearAllNotifications()
+        } finally {
+          setIsClearing(false)
+          setConfirmDialog(null)
+        }
+      },
+    })
+  }
+
+  async function handleDeleteItem(e: React.MouseEvent, notificationId: string) {
+    e.stopPropagation()
+    if (!onDeleteNotification || deletingId) return
+    setDeletingId(notificationId)
+    try {
+      await onDeleteNotification(notificationId)
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  const displayedNotifications = useMemo(() => {
+    if (activeTab === 'unread') {
+      return unreadNotifications
+    }
+    if (activeTab === 'messages') {
+      return mentionNotifications
+    }
+    return notifications
+  }, [activeTab, unreadNotifications, mentionNotifications, notifications])
+
+  const showUnreadConversationsSection =
+    (activeTab === 'all' || activeTab === 'unread' || activeTab === 'messages') &&
+    (unreadConversations.length > 0 || activeTab === 'messages')
+
+  const showNotificationsSection =
+    (activeTab === 'all' || activeTab === 'unread' || activeTab === 'messages')
+
+  const showRequestsSection =
+    (activeTab === 'all' || activeTab === 'unread' || activeTab === 'requests') &&
+    (friendRequests.length > 0 || activeTab === 'requests')
+
+  const isCurrentTabEmpty =
+    (activeTab === 'unread' && totalUnreadCount === 0) ||
+    (activeTab === 'all' && totalNotifications === 0) ||
+    (activeTab === 'messages' && unreadConversations.length === 0 && mentionNotifications.length === 0) ||
+    (activeTab === 'requests' && friendRequests.length === 0)
 
   return (
     <section className="np-page" aria-labelledby="notifications-title">
@@ -163,89 +282,206 @@ export function NotificationsPanel({
         </div>
       </header>
 
-      <div className="np-grid">
-        <NotificationSection
-          icon={<MessageCircle size={15} />}
-          title={t('unreadMessagesTitle')}
-          count={totalUnreadMessages}
-          emptyText={t('unreadMessagesEmpty')}
-        >
-          {unreadConversations.map((conversation) => (
-            <button
-              className="np-row"
-              key={conversation.id}
-              onClick={() => onOpenConversation(conversation.id)}
-              type="button"
-            >
-              <div className="np-row-avatar">
-                <AvatarFallback name={conversation.name} src={conversation.avatar} />
-              </div>
-              <div className="np-row-content">
-                <strong>{conversation.name}</strong>
-                <span>{conversation.lastMessage}</span>
-                <small>{conversation.lastTime}</small>
-              </div>
-              <span className="np-badge">{conversation.unread}</span>
-            </button>
-          ))}
-        </NotificationSection>
+      <div className="np-toolbar">
+        <nav className="np-tabs" aria-label={t('kicker')}>
+          <button
+            className={`np-tab-btn ${activeTab === 'all' ? 'is-active' : ''}`}
+            onClick={() => setActiveTab('all')}
+            type="button"
+          >
+            <span>{t('tabAll')}</span>
+            {tabCounts.all > 0 && <span className="np-tab-badge">{tabCounts.all}</span>}
+          </button>
+          <button
+            className={`np-tab-btn ${activeTab === 'unread' ? 'is-active' : ''}`}
+            onClick={() => setActiveTab('unread')}
+            type="button"
+          >
+            <span>{t('tabUnread')}</span>
+            {tabCounts.unread > 0 && (
+              <span className="np-tab-badge np-tab-badge--accent">{tabCounts.unread}</span>
+            )}
+          </button>
+          <button
+            className={`np-tab-btn ${activeTab === 'messages' ? 'is-active' : ''}`}
+            onClick={() => setActiveTab('messages')}
+            type="button"
+          >
+            <MessageCircle size={14} />
+            <span>{t('tabMessages')}</span>
+            {tabCounts.messages > 0 && <span className="np-tab-badge">{tabCounts.messages}</span>}
+          </button>
+          <button
+            className={`np-tab-btn ${activeTab === 'requests' ? 'is-active' : ''}`}
+            onClick={() => setActiveTab('requests')}
+            type="button"
+          >
+            <UserPlus size={14} />
+            <span>{t('tabRequests')}</span>
+            {tabCounts.requests > 0 && <span className="np-tab-badge">{tabCounts.requests}</span>}
+          </button>
+        </nav>
 
-        <NotificationSection
-          icon={<AtSign size={15} />}
-          title={t('mentionsTitle')}
-          count={unreadMentionCount}
-          emptyText={t('mentionsEmpty')}
-        >
-          {mentionNotifications.map((notification) => (
-            <button
-              className={`np-row${!notification.readAt ? ' np-row--unread' : ''}`}
-              key={notification.id}
-              onClick={() => onOpenNotification(notification)}
-              type="button"
-            >
-              <div className="np-row-avatar">
-                <AvatarFallback
-                  name={notification.actor?.fullName || notification.conversationName}
-                  src={notification.actor?.avatarUrl || notification.conversationAvatar}
-                />
-                {!notification.readAt && <span className="np-unread-dot" />}
-              </div>
-              <div className="np-row-content">
-                <strong>{notification.title}</strong>
-                <span>{notification.body}</span>
-                <small>{notification.conversationName} · {notification.time}</small>
-              </div>
-              {!notification.readAt && <span className="np-badge">1</span>}
-            </button>
-          ))}
-        </NotificationSection>
+        <div className="np-toolbar-actions">
+          <button
+            className="np-toolbar-btn np-toolbar-btn--primary"
+            disabled={totalUnreadCount === 0 || isMarkingAll}
+            onClick={handleMarkAll}
+            title={t('markAllAsRead')}
+            type="button"
+          >
+            <CheckCheck size={15} className={isMarkingAll ? 'np-spin' : ''} />
+            <span>{t('markAllAsRead')}</span>
+          </button>
 
-        <NotificationSection
-          icon={<UserPlus size={15} />}
-          title={t('friendRequestsTitle')}
-          count={friendRequests.length}
-          emptyText={t('friendRequestsEmpty')}
-        >
-          {friendRequests.map((request) => (
-            <button
-              className="np-row"
-              key={request.id}
-              onClick={onOpenContacts}
-              type="button"
-            >
-              <div className="np-row-avatar">
-                <AvatarFallback name={request.fullName} src={request.avatarUrl} />
-              </div>
-              <div className="np-row-content">
-                <strong>{request.fullName}</strong>
-                <span>{request.email}</span>
-                <small>{t('wantsToConnect')}</small>
-              </div>
-              <span className="np-badge">1</span>
-            </button>
-          ))}
-        </NotificationSection>
+          <button
+            className="np-toolbar-btn np-toolbar-btn--danger"
+            disabled={notifications.length === 0 || isClearing}
+            onClick={handleOpenClearConfirm}
+            title={t('clearAll')}
+            type="button"
+          >
+            <Trash2 size={15} className={isClearing ? 'np-spin' : ''} />
+            <span>{t('clearAll')}</span>
+          </button>
+        </div>
       </div>
+
+      {isCurrentTabEmpty ? (
+        <div className="np-empty-card">
+          <div className="np-empty-card-icon">
+            {activeTab === 'unread' ? (
+              <CheckCheck size={36} strokeWidth={1.5} />
+            ) : activeTab === 'requests' ? (
+              <UserPlus size={36} strokeWidth={1.5} />
+            ) : activeTab === 'messages' ? (
+              <MessageCircle size={36} strokeWidth={1.5} />
+            ) : (
+              <Inbox size={36} strokeWidth={1.5} />
+            )}
+          </div>
+          <h3>
+            {activeTab === 'unread'
+              ? t('unreadEmpty')
+              : activeTab === 'requests'
+              ? t('friendRequestsEmpty')
+              : activeTab === 'messages'
+              ? t('unreadMessagesEmpty')
+              : t('allEmpty')}
+          </h3>
+        </div>
+      ) : (
+        <div className="np-grid">
+          {showUnreadConversationsSection && (
+            <NotificationSection
+              icon={<MessageCircle size={15} />}
+              title={t('unreadMessagesTitle')}
+              count={totalUnreadMessages}
+              emptyText={t('unreadMessagesEmpty')}
+            >
+              {unreadConversations.map((conversation) => (
+                <button
+                  className="np-row"
+                  key={conversation.id}
+                  onClick={() => onOpenConversation(conversation.id)}
+                  type="button"
+                >
+                  <div className="np-row-avatar">
+                    <AvatarFallback name={conversation.name} src={conversation.avatar} />
+                  </div>
+                  <div className="np-row-content">
+                    <strong>{conversation.name}</strong>
+                    <span>{conversation.lastMessage}</span>
+                    <small>{conversation.lastTime}</small>
+                  </div>
+                  <span className="np-badge">{conversation.unread}</span>
+                </button>
+              ))}
+            </NotificationSection>
+          )}
+
+          {showNotificationsSection && (
+            <NotificationSection
+              icon={<AtSign size={15} />}
+              title={activeTab === 'unread' ? t('tabUnread') : t('mentionsTitle')}
+              count={displayedNotifications.length}
+              emptyText={t('mentionsEmpty')}
+            >
+              {displayedNotifications.map((notification) => (
+                <div
+                  className={`np-row${!notification.readAt ? ' np-row--unread' : ''}`}
+                  key={notification.id}
+                  onClick={() => onOpenNotification(notification)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      onOpenNotification(notification)
+                    }
+                  }}
+                >
+                  <div className="np-row-avatar">
+                    <AvatarFallback
+                      name={notification.actor?.fullName || notification.conversationName}
+                      src={notification.actor?.avatarUrl || notification.conversationAvatar}
+                    />
+                    {!notification.readAt && <span className="np-unread-dot" />}
+                  </div>
+                  <div className="np-row-content">
+                    <strong>{notification.title}</strong>
+                    <span>{notification.body}</span>
+                    <small>{notification.conversationName} · {notification.time}</small>
+                  </div>
+                  <div className="np-row-actions">
+                    {!notification.readAt && (
+                      <span className="np-badge" title={t('tabUnread')}>1</span>
+                    )}
+                    <button
+                      className="np-row-delete-btn"
+                      disabled={deletingId === notification.id}
+                      onClick={(e) => handleDeleteItem(e, notification.id)}
+                      title={t('deleteNotification')}
+                      type="button"
+                      aria-label={t('deleteNotification')}
+                    >
+                      <Trash2 size={14} className={deletingId === notification.id ? 'np-spin' : ''} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </NotificationSection>
+          )}
+
+          {showRequestsSection && (
+            <NotificationSection
+              icon={<UserPlus size={15} />}
+              title={t('friendRequestsTitle')}
+              count={friendRequests.length}
+              emptyText={t('friendRequestsEmpty')}
+            >
+              {friendRequests.map((request) => (
+                <button
+                  className="np-row"
+                  key={request.id}
+                  onClick={onOpenContacts}
+                  type="button"
+                >
+                  <div className="np-row-avatar">
+                    <AvatarFallback name={request.fullName} src={request.avatarUrl} />
+                  </div>
+                  <div className="np-row-content">
+                    <strong>{request.fullName}</strong>
+                    <span>{request.email}</span>
+                    <small>{t('wantsToConnect')}</small>
+                  </div>
+                  <span className="np-badge">1</span>
+                </button>
+              ))}
+            </NotificationSection>
+          )}
+        </div>
+      )}
 
       {showGuideModal && (
         <div className="np-guide-backdrop" role="presentation" onClick={() => setShowGuideModal(false)}>
@@ -320,6 +556,19 @@ export function NotificationsPanel({
             </div>
           </div>
         </div>
+      )}
+
+      {confirmDialog && (
+        <ConfirmDialog
+          dialog={confirmDialog}
+          isWorking={isClearing}
+          onCancel={() => setConfirmDialog(null)}
+          onConfirm={async () => {
+            if (confirmDialog.onConfirm) {
+              await confirmDialog.onConfirm()
+            }
+          }}
+        />
       )}
     </section>
   )

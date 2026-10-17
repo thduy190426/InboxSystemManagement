@@ -212,6 +212,9 @@ export function ChatApp(props: ChatAppProps) {
           onOpenContacts={ctrl.handleOpenContacts}
           onOpenConversation={ctrl.handleSelectConversation}
           onOpenNotification={ctrl.handleOpenNotification}
+          onMarkAllAsRead={ctrl.handleMarkAllNotificationsRead}
+          onDeleteNotification={ctrl.handleDeleteNotification}
+          onClearAllNotifications={ctrl.handleClearAllNotifications}
         />
         {renderCallOverlay()}
         {renderConfirmDialog()}
