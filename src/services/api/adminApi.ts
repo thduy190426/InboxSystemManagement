@@ -262,3 +262,53 @@ export function deleteUser(userId: string) {
     i18n.t('api.error', { defaultValue: 'Không thể xóa người dùng!' }),
   )
 }
+
+export type AdminUserSession = {
+  id: number
+  deviceName: string
+  ipAddress: string
+  userAgent: string
+  createdAt: string
+  updatedAt: string
+  expiresAt: string
+  revokedAt: string | null
+  isActive: boolean
+}
+
+export type AdminUserDetail = {
+  user: AdminUser
+  twoFactorEnabled: boolean
+  stats: {
+    conversationsCount: number
+    messagesCount: number
+  }
+  sessions: AdminUserSession[]
+}
+
+export type AdminAuditLog = {
+  id: number
+  adminId: string
+  adminName: string
+  action: string
+  targetType: string
+  targetId: string | null
+  details: string | null
+  ipAddress: string | null
+  createdAt: string
+}
+
+export function fetchAdminUserDetails(userId: string) {
+  return requestJson<AdminUserDetail>(
+    `/admin/users/${encodeURIComponent(userId)}/details`,
+    {},
+    i18n.t('api.error', { defaultValue: 'Không thể tải chi tiết người dùng!' }),
+  )
+}
+
+export function fetchAdminAuditLogs() {
+  return requestJson<{ logs: AdminAuditLog[] }>(
+    '/admin/audit-logs',
+    {},
+    i18n.t('api.error', { defaultValue: 'Không thể tải nhật ký hoạt động!' }),
+  )
+}
