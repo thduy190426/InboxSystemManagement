@@ -24,19 +24,19 @@
 - Modify: `backend/src/controllers/system/admin.controller.js`
 - Modify: `backend/src/routes/system/admin.routes.js`
 
-- [ ] **Step 1: Update `getAdminStats` to support `timeFilter`**
+- [x] **Step 1: Update `getAdminStats` to support `timeFilter`**
 Update `getAdminStats` to read `request.query.timeFilter` (`7days` default is 7 days, `30days` is 30 days, `all` is 90 days), build appropriate date ranges and day maps.
-- [ ] **Step 2: Implement `getAdminUserDetails` in `admin.controller.js`**
+- [x] **Step 2: Implement `getAdminUserDetails` in `admin.controller.js`**
 Query target user row (`two_factor_enabled`, `last_login`, role, status), `user_sessions` (active devices, IP, user_agent, created_at, expires_at, revoked_at), count of joined conversations from `conversation_participants`, and count of sent messages from `messages`.
-- [ ] **Step 3: Implement `ensureAdminAuditLogsTable`, `logAdminAction`, and `getAdminAuditLogs`**
+- [x] **Step 3: Implement `ensureAdminAuditLogsTable`, `logAdminAction`, and `getAdminAuditLogs`**
 Create `admin_audit_logs` table if not exists. Add helper `logAdminAction(adminUser, action, targetType, targetId, details, req)`. Call `logAdminAction` inside `lockAdminUser`, `unlockAdminUser`, `deleteAdminUser`, `updateAdminUser`, and `updateMessageReport`.
-- [ ] **Step 4: Register routes in `admin.routes.js`**
+- [x] **Step 4: Register routes in `admin.routes.js`**
 Add:
 ```javascript
 router.get('/users/:id/details', getAdminUserDetails)
 router.get('/audit-logs', getAdminAuditLogs)
 ```
-- [ ] **Step 5: Verify backend syntax & commit**
+- [x] **Step 5: Verify backend syntax & commit**
 Run node syntax check on `backend/src/controllers/system/admin.controller.js`.
 Commit changes to git.
 
@@ -49,12 +49,12 @@ Commit changes to git.
 - Modify: `src/locales/vi.json`
 - Modify: `src/locales/en.json`
 
-- [ ] **Step 1: Add Types and API functions in `adminApi.ts`**
+- [x] **Step 1: Add Types and API functions in `adminApi.ts`**
 Add `AdminUserSession`, `AdminUserDetail`, `AdminAuditLog` types.
 Export `fetchAdminUserDetails(userId: string): Promise<AdminUserDetail>`.
 Export `fetchAdminAuditLogs(): Promise<AdminAuditLog[]>`.
 Verify `fetchAdminStats(timeFilter?: string)` forwards `timeFilter` properly.
-- [ ] **Step 2: Add localization keys in `vi.json` and `en.json`**
+- [x] **Step 2: Add localization keys in `vi.json` and `en.json`**
 Add translations for tabs:
 - `tabDashboard`: "Tổng quan & Biểu đồ"
 - `tabUsers`: "Quản lý người dùng"
@@ -78,8 +78,8 @@ Add translations for Audit tab:
 - `colTarget`: "Đối tượng"
 - `colDetails`: "Chi tiết"
 - `colTime`: "Thời gian"
-- [ ] **Step 3: Run `npm run build` to verify types**
-- [ ] **Step 4: Commit**
+- [x] **Step 3: Run `npm run build` to verify types**
+- [x] **Step 4: Commit**
 `git commit -m "feat(admin): add admin user details, audit log API and i18n keys"`
 
 ---
@@ -90,7 +90,7 @@ Add translations for Audit tab:
 - Create: `src/components/views/admin/AdminUserDrawer.tsx`
 - Modify: `src/components/views/admin/AdminUsersTab.tsx`
 
-- [ ] **Step 1: Create `AdminUserDrawer.tsx`**
+- [x] **Step 1: Create `AdminUserDrawer.tsx`**
 Implement slide-over drawer with:
 - Backdrop overlay with blur.
 - Close button (`X`) and `Escape` key listener.
@@ -101,11 +101,11 @@ Implement slide-over drawer with:
   2. Security & 2FA (2FA status badge, password security info).
   3. Login sessions & Devices (list of sessions from `user_sessions` with device name, IP, user-agent, status).
 - Action buttons in drawer footer (Edit profile, Lock/Unlock account, Delete account).
-- [ ] **Step 2: Update `AdminUsersTab.tsx` for row selection**
+- [x] **Step 2: Update `AdminUsersTab.tsx` for row selection**
 - Accept `onSelectUser?: (user: AdminUser) => void` in `Props`.
 - Add `onClick={() => onSelectUser?.(user)}` to `<tr className="admin-user-row clickable">`.
 - In checkbox cell and action buttons cell, add `e.stopPropagation()` on clicks to prevent triggering the drawer when selecting checkboxes or clicking edit/lock/delete.
-- [ ] **Step 3: Test build & commit**
+- [x] **Step 3: Test build & commit**
 Run `npm run build`.
 `git commit -m "feat(admin): create AdminUserDrawer and connect user row click"`
 
@@ -117,19 +117,19 @@ Run `npm run build`.
 - Create: `src/components/views/admin/AdminAuditLogsTab.tsx`
 - Modify: `src/components/views/admin/AdminCharts.tsx`
 
-- [ ] **Step 1: Create `AdminAuditLogsTab.tsx`**
+- [x] **Step 1: Create `AdminAuditLogsTab.tsx`**
 - Fetch audit logs from `fetchAdminAuditLogs()`.
 - Filter logs by action type (All, Lock, Unlock, Role Change, Delete, Report Review).
 - Search logs by admin name or target user.
 - Export audit logs to CSV.
 - System Settings quick toggles (Maintenance mode, Allow registration, Auto moderation) with toast notifications.
-- [ ] **Step 2: Update chart subtitles in `AdminCharts.tsx`**
+- [x] **Step 2: Update chart subtitles in `AdminCharts.tsx`**
 - Accept `timeFilter?: string` in chart props.
 - Display dynamic period label:
   - `7days`: "7 ngày qua"
   - `30days`: "30 ngày qua"
   - `all`: "Toàn bộ thời gian (90 ngày)"
-- [ ] **Step 3: Test build & commit**
+- [x] **Step 3: Test build & commit**
 Run `npm run build`.
 `git commit -m "feat(admin): add AdminAuditLogsTab and dynamic chart time subtitles"`
 
@@ -140,25 +140,25 @@ Run `npm run build`.
 **Files:**
 - Modify: `src/components/views/AdminPage.tsx`
 
-- [ ] **Step 1: Wire tab query parameter in `AdminPage.tsx`**
+- [x] **Step 1: Wire tab query parameter in `AdminPage.tsx`**
 - Read initial `tab` query param (`dashboard` | `users` | `moderation` | `audit`, default: `dashboard`).
 - Update URL query when switching tabs without full page reload.
 - Listen to `popstate` to handle browser back/forward navigation.
-- [ ] **Step 2: Fix `timeFilter` propagation**
+- [x] **Step 2: Fix `timeFilter` propagation**
 - In `refreshStats()`: pass `timeFilter` parameter (`fetchAdminStats(timeFilter)`).
 - Provide `timeFilter` selector in Dashboard tab header.
-- [ ] **Step 3: Render tab navigation bar**
+- [x] **Step 3: Render tab navigation bar**
 Render clean tab nav bar:
 - `📊 Dashboard`
 - `👥 Users`
 - `🛡️ Moderation` (with badge if `stats.alertCount > 0`)
 - `📝 Audit Logs`
-- [ ] **Step 4: Partition content into the 4 tabs**
+- [x] **Step 4: Partition content into the 4 tabs**
 - Tab 1 (`dashboard`): Stat cards + 5 Charts with dynamic timeFilter.
 - Tab 2 (`users`): `AdminUsersTab` + `AdminUserDrawer`.
 - Tab 3 (`moderation`): `ModerationPanel` + Message Reports list.
 - Tab 4 (`audit`): `AdminAuditLogsTab`.
-- [ ] **Step 5: Test build & commit**
+- [x] **Step 5: Test build & commit**
 Run `npm run build`.
 `git commit -m "refactor(admin): split AdminPage into 4 tabs and fix timeFilter propagation"`
 
@@ -169,16 +169,16 @@ Run `npm run build`.
 **Files:**
 - Modify: `src/style.css`
 
-- [ ] **Step 1: Style Admin Navigation Tabs (`.admin-nav-tabs`)**
+- [x] **Step 1: Style Admin Navigation Tabs (`.admin-nav-tabs`)**
 - Modern pill/segmented buttons with active indicator, smooth hover transitions, and badge counts.
-- [ ] **Step 2: Style Slide-over Drawer (`.admin-drawer-*`)**
+- [x] **Step 2: Style Slide-over Drawer (`.admin-drawer-*`)**
 - Fixed right position, `z-index: 1050`, slide-in animation from `translateX(100%)` to `translateX(0)`.
 - Backdrop with `backdrop-filter: blur(4px)`.
 - Device session cards with icons, IP tags, and status pills.
 - Responsive styles for mobile screen sizes (full width on small screens).
-- [ ] **Step 3: Style Audit Logs Table & Settings Grid**
+- [x] **Step 3: Style Audit Logs Table & Settings Grid**
 - Action badges, filter toolbar, responsive table overflow.
-- [ ] **Step 4: Test build & commit**
+- [x] **Step 4: Test build & commit**
 Run `npm run build`.
 `git commit -m "style(admin): add styles for admin tabs, user detail drawer, and audit logs"`
 
@@ -186,13 +186,13 @@ Run `npm run build`.
 
 ### Task 7: Full Verification & Final Review
 
-- [ ] **Step 1: Build & lint verification**
+- [x] **Step 1: Build & lint verification**
 Run `npm run build` and ensure exit code 0.
-- [ ] **Step 2: Test tab switching and URL persistence**
+- [x] **Step 2: Test tab switching and URL persistence**
 Verify navigation between Dashboard, Users, Moderation, and Audit tabs. Verify URL query update.
-- [ ] **Step 3: Test timeFilter updating charts**
+- [x] **Step 3: Test timeFilter updating charts**
 Verify selecting 7 days, 30 days, or all updates chart data and subtitles.
-- [ ] **Step 4: Test User Drawer interaction**
+- [x] **Step 4: Test User Drawer interaction**
 Verify clicking user opens drawer, sessions and 2FA load, action buttons work.
-- [ ] **Step 5: Final git commit and push**
+- [x] **Step 5: Final git commit and push**
 Push all commits to `origin main`.
