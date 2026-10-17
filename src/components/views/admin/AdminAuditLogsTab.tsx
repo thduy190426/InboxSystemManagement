@@ -65,7 +65,7 @@ export function AdminAuditLogsTab({ pushToast }: AdminAuditLogsTabProps) {
   }, [])
 
   const handleToggle = (
-    key: 'maintenance' | 'registration' | 'moderation',
+    _key: 'maintenance' | 'registration' | 'moderation',
     currentVal: boolean,
     setter: (val: boolean) => void,
     storageKey: string,

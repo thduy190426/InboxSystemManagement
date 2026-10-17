@@ -1,6 +1,8 @@
 import { USER_ROLES, USER_STATUSES, USER_GENDERS, type UserGenderFilter, formatNumber, getErrorMessage, formatReportTime, getReportStatusLabel, getStatusLabel, getGenderLabel } from './admin/AdminUtils';
 import { AdminUsersTab } from './admin/AdminUsersTab';
-import { TrendLineChart, DistributionChart } from './admin/AdminCharts';
+import { TrendLineChart, DistributionChart, getTimeSubtitle } from './admin/AdminCharts';
+import { AdminUserDrawer } from './admin/AdminUserDrawer';
+import { AdminAuditLogsTab } from './admin/AdminAuditLogsTab';
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ModerationPanel } from '../panels/ModerationPanel'
 import {
@@ -27,6 +29,7 @@ import {
   XCircle,
   Download,
   Filter,
+  FileText,
 } from 'lucide-react'
 import { exportToCSV } from '../../utils/exportUtils'
 import {
@@ -75,6 +78,10 @@ type CreateUserState = {
 const USER_PAGE_SIZE = 20
 const REPORT_PAGE_SIZE = 10
 const EDIT_EXIT_DURATION_MS = 140
+
+export type AdminTab = 'dashboard' | 'users' | 'moderation' | 'audit'
+const ADMIN_TABS: AdminTab[] = ['dashboard', 'users', 'moderation', 'audit']
+
 const REPORT_STATUSES: Array<MessageReportStatus | 'all'> = ['pending', 'reviewed', 'dismissed', 'all']
 
 const emptyStats: AdminStats = {
@@ -112,6 +119,7 @@ function createEditState(user: AdminUser): EditUserState {
 
 function readAdminQueryParams() {
   const params = new URLSearchParams(window.location.search)
+  const tabParam = params.get('tab') as AdminTab | null
   const pageParam = Number(params.get('page'))
   const reportStatusParam = params.get('reportStatus') as MessageReportStatus | 'all' | null
   const roleParam = params.get('role') as AdminUserRole | 'all' | null
@@ -119,6 +127,7 @@ function readAdminQueryParams() {
   const genderParam = params.get('gender') as UserGenderFilter | null
 
   return {
+    tab: tabParam && ADMIN_TABS.includes(tabParam) ? tabParam : ('dashboard' as AdminTab),
     page: Number.isInteger(pageParam) && pageParam > 0 ? pageParam : 1,
     search: params.get('search')?.trim() ?? '',
     reportStatus: reportStatusParam && REPORT_STATUSES.includes(reportStatusParam)
@@ -131,6 +140,7 @@ function readAdminQueryParams() {
 }
 
 function updateAdminQueryParams(params: {
+  tab: AdminTab
   page: number
   search: string
   reportStatus: MessageReportStatus | 'all'
@@ -143,6 +153,10 @@ function updateAdminQueryParams(params: {
   }
 
   const query = new URLSearchParams()
+
+  if (params.tab && params.tab !== 'dashboard') {
+    query.set('tab', params.tab)
+  }
 
   if (params.search) {
     query.set('search', params.search)
@@ -178,6 +192,9 @@ function updateAdminQueryParams(params: {
 export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
   const { t } = useTranslation('admin')
   const initialQueryParams = readAdminQueryParams()
+  const [activeTab, setActiveTab] = useState<AdminTab>(initialQueryParams.tab)
+  const [selectedDetailUser, setSelectedDetailUser] = useState<AdminUser | null>(null)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [timeFilter, setTimeFilter] = useState('30days')
   const [searchQuery, setSearchQuery] = useState(initialQueryParams.search)
   const [debouncedSearch, setDebouncedSearch] = useState(initialQueryParams.search)
@@ -246,6 +263,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
       const params = readAdminQueryParams()
 
       suppressSearchEffectRef.current = true
+      setActiveTab(params.tab)
       setSearchQuery(params.search)
       setDebouncedSearch(params.search)
       setPage(params.page)
@@ -303,6 +321,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
 
   useEffect(() => {
     updateAdminQueryParams({
+      tab: activeTab,
       page,
       reportStatus,
       search: debouncedSearch,
@@ -310,7 +329,7 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
       status: statusFilter,
       gender: genderFilter,
     })
-  }, [debouncedSearch, genderFilter, page, reportStatus, roleFilter, statusFilter])
+  }, [activeTab, debouncedSearch, genderFilter, page, reportStatus, roleFilter, statusFilter])
 
   useEffect(() => {
     setSelectedUserIds(new Set())
@@ -873,172 +892,265 @@ export function AdminPage({ currentUser, pushToast }: AdminPageProps) {
 
       {pageError ? <div className="admin-error-message">{pageError}</div> : null}
 
-      <div className="admin-dashboard-cards">
-        <div className="stat-card">
-          <div className="stat-icon users-icon"><Users size={24} /></div>
-          <div className="stat-info">
-            <h3>{t('totalUsersTitle')}</h3>
-            <p className="stat-value">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '80px', height: '28px', marginTop: '4px' }}></div> : formatNumber(stats.totalUsers)}</p>
-            <span className="stat-trend positive">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '120px', height: '14px', marginTop: '4px' }}></div> : t('suspendedCount', { count: formatNumber(stats.suspendedUsers) })}</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon active-icon"><CheckCircle2 size={24} /></div>
-          <div className="stat-info">
-            <h3>{t('unlockedUsersTitle')}</h3>
-            <p className="stat-value">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '80px', height: '28px', marginTop: '4px' }}></div> : formatNumber(stats.activeUsers)}</p>
-            <span className="stat-trend positive">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '100px', height: '14px', marginTop: '4px' }}></div> : t('unlockedStatusSubtitle', { defaultValue: 'Hoạt động bình thường' })}</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon alert-icon"><AlertCircle size={24} /></div>
-          <div className="stat-info">
-            <h3>{t('systemAlertsTitle')}</h3>
-            <p className="stat-value">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '80px', height: '28px', marginTop: '4px' }}></div> : formatNumber(stats.alertCount)}</p>
-            <span className="stat-trend negative">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '60px', height: '14px', marginTop: '4px' }}></div> : t('needsAction')}</span>
-          </div>
-        </div>
-      </div>
 
-      <div className="admin-chart-grid">
-        <section className="admin-chart-panel admin-chart-panel-wide">
-          <div className="admin-chart-header">
-            <div>
-              <h2>
-                <BarChart3 size={18} />
-                {t('newUsersLabel')}
-              </h2>
-              <p>{t('last7DaysLabel')}</p>
+      {/* Admin 4 Navigation Tabs */}
+      <nav className="admin-nav-tabs" aria-label="Admin Navigation Tabs">
+        <button
+          type="button"
+          className={`admin-nav-tab ${activeTab === 'dashboard' ? 'active' : ''}`}
+          onClick={() => setActiveTab('dashboard')}
+        >
+          <BarChart3 size={17} />
+          <span>{t('tabDashboard')}</span>
+        </button>
+
+        <button
+          type="button"
+          className={`admin-nav-tab ${activeTab === 'users' ? 'active' : ''}`}
+          onClick={() => setActiveTab('users')}
+        >
+          <Users size={17} />
+          <span>{t('tabUsers')}</span>
+          {stats.totalUsers > 0 && (
+            <span className="admin-tab-count-badge">{formatNumber(stats.totalUsers)}</span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          className={`admin-nav-tab ${activeTab === 'moderation' ? 'active' : ''}`}
+          onClick={() => setActiveTab('moderation')}
+        >
+          <Flag size={17} />
+          <span>{t('tabModeration')}</span>
+          {stats.alertCount > 0 && (
+            <span className="admin-tab-alert-badge">{stats.alertCount}</span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          className={`admin-nav-tab ${activeTab === 'audit' ? 'active' : ''}`}
+          onClick={() => setActiveTab('audit')}
+        >
+          <FileText size={17} />
+          <span>{t('tabAudit')}</span>
+        </button>
+      </nav>
+
+      {/* Tab 1: Dashboard & Charts */}
+      {activeTab === 'dashboard' && (
+        <div className="admin-tab-pane admin-tab-dashboard">
+          <div className="admin-dashboard-cards">
+            <div className="stat-card">
+              <div className="stat-icon users-icon"><Users size={24} /></div>
+              <div className="stat-info">
+                <h3>{t('totalUsersTitle')}</h3>
+                <p className="stat-value">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '80px', height: '28px', marginTop: '4px' }}></div> : formatNumber(stats.totalUsers)}</p>
+                <span className="stat-trend positive">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '120px', height: '14px', marginTop: '4px' }}></div> : t('suspendedCount', { count: formatNumber(stats.suspendedUsers) })}</span>
+              </div>
             </div>
-            <strong>{formatNumber(stats.userGrowth.reduce((sum, point) => sum + point.value, 0))}</strong>
-          </div>
-          <TrendLineChart t={t} data={stats.userGrowth} isLoading={isStatsLoading} tone="primary" />
-        </section>
-
-        <section className="admin-chart-panel admin-chart-panel-wide">
-          <div className="admin-chart-header">
-            <div>
-              <h2>
-                <MessageSquare size={18} />
-                {t('messageVolumeLabel')}
-              </h2>
-              <p>{t('last7DaysLabel')}</p>
+            <div className="stat-card">
+              <div className="stat-icon active-icon"><CheckCircle2 size={24} /></div>
+              <div className="stat-info">
+                <h3>{t('unlockedUsersTitle')}</h3>
+                <p className="stat-value">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '80px', height: '28px', marginTop: '4px' }}></div> : formatNumber(stats.activeUsers)}</p>
+                <span className="stat-trend positive">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '100px', height: '14px', marginTop: '4px' }}></div> : t('unlockedStatusSubtitle', { defaultValue: 'Hoạt động bình thường' })}</span>
+              </div>
             </div>
-            <strong>{formatNumber(stats.messageVolume.reduce((sum, point) => sum + point.value, 0))}</strong>
-          </div>
-          <TrendLineChart t={t} data={stats.messageVolume} isLoading={isStatsLoading} tone="blue" />
-        </section>
-
-        <section className="admin-chart-panel">
-          <div className="admin-chart-header">
-            <div>
-              <h2>
-                <PieChart size={18} />
-                {t('roleDistributionTitle')}
-              </h2>
-              <p>{t('userDistributionLabel')}</p>
-            </div>
-          </div>
-          <DistributionChart t={t} data={stats.roleDistribution} isLoading={isStatsLoading} tone="primary" />
-        </section>
-
-        <section className="admin-chart-panel">
-          <div className="admin-chart-header">
-            <div>
-              <h2>
-                <AlertCircle size={18} />
-                {t('reportStatusTitle')}
-              </h2>
-              <p>{t('allReportsLabel')}</p>
+            <div className="stat-card">
+              <div className="stat-icon alert-icon"><AlertCircle size={24} /></div>
+              <div className="stat-info">
+                <h3>{t('systemAlertsTitle')}</h3>
+                <p className="stat-value">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '80px', height: '28px', marginTop: '4px' }}></div> : formatNumber(stats.alertCount)}</p>
+                <span className="stat-trend negative">{isStatsLoading ? <div className="skeleton skeleton-text" style={{ width: '60px', height: '14px', marginTop: '4px' }}></div> : t('needsAction')}</span>
+              </div>
             </div>
           </div>
-          <DistributionChart t={t} data={stats.reportStatusDistribution} isLoading={isStatsLoading} tone="orange" />
-        </section>
 
-        <section className="admin-chart-panel">
-          <div className="admin-chart-header">
-            <div>
+          <div className="admin-chart-grid">
+            <section className="admin-chart-panel admin-chart-panel-wide">
+              <div className="admin-chart-header">
+                <div>
+                  <h2>
+                    <BarChart3 size={18} />
+                    {t('newUsersLabel')}
+                  </h2>
+                  <p>{getTimeSubtitle(timeFilter, t)}</p>
+                </div>
+                <strong>{formatNumber(stats.userGrowth.reduce((sum, point) => sum + point.value, 0))}</strong>
+              </div>
+              <TrendLineChart t={t} data={stats.userGrowth} isLoading={isStatsLoading} tone="primary" />
+            </section>
+
+            <section className="admin-chart-panel admin-chart-panel-wide">
+              <div className="admin-chart-header">
+                <div>
+                  <h2>
+                    <MessageSquare size={18} />
+                    {t('messageVolumeLabel')}
+                  </h2>
+                  <p>{getTimeSubtitle(timeFilter, t)}</p>
+                </div>
+                <strong>{formatNumber(stats.messageVolume.reduce((sum, point) => sum + point.value, 0))}</strong>
+              </div>
+              <TrendLineChart t={t} data={stats.messageVolume} isLoading={isStatsLoading} tone="blue" />
+            </section>
+
+            <section className="admin-chart-panel">
+              <div className="admin-chart-header">
+                <div>
+                  <h2>
+                    <PieChart size={18} />
+                    {t('roleDistributionTitle')}
+                  </h2>
+                  <p>{t('userDistributionLabel')}</p>
+                </div>
+              </div>
+              <DistributionChart t={t} data={stats.roleDistribution} isLoading={isStatsLoading} tone="primary" />
+            </section>
+
+            <section className="admin-chart-panel">
+              <div className="admin-chart-header">
+                <div>
+                  <h2>
+                    <AlertCircle size={18} />
+                    {t('reportStatusTitle')}
+                  </h2>
+                  <p>{t('allReportsLabel')}</p>
+                </div>
+              </div>
+              <DistributionChart t={t} data={stats.reportStatusDistribution} isLoading={isStatsLoading} tone="orange" />
+            </section>
+
+            <section className="admin-chart-panel">
+              <div className="admin-chart-header">
+                <div>
+                  <h2>
+                    <Users size={18} />
+                    {t('conversationTypesTitle')}
+                  </h2>
+                  <p>{t('conversationTypesLabel')}</p>
+                </div>
+              </div>
+              <DistributionChart t={t} data={stats.conversationDistribution} isLoading={isStatsLoading} tone="blue" />
+            </section>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 2: User Management */}
+      {activeTab === 'users' && (
+        <div className="admin-tab-pane admin-tab-users">
+          <AdminUsersTab 
+            users={users}
+            isUsersLoading={isUsersLoading}
+            selectedUsers={selectedUsers}
+            selectedUserIds={selectedUserIds}
+            selectableUserIds={selectableUserIds}
+            isAllCurrentPageSelected={isAllCurrentPageSelected}
+            roleFilter={roleFilter}
+            statusFilter={statusFilter}
+            genderFilter={genderFilter}
+            hasUserFilters={hasUserFilters}
+            pagination={pagination}
+            page={page}
+            busyBulkAction={busyBulkAction}
+            busyLockUserId={busyLockUserId}
+            debouncedSearch={debouncedSearch}
+            setRoleFilter={setRoleFilter}
+            setStatusFilter={setStatusFilter}
+            setGenderFilter={setGenderFilter}
+            setPage={setPage}
+            refreshUsers={refreshUsers}
+            handleExportUsers={handleExportUsers}
+            setCreateUser={setCreateUser}
+            emptyCreateUser={emptyCreateUser}
+            handleUserFilterChange={handleUserFilterChange}
+            openBulkLockDialog={openBulkLockDialog}
+            openBulkDeleteDialog={openBulkDeleteDialog}
+            toggleCurrentPageSelection={toggleCurrentPageSelection}
+            toggleUserSelection={toggleUserSelection}
+            setEditUser={setEditUser}
+            createEditState={createEditState}
+            openLockDialog={openLockDialog}
+            openDeleteDialog={openDeleteDialog}
+            isLoading={isLoading}
+            t={t}
+            formatNumber={formatNumber}
+            onSelectUser={(u) => {
+              setSelectedDetailUser(u)
+              setIsDrawerOpen(true)
+            }}
+          />
+        </div>
+      )}
+
+      {/* Tab 3: Moderation & Message Reports */}
+      {activeTab === 'moderation' && (
+        <div className="admin-tab-pane admin-tab-moderation">
+          <ModerationPanel pushToast={pushToast} />
+
+          <div className="admin-content-section message-report-section" style={{ marginTop: '24px' }}>
+            <div className="section-header">
               <h2>
-                <Users size={18} />
-                {t('conversationTypesTitle')}
+                <Flag size={18} />
+                {t('messageReportsSection')}
               </h2>
-              <p>{t('conversationTypesLabel')}</p>
+              <div className="report-toolbar">
+                <select
+                  value={reportStatus}
+                  onChange={(event) => setReportStatus(event.target.value as MessageReportStatus | 'all')}
+                >
+                  <option value="pending">{t('filterPending')}</option>
+                  <option value="reviewed">{t('filterReviewed')}</option>
+                  <option value="dismissed">{t('filterDismissed')}</option>
+                  <option value="all">{t('filterAll')}</option>
+                </select>
+                <button className="btn-secondary" disabled={isReportsLoading} onClick={handleExportReports} type="button" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--surface-hover)', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', color: 'var(--text)', cursor: 'pointer' }}>
+                  <Download size={15} />
+                  {t('exportCSVBtn')}
+                </button>
+                <button disabled={isReportsLoading} onClick={() => void refreshReports()} type="button">
+                  {isReportsLoading ? <Loader2 size={15} /> : <Flag size={15} />}
+                  {t('refreshBtn')}
+                </button>
+              </div>
+            </div>
+            <div className="message-report-list">
+              {reportsContent}
             </div>
           </div>
-          <DistributionChart t={t} data={stats.conversationDistribution} isLoading={isStatsLoading} tone="blue" />
-        </section>
-      </div>
-
-      <ModerationPanel pushToast={pushToast} />
-
-      <div className="admin-content-section message-report-section">
-        <div className="section-header">
-          <h2>
-            <Flag size={18} />
-            {t('messageReportsSection')}
-          </h2>
-          <div className="report-toolbar">
-            <select
-              value={reportStatus}
-              onChange={(event) => setReportStatus(event.target.value as MessageReportStatus | 'all')}
-            >
-              <option value="pending">{t('filterPending')}</option>
-              <option value="reviewed">{t('filterReviewed')}</option>
-              <option value="dismissed">{t('filterDismissed')}</option>
-              <option value="all">{t('filterAll')}</option>
-            </select>
-            <button className="btn-secondary" disabled={isReportsLoading} onClick={handleExportReports} type="button" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--surface-hover)', padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', color: 'var(--text)', cursor: 'pointer' }}>
-              <Download size={15} />
-              {t('exportCSVBtn')}
-            </button>
-            <button disabled={isReportsLoading} onClick={() => void refreshReports()} type="button">
-              {isReportsLoading ? <Loader2 size={15} /> : <Flag size={15} />}
-              {t('refreshBtn')}
-            </button>
-          </div>
         </div>
-        <div className="message-report-list">
-          {reportsContent}
-        </div>
-      </div>
+      )}
 
-      <AdminUsersTab 
-        users={users}
-        isUsersLoading={isUsersLoading}
-        selectedUsers={selectedUsers}
-        selectedUserIds={selectedUserIds}
-        selectableUserIds={selectableUserIds}
-        isAllCurrentPageSelected={isAllCurrentPageSelected}
-        roleFilter={roleFilter}
-        statusFilter={statusFilter}
-        genderFilter={genderFilter}
-        hasUserFilters={hasUserFilters}
-        pagination={pagination}
-        page={page}
-        busyBulkAction={busyBulkAction}
-        busyLockUserId={busyLockUserId}
-        debouncedSearch={debouncedSearch}
-        setRoleFilter={setRoleFilter}
-        setStatusFilter={setStatusFilter}
-        setGenderFilter={setGenderFilter}
-        setPage={setPage}
-        refreshUsers={refreshUsers}
-        handleExportUsers={handleExportUsers}
-        setCreateUser={setCreateUser}
-        emptyCreateUser={emptyCreateUser}
-        handleUserFilterChange={handleUserFilterChange}
-        openBulkLockDialog={openBulkLockDialog}
-        openBulkDeleteDialog={openBulkDeleteDialog}
-        toggleCurrentPageSelection={toggleCurrentPageSelection}
-        toggleUserSelection={toggleUserSelection}
-        setEditUser={setEditUser}
-        createEditState={createEditState}
-        openLockDialog={openLockDialog}
-        openDeleteDialog={openDeleteDialog}
-        isLoading={isLoading}
-        t={t}
-        formatNumber={formatNumber}
+      {/* Tab 4: Audit Logs & Settings */}
+      {activeTab === 'audit' && (
+        <div className="admin-tab-pane admin-tab-audit">
+          <AdminAuditLogsTab pushToast={pushToast} />
+        </div>
+      )}
+
+      {/* User Detail Drawer */}
+      <AdminUserDrawer
+        isOpen={isDrawerOpen}
+        user={selectedDetailUser}
+        onClose={() => {
+          setIsDrawerOpen(false)
+          setSelectedDetailUser(null)
+        }}
+        onEditUser={(u) => {
+          setEditUser(createEditState(u))
+        }}
+        onLockUser={(u) => {
+          openLockDialog(u)
+        }}
+        onDeleteUser={(u) => {
+          openDeleteDialog(u)
+        }}
+        isLockBusy={busyLockUserId === selectedDetailUser?.id}
       />
+
 
       {createUser ? (
         <div className="admin-edit-backdrop" role="presentation">
