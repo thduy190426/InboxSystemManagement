@@ -16106,6 +16106,9 @@ input.sr-only {
 }
 
 .followers-subtab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   padding: 8px 18px;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.05);
