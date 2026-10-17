@@ -29,7 +29,7 @@ function mapNotification(row) {
       : null,
     conversationId: row.conversation_id ? String(row.conversation_id) : null,
     messageId: row.message_id ? String(row.message_id) : null,
-    conversationName: row.conversation_title || row.direct_name || 'Hội thoại',
+    conversationName: row.conversation_title || row.direct_name || (row.conversation_id ? 'Hội thoại' : null),
     conversationAvatar: row.conversation_avatar_url || row.direct_avatar_url || null,
   }
 }

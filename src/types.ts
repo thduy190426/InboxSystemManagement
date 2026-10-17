@@ -77,7 +77,7 @@ export type AppNotification = {
   } | null
   conversationId: string | null
   messageId: string | null
-  conversationName: string
+  conversationName: string | null
   conversationAvatar: string | null
 }
 

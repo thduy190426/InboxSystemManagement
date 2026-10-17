@@ -65,6 +65,72 @@ function NotificationSection({ icon, title, count, emptyText, children }: Notifi
   )
 }
 
+function formatNotificationDisplay(
+  notification: AppNotification,
+  t: (key: string, options?: Record<string, unknown>) => string,
+) {
+  let actorName = notification.actor?.fullName?.trim() || ''
+  if (!actorName && notification.title) {
+    const match = notification.title.match(
+      /^(.*?)(?:\s+(?:đã gửi lời mời kết bạn!|sent you a friend request!|đã nhắc đến bạn!|mentioned you!|đã thả cảm xúc vào tin nhắn!|reacted to your message!))/i,
+    )
+    if (match && match[1]) {
+      actorName = match[1].trim()
+    }
+  }
+
+  const isContactReq =
+    notification.type === 'contact_request' ||
+    /đã gửi lời mời kết bạn|sent you a friend request/i.test(notification.title)
+
+  const isMention =
+    notification.type === 'mention' ||
+    /đã nhắc đến bạn|mentioned you/i.test(notification.title)
+
+  const isReaction =
+    notification.type === 'reaction' ||
+    /đã thả cảm xúc|reacted to/i.test(notification.title)
+
+  let title = notification.title
+  if (isContactReq) {
+    title = actorName ? t('contactRequestTitle', { name: actorName }) : t('friendRequestsTitle')
+  } else if (isMention) {
+    title = actorName ? t('mentionTitle', { name: actorName }) : t('mentionsTitle')
+  } else if (isReaction) {
+    title = actorName ? t('reactionTitle', { name: actorName }) : notification.title
+  }
+
+  let body = notification.body
+  if (
+    isContactReq ||
+    notification.body === 'Muốn kết bạn với bạn!' ||
+    notification.body === 'Muốn kết bạn với bạn' ||
+    !notification.body
+  ) {
+    if (isContactReq) {
+      body = t('wantsToConnect')
+    }
+  }
+
+  let category = ''
+  if (isContactReq) {
+    category = t('contactRequestNotificationLabel')
+  } else if (notification.conversationName && notification.conversationName !== 'Hội thoại') {
+    category = notification.conversationName
+  } else if (notification.conversationId || isMention) {
+    category = t('defaultConversation')
+  } else {
+    category = t('systemNotificationsTitle')
+  }
+
+  return {
+    actorName: actorName || notification.actor?.fullName || notification.conversationName || '?',
+    title,
+    body,
+    category,
+  }
+}
+
 export function NotificationsPanel({
   browserNotificationPermission,
   conversations,
@@ -98,13 +164,53 @@ export function NotificationsPanel({
   )
 
   const mentionNotifications = useMemo(
-    () => notifications.filter((n) => n.type === 'mention'),
+    () =>
+      notifications.filter(
+        (n) => n.type === 'mention' || /đã nhắc đến bạn|mentioned you/i.test(n.title),
+      ),
+    [notifications],
+  )
+
+  const contactRequestNotifications = useMemo(
+    () =>
+      notifications.filter(
+        (n) =>
+          n.type === 'contact_request' ||
+          /đã gửi lời mời kết bạn|sent you a friend request/i.test(n.title),
+      ),
+    [notifications],
+  )
+
+  const otherNotifications = useMemo(
+    () =>
+      notifications.filter(
+        (n) =>
+          n.type !== 'mention' &&
+          n.type !== 'contact_request' &&
+          !/đã nhắc đến bạn|mentioned you/i.test(n.title) &&
+          !/đã gửi lời mời kết bạn|sent you a friend request/i.test(n.title),
+      ),
     [notifications],
   )
 
   const unreadNotifications = useMemo(
     () => notifications.filter((n) => !n.readAt),
     [notifications],
+  )
+
+  const unreadMentionNotifications = useMemo(
+    () => mentionNotifications.filter((n) => !n.readAt),
+    [mentionNotifications],
+  )
+
+  const unreadContactRequestNotifications = useMemo(
+    () => contactRequestNotifications.filter((n) => !n.readAt),
+    [contactRequestNotifications],
+  )
+
+  const unreadOtherNotifications = useMemo(
+    () => otherNotifications.filter((n) => !n.readAt),
+    [otherNotifications],
   )
 
   const totalUnreadCount = totalUnreadMessages + unreadNotifications.length + friendRequests.length
@@ -114,7 +220,7 @@ export function NotificationsPanel({
     all: totalNotifications,
     unread: totalUnreadCount,
     messages: totalUnreadMessages + mentionNotifications.length,
-    requests: friendRequests.length,
+    requests: friendRequests.length + contactRequestNotifications.length,
   }
 
   async function handleResync() {
@@ -175,32 +281,104 @@ export function NotificationsPanel({
     }
   }
 
-  const displayedNotifications = useMemo(() => {
-    if (activeTab === 'unread') {
-      return unreadNotifications
-    }
-    if (activeTab === 'messages') {
-      return mentionNotifications
-    }
-    return notifications
-  }, [activeTab, unreadNotifications, mentionNotifications, notifications])
+  const displayedMentions = useMemo(
+    () => (activeTab === 'unread' ? unreadMentionNotifications : mentionNotifications),
+    [activeTab, unreadMentionNotifications, mentionNotifications],
+  )
+
+  const displayedContactRequests = useMemo(
+    () => (activeTab === 'unread' ? unreadContactRequestNotifications : contactRequestNotifications),
+    [activeTab, unreadContactRequestNotifications, contactRequestNotifications],
+  )
+
+  const displayedOtherNotifications = useMemo(
+    () => (activeTab === 'unread' ? unreadOtherNotifications : otherNotifications),
+    [activeTab, unreadOtherNotifications, otherNotifications],
+  )
 
   const showUnreadConversationsSection =
     (activeTab === 'all' || activeTab === 'unread' || activeTab === 'messages') &&
-    (unreadConversations.length > 0 || activeTab === 'messages')
+    unreadConversations.length > 0
 
-  const showNotificationsSection =
-    (activeTab === 'all' || activeTab === 'unread' || activeTab === 'messages')
+  const showMentionsSection =
+    (activeTab === 'all' || activeTab === 'unread' || activeTab === 'messages') &&
+    displayedMentions.length > 0
 
   const showRequestsSection =
     (activeTab === 'all' || activeTab === 'unread' || activeTab === 'requests') &&
-    (friendRequests.length > 0 || activeTab === 'requests')
+    (friendRequests.length > 0 || displayedContactRequests.length > 0)
+
+  const showOtherSection =
+    (activeTab === 'all' || activeTab === 'unread') &&
+    displayedOtherNotifications.length > 0
 
   const isCurrentTabEmpty =
     (activeTab === 'unread' && totalUnreadCount === 0) ||
     (activeTab === 'all' && totalNotifications === 0) ||
     (activeTab === 'messages' && unreadConversations.length === 0 && mentionNotifications.length === 0) ||
-    (activeTab === 'requests' && friendRequests.length === 0)
+    (activeTab === 'requests' && friendRequests.length === 0 && contactRequestNotifications.length === 0)
+
+  function handleNotificationClick(notification: AppNotification) {
+    onOpenNotification(notification)
+    if (
+      notification.type === 'contact_request' ||
+      /đã gửi lời mời kết bạn|sent you a friend request/i.test(notification.title)
+    ) {
+      onOpenContacts()
+    }
+  }
+
+  function renderNotificationRow(notification: AppNotification) {
+    const display = formatNotificationDisplay(notification, t)
+    return (
+      <div
+        className={`np-row${!notification.readAt ? ' np-row--unread' : ''}`}
+        key={notification.id}
+        onClick={() => handleNotificationClick(notification)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            handleNotificationClick(notification)
+          }
+        }}
+      >
+        <div className="np-row-avatar">
+          <AvatarFallback
+            name={display.actorName}
+            src={notification.actor?.avatarUrl || notification.conversationAvatar}
+          />
+          {!notification.readAt && <span className="np-unread-dot" />}
+        </div>
+        <div className="np-row-content">
+          <strong>{display.title}</strong>
+          <span>{display.body}</span>
+          <small>
+            {display.category}
+            {notification.time ? ` · ${notification.time}` : ''}
+          </small>
+        </div>
+        <div className="np-row-actions">
+          {!notification.readAt && (
+            <span className="np-badge" title={t('tabUnread')}>
+              1
+            </span>
+          )}
+          <button
+            className="np-row-delete-btn"
+            disabled={deletingId === notification.id}
+            onClick={(e) => handleDeleteItem(e, notification.id)}
+            title={t('deleteNotification')}
+            type="button"
+            aria-label={t('deleteNotification')}
+          >
+            <Trash2 size={14} className={deletingId === notification.id ? 'np-spin' : ''} />
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <section className="np-page" aria-labelledby="notifications-title">
@@ -400,56 +578,14 @@ export function NotificationsPanel({
             </NotificationSection>
           )}
 
-          {showNotificationsSection && (
+          {showMentionsSection && (
             <NotificationSection
               icon={<AtSign size={15} />}
-              title={activeTab === 'unread' ? t('tabUnread') : t('mentionsTitle')}
-              count={displayedNotifications.length}
+              title={t('mentionsTitle')}
+              count={displayedMentions.length}
               emptyText={t('mentionsEmpty')}
             >
-              {displayedNotifications.map((notification) => (
-                <div
-                  className={`np-row${!notification.readAt ? ' np-row--unread' : ''}`}
-                  key={notification.id}
-                  onClick={() => onOpenNotification(notification)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault()
-                      onOpenNotification(notification)
-                    }
-                  }}
-                >
-                  <div className="np-row-avatar">
-                    <AvatarFallback
-                      name={notification.actor?.fullName || notification.conversationName}
-                      src={notification.actor?.avatarUrl || notification.conversationAvatar}
-                    />
-                    {!notification.readAt && <span className="np-unread-dot" />}
-                  </div>
-                  <div className="np-row-content">
-                    <strong>{notification.title}</strong>
-                    <span>{notification.body}</span>
-                    <small>{notification.conversationName} · {notification.time}</small>
-                  </div>
-                  <div className="np-row-actions">
-                    {!notification.readAt && (
-                      <span className="np-badge" title={t('tabUnread')}>1</span>
-                    )}
-                    <button
-                      className="np-row-delete-btn"
-                      disabled={deletingId === notification.id}
-                      onClick={(e) => handleDeleteItem(e, notification.id)}
-                      title={t('deleteNotification')}
-                      type="button"
-                      aria-label={t('deleteNotification')}
-                    >
-                      <Trash2 size={14} className={deletingId === notification.id ? 'np-spin' : ''} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+              {displayedMentions.map((notification) => renderNotificationRow(notification))}
             </NotificationSection>
           )}
 
@@ -457,7 +593,7 @@ export function NotificationsPanel({
             <NotificationSection
               icon={<UserPlus size={15} />}
               title={t('friendRequestsTitle')}
-              count={friendRequests.length}
+              count={friendRequests.length + displayedContactRequests.length}
               emptyText={t('friendRequestsEmpty')}
             >
               {friendRequests.map((request) => (
@@ -478,6 +614,18 @@ export function NotificationsPanel({
                   <span className="np-badge">1</span>
                 </button>
               ))}
+              {displayedContactRequests.map((notification) => renderNotificationRow(notification))}
+            </NotificationSection>
+          )}
+
+          {showOtherSection && (
+            <NotificationSection
+              icon={<Bell size={15} />}
+              title={t('systemNotificationsTitle')}
+              count={displayedOtherNotifications.length}
+              emptyText={t('allEmpty')}
+            >
+              {displayedOtherNotifications.map((notification) => renderNotificationRow(notification))}
             </NotificationSection>
           )}
         </div>
@@ -515,7 +663,7 @@ export function NotificationsPanel({
                 <span className="np-step-number">1</span>
                 <div className="np-step-text">
                   <strong>{t('guideStep1')}</strong>
-                  <small>Kiểm tra quyền truy cập ở góc trái URL trình duyệt (bên cạnh tên miền web).</small>
+                  <small>{t('guideStep1Desc')}</small>
                 </div>
               </div>
 
@@ -523,7 +671,7 @@ export function NotificationsPanel({
                 <span className="np-step-number">2</span>
                 <div className="np-step-text">
                   <strong>{t('guideStep2')}</strong>
-                  <small>Đảm bảo trạng thái thông báo là &quot;Cho phép&quot; và trình duyệt không bật chế độ Không làm phiền.</small>
+                  <small>{t('guideStep2Desc')}</small>
                 </div>
               </div>
 
@@ -531,7 +679,7 @@ export function NotificationsPanel({
                 <span className="np-step-number">3</span>
                 <div className="np-step-text">
                   <strong>{t('guideStep3')}</strong>
-                  <small>Hệ thống sẽ tái kết nối Service Worker và gửi ngay một thông báo mẫu để xác nhận.</small>
+                  <small>{t('guideStep3Desc')}</small>
                 </div>
               </div>
             </div>

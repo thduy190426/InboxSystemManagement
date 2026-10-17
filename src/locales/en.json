@@ -193,7 +193,17 @@
     "deleteSuccess": "Notification deleted!",
     "deleteError": "Could not delete notification!",
     "clearAllSuccess": "All notifications cleared!",
-    "clearAllError": "Could not clear notifications!"
+    "clearAllError": "Could not clear notifications!",
+    "contactRequestTitle": "{{name}} sent you a friend request!",
+    "mentionTitle": "{{name}} mentioned you!",
+    "reactionTitle": "{{name}} reacted to your message!",
+    "defaultConversation": "Conversation",
+    "systemNotificationsTitle": "System notifications",
+    "activityTitle": "Activities & Requests",
+    "contactRequestNotificationLabel": "Friend Request",
+    "guideStep1Desc": "Check site permissions on the left side of the browser URL bar.",
+    "guideStep2Desc": "Ensure notifications are set to \"Allow\" and Do Not Disturb is off.",
+    "guideStep3Desc": "The system will reconnect the Service Worker and send a test notification to verify."
   },
   "profile": {
     "genderMale": "Male",

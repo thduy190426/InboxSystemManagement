@@ -193,7 +193,17 @@
     "deleteSuccess": "Đã xóa thông báo!",
     "deleteError": "Không thể xóa thông báo!",
     "clearAllSuccess": "Đã dọn dẹp toàn bộ thông báo!",
-    "clearAllError": "Không thể dọn dẹp thông báo!"
+    "clearAllError": "Không thể dọn dẹp thông báo!",
+    "contactRequestTitle": "{{name}} đã gửi lời mời kết bạn!",
+    "mentionTitle": "{{name}} đã nhắc đến bạn!",
+    "reactionTitle": "{{name}} đã thả cảm xúc vào tin nhắn!",
+    "defaultConversation": "Hội thoại",
+    "systemNotificationsTitle": "Thông báo hệ thống",
+    "activityTitle": "Hoạt động & Lời mời",
+    "contactRequestNotificationLabel": "Lời mời kết bạn",
+    "guideStep1Desc": "Kiểm tra quyền truy cập ở góc trái URL trình duyệt (bên cạnh tên miền web).",
+    "guideStep2Desc": "Đảm bảo trạng thái thông báo là \"Cho phép\" và trình duyệt không bật chế độ Không làm phiền.",
+    "guideStep3Desc": "Hệ thống sẽ tái kết nối Service Worker và gửi ngay một thông báo mẫu để xác nhận."
   },
   "profile": {
     "genderMale": "Nam",

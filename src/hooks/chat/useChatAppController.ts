@@ -1043,6 +1043,8 @@ export function useChatAppController({ currentUser, onLogout }: ChatAppProps) {
 
     if (notification.conversationId) {
       handleSelectConversation(notification.conversationId)
+    } else if (notification.type === 'contact_request') {
+      handleOpenContacts()
     }
   }
 
