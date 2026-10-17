@@ -2,7 +2,11 @@ import { Area, AreaChart, Cell, Legend, Pie, PieChart as RechartsPieChart, Respo
 import type { AdminChartPoint } from '../../../services/api/adminApi';
 import { formatNumber, formatChartLabel } from './AdminUtils';
 
-
+export function getTimeSubtitle(timeFilter: string, t: any) {
+  if (timeFilter === '7days') return t('last7DaysLabel', { defaultValue: '7 ngày gần nhất' })
+  if (timeFilter === '30days') return t('last30DaysLabel', { defaultValue: '30 ngày gần nhất' })
+  return t('allTimeLabel', { defaultValue: 'Toàn bộ thời gian (90 ngày)' })
+}
 
 export function TrendLineChart({
   data,
