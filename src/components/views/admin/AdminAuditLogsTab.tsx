@@ -297,7 +297,7 @@ export function AdminAuditLogsTab({ pushToast }: AdminAuditLogsTabProps) {
 
             <button
               type="button"
-              className="btn-secondary"
+              className="btn-secondary audit-btn"
               onClick={handleExportCSV}
               disabled={isLoading || filteredLogs.length === 0}
             >
@@ -307,7 +307,7 @@ export function AdminAuditLogsTab({ pushToast }: AdminAuditLogsTabProps) {
 
             <button
               type="button"
-              className="btn-secondary"
+              className="btn-secondary audit-btn"
               onClick={() => void loadLogs()}
               disabled={isLoading}
             >
@@ -321,8 +321,8 @@ export function AdminAuditLogsTab({ pushToast }: AdminAuditLogsTabProps) {
           </div>
         </div>
 
-        <div className="admin-table-container">
-          <table className="admin-users-table audit-table">
+        <div className="admin-table-wrapper">
+          <table className="admin-table audit-table">
             <thead>
               <tr>
                 <th>{t('colAdmin')}</th>
@@ -349,7 +349,7 @@ export function AdminAuditLogsTab({ pushToast }: AdminAuditLogsTabProps) {
                 <tr>
                   <td colSpan={6}>
                     <div className="admin-empty-row">
-                      <FileText size={24} style={{ opacity: 0.5, marginBottom: '8px' }} />
+                      <FileText size={32} />
                       <p>{t('noAuditLogs')}</p>
                     </div>
                   </td>
