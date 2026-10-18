@@ -631,7 +631,7 @@ export function ContactsPanel({
   function confirmUnfriend(friend: ContactUser) {
     setConfirmDialog({
       title: t('unfriendConfirmTitle'),
-      description: t('unfriendConfirm', { defaultValue: `Bạn sẽ hủy kết bạn với {{name}}. Hai bạn cần gửi lời mời lại nếu muốn kết bạn tiếp.`, name: friend.nickname || friend.fullName }),
+      description: t('unfriendConfirmDesc', { defaultValue: `Bạn sẽ hủy kết bạn với {{name}}. Hai bạn cần gửi lại lời mời nếu muốn kết bạn tiếp.`, name: friend.nickname || friend.fullName }),
       confirmLabel: t('unfriendConfirmBtn'),
       tone: 'danger',
       onConfirm: () => handleUnfriend(friend),
@@ -707,9 +707,14 @@ export function ContactsPanel({
             placeholder={
               activeTab === 'friends'
                 ? t('searchPlaceholderFriends', { defaultValue: 'Tìm nhanh trong bạn bè hoặc tìm toàn hệ thống...' })
-                : t('searchPlaceholderContact')
+                : activeTab === 'requests'
+                ? t('searchPlaceholderRequests', { defaultValue: 'Tìm trong danh sách lời mời...' })
+                : activeTab === 'suggestions'
+                ? t('searchPlaceholderSuggestions', { defaultValue: 'Tìm trong danh sách gợi ý...' })
+                : t('searchPlaceholderContact', { defaultValue: 'Tìm theo tên hoặc số điện thoại...' })
             }
             value={query}
+            aria-label={t('searchAriaLabel', { defaultValue: 'Tìm kiếm danh bạ' })}
           />
           {query.trim().length > 0 && (
             <button
@@ -717,6 +722,7 @@ export function ContactsPanel({
               onClick={() => handleQueryChange('')}
               type="button"
               title={t('clearSearchBtn', { defaultValue: 'Xóa tìm kiếm' })}
+              aria-label={t('clearSearchBtn', { defaultValue: 'Xóa tìm kiếm' })}
             >
               <X size={14} />
             </button>
@@ -726,8 +732,9 @@ export function ContactsPanel({
             disabled={isLoading || query.trim().length < 2}
             type="submit"
             title={t('searchGlobalBtn', { defaultValue: 'Tìm kiếm toàn hệ thống' })}
+            aria-label={t('searchGlobalBtn', { defaultValue: 'Tìm kiếm toàn hệ thống' })}
           >
-            {isLoading ? t('searchingBtn') : t('searchGlobalBtn', { defaultValue: 'Tìm toàn hệ thống' })}
+            {isLoading ? t('searchingBtn') : t('searchGlobalBtn', { defaultValue: 'Tìm kiếm toàn hệ thống' })}
           </button>
         </form>
 
@@ -919,7 +926,7 @@ export function ContactsPanel({
                     </button>
                     <button className="cp-btn cp-btn--primary cp-btn--sm" disabled={busyId === request.id} onClick={() => handleAcceptRequest(request)} type="button">
                       <Check size={14} />
-                      <span>{busyId === request.id ? t('processing', { defaultValue: 'Đang xử lý...' }) : t('statusAcceptReq')}</span>
+                      <span>{busyId === request.id ? t('processingBtn') : t('statusAcceptReq')}</span>
                     </button>
                     <button className="cp-btn cp-btn--danger cp-btn--sm" disabled={busyId === request.id} onClick={() => handleDeclineRequest(request)} type="button">
                       <X size={14} />
