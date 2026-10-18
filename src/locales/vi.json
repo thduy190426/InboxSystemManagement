@@ -518,7 +518,12 @@
     "editProfile": "Chỉnh sửa hồ sơ",
     "newNotifications": "{{count}} thông báo mới!",
     "switchAccounts": "Chuyển tài khoản",
-    "logout": "Đăng xuất"
+    "logout": "Đăng xuất",
+    "more": "Khác",
+    "moreMenuTitle": "Tùy chọn mở rộng",
+    "closeMoreMenu": "Đóng menu",
+    "adminDesc": "Quản trị hệ thống & phân quyền",
+    "settingsDesc": "Bảo mật tài khoản & cài đặt"
   },
   "settings": {
     "pageTitle": "Bảo mật & Phiên đăng nhập",

@@ -518,7 +518,12 @@
     "editProfile": "Edit profile",
     "newNotifications": "{{count}} new notifications!",
     "switchAccounts": "Switch Accounts",
-    "logout": "Logout"
+    "logout": "Logout",
+    "more": "More",
+    "moreMenuTitle": "More Options",
+    "closeMoreMenu": "Close menu",
+    "adminDesc": "System administration & roles",
+    "settingsDesc": "Account security & settings"
   },
   "settings": {
     "pageTitle": "Security & Sessions",

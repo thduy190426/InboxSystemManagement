@@ -1,14 +1,17 @@
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Bell,
   ChevronLeft,
   ChevronRight,
   LogOut,
   MessageCircle,
+  MoreHorizontal,
   Settings,
   Shield,
   UserRound,
-  Users
+  Users,
+  X
   // Moon,
   // Sun
 } from 'lucide-react'
@@ -18,13 +21,21 @@ import type { SavedAccount } from '../../services/storage/authStorage'
 import { AccountSwitcherMenu } from '../auth/AccountSwitcherMenu'
 import { useTranslation } from 'react-i18next'
 
-const navItemsConfig = [
-  { value: 'chat' as const, icon: MessageCircle },
-  { value: 'contacts' as const, icon: Users },
-  { value: 'profile' as const, icon: UserRound },
-  { value: 'admin' as const, icon: Shield },
-  { value: 'settings' as const, icon: Settings },
-  { value: 'notifications' as const, icon: Bell },
+type NavItemDef = {
+  value: AppView | 'more'
+  icon: typeof MessageCircle
+  desktopOnly?: boolean
+  mobileOnly?: boolean
+}
+
+const navItemsConfig: NavItemDef[] = [
+  { value: 'chat', icon: MessageCircle },
+  { value: 'contacts', icon: Users },
+  { value: 'profile', icon: UserRound },
+  { value: 'admin', icon: Shield, desktopOnly: true },
+  { value: 'settings', icon: Settings, desktopOnly: true },
+  { value: 'notifications', icon: Bell },
+  { value: 'more', icon: MoreHorizontal, mobileOnly: true },
 ]
 
 type NavRailProps = {
@@ -54,6 +65,7 @@ export function NavRail({
   const { t } = useTranslation('nav')
   const [isRinging, setIsRinging] = useState(false)
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false)
+  const [isMoreSheetOpen, setIsMoreSheetOpen] = useState(false)
   const avatarButtonRef = useRef<HTMLButtonElement>(null)
   const prevCountRef = useRef(notificationCount)
 
@@ -65,6 +77,17 @@ export function NavRail({
     }
     prevCountRef.current = notificationCount
   }, [notificationCount])
+
+  useEffect(() => {
+    if (!isMoreSheetOpen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsMoreSheetOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isMoreSheetOpen])
 
   const [dragStartX, setDragStartX] = useState<number | null>(null)
   const [dragCurrentX, setDragCurrentX] = useState<number | null>(null)
@@ -125,7 +148,8 @@ export function NavRail({
   }
 
   return (
-    <aside
+    <>
+      <aside
       ref={asideRef}
       className={isOpen ? 'nav-rail is-open' : 'nav-rail'}
       data-tour="nav-rail"
@@ -189,14 +213,35 @@ export function NavRail({
 
           const Icon = item.icon
           const badgeCount = item.value === 'notifications' ? notificationCount : 0
+          const isActive = item.value === 'more'
+            ? (activeView === 'admin' || activeView === 'settings' || isMoreSheetOpen)
+            : activeView === item.value
+
+          const itemClasses = [
+            'nav-button',
+            `nav-item--${item.value}`,
+            item.desktopOnly ? 'nav-item--desktop-only' : '',
+            item.mobileOnly ? 'nav-item--mobile-only' : '',
+            isActive ? 'is-active' : '',
+          ].filter(Boolean).join(' ')
+
+          const handleClick = () => {
+            if (item.value === 'more') {
+              setIsMoreSheetOpen((prev) => !prev)
+              return
+            }
+            setIsMoreSheetOpen(false)
+            onChangeView(item.value as AppView)
+          }
 
           return (
             <button
-              className={item.value === activeView ? 'nav-button is-active' : 'nav-button'}
+              className={itemClasses}
               key={item.value}
-              onClick={() => onChangeView(item.value)}
+              onClick={handleClick}
               title={t(item.value)}
               type="button"
+              aria-expanded={item.value === 'more' ? isMoreSheetOpen : undefined}
             >
               <Icon 
                 size={22} 
@@ -214,21 +259,6 @@ export function NavRail({
         })}
       </nav>
       <div className="nav-bottom-actions">
-        {/* 
-        <button
-          className="nav-button nav-settings"
-          onClick={toggleTheme}
-          title={theme === 'dark' ? t('lightTheme', { defaultValue: 'Giao diện sáng' }) : t('darkTheme', { defaultValue: 'Giao diện tối' })}
-          type="button"
-        >
-          {theme === 'dark' ? (
-            <Sun size={22} strokeWidth={2.1} />
-          ) : (
-            <Moon size={22} strokeWidth={2.1} />
-          )}
-          <span>{theme === 'dark' ? t('lightTheme', { defaultValue: 'Giao diện sáng' }) : t('darkTheme', { defaultValue: 'Giao diện tối' })}</span>
-        </button>
-        */}
         <button
           className="nav-button nav-settings"
           onClick={onLogout}
@@ -240,5 +270,138 @@ export function NavRail({
         </button>
       </div>
     </aside>
+
+      {typeof document !== 'undefined' && createPortal(
+        <div 
+          className={`nav-mobile-sheet-overlay ${isMoreSheetOpen ? 'is-open' : ''}`}
+          aria-hidden={!isMoreSheetOpen}
+        >
+          <div 
+            className="nav-mobile-backdrop" 
+            onClick={() => setIsMoreSheetOpen(false)} 
+          />
+          <div 
+            className="nav-mobile-sheet" 
+            role="dialog" 
+            aria-modal="true" 
+            aria-label={t('moreMenuTitle', { defaultValue: 'Tùy chọn mở rộng' })}
+          >
+            <div 
+              className="nav-sheet-handle-bar" 
+              onClick={() => setIsMoreSheetOpen(false)}
+              role="presentation"
+            >
+              <div className="nav-sheet-handle" />
+            </div>
+            
+            <div className="nav-sheet-header">
+              <span className="nav-sheet-title">{t('moreMenuTitle', { defaultValue: 'Tùy chọn mở rộng' })}</span>
+              <button 
+                type="button" 
+                className="nav-sheet-close-btn" 
+                onClick={() => setIsMoreSheetOpen(false)}
+                aria-label={t('closeMoreMenu', { defaultValue: 'Đóng menu' })}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="nav-sheet-user-card">
+              <div className="nav-sheet-user-avatar">
+                {currentUser?.avatarUrl ? (
+                  <img src={currentUser.avatarUrl} alt="" />
+                ) : (
+                  <span>{currentUser?.displayName?.[0] || currentUser?.fullName?.[0] || 'U'}</span>
+                )}
+              </div>
+              <div className="nav-sheet-user-info">
+                <div className="nav-sheet-user-name-row">
+                  <span className="nav-sheet-user-name">
+                    {currentUser?.displayName || currentUser?.fullName || 'User'}
+                  </span>
+                  <span className={`nav-sheet-role-badge ${currentUser?.role === 'admin' ? 'is-admin' : ''}`}>
+                    {currentUser?.role === 'admin' ? 'ADMIN' : 'MEMBER'}
+                  </span>
+                </div>
+                <span className="nav-sheet-user-handle">
+                  {currentUser?.handle ? `@${currentUser.handle}` : currentUser?.email || ''}
+                </span>
+              </div>
+              <button
+                type="button"
+                className="nav-sheet-switch-btn"
+                onClick={() => {
+                  setIsMoreSheetOpen(false)
+                  setIsAccountMenuOpen(true)
+                }}
+                title={t('switchAccounts', { defaultValue: 'Chuyển tài khoản' })}
+              >
+                <Users size={15} />
+                <span>{t('switchAccounts', { defaultValue: 'Chuyển' })}</span>
+              </button>
+            </div>
+
+            <div className="nav-sheet-menu-list">
+              {currentUser?.role === 'admin' && (
+                <button
+                  type="button"
+                  className={`nav-sheet-menu-item ${activeView === 'admin' ? 'is-active' : ''}`}
+                  onClick={() => {
+                    onChangeView('admin')
+                    setIsMoreSheetOpen(false)
+                  }}
+                >
+                  <div className="nav-sheet-menu-item-left">
+                    <span className="nav-sheet-menu-icon is-admin">
+                      <Shield size={20} />
+                    </span>
+                    <div className="nav-sheet-menu-text">
+                      <span className="nav-sheet-menu-title">{t('admin')}</span>
+                      <span className="nav-sheet-menu-desc">{t('adminDesc', { defaultValue: 'Quản trị hệ thống & phân quyền' })}</span>
+                    </div>
+                  </div>
+                  <ChevronRight size={18} className="nav-sheet-chevron" />
+                </button>
+              )}
+
+              <button
+                type="button"
+                className={`nav-sheet-menu-item ${activeView === 'settings' ? 'is-active' : ''}`}
+                onClick={() => {
+                  onChangeView('settings')
+                  setIsMoreSheetOpen(false)
+                }}
+              >
+                <div className="nav-sheet-menu-item-left">
+                  <span className="nav-sheet-menu-icon is-settings">
+                    <Settings size={20} />
+                  </span>
+                  <div className="nav-sheet-menu-text">
+                    <span className="nav-sheet-menu-title">{t('settings')}</span>
+                    <span className="nav-sheet-menu-desc">{t('settingsDesc', { defaultValue: 'Bảo mật tài khoản & cài đặt' })}</span>
+                  </div>
+                </div>
+                <ChevronRight size={18} className="nav-sheet-chevron" />
+              </button>
+
+              <div className="nav-sheet-divider" />
+
+              <button
+                type="button"
+                className="nav-sheet-logout-btn"
+                onClick={() => {
+                  setIsMoreSheetOpen(false)
+                  onLogout()
+                }}
+              >
+                <LogOut size={18} />
+                <span>{t('logout')}</span>
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
   )
 }

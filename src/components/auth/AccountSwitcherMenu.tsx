@@ -48,14 +48,18 @@ export function AccountSwitcherMenu({
     if (!isOpen) return
 
     function updateCoords() {
+      const isMobile = window.innerWidth < 640
       if (anchorEl) {
         const rect = anchorEl.getBoundingClientRect()
-        const isMobile = window.innerWidth < 640
         if (isMobile) {
-          setCoords({
-            left: 12,
-            top: Math.min(rect.bottom + 8, window.innerHeight - 380),
-          })
+          if (rect.height > 0) {
+            setCoords({
+              left: 12,
+              top: Math.min(rect.bottom + 8, window.innerHeight - 380),
+            })
+          } else {
+            setCoords({ left: 12, top: 64 })
+          }
         } else {
           setCoords({
             left: rect.right + 12,
@@ -63,7 +67,7 @@ export function AccountSwitcherMenu({
           })
         }
       } else {
-        setCoords({ top: 70, left: 86 })
+        setCoords(isMobile ? { left: 12, top: 64 } : { top: 70, left: 86 })
       }
     }
 
