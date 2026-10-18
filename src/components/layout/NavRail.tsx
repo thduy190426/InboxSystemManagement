@@ -163,9 +163,11 @@ export function NavRail({
         className="sidebar-toggle"
         onClick={onToggleOpen}
         title={isOpen ? t('collapseSidebar') : t('expandSidebar')}
+        aria-label={isOpen ? t('collapseSidebar') : t('expandSidebar')}
+        aria-expanded={isOpen}
         type="button"
       >
-        {isOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+        {isOpen ? <ChevronLeft size={18} strokeWidth={2.2} /> : <ChevronRight size={18} strokeWidth={2.2} />}
         <span>{isOpen ? t('collapse') : t('expand')}</span>
       </button>
 
