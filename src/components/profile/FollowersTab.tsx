@@ -77,11 +77,14 @@ export function FollowersTab({
                 onClick={() => onViewUserProfile?.(item)}
                 style={{ cursor: onViewUserProfile ? 'pointer' : 'default' }}
               >
-                <AvatarFallback
-                  className="friend-card-avatar"
-                  name={item.fullName}
-                  src={item.avatarUrl}
-                />
+                <div className="friend-card-avatar-wrap">
+                  <AvatarFallback
+                    className="friend-card-avatar"
+                    name={item.fullName}
+                    src={item.avatarUrl}
+                  />
+                  <span className={`cp-presence-dot cp-presence--${item.presence || 'offline'}`} />
+                </div>
                 <div style={{ minWidth: 0 }}>
                   <div className="friend-card-name">{item.fullName}</div>
                   <div className="friend-card-sub">

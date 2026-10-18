@@ -1361,7 +1361,13 @@ img {
 .cp-card-avatar-wrap .avatar-fallback,
 .cp-avatar-wrap .avatar-fallback,
 .np-row-avatar .avatar-fallback,
-.pp-avatar-wrap .avatar-fallback {
+.pp-avatar-wrap .avatar-fallback,
+.friend-card-avatar-wrap .avatar-fallback,
+.friend-card-avatar.avatar-fallback,
+.composer-avatar.avatar-fallback,
+.post-author-avatar.avatar-fallback,
+.comment-avatar.avatar-fallback,
+.profile-avatar-large.avatar-fallback {
   display: inline-grid;
   place-items: center;
   border-radius: 50%;
@@ -1378,7 +1384,9 @@ img {
 .cp-card-avatar-wrap .avatar-fallback,
 .cp-avatar-wrap .avatar-fallback,
 .np-row-avatar .avatar-fallback,
-.pp-avatar-wrap .avatar-fallback {
+.pp-avatar-wrap .avatar-fallback,
+.friend-card-avatar-wrap .avatar-fallback,
+.friend-card-avatar.avatar-fallback {
   width: 100%;
   height: 100%;
   font-size: 18px;
@@ -13131,6 +13139,27 @@ html.dark .outgoing .message-bubble {
   line-height: 1;
 }
 
+span.avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #14b8a6, #2563eb);
+  color: #ffffff;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  user-select: none;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+img.avatar-fallback {
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
 .story-viewer-backdrop {
   animation: modal-backdrop-in var(--modal-motion-duration) var(--modal-motion-ease) both;
 }
@@ -15742,6 +15771,22 @@ input.sr-only {
   object-fit: cover !important;
 }
 
+span.profile-avatar-large,
+.profile-avatar-large.avatar-fallback {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #14b8a6, #2563eb) !important;
+  color: #ffffff !important;
+  font-size: 44px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  user-select: none;
+}
+
 .profile-presence-indicator {
   position: absolute;
   bottom: 8px;
@@ -16090,6 +16135,24 @@ input.sr-only {
   height: 44px;
   border-radius: 50%;
   flex-shrink: 0;
+  object-fit: cover;
+}
+
+span.composer-avatar,
+.composer-avatar.avatar-fallback {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #14b8a6, #2563eb);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  user-select: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .composer-textarea {
@@ -16226,6 +16289,24 @@ input.sr-only {
   height: 44px;
   border-radius: 50%;
   flex-shrink: 0;
+  object-fit: cover;
+}
+
+span.post-author-avatar,
+.post-author-avatar.avatar-fallback {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #14b8a6, #2563eb);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  user-select: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .post-author-name {
@@ -16318,6 +16399,23 @@ input.sr-only {
   height: 32px;
   border-radius: 50%;
   flex-shrink: 0;
+  object-fit: cover;
+}
+
+span.comment-avatar,
+.comment-avatar.avatar-fallback {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #14b8a6, #2563eb);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  user-select: none;
 }
 
 .comment-bubble {
@@ -16401,11 +16499,55 @@ input.sr-only {
   min-width: 0;
 }
 
+.friend-card-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.friend-card-left:hover .friend-card-avatar-wrap,
+.friend-card-avatar-wrap:hover {
+  transform: scale(1.05);
+}
+
 .friend-card-avatar {
   width: 48px;
   height: 48px;
   border-radius: 50%;
   flex-shrink: 0;
+  object-fit: cover;
+}
+
+span.friend-card-avatar,
+.friend-card-avatar.avatar-fallback {
+  display: inline-grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #14b8a6, #2563eb);
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  user-select: none;
+  box-shadow: 0 2px 10px rgba(20, 184, 166, 0.25);
+}
+
+.friend-card-avatar-wrap .cp-presence-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2.5px solid var(--surface, #1e293b);
+  z-index: 2;
 }
 
 .friend-card-name {

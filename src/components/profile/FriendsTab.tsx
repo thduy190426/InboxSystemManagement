@@ -50,13 +50,13 @@ export function FriendsTab({
                 onClick={() => onViewFriendProfile?.(friend)}
                 style={{ cursor: onViewFriendProfile ? 'pointer' : 'default' }}
               >
-                <div style={{ position: 'relative' }}>
+                <div className="friend-card-avatar-wrap">
                   <AvatarFallback
                     className="friend-card-avatar"
                     name={friend.fullName}
                     src={friend.avatarUrl}
                   />
-                  <span className={`profile-presence-indicator cp-presence--${presence}`} style={{ width: '12px', height: '12px', bottom: '0', right: '0' }} />
+                  <span className={`cp-presence-dot cp-presence--${presence}`} />
                 </div>
                 <div style={{ minWidth: 0 }}>
                   <div className="friend-card-name">{friend.fullName}</div>
