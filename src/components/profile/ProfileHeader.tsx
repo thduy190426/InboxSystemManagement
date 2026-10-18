@@ -301,8 +301,10 @@ export function ProfileHeader({
           type="button"
         >
           <span className="profile-stat-icon"><FileText size={16} /></span>
-          <strong className="profile-stat-number">{stats.postsCount}</strong>
-          <span className="profile-stat-label">{t('statPosts', { defaultValue: 'Bài viết' })}</span>
+          <div className="profile-stat-content">
+            <strong className="profile-stat-number">{stats.postsCount}</strong>
+            <span className="profile-stat-label">{t('statPosts', { defaultValue: 'Bài viết' })}</span>
+          </div>
         </button>
 
         <button
@@ -311,8 +313,10 @@ export function ProfileHeader({
           type="button"
         >
           <span className="profile-stat-icon"><Users size={16} /></span>
-          <strong className="profile-stat-number">{stats.friendsCount}</strong>
-          <span className="profile-stat-label">{t('statFriends', { defaultValue: 'Bạn bè' })}</span>
+          <div className="profile-stat-content">
+            <strong className="profile-stat-number">{stats.friendsCount}</strong>
+            <span className="profile-stat-label">{t('statFriends', { defaultValue: 'Bạn bè' })}</span>
+          </div>
         </button>
 
         <button
@@ -321,8 +325,10 @@ export function ProfileHeader({
           type="button"
         >
           <span className="profile-stat-icon"><Heart size={16} /></span>
-          <strong className="profile-stat-number">{stats.followersCount}</strong>
-          <span className="profile-stat-label">{t('statFollowers', { defaultValue: 'Người theo dõi' })}</span>
+          <div className="profile-stat-content">
+            <strong className="profile-stat-number">{stats.followersCount}</strong>
+            <span className="profile-stat-label">{t('statFollowers', { defaultValue: 'Người theo dõi' })}</span>
+          </div>
         </button>
 
         <button
@@ -331,8 +337,10 @@ export function ProfileHeader({
           type="button"
         >
           <span className="profile-stat-icon"><Sparkles size={16} /></span>
-          <strong className="profile-stat-number">{stats.followingCount}</strong>
-          <span className="profile-stat-label">{t('statFollowing', { defaultValue: 'Đang theo dõi' })}</span>
+          <div className="profile-stat-content">
+            <strong className="profile-stat-number">{stats.followingCount}</strong>
+            <span className="profile-stat-label">{t('statFollowing', { defaultValue: 'Đang theo dõi' })}</span>
+          </div>
         </button>
       </div>
 
