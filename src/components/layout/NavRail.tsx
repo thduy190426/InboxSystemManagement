@@ -72,6 +72,7 @@ export function NavRail({
 
   function handlePointerDown(e: React.PointerEvent) {
     if (e.pointerType === 'mouse' && e.button !== 0) return; 
+    if (window.innerWidth <= 760) return;
 
     setDragStartX(e.clientX)
     setDragCurrentX(e.clientX)
